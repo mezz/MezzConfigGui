@@ -5,6 +5,14 @@ plugins {
 }
 
 repositories {
+    val deployDir = rootProject.findProperty("DEPLOY_DIR")
+    if (deployDir != null) {
+        maven(deployDir) {
+            content {
+                includeGroup("net.mezzdev.config")
+            }
+        }
+    }
     fun exclusiveMaven(url: String, filter: Action<InclusiveRepositoryContentDescriptor>) =
         exclusiveContent {
             forRepository { maven(url) }
@@ -12,6 +20,16 @@ repositories {
         }
     exclusiveMaven("https://maven.parchmentmc.org") {
         includeGroupByRegex("org\\.parchmentmc.*")
+    }
+    maven("https://maven.blamejared.com") {
+        content {
+            includeGroup("net.mezzdev.config")
+        }
+    }
+    mavenLocal {
+        content {
+            includeGroup("net.mezzdev.config")
+        }
     }
 }
 
@@ -28,8 +46,8 @@ val parchmentMinecraftVersion: String by extra
 val parchmentVersionFabric: String by extra
 val jsr305Version: String by extra
 val mezzConfigVersion: String by extra
+val mezzConfigApiDependency: String by rootProject.extra
 val mezzConfigApiFabricDependency: String by rootProject.extra
-val mezzConfigApiCompileOnlyProject: Project = project(":MezzConfigApiCompileOnly")
 val configGuiApiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui-api")
 val testModId = "mezz_config_gui_test_fabric_custom"
 
@@ -37,7 +55,7 @@ base {
     archivesName.set("${testModId}-${minecraftVersion}")
 }
 
-listOf(mezzConfigApiCompileOnlyProject, configGuiApiProject).forEach {
+listOf(configGuiApiProject).forEach {
     project.evaluationDependsOn(it.path)
 }
 
@@ -66,7 +84,7 @@ dependencies {
     modImplementation("net.fabricmc:fabric-loader:$fabricLoaderVersion")
     modImplementation("net.fabricmc.fabric-api:fabric-api:$fabricApiVersion")
     compileOnly("com.google.code.findbugs:jsr305:$jsr305Version")
-    compileOnly(mezzConfigApiCompileOnlyProject)
+    compileOnly(mezzConfigApiDependency)
     compileOnly(configGuiApiProject)
     modRuntimeOnly(mezzConfigApiFabricDependency)
     modRuntimeOnly("$configModGroup:${configModId}-${minecraftVersion}-fabric:$mezzConfigVersion")

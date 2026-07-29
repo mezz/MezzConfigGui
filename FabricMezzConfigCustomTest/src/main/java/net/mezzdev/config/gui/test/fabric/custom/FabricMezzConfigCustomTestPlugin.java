@@ -104,8 +104,7 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 				.setTitle(Component.translatable("%s.config.category.overview".formatted(MOD_ID)))
 				.setDescription(Component.translatable("%s.config.category.overview.description".formatted(MOD_ID)))
 				.addValue(new CombinedEnabledValue(getPrimaryEnabled(), getSecondaryEnabled()))
-				.addValue(getAccentColor())
-				.hideValues(List.of(getPrimaryEnabled(), getSecondaryEnabled()));
+				.addValue(getAccentColor());
 			screenBuilder.addCategory("controls")
 				.setTitle(Component.translatable("%s.config.category.controls".formatted(MOD_ID)))
 				.setDescription(Component.translatable("%s.config.category.controls.description".formatted(MOD_ID)))

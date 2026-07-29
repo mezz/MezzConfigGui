@@ -24,22 +24,22 @@ public final class NeoForgeNativeCustomTestMod {
 		ENABLED = builder.comment("Boolean value moved into a custom quick category.")
 			.translation(MOD_ID + ".configuration.client.enabled")
 			.define("enabled", true);
-		EXTRA_EFFECTS = builder.comment("Boolean value left in the original native category.")
+		EXTRA_EFFECTS = builder.comment("Boolean value omitted from the manually configured GUI.")
 			.translation(MOD_ID + ".configuration.client.extraEffects")
 			.define("extraEffects", true);
-		SECRET_DIAGNOSTICS = builder.comment("Hidden from the GUI by a native value reference.")
+		SECRET_DIAGNOSTICS = builder.comment("Boolean value omitted from the manually configured GUI.")
 			.translation(MOD_ID + ".configuration.client.secretDiagnostics")
 			.define("secretDiagnostics", false);
 		MODE = builder.comment("Enum value displayed with a custom cycling selection editor.")
 			.translation(MOD_ID + ".configuration.client.mode")
 			.defineEnum("mode", TestMode.BALANCED);
-		LABEL = builder.comment("String value left in the original native category.")
+		LABEL = builder.comment("String value omitted from the manually configured GUI.")
 			.translation(MOD_ID + ".configuration.client.label")
 			.define("label", "NeoForge Custom", value -> value instanceof String string && !string.isBlank() && string.length() <= 40);
-		ROW_COUNT = builder.comment("Integer value left in the original native category.")
+		ROW_COUNT = builder.comment("Integer value omitted from the manually configured GUI.")
 			.translation(MOD_ID + ".configuration.client.rowCount")
 			.defineInRange("rowCount", 6, 1, 12);
-		OPACITY = builder.comment("Double value marked game-restart for update-type coverage.")
+		OPACITY = builder.comment("Double value omitted from the manually configured GUI.")
 			.translation(MOD_ID + ".configuration.client.opacity")
 			.gameRestart()
 			.defineInRange("opacity", 0.85D, 0.1D, 1.0D);

@@ -29,8 +29,10 @@ public interface IConfigScreenBuilder {
 	/**
 	 * Add a category in the order it should appear on the screen.
 	 * <p>
-	 * The config GUI shows customized categories in the order they are added here, followed by any values that were not
-	 * explicitly added to a customized category.
+	 * Adding a category switches the screen to a manually configured layout. Automatically detected categories are no
+	 * longer added unless they are also configured here. If values are added to this category, they replace the
+	 * category's automatically detected values. If no values are added, this category keeps its automatically detected
+	 * values.
 	 * <p>
 	 * The category title and description default to existing schema localization when the category already exists, or to
 	 * the screen's inferred category localization path followed by {@code .} and {@code name}.
@@ -43,9 +45,12 @@ public interface IConfigScreenBuilder {
 	IConfigScreenCategoryBuilder addCategory(String name);
 
 	/**
-	 * Configure an existing category without changing its order on the screen.
+	 * Configure a category without forcing it into the ordered category list.
 	 * <p>
-	 * If there is no existing category with this name, the category is added after the existing categories.
+	 * If this matches an automatically detected category and no values are added, the category keeps its automatically
+	 * detected position and values. Adding values switches the screen to a manually configured layout. Automatically
+	 * detected categories are no longer added unless they are also configured here, and these values replace the
+	 * category's automatically detected values.
 	 * <p>
 	 * The category title and description default to existing schema localization when the category already exists, or to
 	 * the screen's inferred category localization path followed by {@code .} and {@code name}.

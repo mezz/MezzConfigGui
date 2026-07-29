@@ -48,15 +48,11 @@ public final class NeoForgeNativeCustomTestGuiPlugin implements IConfigGuiPlugin
 				.addValueReferences(List.of(
 					configValue(NeoForgeNativeCustomTestMod.ENABLED),
 					configValue(NeoForgeNativeCustomTestMod.MODE)
-				))
-				.hideValueReference(configValue(NeoForgeNativeCustomTestMod.SECRET_DIAGNOSTICS));
+				));
 			screenBuilder.addCategory("keyMappings")
 				.setTitle(Component.translatable("%s.configuration.category.keyMappings".formatted(NeoForgeNativeCustomTestMod.MOD_ID)))
 				.setDescription(Component.translatable("%s.configuration.category.keyMappings.tooltip".formatted(NeoForgeNativeCustomTestMod.MOD_ID)))
 				.addKeyMapping(OPEN_NATIVE_SCREEN_KEY);
-			screenBuilder.configureCategory(NeoForgeNativeCustomTestMod.CLIENT_FILE_NAME)
-				.setTitle(Component.translatable("%s.configuration.category.remainingNative".formatted(NeoForgeNativeCustomTestMod.MOD_ID)))
-				.setDescription(Component.translatable("%s.configuration.category.remainingNative.tooltip".formatted(NeoForgeNativeCustomTestMod.MOD_ID)));
 		});
 	}
 

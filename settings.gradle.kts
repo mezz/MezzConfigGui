@@ -34,16 +34,19 @@ pluginManagement {
 }
 
 val minecraftVersion: String by settings
+val mezzConfigLocalPath: String by settings
 
 rootProject.name = "MezzConfigGui"
 
-includeBuild("../MezzConfig") {
+includeBuild(mezzConfigLocalPath) {
 	dependencySubstitution {
 		substitute(module("net.mezzdev.config:CommonApi")).using(project(":CommonApi"))
 		substitute(module("net.mezzdev.config:Common")).using(project(":Common"))
 		substitute(module("net.mezzdev.config:FabricApi")).using(project(":FabricApi"))
 		substitute(module("net.mezzdev.config:ForgeApi")).using(project(":ForgeApi"))
 		substitute(module("net.mezzdev.config:NeoForgeApi")).using(project(":NeoForgeApi"))
+		substitute(module("net.mezzdev.config:mezz_config-${minecraftVersion}-config-api")).using(project(":CommonApi"))
+		substitute(module("net.mezzdev.config:mezz_config-${minecraftVersion}-config")).using(project(":Common"))
 		substitute(module("net.mezzdev.config:mezz_config_api-${minecraftVersion}-fabric")).using(project(":FabricApi"))
 		substitute(module("net.mezzdev.config:mezz_config_api-${minecraftVersion}-forge")).using(project(":ForgeApi"))
 		substitute(module("net.mezzdev.config:mezz_config_api-${minecraftVersion}-neoforge")).using(project(":NeoForgeApi"))
@@ -56,8 +59,6 @@ includeBuild("../MezzConfig") {
 include(
 	"Common", "CommonApi",
 	"Fabric", "Forge", "NeoForge",
-	"JeiApiCompileOnly",
-	"MezzConfigApiCompileOnly",
 	"FabricMezzConfigDefaultsTest",
 	"FabricMezzConfigCustomTest",
 	"NeoForgeNativeDefaultsTest",

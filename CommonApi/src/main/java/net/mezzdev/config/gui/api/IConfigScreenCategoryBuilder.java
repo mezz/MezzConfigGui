@@ -41,6 +41,8 @@ public interface IConfigScreenCategoryBuilder {
 
 	/**
 	 * Add one config value to this category.
+	 * <p>
+	 * Adding values to a category replaces that category's automatically detected values.
 	 *
 	 * @param value config value to display
 	 * @return this builder
@@ -51,6 +53,8 @@ public interface IConfigScreenCategoryBuilder {
 
 	/**
 	 * Add config values to this category.
+	 * <p>
+	 * Adding values to a category replaces that category's automatically detected values.
 	 *
 	 * @param values config values to display
 	 * @return this builder
@@ -61,6 +65,8 @@ public interface IConfigScreenCategoryBuilder {
 
 	/**
 	 * Add config values to this category when the screen is opened.
+	 * <p>
+	 * Adding values to a category replaces that category's automatically detected values.
 	 *
 	 * @param valuesSupplier supplies config values to display
 	 * @return this builder
@@ -72,7 +78,8 @@ public interface IConfigScreenCategoryBuilder {
 	/**
 	 * Hide one schema config value from this category.
 	 * <p>
-	 * This is useful when a custom screen value represents one or more lower-level schema values.
+	 * This is only needed when this category keeps automatically detected values and some of those values should still
+	 * be omitted.
 	 *
 	 * @param value config value to hide
 	 * @return this builder
@@ -84,7 +91,8 @@ public interface IConfigScreenCategoryBuilder {
 	/**
 	 * Hide schema config values from this category.
 	 * <p>
-	 * This is useful when a custom screen value represents one or more lower-level schema values.
+	 * This is only needed when this category keeps automatically detected values and some of those values should still
+	 * be omitted.
 	 *
 	 * @param values config values to hide
 	 * @return this builder
@@ -96,7 +104,8 @@ public interface IConfigScreenCategoryBuilder {
 	/**
 	 * Hide schema config values from this category when the screen is opened.
 	 * <p>
-	 * This is useful when a custom screen value represents one or more lower-level schema values.
+	 * This is only needed when this category keeps automatically detected values and some of those values should still
+	 * be omitted.
 	 *
 	 * @param valuesSupplier supplies config values to hide
 	 * @return this builder
@@ -107,6 +116,8 @@ public interface IConfigScreenCategoryBuilder {
 
 	/**
 	 * Add one config value to this category by reference.
+	 * <p>
+	 * Adding values to a category replaces that category's automatically detected values.
 	 *
 	 * @param valueReference config value reference
 	 * @return this builder
@@ -118,8 +129,8 @@ public interface IConfigScreenCategoryBuilder {
 	/**
 	 * Hide one schema config value from this category by reference.
 	 * <p>
-	 * This is useful when a custom screen value represents one or more lower-level schema values that are only known
-	 * through platform-native references.
+	 * This is only needed when this category keeps automatically detected values and some of those values should still
+	 * be omitted.
 	 *
 	 * @param valueReference config value reference to hide
 	 * @return this builder
@@ -130,6 +141,8 @@ public interface IConfigScreenCategoryBuilder {
 
 	/**
 	 * Add config values to this category by reference.
+	 * <p>
+	 * Adding values to a category replaces that category's automatically detected values.
 	 *
 	 * @param valueReferences config value references
 	 * @return this builder
@@ -141,8 +154,8 @@ public interface IConfigScreenCategoryBuilder {
 	/**
 	 * Hide schema config values from this category by reference.
 	 * <p>
-	 * This is useful when custom screen values represent lower-level schema values that are only known through
-	 * platform-native references.
+	 * This is only needed when this category keeps automatically detected values and some of those values should still
+	 * be omitted.
 	 *
 	 * @param valueReferences config value references to hide
 	 * @return this builder
@@ -153,6 +166,9 @@ public interface IConfigScreenCategoryBuilder {
 
 	/**
 	 * Add one key mapping to this category.
+	 * <p>
+	 * Adding key mappings to any configured category disables the automatically detected key mappings category for this
+	 * screen. Adding values to a category replaces that category's automatically detected values.
 	 *
 	 * @param keyMapping key mapping to display
 	 * @return this builder
@@ -163,6 +179,9 @@ public interface IConfigScreenCategoryBuilder {
 
 	/**
 	 * Add key mappings to this category.
+	 * <p>
+	 * Adding key mappings to any configured category disables the automatically detected key mappings category for this
+	 * screen. Adding values to a category replaces that category's automatically detected values.
 	 *
 	 * @param keyMappings key mappings to display
 	 * @return this builder
@@ -173,6 +192,9 @@ public interface IConfigScreenCategoryBuilder {
 
 	/**
 	 * Add key mappings to this category when the screen is opened.
+	 * <p>
+	 * Adding key mappings to any configured category disables the automatically detected key mappings category for this
+	 * screen. Adding values to a category replaces that category's automatically detected values.
 	 *
 	 * @param keyMappingsSupplier supplies key mappings to display
 	 * @return this builder

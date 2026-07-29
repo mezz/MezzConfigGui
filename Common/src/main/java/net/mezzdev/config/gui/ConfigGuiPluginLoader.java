@@ -43,6 +43,8 @@ import java.util.function.Supplier;
 
 final class ConfigGuiPluginLoader {
 	private static final Logger LOGGER = LogManager.getLogger();
+	private static final String KEY_MAPPINGS_CATEGORY_NAME = "keyMappings";
+	private static final ConfigScreenValueProvider DEFAULT_KEY_MAPPINGS_PROVIDER = (modId, allValues) -> KeyMappingConfigValues.createForModId(modId);
 
 	private ConfigGuiPluginLoader() {
 
@@ -169,16 +171,14 @@ final class ConfigGuiPluginLoader {
 
 			Supplier<? extends IConfigEditableSchema> schemaSupplier = config.schemaSupplier();
 			List<ConfiguredScreenCategory> configuredCategories = screenBuilder.getCategories();
-			if (!configuredCategories.isEmpty()) {
-				Supplier<? extends IConfigEditableSchema> originalSchemaSupplier = schemaSupplier;
-				schemaSupplier = () -> {
-					IConfigEditableSchema schema = originalSchemaSupplier.get();
-					if (schema == null) {
-						throw new NullPointerException("schemaSupplier must not return null.");
-					}
-					return new CustomizedConfigEditableSchema(modId, schema, configuredCategories);
-				};
-			}
+			Supplier<? extends IConfigEditableSchema> originalSchemaSupplier = schemaSupplier;
+			schemaSupplier = () -> {
+				IConfigEditableSchema schema = originalSchemaSupplier.get();
+				if (schema == null) {
+					throw new NullPointerException("schemaSupplier must not return null.");
+				}
+				return new CustomizedConfigEditableSchema(modId, schema, configuredCategories);
+			};
 			return Optional.of(createScreenFactory(
 				modId,
 				screenBuilder.getTitle(),
@@ -270,6 +270,8 @@ final class ConfigGuiPluginLoader {
 		@Nullable
 		private Component description;
 		private boolean ordered;
+		private boolean containsKeyMappings;
+		private boolean hasManualValues;
 
 		public ConfigScreenCategoryBuilder(String name) {
 			this.name = name;
@@ -381,17 +383,20 @@ final class ConfigGuiPluginLoader {
 		public IConfigScreenCategoryBuilder addKeyMappings(Collection<? extends KeyMapping> keyMappings) {
 			Collection<? extends KeyMapping> checkedKeyMappings = ErrorUtil.checkNotNull(keyMappings, "keyMappings");
 			List<KeyMapping> keyMappingsCopy = List.copyOf(checkedKeyMappings);
+			containsKeyMappings = true;
 			return addValueProvider((modId, allValues) -> KeyMappingConfigValues.create(keyMappingsCopy));
 		}
 
 		@Override
 		public IConfigScreenCategoryBuilder addKeyMappings(Supplier<? extends Collection<? extends KeyMapping>> keyMappingsSupplier) {
 			Supplier<? extends Collection<? extends KeyMapping>> checkedSupplier = ErrorUtil.checkNotNull(keyMappingsSupplier, "keyMappingsSupplier");
+			containsKeyMappings = true;
 			return addValueProvider((modId, allValues) -> KeyMappingConfigValues.create(getKeyMappings(checkedSupplier)));
 		}
 
 		private IConfigScreenCategoryBuilder addValueProvider(ConfigScreenValueProvider valueProvider) {
 			ConfigScreenValueProvider checkedValueProvider = ErrorUtil.checkNotNull(valueProvider, "valueProvider");
+			hasManualValues = true;
 			valueProviders.add(checkedValueProvider);
 			return this;
 		}
@@ -403,7 +408,7 @@ final class ConfigGuiPluginLoader {
 		}
 
 		public ConfiguredScreenCategory build() {
-			return new ConfiguredScreenCategory(name, title, description, ordered, valueProviders, hiddenValueProviders);
+			return new ConfiguredScreenCategory(name, title, description, ordered, hasManualValues, containsKeyMappings, valueProviders, hiddenValueProviders);
 		}
 	}
 
@@ -414,12 +419,42 @@ final class ConfigGuiPluginLoader {
 		@Nullable
 		Component description,
 		boolean ordered,
+		boolean hasManualValues,
+		boolean containsKeyMappings,
 		List<ConfigScreenValueProvider> valueProviders,
 		List<ConfigScreenValueProvider> hiddenValueProviders
 	) {
 		private ConfiguredScreenCategory {
 			valueProviders = List.copyOf(valueProviders);
 			hiddenValueProviders = List.copyOf(hiddenValueProviders);
+		}
+
+		private static ConfiguredScreenCategory createDefaultKeyMappingsCategory(ConfigScreenValueProvider defaultKeyMappingsProvider) {
+			return new ConfiguredScreenCategory(
+				KEY_MAPPINGS_CATEGORY_NAME,
+				null,
+				null,
+				false,
+				false,
+				true,
+				List.of(defaultKeyMappingsProvider),
+				List.of()
+			);
+		}
+
+		private ConfiguredScreenCategory withDefaultKeyMappings(ConfigScreenValueProvider defaultKeyMappingsProvider) {
+			List<ConfigScreenValueProvider> valueProviders = new ArrayList<>(this.valueProviders);
+			valueProviders.add(defaultKeyMappingsProvider);
+			return new ConfiguredScreenCategory(
+				name,
+				title,
+				description,
+				ordered,
+				hasManualValues,
+				containsKeyMappings,
+				valueProviders,
+				hiddenValueProviders
+			);
 		}
 	}
 
@@ -501,6 +536,38 @@ final class ConfigGuiPluginLoader {
 		List<? extends IConfigCategory> originalCategories,
 		List<ConfiguredScreenCategory> configuredCategories
 	) {
+		return createScreenCategories(
+			modId,
+			originalCategories,
+			configuredCategories,
+			DEFAULT_KEY_MAPPINGS_PROVIDER
+		);
+	}
+
+	static List<IConfigCategory> createScreenCategoriesForTests(
+		String modId,
+		List<? extends IConfigCategory> originalCategories,
+		Consumer<IConfigScreenBuilder> screenCustomizer,
+		ConfigScreenValueProvider defaultKeyMappingsProvider
+	) {
+		ConfigScreenBuilder screenBuilder = new ConfigScreenBuilder(modId, Component.empty(), () -> ConfigRestartResult.HANDLED);
+		screenCustomizer.accept(screenBuilder);
+		return createScreenCategories(
+			modId,
+			originalCategories,
+			screenBuilder.getCategories(),
+			defaultKeyMappingsProvider
+		);
+	}
+
+	private static List<IConfigCategory> createScreenCategories(
+		String modId,
+		List<? extends IConfigCategory> originalCategories,
+		List<ConfiguredScreenCategory> configuredCategories,
+		ConfigScreenValueProvider defaultKeyMappingsProvider
+	) {
+		configuredCategories = addDefaultKeyMappingsCategory(configuredCategories, defaultKeyMappingsProvider);
+		boolean hasManualScreenLayout = hasManualScreenLayout(configuredCategories);
 		List<ResolvedScreenCategory> resolvedCategories = originalCategories.stream()
 			.map(ConfigGuiPluginLoader::resolve)
 			.toList();
@@ -542,6 +609,9 @@ final class ConfigGuiPluginLoader {
 				emittedCategoryNames.add(originalCategory.name());
 				continue;
 			}
+			if (hasManualScreenLayout) {
+				continue;
+			}
 			List<IConfigValue<?>> remainingValues = getRemainingValues(originalCategory, usedValues);
 			if (!remainingValues.isEmpty()) {
 				screenCategories.add(new ConfiguredScreenConfigCategory(
@@ -568,6 +638,35 @@ final class ConfigGuiPluginLoader {
 		return List.copyOf(screenCategories);
 	}
 
+	private static List<ConfiguredScreenCategory> addDefaultKeyMappingsCategory(
+		List<ConfiguredScreenCategory> configuredCategories,
+		ConfigScreenValueProvider defaultKeyMappingsProvider
+	) {
+		if (hasConfiguredKeyMappings(configuredCategories)) {
+			return configuredCategories;
+		}
+		List<ConfiguredScreenCategory> categories = new ArrayList<>(configuredCategories);
+		for (int i = 0; i < categories.size(); i++) {
+			ConfiguredScreenCategory category = categories.get(i);
+			if (category.name().equals(KEY_MAPPINGS_CATEGORY_NAME)) {
+				categories.set(i, category.withDefaultKeyMappings(defaultKeyMappingsProvider));
+				return categories;
+			}
+		}
+		categories.add(ConfiguredScreenCategory.createDefaultKeyMappingsCategory(defaultKeyMappingsProvider));
+		return categories;
+	}
+
+	private static boolean hasConfiguredKeyMappings(List<ConfiguredScreenCategory> configuredCategories) {
+		return configuredCategories.stream()
+			.anyMatch(ConfiguredScreenCategory::containsKeyMappings);
+	}
+
+	private static boolean hasManualScreenLayout(List<ConfiguredScreenCategory> configuredCategories) {
+		return configuredCategories.stream()
+			.anyMatch(configuredCategory -> configuredCategory.ordered() || configuredCategory.hasManualValues());
+	}
+
 	private static Optional<ConfiguredScreenCategory> findConfiguredCategory(
 		List<ConfiguredScreenCategory> configuredCategories,
 		String name
@@ -588,7 +687,8 @@ final class ConfigGuiPluginLoader {
 	) {
 		List<IConfigValue<?>> values = new ArrayList<>();
 		addHiddenConfiguredValues(modId, allValues, usedValues, configuredCategory);
-		if (!configuredCategory.ordered()) {
+		boolean includeOriginalValues = !configuredCategory.hasManualValues();
+		if (includeOriginalValues && !configuredCategory.ordered()) {
 			addRemainingOriginalValues(configuredCategory.name(), resolvedCategories, usedValues, values);
 		}
 		for (ConfigScreenValueProvider valueProvider : configuredCategory.valueProviders()) {
@@ -596,7 +696,7 @@ final class ConfigGuiPluginLoader {
 				addConfiguredValue(modId, usedValues, values, configValue);
 			}
 		}
-		if (configuredCategory.ordered()) {
+		if (includeOriginalValues && configuredCategory.ordered()) {
 			addRemainingOriginalValues(configuredCategory.name(), resolvedCategories, usedValues, values);
 		}
 		if (!values.isEmpty()) {
@@ -859,7 +959,7 @@ final class ConfigGuiPluginLoader {
 	}
 
 	@FunctionalInterface
-	private interface ConfigScreenValueProvider {
+	interface ConfigScreenValueProvider {
 		List<? extends IConfigValue<?>> getValues(String modId, List<IConfigValue<?>> allValues);
 	}
 

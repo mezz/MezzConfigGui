@@ -15,5 +15,12 @@
   "mezz_config_gui_test_neoforge_defaults.configuration.limits.cacheBudget": "Cache Budget",
   "mezz_config_gui_test_neoforge_defaults.configuration.limits.cacheBudget.tooltip": "Long native config value.",
   "mezz_config_gui_test_neoforge_defaults.configuration.limits.scale": "Scale",
-  "mezz_config_gui_test_neoforge_defaults.configuration.limits.scale.tooltip": "Double native config value."
+  "mezz_config_gui_test_neoforge_defaults.configuration.limits.scale.tooltip": "Double native config value.",
+  "key.categories.mezz_config_gui_test_neoforge_defaults": "Config GUI Native Defaults Test",
+  "key.mezz_config_gui_test_neoforge_defaults.openDefaultsScreen": "Open Defaults Test Screen",
+  "key.mezz_config_gui_test_neoforge_defaults.openDefaultsScreen.context": "In game",
+  "key.mezz_config_gui_test_neoforge_defaults.openDefaultsScreen.description": "Opens the default native config test screen.",
+  "key.mezz_config_gui_test_neoforge_defaults.toggleDefaultsOverlay": "Toggle Defaults Test Overlay",
+  "key.mezz_config_gui_test_neoforge_defaults.toggleDefaultsOverlay.context": "In game",
+  "key.mezz_config_gui_test_neoforge_defaults.toggleDefaultsOverlay.description": "Toggles a placeholder overlay for key mapping coverage."
 }

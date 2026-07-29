@@ -6,6 +6,14 @@ plugins {
 }
 
 repositories {
+    val deployDir = rootProject.findProperty("DEPLOY_DIR")
+    if (deployDir != null) {
+        maven(deployDir) {
+            content {
+                includeGroup("net.mezzdev.config")
+            }
+        }
+    }
     fun exclusiveMaven(url: String, filter: Action<InclusiveRepositoryContentDescriptor>) =
         exclusiveContent {
             forRepository { maven(url) }
@@ -24,6 +32,16 @@ repositories {
         // for optional Mod Menu integration
         content {
             includeGroup("com.terraformersmc")
+        }
+    }
+    maven("https://maven.blamejared.com") {
+        content {
+            includeGroup("net.mezzdev.config")
+        }
+    }
+    mavenLocal {
+        content {
+            includeGroup("net.mezzdev.config")
         }
     }
 }
@@ -45,7 +63,6 @@ val jsr305Version: String by extra
 val mezzConfigVersion: String by extra
 val mezzConfigApiDependency: String by rootProject.extra
 val mezzConfigApiFabricDependency: String by rootProject.extra
-val mezzConfigApiCompileOnlyProject: Project = project(":MezzConfigApiCompileOnly")
 val configGuiApiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui-api")
 val configGuiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui")
 val fabricDefaultsTestModProject: Project = project(":FabricMezzConfigDefaultsTest")
@@ -67,7 +84,7 @@ val testModProjects: List<Project> = listOf(
     fabricCustomTestModProject,
 )
 
-(dependencyProjects + testModProjects + mezzConfigApiCompileOnlyProject).forEach {
+(dependencyProjects + testModProjects).forEach {
     project.evaluationDependsOn(it.path)
 }
 val testModSourceSets = testModProjects.map {
@@ -109,7 +126,7 @@ dependencies {
     modCompileOnly("de.siphalor:amecsapi-${amecsMinecraftVersion}:$amecsVersionFabric")
     modCompileOnly("com.terraformersmc:modmenu:$modMenuVersionFabric")
     compileOnly("com.google.code.findbugs:jsr305:$jsr305Version")
-    compileOnly(mezzConfigApiCompileOnlyProject)
+    compileOnly(mezzConfigApiDependency)
     modRuntimeOnly(mezzConfigApiFabricDependency)
     modLocalRuntime("$configModGroup:${configModId}-${minecraftVersion}-fabric:$mezzConfigVersion")
     modLocalRuntime("com.terraformersmc:modmenu:$modMenuVersionFabric")

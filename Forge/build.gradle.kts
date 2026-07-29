@@ -23,7 +23,7 @@ val fastutilVersion: String by extra
 val jsr305Version: String by extra
 val mezzConfigApiDependency: String by rootProject.extra
 val mezzConfigApiForgeDependency: String by rootProject.extra
-val mezzConfigApiCompileOnlyProject: Project = project(":MezzConfigApiCompileOnly")
+val jeiApiDependency: Any by rootProject.extra
 val configGuiApiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui-api")
 val configGuiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui")
 
@@ -38,9 +38,8 @@ val dependencyProjects: List<Project> = listOf(
 	configGuiApiProject,
 	configGuiProject,
 )
-val jeiApiCompileOnlyProject: Project = project(":JeiApiCompileOnly")
 
-(dependencyProjects + jeiApiCompileOnlyProject + mezzConfigApiCompileOnlyProject).forEach {
+(dependencyProjects).forEach {
 	project.evaluationDependsOn(it.path)
 }
 
@@ -82,7 +81,29 @@ tasks.named<JavaCompile>(sourceSets.main.get().compileJavaTaskName) {
 
 // Hack fix: FG can't resolve deps like lwjgl-freetype-3.3.3-natives-macos-patch.jar without this
 repositories {
+	val deployDir = rootProject.findProperty("DEPLOY_DIR")
+	if (deployDir != null) {
+		maven(deployDir) {
+			content {
+				includeGroup("mezz.jei")
+				includeGroup("net.mezzdev.config")
+			}
+		}
+	}
 	maven("https://libraries.minecraft.net")
+	mavenCentral()
+	maven("https://maven.blamejared.com") {
+		content {
+			includeGroup("mezz.jei")
+			includeGroup("net.mezzdev.config")
+		}
+	}
+	mavenLocal {
+		content {
+			includeGroup("mezz.jei")
+			includeGroup("net.mezzdev.config")
+		}
+	}
 }
 
 dependencies {
@@ -97,8 +118,8 @@ dependencies {
 	compileOnly("org.apache.logging.log4j:log4j-api:$log4jVersion")
 	compileOnly("it.unimi.dsi:fastutil:$fastutilVersion")
 	compileOnly("com.google.code.findbugs:jsr305:$jsr305Version")
-	compileOnly(jeiApiCompileOnlyProject)
-	compileOnly(mezzConfigApiCompileOnlyProject)
+	compileOnly(jeiApiDependency)
+	compileOnly(mezzConfigApiDependency)
 	runtimeOnly(mezzConfigApiForgeDependency)
 	dependencyProjects.forEach {
 		compileOnly(it)

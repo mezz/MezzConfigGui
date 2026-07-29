@@ -48,12 +48,15 @@ val modJavaVersion: String by extra
 val modName: String by extra
 val neoforgeVersionRange: String by extra
 val neoforgeLoaderVersionRange: String by extra
+val jeiLocalPath: String by extra
+val jeiVersion: String by extra
 val specificationVersion: String by extra
 
 extra["mezzConfigApiDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-config-api:$mezzConfigVersion"
 extra["mezzConfigApiFabricDependency"] = "$configModGroup:${configApiModId}-${minecraftVersion}-fabric:$mezzConfigVersion"
 extra["mezzConfigApiForgeDependency"] = "$configModGroup:${configApiModId}-${minecraftVersion}-forge:$mezzConfigVersion"
 extra["mezzConfigApiNeoForgeDependency"] = "$configModGroup:${configApiModId}-${minecraftVersion}-neoforge:$mezzConfigVersion"
+extra["jeiApiDependency"] = files("${jeiLocalPath}/CommonApi/build/libs/jei-${minecraftVersion}-common-api-${jeiVersion}.jar")
 
 spotless {
 	java {

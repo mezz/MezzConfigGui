@@ -260,7 +260,8 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 			));
 		}
 		return new ConfigInfo(
-			Component.translatable("mezz_config.config.keyMapping.conflict.title"),
+			Component.translatable("mezz_config.config.keyMapping.conflict.title")
+				.withStyle(ChatFormatting.YELLOW),
 			lines
 		);
 	}

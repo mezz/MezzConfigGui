@@ -49,7 +49,7 @@
   "mezz_config.key.modifier.alt": "ALT",
   "mezz_config.key.mouse.left": "Left Click",
   "mezz_config.key.mouse.right": "Right Click",
-  "mezz_config.config.keyMapping.conflict.title": "Key Binding Conflict",
+  "mezz_config.config.keyMapping.conflict.title": "This key is also used for: ",
   "mezz_config.config.keyMapping.conflict": "Conflicts with: %s",
   "mezz_config.config.keyMapping.conflict.binding": "%s: %s",
   "mezz_config.config.keyMapping.conflict.mod": "Mod: %s",

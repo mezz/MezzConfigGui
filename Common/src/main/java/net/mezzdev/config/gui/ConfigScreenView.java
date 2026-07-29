@@ -14,6 +14,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.FormattedCharSequence;
 import org.jetbrains.annotations.Nullable;
 
@@ -422,10 +423,18 @@ final class ConfigScreenView {
 			return;
 		}
 		ConfigTooltip tooltip = new ConfigTooltip();
-		tooltip.add(info.title().copy().withStyle(ChatFormatting.WHITE));
+		tooltip.add(withDefaultColor(info.title(), ChatFormatting.WHITE));
 		for (Component line : info.lines()) {
-			tooltip.add(line.copy().withStyle(ChatFormatting.GRAY));
+			tooltip.add(withDefaultColor(line, ChatFormatting.GRAY));
 		}
 		tooltip.draw(guiGraphics, mouseX, mouseY);
+	}
+
+	private static MutableComponent withDefaultColor(Component component, ChatFormatting color) {
+		MutableComponent result = component.copy();
+		if (result.getStyle().getColor() == null) {
+			result.withStyle(color);
+		}
+		return result;
 	}
 }

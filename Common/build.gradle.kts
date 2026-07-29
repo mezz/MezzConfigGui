@@ -8,6 +8,31 @@ plugins {
     id("maven-publish")
 }
 
+repositories {
+    val deployDir = rootProject.findProperty("DEPLOY_DIR")
+    if (deployDir != null) {
+        maven(deployDir) {
+            content {
+                includeGroup("mezz.jei")
+                includeGroup("net.mezzdev.config")
+            }
+        }
+    }
+    mavenCentral()
+    maven("https://maven.blamejared.com") {
+        content {
+            includeGroup("mezz.jei")
+            includeGroup("net.mezzdev.config")
+        }
+    }
+    mavenLocal {
+        content {
+            includeGroup("mezz.jei")
+            includeGroup("net.mezzdev.config")
+        }
+    }
+}
+
 // gradle.properties
 val jUnitVersion: String by extra
 val minecraftVersion: String by extra
@@ -19,7 +44,7 @@ val mixinVersion: String by extra
 val jetbrainsAnnotationsVersion: String by extra
 val fastutilVersion: String by extra
 val mezzConfigApiDependency: String by rootProject.extra
-val mezzConfigApiCompileOnlyProject: Project = project(":MezzConfigApiCompileOnly")
+val jeiApiDependency: Any by rootProject.extra
 val configGuiApiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui-api")
 
 group = configModGroup
@@ -32,9 +57,8 @@ base {
 val dependencyProjects: List<Project> = listOf(
     configGuiApiProject,
 )
-val jeiApiCompileOnlyProject: Project = project(":JeiApiCompileOnly")
 
-(dependencyProjects + jeiApiCompileOnlyProject + mezzConfigApiCompileOnlyProject).forEach {
+(dependencyProjects).forEach {
     project.evaluationDependsOn(it.path)
 }
 
@@ -55,20 +79,21 @@ sourceSets {
 
 dependencies {
     compileOnly("org.spongepowered:mixin:$mixinVersion")
-    compileOnly(jeiApiCompileOnlyProject)
-    compileOnly(mezzConfigApiCompileOnlyProject)
+    compileOnly(jeiApiDependency)
+    compileOnly(mezzConfigApiDependency)
     implementation("org.jetbrains:annotations:$jetbrainsAnnotationsVersion")
     implementation("it.unimi.dsi:fastutil:$fastutilVersion")
     dependencyProjects.forEach {
         implementation(it)
     }
     testImplementation("org.junit.jupiter:junit-jupiter:$jUnitVersion")
+    testImplementation(mezzConfigApiDependency)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.test {
     useJUnitPlatform()
-    include("net/mezzdev/config/gui/test/**")
+    include("net/mezzdev/config/gui/**/*Test.class")
     outputs.upToDateWhen { false }
     testLogging {
         events = setOf(TestLogEvent.FAILED)

@@ -8,6 +8,27 @@ plugins {
     id("net.neoforged.moddev")
 }
 
+repositories {
+    val deployDir = rootProject.findProperty("DEPLOY_DIR")
+    if (deployDir != null) {
+        maven(deployDir) {
+            content {
+                includeGroup("net.mezzdev.config")
+            }
+        }
+    }
+    maven("https://maven.blamejared.com") {
+        content {
+            includeGroup("net.mezzdev.config")
+        }
+    }
+    mavenLocal {
+        content {
+            includeGroup("net.mezzdev.config")
+        }
+    }
+}
+
 // gradle.properties
 val neoforgeVersion: String by extra
 val minecraftVersion: String by extra
@@ -16,7 +37,6 @@ val configModGroup: String by extra
 val modJavaVersion: String by extra
 val mezzConfigApiDependency: String by rootProject.extra
 val mezzConfigApiNeoForgeDependency: String by rootProject.extra
-val mezzConfigApiCompileOnlyProject: Project = project(":MezzConfigApiCompileOnly")
 val configGuiApiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui-api")
 val configGuiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui")
 val neoForgeNativeDefaultsTestModId = "mezz_config_gui_test_neoforge_defaults"
@@ -40,7 +60,7 @@ val testModProjects: List<Project> = listOf(
     neoForgeNativeCustomTestModProject,
 )
 
-(dependencyProjects + testModProjects + mezzConfigApiCompileOnlyProject).forEach {
+(dependencyProjects + testModProjects).forEach {
     project.evaluationDependsOn(it.path)
 }
 val testModSourceSets = testModProjects.map {
@@ -99,6 +119,11 @@ neoForge {
             programArguments.addAll("nogui")
             logLevel = Level.INFO
         }
+        create("gameTestServer") {
+            getType().set("gameTestServer")
+            gameDirectory = file("run/gameTestServer")
+            logLevel = Level.INFO
+        }
     }
 }
 
@@ -106,6 +131,9 @@ val testModClassesTasks = testModProjects.mapIndexed { index, testModProject ->
     testModProject.tasks.named(testModSourceSets[index].classesTaskName)
 }
 tasks.matching { it.name == "runClient" }.configureEach {
+    dependsOn(testModClassesTasks)
+}
+tasks.matching { it.name == "runGameTestServer" }.configureEach {
     dependsOn(testModClassesTasks)
 }
 
@@ -117,7 +145,7 @@ sourceSets {
 }
 
 dependencies {
-    compileOnly(mezzConfigApiCompileOnlyProject)
+    compileOnly(mezzConfigApiDependency)
     runtimeOnly(mezzConfigApiNeoForgeDependency)
     dependencyProjects.forEach {
         implementation(it)

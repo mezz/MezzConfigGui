@@ -7,13 +7,34 @@ plugins {
     id("net.neoforged.moddev")
 }
 
+repositories {
+    val deployDir = rootProject.findProperty("DEPLOY_DIR")
+    if (deployDir != null) {
+        maven(deployDir) {
+            content {
+                includeGroup("net.mezzdev.config")
+            }
+        }
+    }
+    maven("https://maven.blamejared.com") {
+        content {
+            includeGroup("net.mezzdev.config")
+        }
+    }
+    mavenLocal {
+        content {
+            includeGroup("net.mezzdev.config")
+        }
+    }
+}
+
 // gradle.properties
 val neoforgeVersion: String by extra
 val minecraftVersion: String by extra
 val configGuiModId: String by extra
 val modJavaVersion: String by extra
 val jsr305Version: String by extra
-val mezzConfigApiProject: Project = project(":MezzConfigApiCompileOnly")
+val mezzConfigApiDependency: String by rootProject.extra
 val configGuiApiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui-api")
 val testModId = "mezz_config_gui_test_neoforge_custom"
 
@@ -21,7 +42,7 @@ base {
     archivesName.set("${testModId}-${minecraftVersion}")
 }
 
-listOf(mezzConfigApiProject, configGuiApiProject).forEach {
+listOf(configGuiApiProject).forEach {
     project.evaluationDependsOn(it.path)
 }
 
@@ -56,7 +77,7 @@ sourceSets {
 
 dependencies {
     compileOnly("com.google.code.findbugs:jsr305:$jsr305Version")
-    compileOnly(mezzConfigApiProject)
+    compileOnly(mezzConfigApiDependency)
     compileOnly(configGuiApiProject)
 }
 
