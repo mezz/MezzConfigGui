@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "mezz_config_gui_test_fabric_custom",
+  "version": "${version}",
+
+  "name": "Mezz Config GUI Fabric Custom Test",
+  "description": "Custom MezzConfig-backed config screen test for Mezz Config GUI on Fabric.",
+  "authors": [
+    "${modAuthor}"
+  ],
+
+  "license": "The MIT License (MIT)",
+
+  "environment": "client",
+  "entrypoints": {
+    "mezz_config_plugin": [
+      "net.mezzdev.config.gui.test.fabric.custom.FabricMezzConfigCustomTestPlugin"
+    ],
+    "mezz_config_gui_plugin": [
+      "net.mezzdev.config.gui.test.fabric.custom.FabricMezzConfigCustomTestPlugin"
+    ]
+  },
+
+  "depends": {
+    "fabricloader": "${fabricLoaderVersionRange}",
+    "${configApiModId}": "*",
+    "${configModId}": "*",
+    "${configGuiModId}": "*",
+    "java": ">=${modJavaVersion}"
+  }
+}

@@ -1,0 +1,9 @@
+{
+    "sources": [
+        {
+            "type": "directory",
+            "source": "mezz_config/atlas/gui",
+            "prefix": ""
+        }
+    ]
+}

@@ -1,0 +1,19 @@
+{
+  "mezz_config_gui_test_neoforge_defaults.configuration.title": "NeoForge Native Defaults Test",
+  "mezz_config_gui_test_neoforge_defaults.configuration.section.mezz.config.gui.test.neoforge.defaults.client.toml.title": "Client Config",
+  "mezz_config_gui_test_neoforge_defaults.configuration.section.mezz.config.gui.test.neoforge.defaults.client.toml.tooltip": "Native NeoForge client config adapted with default GUI behavior.",
+  "mezz_config_gui_test_neoforge_defaults.configuration.section.mezz.config.gui.test.neoforge.defaults.common.toml.title": "Common Config",
+  "mezz_config_gui_test_neoforge_defaults.configuration.section.mezz.config.gui.test.neoforge.defaults.common.toml.tooltip": "Native NeoForge common config adapted with default GUI behavior.",
+  "mezz_config_gui_test_neoforge_defaults.configuration.general.enabled": "Enabled",
+  "mezz_config_gui_test_neoforge_defaults.configuration.general.enabled.tooltip": "Boolean native config value.",
+  "mezz_config_gui_test_neoforge_defaults.configuration.general.maxVisibleRows": "Max Visible Rows",
+  "mezz_config_gui_test_neoforge_defaults.configuration.general.maxVisibleRows.tooltip": "Bounded integer native config value.",
+  "mezz_config_gui_test_neoforge_defaults.configuration.general.mode": "Mode",
+  "mezz_config_gui_test_neoforge_defaults.configuration.general.mode.tooltip": "Enum native config value.",
+  "mezz_config_gui_test_neoforge_defaults.configuration.general.screenLabel": "Screen Label",
+  "mezz_config_gui_test_neoforge_defaults.configuration.general.screenLabel.tooltip": "String native config value.",
+  "mezz_config_gui_test_neoforge_defaults.configuration.limits.cacheBudget": "Cache Budget",
+  "mezz_config_gui_test_neoforge_defaults.configuration.limits.cacheBudget.tooltip": "Long native config value.",
+  "mezz_config_gui_test_neoforge_defaults.configuration.limits.scale": "Scale",
+  "mezz_config_gui_test_neoforge_defaults.configuration.limits.scale.tooltip": "Double native config value."
+}

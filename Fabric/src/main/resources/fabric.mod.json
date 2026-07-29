@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "${configGuiModId}",
+  "version": "${version}",
+
+  "name": "Mezz Config GUI",
+  "description": "Shared config GUI support for Minecraft mods.",
+  "authors": [
+    "${modAuthor}"
+  ],
+  "contact": {
+    "sources": "${githubUrl}"
+  },
+
+  "license": "The MIT License (MIT)",
+
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "net.mezzdev.config.gui.fabric.ConfigGuiFabricClient"
+    ],
+    "modmenu": [
+      "net.mezzdev.config.gui.fabric.ConfigGuiModMenuPlugin"
+    ],
+    "jei_mod_plugin": [
+      "net.mezzdev.config.gui.jei.ConfigGuiPlugin"
+    ]
+  },
+  "accessWidener" : "mezz_config.accesswidener",
+
+  "depends": {
+    "fabricloader": "${fabricLoaderVersionRange}",
+    "fabric-api": "${fabricApiVersionRange}",
+    "${configApiModId}": "*",
+    "java": ">=${modJavaVersion}"
+  },
+  "suggests": {
+    "amecsapi": "*",
+    "modmenu": "*",
+    "jei": "*"
+  }
+}
