@@ -26,6 +26,17 @@ public interface IConfigGuiRegistration {
 	<T> void registerValueEditor(ConfigValueEditorType<T> editorType, IConfigValueEditorFactory<T> editorFactory);
 
 	/**
+	 * Get helper factories for config values backed by sortable runtime lists.
+	 *
+	 * @return helper factories for sortable runtime list values
+	 *
+	 * @since 0.1.0
+	 */
+	default ISortableConfigValueFactory getSortableConfigValueFactory() {
+		throw new UnsupportedOperationException("Sortable config value helpers are not available.");
+	}
+
+	/**
 	 * Customize the config screen for this mod.
 	 * <p>
 	 * This can be used with a screen registered through {@link #registerScreen(Component, Supplier, IConfigRestartHandler)}

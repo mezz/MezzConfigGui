@@ -10,6 +10,7 @@ import net.mezzdev.config.gui.api.IConfigScreenFactory;
 import net.mezzdev.config.gui.api.IConfigScreenConfig;
 import net.mezzdev.config.gui.api.IConfigScreenValueReference;
 import net.mezzdev.config.gui.api.IConfigValueEditorFactory;
+import net.mezzdev.config.gui.api.ISortableConfigValueFactory;
 import net.mezzdev.config.api.schema.IConfigCategory;
 import net.mezzdev.config.api.schema.IConfigEditableSchema;
 import net.mezzdev.config.api.value.ConfigValueChange;
@@ -139,6 +140,11 @@ final class ConfigGuiPluginLoader {
 			if (previous != null) {
 				LOGGER.error("Duplicate config value editor for mod id: {}, editor type: {}", modId, checkedEditorType);
 			}
+		}
+
+		@Override
+		public ISortableConfigValueFactory getSortableConfigValueFactory() {
+			return SortableConfigValueFactory.INSTANCE;
 		}
 
 		@Override
