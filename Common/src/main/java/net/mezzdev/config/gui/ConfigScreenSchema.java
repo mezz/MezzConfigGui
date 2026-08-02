@@ -22,9 +22,6 @@ public interface ConfigScreenSchema {
 	 */
 	static ConfigScreenSchema from(IConfigSchema schema) {
 		Objects.requireNonNull(schema, "schema");
-		return () -> schema.getCategories()
-			.stream()
-			.map(ConfigScreenCategory::configCategory)
-			.toList();
+		return new MezzConfigScreenSchema(schema);
 	}
 }

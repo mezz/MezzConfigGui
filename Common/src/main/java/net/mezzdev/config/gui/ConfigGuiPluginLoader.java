@@ -42,7 +42,7 @@ import java.util.function.Supplier;
 final class ConfigGuiPluginLoader {
 	private static final Logger LOGGER = LogManager.getLogger();
 	private static final String KEY_MAPPINGS_CATEGORY_NAME = "keyMappings";
-	private static final ConfigScreenValueProvider DEFAULT_KEY_MAPPINGS_PROVIDER = (modId, allValues) -> KeyMappingConfigValues.createForModId(modId);
+	private static final ConfigScreenValueProvider DEFAULT_KEY_MAPPINGS_PROVIDER = lookup -> KeyMappingConfigValues.createForModId(lookup.modId());
 
 	private ConfigGuiPluginLoader() {
 
@@ -188,13 +188,14 @@ final class ConfigGuiPluginLoader {
 
 			Supplier<? extends ConfigScreenSchema> schemaSupplier = config.schemaSupplier();
 			List<ConfiguredScreenCategory> configuredCategories = screenBuilder.getCategories();
+			boolean clearDefaultCategories = screenBuilder.isClearDefaultCategories();
 			Supplier<? extends ConfigScreenSchema> originalSchemaSupplier = schemaSupplier;
 			schemaSupplier = () -> {
 				ConfigScreenSchema schema = originalSchemaSupplier.get();
 				if (schema == null) {
 					throw new NullPointerException("schemaSupplier must not return null.");
 				}
-				return new CustomizedConfigScreenSchema(modId, schema, configuredCategories);
+				return new CustomizedConfigScreenSchema(modId, schema, configuredCategories, clearDefaultCategories);
 			};
 			return Optional.of(createScreenFactory(
 				modId,
@@ -230,6 +231,7 @@ final class ConfigGuiPluginLoader {
 		private final Map<String, ConfigScreenCategoryBuilder> categories = new LinkedHashMap<>();
 		private Component title;
 		private IConfigRestartHandler restartHandler;
+		private boolean clearDefaultCategories;
 
 		public ConfigScreenBuilder(String modId, Component title, IConfigRestartHandler restartHandler) {
 			this.modId = modId;
@@ -245,6 +247,12 @@ final class ConfigGuiPluginLoader {
 		@Override
 		public void setRestartHandler(IConfigRestartHandler restartHandler) {
 			this.restartHandler = ErrorUtil.checkNotNull(restartHandler, "restartHandler");
+		}
+
+		@Override
+		public IConfigScreenBuilder clearDefaultCategories() {
+			clearDefaultCategories = true;
+			return this;
 		}
 
 		@Override
@@ -272,6 +280,10 @@ final class ConfigGuiPluginLoader {
 			return restartHandler;
 		}
 
+		public boolean isClearDefaultCategories() {
+			return clearDefaultCategories;
+		}
+
 		public List<ConfiguredScreenCategory> getCategories() {
 			return categories.values()
 				.stream()
@@ -293,8 +305,8 @@ final class ConfigGuiPluginLoader {
 		@Nullable
 		private ConfigValueApplyMode defaultApplyMode;
 		private boolean ordered;
+		private boolean clearDefaultValues;
 		private boolean containsKeyMappings;
-		private boolean hasManualValues;
 
 		public ConfigScreenCategoryBuilder(String name) {
 			this.name = name;
@@ -317,6 +329,12 @@ final class ConfigGuiPluginLoader {
 		@Override
 		public IConfigScreenCategoryBuilder setDescription(Component description) {
 			this.description = ErrorUtil.checkNotNull(description, "description");
+			return this;
+		}
+
+		@Override
+		public IConfigScreenCategoryBuilder clearDefaultValues() {
+			clearDefaultValues = true;
 			return this;
 		}
 
@@ -381,13 +399,13 @@ final class ConfigGuiPluginLoader {
 		public IConfigScreenCategoryBuilder addScreenValues(Collection<? extends IConfigScreenValue<?>> values) {
 			Collection<? extends IConfigScreenValue<?>> checkedValues = ErrorUtil.checkNotNull(values, "values");
 			List<IConfigScreenValue<?>> valuesCopy = List.copyOf(checkedValues);
-			return addValueProvider((modId, allValues) -> valuesCopy);
+			return addValueProvider(lookup -> valuesCopy);
 		}
 
 		@Override
 		public IConfigScreenCategoryBuilder addScreenValues(Supplier<? extends Collection<? extends IConfigScreenValue<?>>> valuesSupplier) {
 			Supplier<? extends Collection<? extends IConfigScreenValue<?>>> checkedSupplier = ErrorUtil.checkNotNull(valuesSupplier, "valuesSupplier");
-			return addValueProvider((modId, allValues) -> getConfigValues(checkedSupplier));
+			return addValueProvider(lookup -> getConfigValues(checkedSupplier));
 		}
 
 		@Override
@@ -400,19 +418,19 @@ final class ConfigGuiPluginLoader {
 		public IConfigScreenCategoryBuilder hideScreenValues(Collection<? extends IConfigScreenValue<?>> values) {
 			Collection<? extends IConfigScreenValue<?>> checkedValues = ErrorUtil.checkNotNull(values, "values");
 			List<IConfigScreenValue<?>> valuesCopy = List.copyOf(checkedValues);
-			return addHiddenValueProvider((modId, allValues) -> valuesCopy);
+			return addHiddenValueProvider(lookup -> valuesCopy);
 		}
 
 		@Override
 		public IConfigScreenCategoryBuilder hideScreenValues(Supplier<? extends Collection<? extends IConfigScreenValue<?>>> valuesSupplier) {
 			Supplier<? extends Collection<? extends IConfigScreenValue<?>>> checkedSupplier = ErrorUtil.checkNotNull(valuesSupplier, "valuesSupplier");
-			return addHiddenValueProvider((modId, allValues) -> getConfigValues(checkedSupplier));
+			return addHiddenValueProvider(lookup -> getConfigValues(checkedSupplier));
 		}
 
 		@Override
 		public IConfigScreenCategoryBuilder addValueByName(String valueName) {
 			ConfigScreenValueMatcher valueMatcher = ConfigScreenValueMatcher.named(valueName);
-			return addValueProvider((modId, allValues) -> findValue(modId, valueMatcher, allValues)
+			return addValueProvider(lookup -> findValue(lookup, valueMatcher)
 				.map(List::of)
 				.orElseGet(List::of)
 			);
@@ -421,7 +439,7 @@ final class ConfigGuiPluginLoader {
 		@Override
 		public IConfigScreenCategoryBuilder hideValueByName(String valueName) {
 			ConfigScreenValueMatcher valueMatcher = ConfigScreenValueMatcher.named(valueName);
-			return addHiddenValueProvider((modId, allValues) -> findValue(modId, valueMatcher, allValues)
+			return addHiddenValueProvider(lookup -> findValue(lookup, valueMatcher)
 				.map(List::of)
 				.orElseGet(List::of)
 			);
@@ -438,19 +456,18 @@ final class ConfigGuiPluginLoader {
 			Collection<? extends KeyMapping> checkedKeyMappings = ErrorUtil.checkNotNull(keyMappings, "keyMappings");
 			List<KeyMapping> keyMappingsCopy = List.copyOf(checkedKeyMappings);
 			containsKeyMappings = true;
-			return addValueProvider((modId, allValues) -> KeyMappingConfigValues.create(keyMappingsCopy));
+			return addValueProvider(lookup -> KeyMappingConfigValues.create(keyMappingsCopy));
 		}
 
 		@Override
 		public IConfigScreenCategoryBuilder addKeyMappings(Supplier<? extends Collection<? extends KeyMapping>> keyMappingsSupplier) {
 			Supplier<? extends Collection<? extends KeyMapping>> checkedSupplier = ErrorUtil.checkNotNull(keyMappingsSupplier, "keyMappingsSupplier");
 			containsKeyMappings = true;
-			return addValueProvider((modId, allValues) -> KeyMappingConfigValues.create(getKeyMappings(checkedSupplier)));
+			return addValueProvider(lookup -> KeyMappingConfigValues.create(getKeyMappings(checkedSupplier)));
 		}
 
 		private IConfigScreenCategoryBuilder addValueProvider(ConfigScreenValueProvider valueProvider) {
 			ConfigScreenValueProvider checkedValueProvider = ErrorUtil.checkNotNull(valueProvider, "valueProvider");
-			hasManualValues = true;
 			valueProviders.add(checkedValueProvider);
 			return this;
 		}
@@ -468,7 +485,7 @@ final class ConfigGuiPluginLoader {
 				description,
 				defaultApplyMode,
 				ordered,
-				hasManualValues,
+				clearDefaultValues,
 				containsKeyMappings,
 				valueProviders,
 				hiddenValueProviders,
@@ -484,7 +501,7 @@ final class ConfigGuiPluginLoader {
 		@Nullable Component description,
 		@Nullable ConfigValueApplyMode defaultApplyMode,
 		boolean ordered,
-		boolean hasManualValues,
+		boolean clearDefaultValues,
 		boolean containsKeyMappings,
 		List<ConfigScreenValueProvider> valueProviders,
 		List<ConfigScreenValueProvider> hiddenValueProviders,
@@ -523,7 +540,7 @@ final class ConfigGuiPluginLoader {
 				description,
 				defaultApplyMode,
 				ordered,
-				hasManualValues,
+				clearDefaultValues,
 				containsKeyMappings,
 				valueProviders,
 				hiddenValueProviders,
@@ -553,7 +570,7 @@ final class ConfigGuiPluginLoader {
 			IConfigValue<?> checkedConfigValue = ErrorUtil.checkNotNull(configValue, "configValue");
 			return new ConfigScreenValueMatcher() {
 				@Override
-				public boolean matches(IConfigScreenValue<?> value) {
+				public boolean matches(String categoryName, IConfigScreenValue<?> value) {
 					return value.getConfigValue()
 						.filter(configValue -> configValue == checkedConfigValue)
 						.isPresent();
@@ -570,7 +587,7 @@ final class ConfigGuiPluginLoader {
 			IConfigScreenValue<?> checkedConfigValue = ErrorUtil.checkNotNull(configValue, "configValue");
 			return new ConfigScreenValueMatcher() {
 				@Override
-				public boolean matches(IConfigScreenValue<?> value) {
+				public boolean matches(String categoryName, IConfigScreenValue<?> value) {
 					return checkedConfigValue == value;
 				}
 
@@ -585,8 +602,12 @@ final class ConfigGuiPluginLoader {
 			String checkedName = validateName(name, "value name");
 			return new ConfigScreenValueMatcher() {
 				@Override
-				public boolean matches(IConfigScreenValue<?> value) {
-					return value.getName().equals(checkedName);
+				public boolean matches(String categoryName, IConfigScreenValue<?> value) {
+					if (value.getName().equals(checkedName)) {
+						return true;
+					}
+					String qualifiedName = categoryName + "." + value.getName();
+					return qualifiedName.equals(checkedName);
 				}
 
 				@Override
@@ -596,39 +617,44 @@ final class ConfigGuiPluginLoader {
 			};
 		}
 
-		boolean matches(IConfigScreenValue<?> value);
+		boolean matches(String categoryName, IConfigScreenValue<?> value);
 	}
 
 	private static final class CustomizedConfigScreenSchema implements ConfigScreenSchema {
 		private final String modId;
 		private final ConfigScreenSchema schema;
 		private final List<ConfiguredScreenCategory> configuredCategories;
+		private final boolean clearDefaultCategories;
 
 		public CustomizedConfigScreenSchema(
 			String modId,
 			ConfigScreenSchema schema,
-			List<ConfiguredScreenCategory> configuredCategories
+			List<ConfiguredScreenCategory> configuredCategories,
+			boolean clearDefaultCategories
 		) {
 			this.modId = modId;
 			this.schema = schema;
 			this.configuredCategories = List.copyOf(configuredCategories);
+			this.clearDefaultCategories = clearDefaultCategories;
 		}
 
 		@Override
 		public List<? extends ConfigScreenCategory> getCategories() {
-			return createScreenCategories(modId, schema.getCategories(), configuredCategories);
+			return createScreenCategories(modId, schema.getCategories(), configuredCategories, clearDefaultCategories);
 		}
 	}
 
 	private static List<ConfigScreenCategory> createScreenCategories(
 		String modId,
 		List<? extends ConfigScreenCategory> originalCategories,
-		List<ConfiguredScreenCategory> configuredCategories
+		List<ConfiguredScreenCategory> configuredCategories,
+		boolean clearDefaultCategories
 	) {
 		return createScreenCategories(
 			modId,
 			originalCategories,
 			configuredCategories,
+			clearDefaultCategories,
 			DEFAULT_KEY_MAPPINGS_PROVIDER
 		);
 	}
@@ -645,6 +671,7 @@ final class ConfigGuiPluginLoader {
 			modId,
 			originalCategories,
 			screenBuilder.getCategories(),
+			screenBuilder.isClearDefaultCategories(),
 			defaultKeyMappingsProvider
 		);
 	}
@@ -653,16 +680,14 @@ final class ConfigGuiPluginLoader {
 		String modId,
 		List<? extends ConfigScreenCategory> originalCategories,
 		List<ConfiguredScreenCategory> configuredCategories,
+		boolean clearDefaultCategories,
 		ConfigScreenValueProvider defaultKeyMappingsProvider
 	) {
-		configuredCategories = addDefaultKeyMappingsCategory(configuredCategories, defaultKeyMappingsProvider);
-		boolean hasManualScreenLayout = hasManualScreenLayout(configuredCategories);
+		configuredCategories = addDefaultKeyMappingsCategory(configuredCategories, defaultKeyMappingsProvider, clearDefaultCategories);
 		List<ResolvedScreenCategory> resolvedCategories = originalCategories.stream()
 			.map(ConfigGuiPluginLoader::resolve)
 			.toList();
 		Optional<String> categoryLocalizationPrefix = getCategoryLocalizationPrefix(resolvedCategories);
-		List<IConfigScreenValue<?>> allValues = getAllValues(resolvedCategories);
-		Set<IConfigScreenValue<?>> usedValues = new HashSet<>();
 		Set<String> emittedCategoryNames = new HashSet<>();
 		List<ConfigScreenCategory> screenCategories = new ArrayList<>();
 		for (ConfiguredScreenCategory configuredCategory : configuredCategories) {
@@ -671,8 +696,6 @@ final class ConfigGuiPluginLoader {
 					modId,
 					categoryLocalizationPrefix,
 					resolvedCategories,
-					allValues,
-					usedValues,
 					screenCategories,
 					configuredCategory
 				);
@@ -690,24 +713,21 @@ final class ConfigGuiPluginLoader {
 					modId,
 					categoryLocalizationPrefix,
 					resolvedCategories,
-					allValues,
-					usedValues,
 					screenCategories,
 					configuredCategory.get()
 				);
 				emittedCategoryNames.add(originalCategory.name());
 				continue;
 			}
-			if (hasManualScreenLayout) {
+			if (clearDefaultCategories) {
 				continue;
 			}
-			List<IConfigScreenValue<?>> remainingValues = getRemainingValues(originalCategory, usedValues);
-			if (!remainingValues.isEmpty()) {
+			if (!originalCategory.values().isEmpty()) {
 				screenCategories.add(new ConfiguredScreenConfigCategory(
 					originalCategory.name(),
 					originalCategory.title(),
 					originalCategory.description(),
-					remainingValues
+					originalCategory.values()
 				));
 			}
 		}
@@ -717,8 +737,6 @@ final class ConfigGuiPluginLoader {
 					modId,
 					categoryLocalizationPrefix,
 					resolvedCategories,
-					allValues,
-					usedValues,
 					screenCategories,
 					configuredCategory
 				);
@@ -729,7 +747,8 @@ final class ConfigGuiPluginLoader {
 
 	private static List<ConfiguredScreenCategory> addDefaultKeyMappingsCategory(
 		List<ConfiguredScreenCategory> configuredCategories,
-		ConfigScreenValueProvider defaultKeyMappingsProvider
+		ConfigScreenValueProvider defaultKeyMappingsProvider,
+		boolean clearDefaultCategories
 	) {
 		if (hasConfiguredKeyMappings(configuredCategories)) {
 			return configuredCategories;
@@ -738,9 +757,15 @@ final class ConfigGuiPluginLoader {
 		for (int i = 0; i < categories.size(); i++) {
 			ConfiguredScreenCategory category = categories.get(i);
 			if (category.name().equals(KEY_MAPPINGS_CATEGORY_NAME)) {
+				if (category.clearDefaultValues()) {
+					return categories;
+				}
 				categories.set(i, category.withDefaultKeyMappings(defaultKeyMappingsProvider));
 				return categories;
 			}
+		}
+		if (clearDefaultCategories) {
+			return configuredCategories;
 		}
 		categories.add(ConfiguredScreenCategory.createDefaultKeyMappingsCategory(defaultKeyMappingsProvider));
 		return categories;
@@ -749,11 +774,6 @@ final class ConfigGuiPluginLoader {
 	private static boolean hasConfiguredKeyMappings(List<ConfiguredScreenCategory> configuredCategories) {
 		return configuredCategories.stream()
 			.anyMatch(ConfiguredScreenCategory::containsKeyMappings);
-	}
-
-	private static boolean hasManualScreenLayout(List<ConfiguredScreenCategory> configuredCategories) {
-		return configuredCategories.stream()
-			.anyMatch(configuredCategory -> configuredCategory.ordered() || configuredCategory.hasManualValues());
 	}
 
 	private static Optional<ConfiguredScreenCategory> findConfiguredCategory(
@@ -769,24 +789,20 @@ final class ConfigGuiPluginLoader {
 		String modId,
 		Optional<String> categoryLocalizationPrefix,
 		List<ResolvedScreenCategory> resolvedCategories,
-		List<IConfigScreenValue<?>> allValues,
-		Set<IConfigScreenValue<?>> usedValues,
 		List<ConfigScreenCategory> screenCategories,
 		ConfiguredScreenCategory configuredCategory
 	) {
 		List<IConfigScreenValue<?>> values = new ArrayList<>();
-		addHiddenConfiguredValues(modId, allValues, usedValues, configuredCategory);
-		boolean includeOriginalValues = !configuredCategory.hasManualValues();
-		if (includeOriginalValues && !configuredCategory.ordered()) {
-			addRemainingOriginalValues(configuredCategory.name(), resolvedCategories, usedValues, values);
+		Set<IConfigScreenValue<?>> usedValues = new HashSet<>();
+		Set<IConfigScreenValue<?>> hiddenValues = getHiddenConfiguredValues(modId, resolvedCategories, configuredCategory);
+		if (!configuredCategory.clearDefaultValues()) {
+			addOriginalValues(configuredCategory.name(), resolvedCategories, hiddenValues, usedValues, values);
 		}
 		for (ConfigScreenValueProvider valueProvider : configuredCategory.valueProviders()) {
-			for (IConfigScreenValue<?> configValue : valueProvider.getValues(modId, allValues)) {
-				addConfiguredValue(modId, usedValues, values, configValue);
+			ConfigScreenValueLookup lookup = new ConfigScreenValueLookup(modId, configuredCategory.name(), resolvedCategories);
+			for (IConfigScreenValue<?> configValue : valueProvider.getValues(lookup)) {
+				addConfiguredValue(usedValues, values, configValue);
 			}
-		}
-		if (includeOriginalValues && configuredCategory.ordered()) {
-			addRemainingOriginalValues(configuredCategory.name(), resolvedCategories, usedValues, values);
 		}
 		values = applyConfiguredValueSettings(modId, configuredCategory, values);
 		if (!values.isEmpty()) {
@@ -830,7 +846,7 @@ final class ConfigGuiPluginLoader {
 		ConfigValueApplyMode applyMode = configuredCategory.defaultApplyMode();
 		for (ConfigScreenValueApplyModeOverride applyModeOverride : configuredCategory.applyModeOverrides()) {
 			ConfigScreenValueMatcher valueMatcher = applyModeOverride.valueMatcher();
-			if (valueMatcher.matches(value)) {
+			if (valueMatcher.matches(configuredCategory.name(), value)) {
 				validateApplyModeMatcher(modId, configuredCategory, valueMatcher, values);
 				applyMode = applyModeOverride.applyMode();
 			}
@@ -850,7 +866,7 @@ final class ConfigGuiPluginLoader {
 		boolean requiresRestart = value.requiresRestart();
 		for (ConfigScreenValueRestartRequirementOverride restartRequirementOverride : configuredCategory.restartRequirementOverrides()) {
 			ConfigScreenValueMatcher valueMatcher = restartRequirementOverride.valueMatcher();
-			if (valueMatcher.matches(value)) {
+			if (valueMatcher.matches(configuredCategory.name(), value)) {
 				validateRestartRequirementMatcher(modId, configuredCategory, valueMatcher, values);
 				requiresRestart = restartRequirementOverride.requiresRestart();
 			}
@@ -865,7 +881,7 @@ final class ConfigGuiPluginLoader {
 		List<IConfigScreenValue<?>> values
 	) {
 		long matchCount = values.stream()
-			.filter(valueMatcher::matches)
+			.filter(value -> valueMatcher.matches(configuredCategory.name(), value))
 			.limit(2)
 			.count();
 		if (matchCount > 1) {
@@ -885,7 +901,7 @@ final class ConfigGuiPluginLoader {
 		List<IConfigScreenValue<?>> values
 	) {
 		long matchCount = values.stream()
-			.filter(valueMatcher::matches)
+			.filter(value -> valueMatcher.matches(configuredCategory.name(), value))
 			.limit(2)
 			.count();
 		if (matchCount > 1) {
@@ -914,17 +930,19 @@ final class ConfigGuiPluginLoader {
 		return configuredValue;
 	}
 
-	private static void addHiddenConfiguredValues(
+	private static Set<IConfigScreenValue<?>> getHiddenConfiguredValues(
 		String modId,
-		List<IConfigScreenValue<?>> allValues,
-		Set<IConfigScreenValue<?>> usedValues,
+		List<ResolvedScreenCategory> resolvedCategories,
 		ConfiguredScreenCategory configuredCategory
 	) {
+		Set<IConfigScreenValue<?>> hiddenValues = new HashSet<>();
+		ConfigScreenValueLookup lookup = new ConfigScreenValueLookup(modId, configuredCategory.name(), resolvedCategories);
 		for (ConfigScreenValueProvider valueProvider : configuredCategory.hiddenValueProviders()) {
-			for (IConfigScreenValue<?> configValue : valueProvider.getValues(modId, allValues)) {
-				usedValues.add(configValue);
+			for (IConfigScreenValue<?> configValue : valueProvider.getValues(lookup)) {
+				hiddenValues.add(configValue);
 			}
 		}
+		return hiddenValues;
 	}
 
 	private static Component getCategoryTitle(
@@ -1030,21 +1048,20 @@ final class ConfigGuiPluginLoader {
 	}
 
 	private static void addConfiguredValue(
-		String modId,
 		Set<IConfigScreenValue<?>> usedValues,
 		List<IConfigScreenValue<?>> values,
 		IConfigScreenValue<?> configValue
 	) {
 		if (!usedValues.add(configValue)) {
-			LOGGER.error("Duplicate config value in configured screen categories for mod id: {}, value: {}", modId, configValue.getName());
 			return;
 		}
 		values.add(configValue);
 	}
 
-	private static void addRemainingOriginalValues(
+	private static void addOriginalValues(
 		String categoryName,
 		List<ResolvedScreenCategory> originalCategories,
+		Set<IConfigScreenValue<?>> hiddenValues,
 		Set<IConfigScreenValue<?>> usedValues,
 		List<IConfigScreenValue<?>> values
 	) {
@@ -1053,21 +1070,11 @@ final class ConfigGuiPluginLoader {
 				continue;
 			}
 			for (IConfigScreenValue<?> value : originalCategory.values()) {
-				if (usedValues.add(value)) {
-					values.add(value);
+				if (!hiddenValues.contains(value)) {
+					addConfiguredValue(usedValues, values, value);
 				}
 			}
 		}
-	}
-
-	private static List<IConfigScreenValue<?>> getRemainingValues(ResolvedScreenCategory originalCategory, Set<IConfigScreenValue<?>> usedValues) {
-		List<IConfigScreenValue<?>> remainingValues = new ArrayList<>();
-		for (IConfigScreenValue<?> value : originalCategory.values()) {
-			if (usedValues.add(value)) {
-				remainingValues.add(value);
-			}
-		}
-		return remainingValues;
 	}
 
 	private static List<IConfigScreenValue<?>> getAllValues(List<ResolvedScreenCategory> screenCategories) {
@@ -1078,20 +1085,56 @@ final class ConfigGuiPluginLoader {
 		return List.copyOf(values);
 	}
 
-	private static Optional<IConfigScreenValue<?>> findValue(
-		String modId,
-		ConfigScreenValueMatcher valueMatcher,
-		List<IConfigScreenValue<?>> values
-	) {
+	private static Optional<IConfigScreenValue<?>> findValue(ConfigScreenValueLookup lookup, ConfigScreenValueMatcher valueMatcher) {
+		Optional<IConfigScreenValue<?>> categoryValue = findValueInCategory(lookup, valueMatcher);
+		if (categoryValue.isPresent()) {
+			return categoryValue;
+		}
+		return findValueInAllCategories(lookup, valueMatcher);
+	}
+
+	private static Optional<IConfigScreenValue<?>> findValueInCategory(ConfigScreenValueLookup lookup, ConfigScreenValueMatcher valueMatcher) {
 		@Nullable
 		IConfigScreenValue<?> result = null;
-		for (IConfigScreenValue<?> value : values) {
-			if (valueMatcher.matches(value)) {
-				if (result != null) {
-					LOGGER.error("Config value matcher matched multiple values for mod id: {}, value matcher: {}", modId, valueMatcher);
-					return Optional.of(result);
+		for (ResolvedScreenCategory category : lookup.resolvedCategories()) {
+			if (!category.name().equals(lookup.categoryName())) {
+				continue;
+			}
+			for (IConfigScreenValue<?> value : category.values()) {
+				if (valueMatcher.matches(category.name(), value)) {
+					if (result != null) {
+						LOGGER.error(
+							"Config value matcher matched multiple values for mod id: {}, category: {}, value matcher: {}",
+							lookup.modId(),
+							lookup.categoryName(),
+							valueMatcher
+						);
+						return Optional.of(result);
+					}
+					result = value;
 				}
-				result = value;
+			}
+		}
+		return Optional.ofNullable(result);
+	}
+
+	private static Optional<IConfigScreenValue<?>> findValueInAllCategories(ConfigScreenValueLookup lookup, ConfigScreenValueMatcher valueMatcher) {
+		@Nullable
+		IConfigScreenValue<?> result = null;
+		for (ResolvedScreenCategory category : lookup.resolvedCategories()) {
+			for (IConfigScreenValue<?> value : category.values()) {
+				if (valueMatcher.matches(category.name(), value)) {
+					if (result != null) {
+						LOGGER.error(
+							"Config value matcher matched multiple values for mod id: {}, category: {}, value matcher: {}",
+							lookup.modId(),
+							lookup.categoryName(),
+							valueMatcher
+						);
+						return Optional.of(result);
+					}
+					result = value;
+				}
 			}
 		}
 		return Optional.ofNullable(result);
@@ -1106,14 +1149,28 @@ final class ConfigGuiPluginLoader {
 		);
 	}
 
-	private record ResolvedScreenCategory(
+	record ResolvedScreenCategory(
 		String name,
 		Component title,
 		Component description,
 		List<IConfigScreenValue<?>> values
 	) {
-		private ResolvedScreenCategory {
+		ResolvedScreenCategory {
 			values = List.copyOf(values);
+		}
+	}
+
+	record ConfigScreenValueLookup(
+		String modId,
+		String categoryName,
+		List<ResolvedScreenCategory> resolvedCategories
+	) {
+		ConfigScreenValueLookup {
+			resolvedCategories = List.copyOf(resolvedCategories);
+		}
+
+		public List<IConfigScreenValue<?>> getAllValues() {
+			return ConfigGuiPluginLoader.getAllValues(resolvedCategories);
 		}
 	}
 
@@ -1171,7 +1228,7 @@ final class ConfigGuiPluginLoader {
 
 	@FunctionalInterface
 	interface ConfigScreenValueProvider {
-		List<? extends IConfigScreenValue<?>> getValues(String modId, List<IConfigScreenValue<?>> allValues);
+		List<? extends IConfigScreenValue<?>> getValues(ConfigScreenValueLookup lookup);
 	}
 
 	private static IConfigScreenFactory createScreenFactory(

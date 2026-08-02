@@ -85,7 +85,18 @@ public final class NeoForgeNativeCustomTestGuiPlugin implements IConfigGuiPlugin
 				.setDefaultApplyMode(ConfigValueApplyMode.ON_APPLY)
 				.setValueApplyModeByName(configValueName(NeoForgeNativeCustomTestMod.EXTRA_EFFECTS), ConfigValueApplyMode.IMMEDIATE)
 				.setValueRequiresRestartByName(configValueName(NeoForgeNativeCustomTestMod.LABEL))
-				.hideValuesByName(List.of(configValueName(NeoForgeNativeCustomTestMod.SECRET_DIAGNOSTICS)));
+				.hideValuesByName(List.of(
+					configValueName(NeoForgeNativeCustomTestMod.ENABLED),
+					configValueName(NeoForgeNativeCustomTestMod.SECRET_DIAGNOSTICS),
+					configValueName(NeoForgeNativeCustomTestMod.MODE),
+					configValueName(NeoForgeNativeCustomTestMod.ROW_COUNT),
+					configValueName(NeoForgeNativeCustomTestMod.ENABLED_HISTORY),
+					configValueName(NeoForgeNativeCustomTestMod.FAVORITE_ROWS),
+					configValueName(NeoForgeNativeCustomTestMod.FAVORITE_MODES),
+					configValueName(NeoForgeNativeCustomTestMod.ALIASES),
+					configValueName(NeoForgeNativeCustomTestMod.CACHE_BREAKPOINTS),
+					configValueName(NeoForgeNativeCustomTestMod.OPACITY_STEPS)
+				));
 			screenBuilder.configureCategory(NeoForgeNativeCustomTestMod.COMMON_FILE_NAME)
 				.setTitle(Component.translatable("%s.configuration.category.common".formatted(NeoForgeNativeCustomTestMod.MOD_ID)))
 				.setDescription(Component.translatable("%s.configuration.category.common.tooltip".formatted(NeoForgeNativeCustomTestMod.MOD_ID)))

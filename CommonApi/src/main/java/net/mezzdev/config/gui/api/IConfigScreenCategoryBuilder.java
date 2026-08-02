@@ -41,6 +41,20 @@ public interface IConfigScreenCategoryBuilder {
 	IConfigScreenCategoryBuilder setDescription(Component description);
 
 	/**
+	 * Remove this category's automatically detected values from the screen.
+	 * <p>
+	 * Values added with this builder are still shown. Use this when a category should be manually populated instead of
+	 * appending to its automatically detected values.
+	 *
+	 * @return this builder
+	 *
+	 * @since 0.1.0
+	 */
+	default IConfigScreenCategoryBuilder clearDefaultValues() {
+		return this;
+	}
+
+	/**
 	 * Set the default apply mode for config screen values in this category.
 	 * <p>
 	 * Individual values can override this with {@link #setValueApplyMode(IConfigValue, ConfigValueApplyMode)},
@@ -165,7 +179,8 @@ public interface IConfigScreenCategoryBuilder {
 	/**
 	 * Add one config value to this category.
 	 * <p>
-	 * Adding values to a category replaces that category's automatically detected values.
+	 * Added values are appended to this category's automatically detected values. Call {@link #clearDefaultValues()} to
+	 * replace the automatically detected values.
 	 *
 	 * @param value config value to display
 	 * @return this builder
@@ -179,7 +194,8 @@ public interface IConfigScreenCategoryBuilder {
 	/**
 	 * Add one config screen value to this category.
 	 * <p>
-	 * Adding values to a category replaces that category's automatically detected values.
+	 * Added values are appended to this category's automatically detected values. Call {@link #clearDefaultValues()} to
+	 * replace the automatically detected values.
 	 *
 	 * @param value config screen value to display
 	 * @return this builder
@@ -191,7 +207,8 @@ public interface IConfigScreenCategoryBuilder {
 	/**
 	 * Add config values to this category.
 	 * <p>
-	 * Adding values to a category replaces that category's automatically detected values.
+	 * Added values are appended to this category's automatically detected values. Call {@link #clearDefaultValues()} to
+	 * replace the automatically detected values.
 	 *
 	 * @param values config values to display
 	 * @return this builder
@@ -207,7 +224,8 @@ public interface IConfigScreenCategoryBuilder {
 	/**
 	 * Add config screen values to this category.
 	 * <p>
-	 * Adding values to a category replaces that category's automatically detected values.
+	 * Added values are appended to this category's automatically detected values. Call {@link #clearDefaultValues()} to
+	 * replace the automatically detected values.
 	 *
 	 * @param values config screen values to display
 	 * @return this builder
@@ -219,7 +237,8 @@ public interface IConfigScreenCategoryBuilder {
 	/**
 	 * Add config values to this category when the screen is opened.
 	 * <p>
-	 * Adding values to a category replaces that category's automatically detected values.
+	 * Added values are appended to this category's automatically detected values. Call {@link #clearDefaultValues()} to
+	 * replace the automatically detected values.
 	 *
 	 * @param valuesSupplier supplies config values to display
 	 * @return this builder
@@ -236,7 +255,8 @@ public interface IConfigScreenCategoryBuilder {
 	/**
 	 * Add config screen values to this category when the screen is opened.
 	 * <p>
-	 * Adding values to a category replaces that category's automatically detected values.
+	 * Added values are appended to this category's automatically detected values. Call {@link #clearDefaultValues()} to
+	 * replace the automatically detected values.
 	 *
 	 * @param valuesSupplier supplies config screen values to display
 	 * @return this builder
@@ -337,7 +357,9 @@ public interface IConfigScreenCategoryBuilder {
 	/**
 	 * Add one config screen value to this category by stable name.
 	 * <p>
-	 * Adding values to a category replaces that category's automatically detected values.
+	 * Added values are appended to this category's automatically detected values. Call {@link #clearDefaultValues()} to
+	 * replace the automatically detected values. The value name is resolved against this category first, so category-local
+	 * value names can be used safely when multiple categories contain the same value name.
 	 * This is useful for screen values that do not have a MezzConfig {@link IConfigValue} backing object, such as
 	 * platform-native config values adapted for the config GUI.
 	 *
@@ -352,7 +374,8 @@ public interface IConfigScreenCategoryBuilder {
 	 * Hide one config screen value from this category by stable name.
 	 * <p>
 	 * This is only needed when this category keeps automatically detected values and some of those values should still
-	 * be omitted.
+	 * be omitted. The value name is resolved against this category first, so category-local value names can be used
+	 * safely when multiple categories contain the same value name.
 	 * This is useful for screen values that do not have a MezzConfig {@link IConfigValue} backing object, such as
 	 * platform-native config values adapted for the config GUI.
 	 *
@@ -366,7 +389,9 @@ public interface IConfigScreenCategoryBuilder {
 	/**
 	 * Add config screen values to this category by stable name.
 	 * <p>
-	 * Adding values to a category replaces that category's automatically detected values.
+	 * Added values are appended to this category's automatically detected values. Call {@link #clearDefaultValues()} to
+	 * replace the automatically detected values. Value names are resolved against this category first, so category-local
+	 * value names can be used safely when multiple categories contain the same value name.
 	 * This is useful for screen values that do not have a MezzConfig {@link IConfigValue} backing object, such as
 	 * platform-native config values adapted for the config GUI.
 	 *
@@ -387,7 +412,8 @@ public interface IConfigScreenCategoryBuilder {
 	 * Hide config screen values from this category by stable name.
 	 * <p>
 	 * This is only needed when this category keeps automatically detected values and some of those values should still
-	 * be omitted.
+	 * be omitted. Value names are resolved against this category first, so category-local value names can be used safely
+	 * when multiple categories contain the same value name.
 	 * This is useful for screen values that do not have a MezzConfig {@link IConfigValue} backing object, such as
 	 * platform-native config values adapted for the config GUI.
 	 *
@@ -408,7 +434,7 @@ public interface IConfigScreenCategoryBuilder {
 	 * Add one key mapping to this category.
 	 * <p>
 	 * Adding key mappings to any configured category disables the automatically detected key mappings category for this
-	 * screen. Adding values to a category replaces that category's automatically detected values.
+	 * screen. Added key mappings are appended to this category's automatically detected values.
 	 *
 	 * @param keyMapping key mapping to display
 	 * @return this builder
@@ -421,7 +447,7 @@ public interface IConfigScreenCategoryBuilder {
 	 * Add key mappings to this category.
 	 * <p>
 	 * Adding key mappings to any configured category disables the automatically detected key mappings category for this
-	 * screen. Adding values to a category replaces that category's automatically detected values.
+	 * screen. Added key mappings are appended to this category's automatically detected values.
 	 *
 	 * @param keyMappings key mappings to display
 	 * @return this builder
@@ -434,7 +460,7 @@ public interface IConfigScreenCategoryBuilder {
 	 * Add key mappings to this category when the screen is opened.
 	 * <p>
 	 * Adding key mappings to any configured category disables the automatically detected key mappings category for this
-	 * screen. Adding values to a category replaces that category's automatically detected values.
+	 * screen. Added key mappings are appended to this category's automatically detected values.
 	 *
 	 * @param keyMappingsSupplier supplies key mappings to display
 	 * @return this builder

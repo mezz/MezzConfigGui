@@ -37,9 +37,9 @@ class ConfigGuiPluginLoaderTest {
 		List<ConfigScreenCategory> categories = createCategories(
 			List.of(originalCategory),
 			screenBuilder -> {},
-			(modId, allValues) -> {
-				assertEquals(MOD_ID, modId);
-				assertEquals(List.of(originalValue), allValues);
+			lookup -> {
+				assertEquals(MOD_ID, lookup.modId());
+				assertEquals(List.of(originalValue), lookup.getAllValues());
 				return List.of(keyMappingValue);
 			}
 		);
@@ -55,7 +55,7 @@ class ConfigGuiPluginLoaderTest {
 		List<ConfigScreenCategory> categories = createCategories(
 			List.of(originalCategory),
 			screenBuilder -> {},
-			(modId, allValues) -> List.of()
+			lookup -> List.of()
 		);
 
 		assertEquals(List.of("general"), categoryNames(categories));
@@ -69,7 +69,7 @@ class ConfigGuiPluginLoaderTest {
 			List.of(),
 			screenBuilder -> screenBuilder.addCategory("keyMappings")
 				.setTitle(Component.literal("Controls")),
-			(modId, allValues) -> List.of(keyMappingValue)
+			lookup -> List.of(keyMappingValue)
 		);
 
 		assertEquals(List.of("keyMappings"), categoryNames(categories));
@@ -91,7 +91,7 @@ class ConfigGuiPluginLoaderTest {
 				screenBuilder.addCategory("secondaryKeys")
 					.addKeyMappings(List.of(secondaryKeyMapping));
 			},
-			(modId, allValues) -> {
+			lookup -> {
 				defaultProviderCalled.set(true);
 				return List.of(new TestConfigValue("key.test_mod.default"));
 			}
@@ -104,7 +104,86 @@ class ConfigGuiPluginLoaderTest {
 	}
 
 	@Test
-	void manualCategoryValuesReplaceDefaultValuesForThatCategory() {
+	void addedKeyMappingsAppendToDefaultValuesForThatCategory() {
+		AtomicBoolean defaultProviderCalled = new AtomicBoolean(false);
+		TestConfigValue originalValue = new TestConfigValue("dragDelayInMilliseconds");
+		TestCategory originalCategory = new TestCategory("input", List.of(originalValue));
+		KeyMapping keyMapping = keyMapping("key.test_mod.openScreen", GLFW.GLFW_KEY_G);
+
+		List<ConfigScreenCategory> categories = createCategories(
+			List.of(originalCategory),
+			screenBuilder -> screenBuilder.addCategory("input")
+				.addKeyMapping(keyMapping),
+			lookup -> {
+				defaultProviderCalled.set(true);
+				return List.of(new TestConfigValue("key.test_mod.default"));
+			}
+		);
+
+		assertEquals(List.of("input"), categoryNames(categories));
+		assertEquals(List.of("dragDelayInMilliseconds", "key.test_mod.openScreen"), valueNames(categories.getFirst()));
+		assertFalse(defaultProviderCalled.get());
+	}
+
+	@Test
+	void categoryScopedValueNamesResolveBeforeGlobalValueNames() {
+		TestConfigValue ingredientRows = new TestConfigValue("maxRows");
+		TestConfigValue bookmarkRows = new TestConfigValue("maxRows");
+		TestCategory ingredientCategory = new TestCategory("ingredientList", List.of(ingredientRows));
+		TestCategory bookmarkCategory = new TestCategory("bookmarkList", List.of(bookmarkRows));
+
+		List<ConfigScreenCategory> categories = createCategories(
+			List.of(ingredientCategory, bookmarkCategory),
+			screenBuilder -> screenBuilder.configureCategory("bookmarkList")
+				.clearDefaultValues()
+				.addValueByName("maxRows"),
+			lookup -> List.of()
+		);
+
+		assertEquals(List.of("ingredientList", "bookmarkList"), categoryNames(categories));
+		assertSame(bookmarkRows, List.copyOf(categories.get(1).getConfigValues()).getFirst());
+	}
+
+	@Test
+	void qualifiedValueNamesCanResolveAcrossCategories() {
+		TestConfigValue ingredientRows = new TestConfigValue("maxRows");
+		TestConfigValue bookmarkRows = new TestConfigValue("maxRows");
+		TestCategory ingredientCategory = new TestCategory("ingredientList", List.of(ingredientRows));
+		TestCategory bookmarkCategory = new TestCategory("bookmarkList", List.of(bookmarkRows));
+
+		List<ConfigScreenCategory> categories = createCategories(
+			List.of(ingredientCategory, bookmarkCategory),
+			screenBuilder -> screenBuilder.addCategory("quick")
+				.addValueByName("bookmarkList.maxRows"),
+			lookup -> List.of()
+		);
+
+		assertEquals(List.of("quick", "ingredientList", "bookmarkList"), categoryNames(categories));
+		assertSame(bookmarkRows, List.copyOf(categories.getFirst().getConfigValues()).getFirst());
+	}
+
+	@Test
+	void addedCategoryValuesAppendToDefaultValuesForThatCategory() {
+		TestConfigValue primaryValue = new TestConfigValue("primary");
+		TestConfigValue secondaryValue = new TestConfigValue("secondary");
+		TestConfigValue modeValue = new TestConfigValue("mode");
+		TestConfigValue customValue = new TestConfigValue("custom");
+		TestCategory originalCategory = new TestCategory("controls", List.of(primaryValue, secondaryValue, modeValue));
+
+		List<ConfigScreenCategory> categories = createCategories(
+			List.of(originalCategory),
+			screenBuilder -> screenBuilder.addCategory("controls")
+				.addScreenValue(modeValue)
+				.addScreenValue(customValue),
+			lookup -> List.of()
+		);
+
+		assertEquals(List.of("controls"), categoryNames(categories));
+		assertEquals(List.of("primary", "secondary", "mode", "custom"), valueNames(categories.getFirst()));
+	}
+
+	@Test
+	void clearDefaultValuesReplacesDefaultValuesForThatCategory() {
 		TestConfigValue primaryValue = new TestConfigValue("primary");
 		TestConfigValue secondaryValue = new TestConfigValue("secondary");
 		TestConfigValue modeValue = new TestConfigValue("mode");
@@ -113,8 +192,9 @@ class ConfigGuiPluginLoaderTest {
 		List<ConfigScreenCategory> categories = createCategories(
 			List.of(originalCategory),
 			screenBuilder -> screenBuilder.addCategory("controls")
+				.clearDefaultValues()
 				.addScreenValue(modeValue),
-			(modId, allValues) -> List.of()
+			lookup -> List.of()
 		);
 
 		assertEquals(List.of("controls"), categoryNames(categories));
@@ -122,7 +202,7 @@ class ConfigGuiPluginLoaderTest {
 	}
 
 	@Test
-	void manualScreenLayoutOmitsUnconfiguredDefaultCategories() {
+	void configuredCategoriesDoNotOmitUnconfiguredDefaultCategories() {
 		TestConfigValue generalValue = new TestConfigValue("enabled");
 		TestConfigValue advancedValue = new TestConfigValue("refreshTicks");
 		TestConfigValue overviewValue = new TestConfigValue("combined");
@@ -133,7 +213,29 @@ class ConfigGuiPluginLoaderTest {
 			List.of(generalCategory, advancedCategory),
 			screenBuilder -> screenBuilder.addCategory("overview")
 				.addScreenValue(overviewValue),
-			(modId, allValues) -> List.of()
+			lookup -> List.of()
+		);
+
+		assertEquals(List.of("overview", "general", "advanced"), categoryNames(categories));
+		assertEquals(List.of("combined"), valueNames(categories.getFirst()));
+	}
+
+	@Test
+	void clearDefaultCategoriesOmitsUnconfiguredDefaultCategories() {
+		TestConfigValue generalValue = new TestConfigValue("enabled");
+		TestConfigValue advancedValue = new TestConfigValue("refreshTicks");
+		TestConfigValue overviewValue = new TestConfigValue("combined");
+		TestCategory generalCategory = new TestCategory("general", List.of(generalValue));
+		TestCategory advancedCategory = new TestCategory("advanced", List.of(advancedValue));
+
+		List<ConfigScreenCategory> categories = createCategories(
+			List.of(generalCategory, advancedCategory),
+			screenBuilder -> {
+				screenBuilder.clearDefaultCategories();
+				screenBuilder.addCategory("overview")
+					.addScreenValue(overviewValue);
+			},
+			lookup -> List.of()
 		);
 
 		assertEquals(List.of("overview"), categoryNames(categories));
@@ -141,7 +243,7 @@ class ConfigGuiPluginLoaderTest {
 	}
 
 	@Test
-	void manualConfiguredCategoryValuesOmitUnconfiguredDefaultCategories() {
+	void configuredCategoryValuesAppendWithoutOmittingUnconfiguredDefaultCategories() {
 		TestConfigValue generalValue = new TestConfigValue("enabled");
 		TestConfigValue advancedValue = new TestConfigValue("refreshTicks");
 		TestConfigValue replacementValue = new TestConfigValue("replacement");
@@ -152,7 +254,31 @@ class ConfigGuiPluginLoaderTest {
 			List.of(generalCategory, advancedCategory),
 			screenBuilder -> screenBuilder.configureCategory("advanced")
 				.addScreenValue(replacementValue),
-			(modId, allValues) -> List.of()
+			lookup -> List.of()
+		);
+
+		assertEquals(List.of("general", "advanced"), categoryNames(categories));
+		assertEquals(List.of("enabled"), valueNames(categories.getFirst()));
+		assertEquals(List.of("refreshTicks", "replacement"), valueNames(categories.get(1)));
+	}
+
+	@Test
+	void clearDefaultCategoriesAndValuesPreserveManualReplacementWorkflow() {
+		TestConfigValue generalValue = new TestConfigValue("enabled");
+		TestConfigValue advancedValue = new TestConfigValue("refreshTicks");
+		TestConfigValue replacementValue = new TestConfigValue("replacement");
+		TestCategory generalCategory = new TestCategory("general", List.of(generalValue));
+		TestCategory advancedCategory = new TestCategory("advanced", List.of(advancedValue));
+
+		List<ConfigScreenCategory> categories = createCategories(
+			List.of(generalCategory, advancedCategory),
+			screenBuilder -> {
+				screenBuilder.clearDefaultCategories();
+				screenBuilder.configureCategory("advanced")
+					.clearDefaultValues()
+					.addScreenValue(replacementValue);
+			},
+			lookup -> List.of()
 		);
 
 		assertEquals(List.of("advanced"), categoryNames(categories));
@@ -168,7 +294,7 @@ class ConfigGuiPluginLoaderTest {
 			List.of(advancedCategory),
 			screenBuilder -> screenBuilder.configureCategory("advanced")
 				.setTitle(Component.literal("Advanced Settings")),
-			(modId, allValues) -> List.of()
+			lookup -> List.of()
 		);
 
 		assertEquals(List.of("advanced"), categoryNames(categories));
@@ -187,7 +313,7 @@ class ConfigGuiPluginLoaderTest {
 			screenBuilder -> screenBuilder.configureCategory("general")
 				.setDefaultApplyMode(ConfigValueApplyMode.IMMEDIATE)
 				.setScreenValueApplyMode(onApplyValue, ConfigValueApplyMode.ON_APPLY),
-			(modId, allValues) -> List.of()
+			lookup -> List.of()
 		);
 
 		List<? extends IConfigScreenValue<?>> values = List.copyOf(categories.getFirst().getConfigValues());
@@ -205,7 +331,7 @@ class ConfigGuiPluginLoaderTest {
 			List.of(originalCategory),
 			screenBuilder -> screenBuilder.configureCategory("general")
 				.setScreenValueRequiresRestart(restartValue),
-			(modId, allValues) -> List.of()
+			lookup -> List.of()
 		);
 
 		List<? extends IConfigScreenValue<?>> values = List.copyOf(categories.getFirst().getConfigValues());
@@ -214,7 +340,7 @@ class ConfigGuiPluginLoaderTest {
 	}
 
 	@Test
-	void configuresNativeScreenValuesByNameAcrossManualCategories() {
+	void configuresNativeScreenValuesByNameAcrossCustomCategories() {
 		String clientCategoryName = "%s-client.toml".formatted(MOD_ID);
 		String commonCategoryName = "%s-common.toml".formatted(MOD_ID);
 		TestConfigValue enabled = new TestConfigValue("client.enabled");
@@ -298,7 +424,18 @@ class ConfigGuiPluginLoaderTest {
 					.setDefaultApplyMode(ConfigValueApplyMode.ON_APPLY)
 					.setValueApplyModeByName("client.extraEffects", ConfigValueApplyMode.IMMEDIATE)
 					.setValueRequiresRestartByName("client.label")
-					.hideValuesByName(List.of("client.secretDiagnostics"));
+					.hideValuesByName(List.of(
+						"client.enabled",
+						"client.secretDiagnostics",
+						"client.mode",
+						"client.rowCount",
+						"client.enabledHistory",
+						"client.favoriteRows",
+						"client.favoriteModes",
+						"client.aliases",
+						"client.cacheBreakpoints",
+						"client.opacitySteps"
+					));
 				screenBuilder.configureCategory(commonCategoryName)
 					.setTitle(Component.literal("Common Native Values"))
 					.setDescription(Component.literal("Common native values kept in their original category"))
@@ -306,7 +443,7 @@ class ConfigGuiPluginLoaderTest {
 					.setValueApplyModeByName("common.enabled", ConfigValueApplyMode.IMMEDIATE)
 					.setValueRequiresRestartByName("common.cacheBudget");
 			},
-			(modId, allValues) -> {
+			lookup -> {
 				defaultProviderCalled.set(true);
 				return List.of(new TestConfigValue("key.test_mod.default"));
 			}

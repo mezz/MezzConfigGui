@@ -3,6 +3,7 @@ package net.mezzdev.config.gui.api;
 import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.api.value.IConfigValueChangeListener;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.api.value.ConfigValueEditMode;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -28,7 +29,8 @@ public interface IConfigScreenValue<T> {
 	 */
 	static <T> IConfigScreenValue<T> configValue(IConfigValue<T> configValue) {
 		IConfigValue<T> checkedConfigValue = Objects.requireNonNull(configValue, "configValue");
-		return configValue(checkedConfigValue, ConfigValueApplyMode.ON_APPLY);
+		ConfigValueEditMode editMode = Objects.requireNonNull(checkedConfigValue.getEditMode(), "configValue editMode");
+		return configValue(checkedConfigValue, getApplyMode(editMode), requiresRestart(editMode));
 	}
 
 	/**
@@ -37,7 +39,20 @@ public interface IConfigScreenValue<T> {
 	 * @since 0.1.0
 	 */
 	static <T> IConfigScreenValue<T> configValue(IConfigValue<T> configValue, ConfigValueApplyMode applyMode) {
-		return configValue(configValue, applyMode, false);
+		IConfigValue<T> checkedConfigValue = Objects.requireNonNull(configValue, "configValue");
+		ConfigValueEditMode editMode = Objects.requireNonNull(checkedConfigValue.getEditMode(), "configValue editMode");
+		return configValue(checkedConfigValue, applyMode, requiresRestart(editMode));
+	}
+
+	private static ConfigValueApplyMode getApplyMode(ConfigValueEditMode editMode) {
+		return switch (editMode) {
+			case IMMEDIATE -> ConfigValueApplyMode.IMMEDIATE;
+			case BATCH, RESTART -> ConfigValueApplyMode.ON_APPLY;
+		};
+	}
+
+	private static boolean requiresRestart(ConfigValueEditMode editMode) {
+		return editMode == ConfigValueEditMode.RESTART;
 	}
 
 	/**
