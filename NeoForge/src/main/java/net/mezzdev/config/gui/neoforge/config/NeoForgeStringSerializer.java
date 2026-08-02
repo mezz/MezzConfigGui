@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.neoforge.config;
 
+import net.mezzdev.config.api.value.IDeserializeResult;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 final class NeoForgeStringSerializer extends NeoForgeTextSerializer<String> {
@@ -13,10 +14,10 @@ final class NeoForgeStringSerializer extends NeoForgeTextSerializer<String> {
 	}
 
 	@Override
-	public NeoForgeDeserializeResult<String> deserialize(String string) {
+	public IDeserializeResult<String> deserialize(String string) {
 		if (!isValid(string)) {
-			return new NeoForgeDeserializeResult<>(null, "Invalid text. Must be: " + getValidValuesDescription());
+			return IDeserializeResult.failure("Invalid text. Must be: " + getValidValuesDescription());
 		}
-		return new NeoForgeDeserializeResult<>(string);
+		return IDeserializeResult.success(string);
 	}
 }

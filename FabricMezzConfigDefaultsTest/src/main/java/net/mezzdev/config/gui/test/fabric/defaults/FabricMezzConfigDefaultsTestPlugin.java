@@ -3,17 +3,19 @@ package net.mezzdev.config.gui.test.fabric.defaults;
 import net.mezzdev.config.api.plugin.IConfigPlugin;
 import net.mezzdev.config.api.plugin.IConfigRegistration;
 import net.mezzdev.config.api.schema.IConfigCategoryBuilder;
-import net.mezzdev.config.api.schema.IConfigEditableSchema;
+import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.schema.IConfigSchemaBuilder;
-import net.mezzdev.config.api.value.ConfigValueEditorType;
-import net.mezzdev.config.api.value.ConfigValueEditorTypes;
-import net.mezzdev.config.api.value.ConfigValueUpdateType;
-import net.mezzdev.config.api.value.IConfigListValueSerializer;
-import net.mezzdev.config.api.value.IConfigValueEditorSerializer;
+import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.ConfigRestartResult;
+import net.mezzdev.config.gui.api.ConfigValueApplyMode;
+import net.mezzdev.config.gui.api.ConfigValueEditorType;
+import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigGuiRegistration;
+import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
+import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,7 +30,9 @@ public final class FabricMezzConfigDefaultsTestPlugin implements IConfigPlugin, 
 	private static final String MOD_ID = "mezz_config_gui_test_fabric_defaults";
 	private static final String LOCALIZATION_PATH = "mezz_config_gui_test.fabric.defaults";
 	@Nullable
-	private static IConfigEditableSchema schema;
+	private static IConfigSchema schema;
+	@Nullable
+	private static IConfigValue<Integer> tinySelectionRange;
 
 	@Override
 	public String getModId() {
@@ -39,29 +43,34 @@ public final class FabricMezzConfigDefaultsTestPlugin implements IConfigPlugin, 
 	public void registerConfigFiles(IConfigRegistration registration) {
 		IConfigSchemaBuilder schemaBuilder = registration.createSchemaBuilder("config-gui-fabric-defaults-test.ini", LOCALIZATION_PATH);
 		IConfigCategoryBuilder general = schemaBuilder.addCategory("general");
-		general.addBoolean("enabled", true, ConfigValueUpdateType.IMMEDIATE);
-		general.addBoolean("requiresRestart", false, ConfigValueUpdateType.RESTART);
+		general.addBoolean("enabled", true).build();
+		general.addBoolean("requiresRestart", false).setRequiresRestart().build();
 
 		IConfigCategoryBuilder numbers = schemaBuilder.addCategory("numbers");
-		numbers.addInteger("maxVisibleRows", 8, 1, 16, ConfigValueUpdateType.ON_APPLY);
-		numbers.addInteger("tinySelectionRange", 2, 0, 4, ConfigValueUpdateType.IMMEDIATE);
+		numbers.addInteger("maxVisibleRows", 8, 1, 16).build();
+		tinySelectionRange = numbers.addInteger("tinySelectionRange", 2, 0, 4).build();
 
 		IConfigCategoryBuilder text = schemaBuilder.addCategory("text");
-		text.addValue("screenLabel", "Fabric Defaults", TextSerializer.INSTANCE, ConfigValueUpdateType.ON_APPLY);
+		text.addValue("screenLabel", "Fabric Defaults", TextSerializer.INSTANCE).build();
 
 		IConfigCategoryBuilder selections = schemaBuilder.addCategory("selections");
-		selections.addEnum("mode", TestMode.BALANCED, ConfigValueUpdateType.ON_APPLY);
-		selections.addList(
+		selections.addEnum("mode", TestMode.BALANCED).build();
+		selections.addValue(
 			"favoriteModes",
 			List.of(TestMode.BALANCED, TestMode.FAST),
-			ModeListSerializer.INSTANCE,
-			ConfigValueUpdateType.ON_APPLY
-		);
+			ModeListSerializer.INSTANCE
+		).build();
 		schema = schemaBuilder.build();
 	}
 
 	@Override
 	public void register(IConfigGuiRegistration registration) {
+		registration.configureScreen(screenBuilder -> {
+			screenBuilder.configureCategory("general")
+				.setDefaultApplyMode(ConfigValueApplyMode.IMMEDIATE);
+			screenBuilder.configureCategory("numbers")
+				.setValueApplyMode(getTinySelectionRange(), ConfigValueApplyMode.IMMEDIATE);
+		});
 		registration.registerScreen(
 			Component.translatable(MOD_ID + ".config.screen.title"),
 			FabricMezzConfigDefaultsTestPlugin::getSchema,
@@ -69,37 +78,18 @@ public final class FabricMezzConfigDefaultsTestPlugin implements IConfigPlugin, 
 		);
 	}
 
-	private static IConfigEditableSchema getSchema() {
+	private static IConfigSchema getSchema() {
 		return Objects.requireNonNull(schema, "schema");
+	}
+
+	private static IConfigValue<Integer> getTinySelectionRange() {
+		return Objects.requireNonNull(tinySelectionRange, "tinySelectionRange");
 	}
 
 	private enum TestMode {
 		SLOW,
 		BALANCED,
 		FAST
-	}
-
-	private record DeserializeResult<T>(
-		@Nullable T value,
-		List<String> errors
-	) implements IConfigValueSerializer.IDeserializeResult<T> {
-		public DeserializeResult(@Nullable T value) {
-			this(value, List.of());
-		}
-
-		public DeserializeResult(@Nullable T value, String error) {
-			this(value, List.of(error));
-		}
-
-		@Override
-		public Optional<T> getResult() {
-			return Optional.ofNullable(value);
-		}
-
-		@Override
-		public List<String> getErrors() {
-			return errors;
-		}
 	}
 
 	private enum TextSerializer implements IConfigValueEditorSerializer<String> {
@@ -114,9 +104,9 @@ public final class FabricMezzConfigDefaultsTestPlugin implements IConfigPlugin, 
 		public IDeserializeResult<String> deserialize(String string) {
 			String value = string.trim();
 			if (!isValid(value)) {
-				return new DeserializeResult<>(null, "Text must be between 1 and 32 characters.");
+				return IDeserializeResult.failure("Text must be between 1 and 32 characters.");
 			}
-			return new DeserializeResult<>(value);
+			return IDeserializeResult.success(value);
 		}
 
 		@Override
@@ -156,9 +146,9 @@ public final class FabricMezzConfigDefaultsTestPlugin implements IConfigPlugin, 
 		@Override
 		public IDeserializeResult<TestMode> deserialize(String string) {
 			try {
-				return new DeserializeResult<>(TestMode.valueOf(string.trim().toUpperCase(Locale.ROOT)));
+				return IDeserializeResult.success(TestMode.valueOf(string.trim().toUpperCase(Locale.ROOT)));
 			} catch (IllegalArgumentException e) {
-				return new DeserializeResult<>(null, "Expected one of: " + getValidValuesDescription());
+				return IDeserializeResult.failure("Expected one of: " + getValidValuesDescription());
 			}
 		}
 
@@ -189,11 +179,11 @@ public final class FabricMezzConfigDefaultsTestPlugin implements IConfigPlugin, 
 		}
 	}
 
-	private enum ModeListSerializer implements IConfigListValueSerializer<TestMode> {
+	private enum ModeListSerializer implements IConfigListValueEditorSerializer<TestMode> {
 		INSTANCE;
 
 		@Override
-		public IConfigValueSerializer<TestMode> getListValueSerializer() {
+		public IConfigValueSerializer<TestMode> getElementSerializer() {
 			return ModeSerializer.INSTANCE;
 		}
 
@@ -215,9 +205,9 @@ public final class FabricMezzConfigDefaultsTestPlugin implements IConfigPlugin, 
 				})
 				.toList();
 			if (!errors.isEmpty()) {
-				return new DeserializeResult<>(null, errors);
+				return IDeserializeResult.failure(errors);
 			}
-			return new DeserializeResult<>(values);
+			return IDeserializeResult.success(values);
 		}
 
 		@Override
@@ -240,10 +230,6 @@ public final class FabricMezzConfigDefaultsTestPlugin implements IConfigPlugin, 
 			return "A comma-separated list containing values of: " + ModeSerializer.INSTANCE.getValidValuesDescription();
 		}
 
-		@Override
-		public ConfigValueEditorType<List<TestMode>> getEditorType() {
-			return ConfigValueEditorTypes.getList();
-		}
 	}
 
 	private static String getDisplayName(String name) {

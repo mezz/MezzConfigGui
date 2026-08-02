@@ -1,8 +1,8 @@
 package net.mezzdev.config.gui.entries;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.gui.api.ConfigInfo;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueEditor;
 import net.mezzdev.config.gui.api.IConfigValuePopup;
 import net.mezzdev.config.gui.info.ConfigValueInfoFactory;
@@ -31,7 +31,7 @@ final class CustomConfigEntry<T> extends ConfigEntryWidget<T> {
 	private ImmutableRect2i valueArea = ImmutableRect2i.EMPTY;
 
 	CustomConfigEntry(
-		IConfigValue<T> value,
+		IConfigScreenValue<T> value,
 		IConfigValueEditor<T> editor,
 		Consumer<ConfigPopupSelector> valueSelectorOpener,
 		ConfigTextures textures
@@ -71,7 +71,8 @@ final class CustomConfigEntry<T> extends ConfigEntryWidget<T> {
 	@Override
 	@Nullable
 	public ConfigInfo getTooltipInfo(double mouseX, double mouseY) {
-		@Nullable ConfigInfo resetInfo = super.getTooltipInfo(mouseX, mouseY);
+		@Nullable
+		ConfigInfo resetInfo = super.getTooltipInfo(mouseX, mouseY);
 		if (resetInfo != null) {
 			return resetInfo;
 		}

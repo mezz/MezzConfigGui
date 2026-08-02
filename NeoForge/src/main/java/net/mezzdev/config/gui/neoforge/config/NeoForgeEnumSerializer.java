@@ -1,8 +1,9 @@
 package net.mezzdev.config.gui.neoforge.config;
 
-import net.mezzdev.config.api.value.ConfigValueEditorType;
-import net.mezzdev.config.api.value.ConfigValueEditorTypes;
-import net.mezzdev.config.api.value.IConfigValueEditorSerializer;
+import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.gui.api.ConfigValueEditorType;
+import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
+import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.common.TranslatableEnum;
@@ -27,7 +28,7 @@ final class NeoForgeEnumSerializer<T extends Enum<T>> implements IConfigValueEdi
 	}
 
 	@Override
-	public NeoForgeDeserializeResult<T> deserialize(String string) {
+	public IDeserializeResult<T> deserialize(String string) {
 		string = string.trim();
 		if (string.startsWith("\"") && string.endsWith("\"")) {
 			string = string.substring(1, string.length() - 1);
@@ -35,11 +36,11 @@ final class NeoForgeEnumSerializer<T extends Enum<T>> implements IConfigValueEdi
 		try {
 			T value = Enum.valueOf(enumClass, string);
 			if (!isValid(value)) {
-				return new NeoForgeDeserializeResult<>(null, "Invalid enum name: %s".formatted(string));
+				return IDeserializeResult.failure("Invalid enum name: %s".formatted(string));
 			}
-			return new NeoForgeDeserializeResult<>(value);
+			return IDeserializeResult.success(value);
 		} catch (IllegalArgumentException e) {
-			return new NeoForgeDeserializeResult<>(null, "Invalid enum name: %s".formatted(e.getMessage()));
+			return IDeserializeResult.failure("Invalid enum name: %s".formatted(e.getMessage()));
 		}
 	}
 

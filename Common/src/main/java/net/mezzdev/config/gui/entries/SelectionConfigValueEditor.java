@@ -1,9 +1,10 @@
 package net.mezzdev.config.gui.entries;
 
-import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.gui.api.ConfigInfo;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueEditor;
 import net.mezzdev.config.gui.api.IConfigValuePopup;
+import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.popup.ConfigValueSelector;
 import net.mezzdev.config.gui.textures.ConfigDrawableStatic;
 import net.mezzdev.config.gui.textures.ConfigTextures;
@@ -34,7 +35,7 @@ final class SelectionConfigValueEditor<T> implements IConfigValueEditor<T> {
 	}
 
 	@Override
-	public int getControlWidth(IConfigValue<T> configValue, T value) {
+	public int getControlWidth(IConfigScreenValue<T> configValue, T value) {
 		Font font = Minecraft.getInstance().font;
 		Component valueName = getValueName(configValue, value);
 		int textWidth = (int) (font.width(valueName) * ConfigEntryWidget.TEXT_SCALE);
@@ -43,7 +44,7 @@ final class SelectionConfigValueEditor<T> implements IConfigValueEditor<T> {
 	}
 
 	@Override
-	public int getControlHeight(IConfigValue<T> configValue, T value) {
+	public int getControlHeight(IConfigScreenValue<T> configValue, T value) {
 		return VALUE_BUTTON_HEIGHT;
 	}
 
@@ -51,7 +52,7 @@ final class SelectionConfigValueEditor<T> implements IConfigValueEditor<T> {
 	public void draw(
 		GuiGraphics guiGraphics,
 		Rect2i area,
-		IConfigValue<T> configValue,
+		IConfigScreenValue<T> configValue,
 		T value,
 		boolean hovered,
 		boolean hasPendingChange
@@ -72,7 +73,7 @@ final class SelectionConfigValueEditor<T> implements IConfigValueEditor<T> {
 	@Override
 	public Optional<ConfigInfo> getTooltipInfo(
 		Rect2i area,
-		IConfigValue<T> configValue,
+		IConfigScreenValue<T> configValue,
 		T value,
 		boolean hasPendingChange,
 		double mouseX,
@@ -84,7 +85,7 @@ final class SelectionConfigValueEditor<T> implements IConfigValueEditor<T> {
 	@Override
 	public Optional<IConfigValuePopup<T>> createPopup(
 		Rect2i area,
-		IConfigValue<T> configValue,
+		IConfigScreenValue<T> configValue,
 		T value,
 		double mouseX,
 		double mouseY,
@@ -101,12 +102,11 @@ final class SelectionConfigValueEditor<T> implements IConfigValueEditor<T> {
 		return Optional.of(popup);
 	}
 
-	private static <T> Component getValueName(IConfigValue<T> configValue, T value) {
-		return configValue.getSerializer()
-			.getLocalizedValueName(configValue.getLocalizationKey(), value);
+	private static <T> Component getValueName(IConfigScreenValue<T> configValue, T value) {
+		return ConfigValueLocalization.getValueName(configValue, value);
 	}
 
-	private static <T> List<T> getValidValues(IConfigValue<T> configValue) {
+	private static <T> List<T> getValidValues(IConfigScreenValue<T> configValue) {
 		return configValue.getSerializer()
 			.getAllValidValues()
 			.map(List::copyOf)

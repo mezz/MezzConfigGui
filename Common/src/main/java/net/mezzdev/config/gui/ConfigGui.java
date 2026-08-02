@@ -3,6 +3,7 @@ package net.mezzdev.config.gui;
 import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigScreenFactory;
 import net.mezzdev.config.gui.api.IConfigScreenConfig;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Collection;
 import java.util.List;
@@ -31,5 +32,16 @@ public final class ConfigGui {
 		List<? extends IConfigGuiPlugin> plugins
 	) {
 		return ConfigGuiPluginLoader.createScreenFactories(configScreens, plugins);
+	}
+
+	/**
+	 * Create config screen factories from internal config screen metadata and discovered config GUI plugins.
+	 */
+	@ApiStatus.Internal
+	public static Map<String, IConfigScreenFactory> createScreenFactoriesFromInternalConfigs(
+		Collection<? extends ConfigScreenConfig> configScreens,
+		List<? extends IConfigGuiPlugin> plugins
+	) {
+		return ConfigGuiPluginLoader.createScreenFactoriesFromInternalConfigs(configScreens, plugins);
 	}
 }

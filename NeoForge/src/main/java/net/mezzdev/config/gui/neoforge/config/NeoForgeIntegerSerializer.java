@@ -1,8 +1,10 @@
 package net.mezzdev.config.gui.neoforge.config;
 
-import net.mezzdev.config.api.value.ConfigValueEditorType;
-import net.mezzdev.config.api.value.ConfigValueEditorTypes;
-import net.mezzdev.config.api.value.IConfigIntegerValueSerializer;
+import net.mezzdev.config.api.value.ConfigValueRange;
+import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.gui.api.ConfigValueEditorType;
+import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
+import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.minecraft.network.chat.Component;
 
 import java.util.Collection;
@@ -10,23 +12,16 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
-final class NeoForgeIntegerSerializer implements IConfigIntegerValueSerializer {
-	private final int min;
-	private final int max;
+final class NeoForgeIntegerSerializer implements IConfigValueEditorSerializer<Integer> {
+	private final ConfigValueRange<Integer> range;
 
 	public NeoForgeIntegerSerializer(int min, int max) {
-		this.min = min;
-		this.max = max;
+		this.range = new ConfigValueRange<>(min, max);
 	}
 
 	@Override
-	public int getMin() {
-		return min;
-	}
-
-	@Override
-	public int getMax() {
-		return max;
+	public Optional<ConfigValueRange<Integer>> getRange() {
+		return Optional.of(range);
 	}
 
 	@Override
@@ -35,26 +30,28 @@ final class NeoForgeIntegerSerializer implements IConfigIntegerValueSerializer {
 	}
 
 	@Override
-	public NeoForgeDeserializeResult<Integer> deserialize(String string) {
+	public IDeserializeResult<Integer> deserialize(String string) {
 		string = string.trim();
 		try {
 			int value = Integer.parseInt(string);
 			if (!isValid(value)) {
-				return new NeoForgeDeserializeResult<>(null, "Invalid integer. Must be: " + getValidValuesDescription());
+				return IDeserializeResult.failure("Invalid integer. Must be: " + getValidValuesDescription());
 			}
-			return new NeoForgeDeserializeResult<>(value);
+			return IDeserializeResult.success(value);
 		} catch (NumberFormatException e) {
-			return new NeoForgeDeserializeResult<>(null, "Unable to parse int: '%s' with error:\n%s".formatted(string, e.getMessage()));
+			return IDeserializeResult.failure("Unable to parse int: '%s' with error:\n%s".formatted(string, e.getMessage()));
 		}
 	}
 
 	@Override
 	public boolean isValid(Integer value) {
-		return value >= min && value <= max;
+		return value >= range.min() && value <= range.max();
 	}
 
 	@Override
 	public Optional<Collection<Integer>> getAllValidValues() {
+		int min = range.min();
+		int max = range.max();
 		int count = max - min + 1;
 		if (count > 0 && count < 20) {
 			List<Integer> values = IntStream.rangeClosed(min, max)
@@ -72,6 +69,8 @@ final class NeoForgeIntegerSerializer implements IConfigIntegerValueSerializer {
 
 	@Override
 	public String getValidValuesDescription() {
+		int min = range.min();
+		int max = range.max();
 		if (min == Integer.MIN_VALUE && max == Integer.MAX_VALUE) {
 			return "Any integer";
 		}

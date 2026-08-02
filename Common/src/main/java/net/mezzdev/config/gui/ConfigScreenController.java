@@ -1,8 +1,6 @@
 package net.mezzdev.config.gui;
 
-import net.mezzdev.config.api.value.ConfigValueChange;
-import net.mezzdev.config.api.value.ConfigValueUpdateType;
-import net.mezzdev.config.api.schema.IConfigEditableSchema;
+import net.mezzdev.config.gui.model.ConfigValueChange;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.mezzdev.config.gui.entries.ConfigEntryWidget;
 import net.mezzdev.config.gui.model.ConfigCategoryWidget;
@@ -17,20 +15,17 @@ import java.util.List;
  * Coordinates search, category selection, scrolling, and applying or discarding config changes.
  */
 final class ConfigScreenController {
-	private final IConfigEditableSchema configSchema;
 	private final ConfigChangesHandler changesHandler;
 	private final ConfigScreenModel model;
 	private final ConfigScreenLayout layout;
 	private final Runnable clearSearchInput;
 
 	public ConfigScreenController(
-		IConfigEditableSchema configSchema,
 		ConfigChangesHandler changesHandler,
 		ConfigScreenModel model,
 		ConfigScreenLayout layout,
 		Runnable clearSearchInput
 	) {
-		this.configSchema = configSchema;
 		this.changesHandler = changesHandler;
 		this.model = model;
 		this.layout = layout;
@@ -68,14 +63,14 @@ final class ConfigScreenController {
 			.anyMatch(ConfigEntryWidget::hasPendingChange);
 	}
 
-	public ConfigValueUpdateType getPendingUpdateType() {
-		return configSchema.getUpdateType(getPendingChanges());
+	public boolean pendingChangesRequireRestart() {
+		return ConfigValueChange.requiresRestart(getPendingChanges());
 	}
 
-	public ConfigValueUpdateType applyPendingChanges() {
-		ConfigValueUpdateType updateType = changesHandler.applyChanges(getPendingChanges());
+	public boolean applyPendingChanges() {
+		boolean requiresRestart = changesHandler.applyChanges(getPendingChanges());
 		updateContentLayout();
-		return updateType;
+		return requiresRestart;
 	}
 
 	private List<ConfigValueChange<?>> getPendingChanges() {

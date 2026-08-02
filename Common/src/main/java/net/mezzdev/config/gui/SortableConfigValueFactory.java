@@ -1,20 +1,22 @@
 package net.mezzdev.config.gui;
 
 import net.mezzdev.config.api.sorting.ISortingConfig;
-import net.mezzdev.config.api.value.ConfigValueEditorType;
-import net.mezzdev.config.api.value.ConfigValueEditorTypes;
-import net.mezzdev.config.api.value.ConfigValueUpdateType;
-import net.mezzdev.config.api.value.IConfigListValueSerializer;
-import net.mezzdev.config.api.value.IConfigValue;
+import net.mezzdev.config.api.value.IDeserializeResult;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.gui.api.ConfigValueApplyMode;
+import net.mezzdev.config.gui.api.ConfigValueEditorType;
+import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
+import net.mezzdev.config.gui.api.ConfigValueLocalization;
+import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigListValueEditorOptions;
+import net.mezzdev.config.gui.api.IConfigLocalizedValue;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueIcon;
 import net.mezzdev.config.gui.api.IConfigValueIconProvider;
+import net.mezzdev.config.gui.api.IConfigValueLocalizationProvider;
 import net.mezzdev.config.gui.api.ISortableConfigValueFactory;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,42 +30,42 @@ import java.util.stream.Collectors;
 
 final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 	static final SortableConfigValueFactory INSTANCE = new SortableConfigValueFactory();
-	private static final ConfigValueUpdateType DEFAULT_UPDATE_TYPE = ConfigValueUpdateType.ON_APPLY;
+	private static final ConfigValueApplyMode DEFAULT_APPLY_MODE = ConfigValueApplyMode.ON_APPLY;
 
 	private SortableConfigValueFactory() {
 
 	}
 
 	@Override
-	public <T> IConfigValue<List<T>> create(
+	public <T> IConfigScreenValue<List<T>> create(
 		String name,
 		String localizationKey,
 		ISortingConfig<T> sortingConfig,
 		Collection<T> values,
 		IConfigValueSerializer<T> valueSerializer
 	) {
-		return create(name, localizationKey, sortingConfig, values, valueSerializer, DEFAULT_UPDATE_TYPE);
+		return create(name, localizationKey, sortingConfig, values, valueSerializer, DEFAULT_APPLY_MODE);
 	}
 
 	@Override
-	public <T> IConfigValue<List<T>> create(
+	public <T> IConfigScreenValue<List<T>> create(
 		String name,
 		String localizationKey,
 		ISortingConfig<T> sortingConfig,
 		Collection<T> values,
 		IConfigValueSerializer<T> valueSerializer,
-		ConfigValueUpdateType updateType
+		ConfigValueApplyMode applyMode
 	) {
 		Objects.requireNonNull(name, "name");
 		Objects.requireNonNull(localizationKey, "localizationKey");
 		Objects.requireNonNull(sortingConfig, "sortingConfig");
 		Objects.requireNonNull(values, "values");
 		Objects.requireNonNull(valueSerializer, "valueSerializer");
-		Objects.requireNonNull(updateType, "updateType");
+		Objects.requireNonNull(applyMode, "applyMode");
 
 		List<T> valuesCopy = List.copyOf(values);
 		List<T> defaultValues = List.copyOf(sortingConfig.getDefaultSortedValues(valuesCopy));
-		IConfigListValueSerializer<T> listSerializer = new SortableListSerializer<>(
+		IConfigListValueEditorSerializer<T> listSerializer = new SortableListSerializer<>(
 			defaultValues,
 			sortingConfig.allowsRemovingValues(),
 			valueSerializer
@@ -74,12 +76,12 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 			sortingConfig,
 			defaultValues,
 			listSerializer,
-			updateType
+			applyMode
 		);
 	}
 
 	@Override
-	public IConfigValue<List<String>> createStringList(
+	public IConfigScreenValue<List<String>> createStringList(
 		String name,
 		String localizationKey,
 		ISortingConfig<String> sortingConfig,
@@ -96,12 +98,12 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 			valueNames,
 			valueDescriptions,
 			valueIcons,
-			DEFAULT_UPDATE_TYPE
+			DEFAULT_APPLY_MODE
 		);
 	}
 
 	@Override
-	public IConfigValue<List<String>> createStringList(
+	public IConfigScreenValue<List<String>> createStringList(
 		String name,
 		String localizationKey,
 		ISortingConfig<String> sortingConfig,
@@ -109,7 +111,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		Map<String, Component> valueNames,
 		Map<String, Component> valueDescriptions,
 		Map<String, IConfigValueIcon> valueIcons,
-		ConfigValueUpdateType updateType
+		ConfigValueApplyMode applyMode
 	) {
 		Objects.requireNonNull(values, "values");
 		IConfigValueSerializer<String> valueSerializer = new StringRuntimeValueSerializer(
@@ -118,16 +120,16 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 			valueDescriptions,
 			valueIcons
 		);
-		return create(name, localizationKey, sortingConfig, values, valueSerializer, updateType);
+		return create(name, localizationKey, sortingConfig, values, valueSerializer, applyMode);
 	}
 
-	private static final class SortableConfigValue<T> implements IConfigValue<List<T>> {
+	private static final class SortableConfigValue<T> implements IConfigScreenValue<List<T>>, IConfigLocalizedValue {
 		private final String name;
 		private final String localizationKey;
 		private final ISortingConfig<T> sortingConfig;
 		private final List<T> values;
-		private final IConfigListValueSerializer<T> serializer;
-		private final ConfigValueUpdateType updateType;
+		private final IConfigListValueEditorSerializer<T> serializer;
+		private final ConfigValueApplyMode applyMode;
 		private final List<Consumer<List<T>>> listeners = new ArrayList<>();
 
 		private SortableConfigValue(
@@ -135,15 +137,15 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 			String localizationKey,
 			ISortingConfig<T> sortingConfig,
 			List<T> values,
-			IConfigListValueSerializer<T> serializer,
-			ConfigValueUpdateType updateType
+			IConfigListValueEditorSerializer<T> serializer,
+			ConfigValueApplyMode applyMode
 		) {
 			this.name = name;
 			this.localizationKey = localizationKey;
 			this.sortingConfig = sortingConfig;
 			this.values = List.copyOf(values);
 			this.serializer = serializer;
-			this.updateType = updateType;
+			this.applyMode = applyMode;
 		}
 
 		@Override
@@ -197,17 +199,17 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		}
 
 		@Override
-		public ConfigValueUpdateType getUpdateType() {
-			return updateType;
+		public ConfigValueApplyMode getApplyMode() {
+			return applyMode;
 		}
 
 		@Override
-		public IConfigListValueSerializer<T> getSerializer() {
+		public IConfigListValueEditorSerializer<T> getSerializer() {
 			return serializer;
 		}
 	}
 
-	private static final class SortableListSerializer<T> implements IConfigListValueSerializer<T>, IConfigListValueEditorOptions {
+	private static final class SortableListSerializer<T> implements IConfigListValueEditorSerializer<T>, IConfigListValueEditorOptions {
 		private final RuntimeValueSerializer<T> valueSerializer;
 		private final boolean allowsRemovingValues;
 
@@ -235,7 +237,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 					String errorMessage = """
 						No closing brace found.
 						List must have no braces, or be wrapped in [ and ].""";
-					return new DeserializeResult<>(null, errorMessage);
+					return IDeserializeResult.failure(errorMessage);
 				}
 				checkedString = checkedString.substring(1, checkedString.length() - 1);
 			}
@@ -256,7 +258,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 				errors.add("List values must not contain duplicates.");
 			}
 
-			return new DeserializeResult<>(results, errors);
+			return IDeserializeResult.of(results, errors);
 		}
 
 		@Override
@@ -280,7 +282,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 				if (i > 0) {
 					result.append(Component.literal(", "));
 				}
-				result.append(valueSerializer.getLocalizedValueName(configValueLocalizationKey, values.get(i)));
+				result.append(ConfigValueLocalization.getValueName(valueSerializer, configValueLocalizationKey, values.get(i)));
 			}
 			return result;
 		}
@@ -291,7 +293,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		}
 
 		@Override
-		public IConfigValueSerializer<T> getListValueSerializer() {
+		public IConfigValueSerializer<T> getElementSerializer() {
 			return valueSerializer;
 		}
 
@@ -306,7 +308,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		}
 	}
 
-	private static final class RuntimeValueSerializer<T> implements IConfigValueSerializer<T>, IConfigValueIconProvider<T> {
+	private static final class RuntimeValueSerializer<T> implements IConfigValueSerializer<T>, IConfigValueLocalizationProvider<T>, IConfigValueIconProvider<T> {
 		private final List<T> validValues;
 		private final IConfigValueSerializer<T> valueSerializer;
 
@@ -337,17 +339,12 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 
 		@Override
 		public Component getLocalizedValueName(String configValueLocalizationKey, T value) {
-			return valueSerializer.getLocalizedValueName(configValueLocalizationKey, value);
+			return ConfigValueLocalization.getValueName(valueSerializer, configValueLocalizationKey, value);
 		}
 
 		@Override
 		public Optional<Component> getLocalizedValueDescription(String configValueLocalizationKey, T value) {
-			return valueSerializer.getLocalizedValueDescription(configValueLocalizationKey, value);
-		}
-
-		@Override
-		public Optional<ResourceLocation> getValueIcon(T value) {
-			return valueSerializer.getValueIcon(value);
+			return ConfigValueLocalization.getValueDescription(valueSerializer, configValueLocalizationKey, value);
 		}
 
 		@Override
@@ -366,7 +363,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		}
 	}
 
-	private static final class StringRuntimeValueSerializer implements IConfigValueSerializer<String>, IConfigValueIconProvider<String> {
+	private static final class StringRuntimeValueSerializer implements IConfigValueSerializer<String>, IConfigValueLocalizationProvider<String>, IConfigValueIconProvider<String> {
 		private final List<String> validValues;
 		private final Map<String, Component> valueNames;
 		private final Map<String, Component> valueDescriptions;
@@ -392,9 +389,9 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		@Override
 		public IDeserializeResult<String> deserialize(String string) {
 			if (string.isBlank()) {
-				return new DeserializeResult<>(null, "Value must not be blank.");
+				return IDeserializeResult.failure("Value must not be blank.");
 			}
-			return new DeserializeResult<>(string, List.of());
+			return IDeserializeResult.success(string);
 		}
 
 		@Override
@@ -428,26 +425,4 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		}
 	}
 
-	private record DeserializeResult<T>(
-		@Nullable T value,
-		List<String> errors
-	) implements IConfigValueSerializer.IDeserializeResult<T> {
-		private DeserializeResult {
-			errors = List.copyOf(errors);
-		}
-
-		private DeserializeResult(@Nullable T value, String error) {
-			this(value, List.of(error));
-		}
-
-		@Override
-		public Optional<T> getResult() {
-			return Optional.ofNullable(value);
-		}
-
-		@Override
-		public List<String> getErrors() {
-			return errors;
-		}
-	}
 }

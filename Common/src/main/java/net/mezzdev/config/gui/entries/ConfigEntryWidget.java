@@ -1,14 +1,15 @@
 package net.mezzdev.config.gui.entries;
 
-import net.mezzdev.config.api.value.ConfigValueUpdateType;
-import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.api.value.ConfigValueChange;
+import net.mezzdev.config.gui.api.ConfigValueApplyMode;
+import net.mezzdev.config.gui.model.ConfigValueChange;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.mezzdev.config.gui.util.Pair;
 import net.mezzdev.config.gui.util.StringUtil;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.info.ConfigValueInfoFactory;
+import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.model.PendingConfigChange;
 import net.mezzdev.config.gui.ConfigInputHandler;
 import net.mezzdev.config.gui.input.UserInput;
@@ -72,12 +73,12 @@ public abstract class ConfigEntryWidget<T> {
 	}
 
 	public static boolean drawFittedText(
-			GuiGraphics guiGraphics,
-			Font font,
-			Component text,
-			ImmutableRect2i area,
-			int color,
-			boolean centered
+		GuiGraphics guiGraphics,
+		Font font,
+		Component text,
+		ImmutableRect2i area,
+		int color,
+		boolean centered
 	) {
 		int maxLines = Math.max(1, area.getHeight() / font.lineHeight);
 		Pair<List<FormattedText>, Boolean> splitLines = StringUtil.splitLines(font, List.of(text), area.getWidth(), maxLines);
@@ -116,17 +117,17 @@ public abstract class ConfigEntryWidget<T> {
 	}
 
 	public static void drawButtonBackground(
-			GuiGraphics guiGraphics,
-			ConfigTextures textures,
-			ImmutableRect2i area,
-			boolean active,
-			boolean hovered
+		GuiGraphics guiGraphics,
+		ConfigTextures textures,
+		ImmutableRect2i area,
+		boolean active,
+		boolean hovered
 	) {
 		guiGraphics.fill(area.getX(), area.getY(), area.getX() + area.getWidth(), area.getY() + area.getHeight(), BUTTON_UNDERLAY_COLOR);
 		textures.getButtonForState(false, active, hovered).draw(guiGraphics, area);
 	}
 
-	protected final IConfigValue<T> configValue;
+	protected final IConfigScreenValue<T> configValue;
 	private final ConfigTextures textures;
 	private final Component fullName;
 	private T value;
@@ -137,10 +138,10 @@ public abstract class ConfigEntryWidget<T> {
 	ImmutableRect2i nameArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i resetArea = ImmutableRect2i.EMPTY;
 
-	protected ConfigEntryWidget(IConfigValue<T> configValue, ConfigTextures textures) {
+	protected ConfigEntryWidget(IConfigScreenValue<T> configValue, ConfigTextures textures) {
 		this.configValue = configValue;
 		this.textures = textures;
-		this.fullName = StringUtil.stripStyling(configValue.getLocalizedName());
+		this.fullName = StringUtil.stripStyling(ConfigValueLocalization.getName(configValue));
 		this.value = configValue.getValue();
 	}
 
@@ -157,10 +158,10 @@ public abstract class ConfigEntryWidget<T> {
 		this.area = area;
 		updateNameLayout(area, NAME_RIGHT_RESERVE);
 		this.resetArea = new ImmutableRect2i(
-				area.getX() + area.getWidth() - RESET_BUTTON_SIZE - RESET_BUTTON_RIGHT_PADDING,
-				area.getY() + (area.getHeight() - RESET_BUTTON_SIZE) / 2,
-				RESET_BUTTON_SIZE,
-				RESET_BUTTON_SIZE
+			area.getX() + area.getWidth() - RESET_BUTTON_SIZE - RESET_BUTTON_RIGHT_PADDING,
+			area.getY() + (area.getHeight() - RESET_BUTTON_SIZE) / 2,
+			RESET_BUTTON_SIZE,
+			RESET_BUTTON_SIZE
 		);
 	}
 
@@ -176,10 +177,10 @@ public abstract class ConfigEntryWidget<T> {
 		int scaledLineHeight = getScaledLineHeight(font);
 		int textHeight = nameLines.size() * scaledLineHeight;
 		this.nameArea = new ImmutableRect2i(
-				area.getX() + NAME_LEFT_PADDING,
-				area.getY() + Math.round((area.getHeight() - textHeight) / 2.0f),
-				nameColWidth,
-				textHeight
+			area.getX() + NAME_LEFT_PADDING,
+			area.getY() + Math.round((area.getHeight() - textHeight) / 2.0f),
+			nameColWidth,
+			textHeight
 		);
 	}
 
@@ -230,31 +231,35 @@ public abstract class ConfigEntryWidget<T> {
 	public void draw(GuiGraphics guiGraphics, double mouseX, double mouseY, boolean allowHover) {
 		if (allowHover && area.contains(mouseX, mouseY)) {
 			guiGraphics.fill(
-					area.getX() + 1,
-					area.getY(),
-					area.getX() + area.getWidth() - 1,
-					area.getY() + area.getHeight(),
-					ROW_HOVER_COLOR
+				area.getX() + 1,
+				area.getY(),
+				area.getX() + area.getWidth() - 1,
+				area.getY() + area.getHeight(),
+				ROW_HOVER_COLOR
 			);
 		}
 		if (hasPendingChange()) {
 			guiGraphics.fill(
-					area.getX() + 1,
-					area.getY(),
-					area.getX() + area.getWidth() - 1,
-					area.getY() + area.getHeight(),
-					PENDING_BACKGROUND_COLOR
+				area.getX() + 1,
+				area.getY(),
+				area.getX() + area.getWidth() - 1,
+				area.getY() + area.getHeight(),
+				PENDING_BACKGROUND_COLOR
 			);
 			guiGraphics.fill(
-					area.getX() + 1,
-					area.getY(),
-					area.getX() + 3,
-					area.getY() + area.getHeight(),
-					PENDING_ACCENT_COLOR
+				area.getX() + 1,
+				area.getY(),
+				area.getX() + 3,
+				area.getY() + area.getHeight(),
+				PENDING_ACCENT_COLOR
 			);
 		}
-		double drawMouseX = allowHover ? mouseX : Double.NaN;
-		double drawMouseY = allowHover ? mouseY : Double.NaN;
+		double drawMouseX = Double.NaN;
+		double drawMouseY = Double.NaN;
+		if (allowHover) {
+			drawMouseX = mouseX;
+			drawMouseY = mouseY;
+		}
 		drawContent(guiGraphics, drawMouseX, drawMouseY);
 		drawResetButton(guiGraphics, drawMouseX, drawMouseY);
 	}
@@ -285,7 +290,7 @@ public abstract class ConfigEntryWidget<T> {
 		return Optional.empty();
 	}
 
-	public IConfigValue<T> getConfigValue() {
+	public IConfigScreenValue<T> getConfigValue() {
 		return configValue;
 	}
 
@@ -302,12 +307,12 @@ public abstract class ConfigEntryWidget<T> {
 			T oldValue = configValue.getValue();
 			T newValue = value;
 			return Optional.of(PendingConfigChange.create(
-					configValue.getLocalizedName(),
-					getValueName(oldValue),
-					getValueName(newValue),
-					getInfo(),
-					ConfigValueInfoFactory.createPendingChangeValueInfo(configValue, oldValue),
-					ConfigValueInfoFactory.createPendingChangeValueInfo(configValue, newValue)
+				ConfigValueLocalization.getName(configValue),
+				getValueName(oldValue),
+				getValueName(newValue),
+				getInfo(),
+				ConfigValueInfoFactory.createPendingChangeValueInfo(configValue, oldValue),
+				ConfigValueInfoFactory.createPendingChangeValueInfo(configValue, newValue)
 			));
 		}
 		return Optional.empty();
@@ -318,12 +323,11 @@ public abstract class ConfigEntryWidget<T> {
 	}
 
 	public ConfigInfo getInfo() {
-		return new ConfigInfo(configValue.getLocalizedName(), configValue.getLocalizedDescription());
+		return new ConfigInfo(ConfigValueLocalization.getName(configValue), ConfigValueLocalization.getDescription(configValue));
 	}
 
 	protected Component getValueName(T value) {
-		return configValue.getSerializer()
-			.getLocalizedValueName(configValue.getLocalizationKey(), value);
+		return ConfigValueLocalization.getValueName(configValue, value);
 	}
 
 	public ConfigInfo getInfo(double mouseX, double mouseY) {
@@ -361,7 +365,7 @@ public abstract class ConfigEntryWidget<T> {
 			return false;
 		}
 		this.value = value;
-		if (configValue.getUpdateType() == ConfigValueUpdateType.IMMEDIATE) {
+		if (appliesImmediately()) {
 			boolean changed = configValue.set(value);
 			if (!changed && !configValue.getValue().equals(value)) {
 				this.value = configValue.getValue();
@@ -370,6 +374,11 @@ public abstract class ConfigEntryWidget<T> {
 		}
 		onValueChanged();
 		return true;
+	}
+
+	private boolean appliesImmediately() {
+		return configValue.getApplyMode() == ConfigValueApplyMode.IMMEDIATE &&
+			!configValue.requiresRestart();
 	}
 
 	protected void onValueChanged() {

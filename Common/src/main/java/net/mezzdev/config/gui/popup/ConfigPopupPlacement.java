@@ -60,7 +60,10 @@ public final class ConfigPopupPlacement {
 
 		int visibleBelow = getVisibleHeight(clipTop, clipBottom, belowY, height);
 		int visibleAbove = getVisibleHeight(clipTop, clipBottom, aboveY, height);
-		int preferredY = visibleAbove > visibleBelow ? aboveY : belowY;
+		int preferredY = belowY;
+		if (visibleAbove > visibleBelow) {
+			preferredY = aboveY;
+		}
 		return clamp(preferredY, clipTop, clipBottom - height);
 	}
 

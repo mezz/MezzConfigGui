@@ -78,27 +78,33 @@ final class ConfigScreenView {
 		ImmutableRect2i contentArea = layout.getContentArea();
 		ImmutableRect2i valueSelectorClipArea = getValueSelectorClipArea(contentArea);
 		ImmutableRect2i searchBackgroundArea = layout.getSearchBackgroundArea();
-		@Nullable ConfigInfo hoveredValueSelectorInfo = getValueSelectorInfo(valueSelector, valueSelectorClipArea, mouseX, mouseY);
-		@Nullable ConfigInfo activeValueSelectorInfo = valueSelector == null ? null : valueSelector.getInfo();
-		@Nullable ConfigInfo tooltipInfo = getTooltipInfo(
+		@Nullable
+		ConfigInfo hoveredValueSelectorInfo = getValueSelectorInfo(valueSelector, valueSelectorClipArea, mouseX, mouseY);
+		@Nullable
+		ConfigInfo activeValueSelectorInfo = getActiveValueSelectorInfo(valueSelector);
+		@Nullable
+		ConfigInfo tooltipInfo = getTooltipInfo(
 			valueSelector,
 			valueSelectorClipArea,
 			contentArea,
 			mouseX,
 			mouseY
 		);
-		@Nullable ConfigInfo hoveredControlInfo = getControlInfo(searchBackgroundArea, mouseX, mouseY);
+		@Nullable
+		ConfigInfo hoveredControlInfo = getControlInfo(searchBackgroundArea, mouseX, mouseY);
 
 		guiGraphics.pose().pushPose();
 		background.draw(guiGraphics, area);
 		drawTitle(guiGraphics, font, titleArea, title);
 		drawNavBackground(guiGraphics, navArea);
-		@Nullable ConfigNavItem hoveredNavItem = drawNavItems(guiGraphics, navArea, mouseX, mouseY);
+		@Nullable
+		ConfigNavItem hoveredNavItem = drawNavItems(guiGraphics, navArea, mouseX, mouseY);
 		drawInsetBorder(guiGraphics, navArea);
 		drawNavScrollBar(guiGraphics);
 		drawSearch(guiGraphics, textures, searchBackgroundArea, mouseX, mouseY, partialTick);
 		drawValueAreaBackground(guiGraphics, contentArea);
-		@Nullable ConfigInfo hoveredEntryInfo = drawEntries(guiGraphics, contentArea, mouseX, mouseY, valueSelector == null);
+		@Nullable
+		ConfigInfo hoveredEntryInfo = drawEntries(guiGraphics, contentArea, mouseX, mouseY, valueSelector == null);
 		drawInsetBorder(guiGraphics, contentArea);
 		drawInfoPanel(guiGraphics, font, getInfo(hoveredValueSelectorInfo, hoveredControlInfo, hoveredNavItem, hoveredEntryInfo, activeValueSelectorInfo));
 		guiGraphics.pose().popPose();
@@ -110,6 +116,14 @@ final class ConfigScreenView {
 
 	static ImmutableRect2i getValueSelectorClipArea(ImmutableRect2i contentArea) {
 		return contentArea.insetBy(1);
+	}
+
+	@Nullable
+	private static ConfigInfo getActiveValueSelectorInfo(@Nullable ConfigPopupSelector valueSelector) {
+		if (valueSelector == null) {
+			return null;
+		}
+		return valueSelector.getInfo();
 	}
 
 	private static void drawTitle(GuiGraphics guiGraphics, Font font, ImmutableRect2i titleArea, Component title) {
@@ -135,7 +149,8 @@ final class ConfigScreenView {
 
 	@Nullable
 	private ConfigNavItem drawNavItems(GuiGraphics guiGraphics, ImmutableRect2i navArea, int mouseX, int mouseY) {
-		@Nullable ConfigNavItem hoveredNavItem = null;
+		@Nullable
+		ConfigNavItem hoveredNavItem = null;
 		guiGraphics.enableScissor(
 			navArea.getX(),
 			navArea.getY(),
@@ -212,7 +227,8 @@ final class ConfigScreenView {
 		int mouseY,
 		boolean allowEntryHover
 	) {
-		@Nullable ConfigInfo hoveredEntryInfo = null;
+		@Nullable
+		ConfigInfo hoveredEntryInfo = null;
 		guiGraphics.enableScissor(
 			contentArea.getX(),
 			contentArea.getY(),
@@ -254,7 +270,8 @@ final class ConfigScreenView {
 		int mouseY
 	) {
 		if (valueSelector != null && valueSelectorClipArea.contains(mouseX, mouseY)) {
-			@Nullable ConfigInfo valueSelectorTooltipInfo = valueSelector.getTooltipInfo(mouseX, mouseY);
+			@Nullable
+			ConfigInfo valueSelectorTooltipInfo = valueSelector.getTooltipInfo(mouseX, mouseY);
 			if (valueSelectorTooltipInfo != null) {
 				return valueSelectorTooltipInfo;
 			}
@@ -269,7 +286,8 @@ final class ConfigScreenView {
 			if (entryWidget.getArea().equals(ImmutableRect2i.EMPTY) || !entryWidget.isMouseOver(mouseX, mouseY)) {
 				continue;
 			}
-			@Nullable ConfigInfo info = entryWidget.getTooltipInfo(mouseX, mouseY);
+			@Nullable
+			ConfigInfo info = entryWidget.getTooltipInfo(mouseX, mouseY);
 			if (info != null) {
 				return info;
 			}

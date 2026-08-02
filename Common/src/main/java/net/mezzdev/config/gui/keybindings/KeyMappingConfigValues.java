@@ -1,6 +1,6 @@
 package net.mezzdev.config.gui.keybindings;
 
-import net.mezzdev.config.api.value.IConfigValue;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 
@@ -17,22 +17,22 @@ public final class KeyMappingConfigValues {
 
 	}
 
-	public static List<IConfigValue<?>> create(Collection<? extends KeyMapping> keyMappings) {
+	public static List<IConfigScreenValue<?>> create(Collection<? extends KeyMapping> keyMappings) {
 		return keyMappings.stream()
 			.map(KeyMappingAdapters::create)
 			.map(KeyMappingConfigValue::new)
-			.<IConfigValue<?>>map(value -> value)
+			.<IConfigScreenValue<?>>map(value -> value)
 			.toList();
 	}
 
-	public static List<IConfigValue<?>> createForModId(String modId) {
+	public static List<IConfigScreenValue<?>> createForModId(String modId) {
 		String checkedModId = modId.toLowerCase(Locale.ROOT);
 		KeyMapping[] keyMappings = Minecraft.getInstance().options.keyMappings;
 		return Arrays.stream(keyMappings)
 			.filter(keyMapping -> belongsToModId(keyMapping, checkedModId))
 			.map(KeyMappingAdapters::create)
 			.map(KeyMappingConfigValue::new)
-			.<IConfigValue<?>>map(value -> value)
+			.<IConfigScreenValue<?>>map(value -> value)
 			.toList();
 	}
 

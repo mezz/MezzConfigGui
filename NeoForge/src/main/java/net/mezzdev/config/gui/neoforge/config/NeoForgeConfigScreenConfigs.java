@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui.neoforge.config;
 
 import com.electronwill.nightconfig.core.UnmodifiableConfig;
-import net.mezzdev.config.gui.api.IConfigScreenConfig;
+import net.mezzdev.config.gui.ConfigScreenConfig;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.config.ModConfig;
@@ -33,11 +33,11 @@ public final class NeoForgeConfigScreenConfigs {
 
 	}
 
-	public static Collection<? extends IConfigScreenConfig> getConfigScreens(
-		Collection<? extends IConfigScreenConfig> existingConfigScreens
+	public static Collection<? extends ConfigScreenConfig> getConfigScreens(
+		Collection<? extends ConfigScreenConfig> existingConfigScreens
 	) {
 		Set<String> existingModIds = new LinkedHashSet<>();
-		for (IConfigScreenConfig configScreen : existingConfigScreens) {
+		for (ConfigScreenConfig configScreen : existingConfigScreens) {
 			existingModIds.add(configScreen.getModId());
 		}
 
@@ -93,6 +93,7 @@ public final class NeoForgeConfigScreenConfigs {
 		String localizationKey = NeoForgeConfigLocalization.getCategoryLocalizationKey(modId, modConfig);
 		return Optional.of(new NeoForgeConfigCategory(
 			modConfig.getFileName(),
+			localizationKey,
 			NeoForgeConfigLocalization.getCategoryName(localizationKey, modConfig),
 			NeoForgeConfigLocalization.getCategoryDescription(localizationKey, modConfig),
 			modConfig,

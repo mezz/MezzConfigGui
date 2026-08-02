@@ -62,7 +62,7 @@ val parchmentVersionFabric: String by extra
 val jsr305Version: String by extra
 val mezzConfigVersion: String by extra
 val mezzConfigApiDependency: String by rootProject.extra
-val mezzConfigApiFabricDependency: String by rootProject.extra
+val mezzConfigFabricDependency: String by rootProject.extra
 val configGuiApiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui-api")
 val configGuiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui")
 val fabricDefaultsTestModProject: Project = project(":FabricMezzConfigDefaultsTest")
@@ -127,8 +127,7 @@ dependencies {
     modCompileOnly("com.terraformersmc:modmenu:$modMenuVersionFabric")
     compileOnly("com.google.code.findbugs:jsr305:$jsr305Version")
     compileOnly(mezzConfigApiDependency)
-    modRuntimeOnly(mezzConfigApiFabricDependency)
-    modLocalRuntime("$configModGroup:${configModId}-${minecraftVersion}-fabric:$mezzConfigVersion")
+    modRuntimeOnly(mezzConfigFabricDependency)
     modLocalRuntime("com.terraformersmc:modmenu:$modMenuVersionFabric")
     dependencyProjects.forEach {
         implementation(it)
@@ -261,7 +260,7 @@ publishing {
             artifact(tasks.remapJar)
             artifact(tasks.remapSourcesJar)
 
-            val dependencyInfos = listOf(dependencyInfo(mezzConfigApiFabricDependency)) + dependencyProjects.map {
+            val dependencyInfos = listOf(dependencyInfo(mezzConfigFabricDependency)) + dependencyProjects.map {
                 mapOf(
                     "groupId" to it.group,
                     "artifactId" to it.base.archivesName.get(),

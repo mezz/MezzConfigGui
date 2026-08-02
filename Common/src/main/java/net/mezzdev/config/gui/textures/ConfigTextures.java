@@ -75,9 +75,15 @@ public class ConfigTextures {
 		}
 
 		if (hovered) {
-			return pressed ? buttonPressedHighlight : buttonHighlight;
+			if (pressed) {
+				return buttonPressedHighlight;
+			}
+			return buttonHighlight;
 		}
-		return pressed ? buttonPressed : buttonEnabled;
+		if (pressed) {
+			return buttonPressed;
+		}
+		return buttonEnabled;
 	}
 
 	public ConfigScalableDrawable getConfigScreenBackground() {

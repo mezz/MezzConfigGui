@@ -1,9 +1,10 @@
 package net.mezzdev.config.gui.popup;
 
-import net.mezzdev.config.api.value.IConfigValue;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValuePopup;
 import net.mezzdev.config.gui.entries.ConfigEntryWidget;
 import net.mezzdev.config.gui.info.ConfigValueIcon;
+import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -32,32 +33,35 @@ public final class ConfigValueSelector<T> implements IConfigValuePopup<T> {
 	private static final int BORDER_LIGHT_COLOR = 0x45FFFFFF;
 	private static final int DIVIDER_COLOR = 0x22FFFFFF;
 
-	private final IConfigValue<T> configValue;
+	private final IConfigScreenValue<T> configValue;
 	private final List<ValueEntry> valueEntries;
 
-	public ConfigValueSelector(IConfigValue<T> configValue, List<T> allValues, @Nullable T currentValue) {
+	public ConfigValueSelector(IConfigScreenValue<T> configValue, List<T> allValues, @Nullable T currentValue) {
 		this.configValue = configValue;
 		this.valueEntries = allValues.stream()
-									.filter(value -> !value.equals(currentValue))
-									.map(value -> new ValueEntry(value, getValueName(value)))
-									.toList();
+			.filter(value -> !value.equals(currentValue))
+			.map(value -> new ValueEntry(value, getValueName(value)))
+			.toList();
 	}
 
 	@Override
 	public int getWidth() {
 		Font font = Minecraft.getInstance().font;
 		int width = valueEntries.stream()
-								.mapToInt(entry -> {
-									int textWidth = (int) (font.width(entry.label) * ConfigEntryWidget.TEXT_SCALE);
-									return textWidth + ConfigValueIcon.getTextOffset(configValue, entry.value);
-								})
-								.max().orElse(MIN_ENTRY_WIDTH);
+			.mapToInt(entry -> {
+				int textWidth = (int) (font.width(entry.label) * ConfigEntryWidget.TEXT_SCALE);
+				return textWidth + ConfigValueIcon.getTextOffset(configValue, entry.value);
+			})
+			.max().orElse(MIN_ENTRY_WIDTH);
 		return Math.clamp(width + 12, MIN_ENTRY_WIDTH, MAX_ENTRY_WIDTH);
 	}
 
 	@Override
 	public int getHeight() {
-		return valueEntries.isEmpty() ? 0 : valueEntries.size() * ENTRY_HEIGHT + BORDER_SIZE * 2;
+		if (valueEntries.isEmpty()) {
+			return 0;
+		}
+		return valueEntries.size() * ENTRY_HEIGHT + BORDER_SIZE * 2;
 	}
 
 	@Override
@@ -89,12 +93,12 @@ public final class ConfigValueSelector<T> implements IConfigValuePopup<T> {
 			ConfigValueIcon.draw(guiGraphics, configValue, entry.value, contentX, iconY);
 			int textX = contentX + ConfigValueIcon.getTextOffset(configValue, entry.value);
 			ImmutableRect2i textArea = new ImmutableRect2i(
-					textX,
-					valueArea.getY(),
-					Math.max(0, valueArea.getX() + valueArea.getWidth() - textX - TEXT_PADDING),
-					valueArea.getHeight()
+				textX,
+				valueArea.getY(),
+				Math.max(0, valueArea.getX() + valueArea.getWidth() - textX - TEXT_PADDING),
+				valueArea.getHeight()
 			);
-			ConfigEntryWidget.drawFittedText(guiGraphics, font, entry.label, textArea, hovered ? ConfigEntryWidget.HOVER_TEXT_COLOR : ConfigEntryWidget.TEXT_COLOR, false);
+			ConfigEntryWidget.drawFittedText(guiGraphics, font, entry.label, textArea, getTextColor(hovered), false);
 		}
 	}
 
@@ -121,10 +125,24 @@ public final class ConfigValueSelector<T> implements IConfigValuePopup<T> {
 		int right = x + valueArea.getWidth();
 		int bottom = y + valueArea.getHeight();
 
-		guiGraphics.fill(x, y, right, bottom, hovered ? ROW_HOVER_COLOR : ROW_BACKGROUND_COLOR);
+		guiGraphics.fill(x, y, right, bottom, getBackgroundColor(hovered));
 		if (drawDivider) {
 			guiGraphics.fill(x, y, right, y + 1, DIVIDER_COLOR);
 		}
+	}
+
+	private static int getTextColor(boolean hovered) {
+		if (hovered) {
+			return ConfigEntryWidget.HOVER_TEXT_COLOR;
+		}
+		return ConfigEntryWidget.TEXT_COLOR;
+	}
+
+	private static int getBackgroundColor(boolean hovered) {
+		if (hovered) {
+			return ROW_HOVER_COLOR;
+		}
+		return ROW_BACKGROUND_COLOR;
 	}
 
 	private static ImmutableRect2i getValueArea(Rect2i area, int index) {
@@ -151,7 +169,6 @@ public final class ConfigValueSelector<T> implements IConfigValuePopup<T> {
 	}
 
 	private Component getValueName(T value) {
-		return configValue.getSerializer()
-			.getLocalizedValueName(configValue.getLocalizationKey(), value);
+		return ConfigValueLocalization.getValueName(configValue, value);
 	}
 }

@@ -1,10 +1,7 @@
 package net.mezzdev.config.gui;
 
-import net.mezzdev.config.api.files.IConfigFile;
-import net.mezzdev.config.api.schema.IConfigCategory;
-import net.mezzdev.config.api.schema.IConfigEditableSchema;
-import net.mezzdev.config.api.value.ConfigValueEditorType;
-import net.mezzdev.config.api.value.IConfigValue;
+import net.mezzdev.config.gui.api.ConfigValueEditorType;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueEditorFactory;
 import net.mezzdev.config.gui.entries.ConfigEntryWidget;
 import net.mezzdev.config.gui.entries.ConfigEntryWidgetFactory;
@@ -45,7 +42,7 @@ public class ConfigScreen extends Screen {
 	static Screen create(
 		@Nullable Screen parent,
 		Component title,
-		IConfigEditableSchema clientSchema,
+		ConfigScreenSchema clientSchema,
 		ConfigChangesHandler changesHandler,
 		Map<ConfigValueEditorType<?>, IConfigValueEditorFactory<?>> valueEditorFactories
 	) {
@@ -80,7 +77,7 @@ public class ConfigScreen extends Screen {
 	private ConfigScreen(
 		@Nullable Screen parent,
 		Component title,
-		IConfigEditableSchema clientSchema,
+		ConfigScreenSchema clientSchema,
 		ConfigChangesHandler changesHandler,
 		Map<ConfigValueEditorType<?>, IConfigValueEditorFactory<?>> valueEditorFactories
 	) {
@@ -96,7 +93,7 @@ public class ConfigScreen extends Screen {
 		updateSearchTextColor("");
 
 		this.model = new ConfigScreenModel(createCategories(clientSchema));
-		this.controller = new ConfigScreenController(clientSchema, changesHandler, model, layout, () -> {
+		this.controller = new ConfigScreenController(changesHandler, model, layout, () -> {
 			if (!searchBox.getValue().isEmpty()) {
 				searchBox.setValue("");
 			}
@@ -108,17 +105,17 @@ public class ConfigScreen extends Screen {
 		});
 
 		List<ConfigInputHandler> allInputHandlers = new ArrayList<>();
-		List<IConfigCategory> categories = model.getCategories();
+		List<ConfigScreenCategory> categories = model.getCategories();
 		ConfigEntryWidgetFactory entryWidgetFactory = new ConfigEntryWidgetFactory(
 			this::openValueSelector,
 			controller::updateContentLayout,
 			textures,
 			valueEditorFactories
 		);
-		Map<IConfigValue<?>, ConfigEntryWidget<?>> entryWidgetsByValue = new IdentityHashMap<>();
+		Map<IConfigScreenValue<?>, ConfigEntryWidget<?>> entryWidgetsByValue = new IdentityHashMap<>();
 		List<ConfigEntryWidget<?>> allEntryWidgets = new ArrayList<>();
 		for (int i = 0; i < categories.size(); i++) {
-			IConfigCategory category = categories.get(i);
+			ConfigScreenCategory category = categories.get(i);
 			List<ConfigEntryWidget<?>> entryWidgets = createEntryWidgets(
 				category,
 				entryWidgetsByValue,
@@ -156,27 +153,27 @@ public class ConfigScreen extends Screen {
 	}
 
 	private static List<ConfigEntryWidget<?>> createEntryWidgets(
-		IConfigCategory category,
-		Map<IConfigValue<?>, ConfigEntryWidget<?>> entryWidgetsByValue,
+		ConfigScreenCategory category,
+		Map<IConfigScreenValue<?>, ConfigEntryWidget<?>> entryWidgetsByValue,
 		List<ConfigEntryWidget<?>> allEntryWidgets,
 		ConfigEntryWidgetFactory entryWidgetFactory
 	) {
 		List<ConfigEntryWidget<?>> entryWidgets = new ArrayList<>();
-		for (IConfigValue<?> configValue : category.getConfigValues()) {
+		for (IConfigScreenValue<?> configValue : category.getConfigValues()) {
 			entryWidgets.add(getOrCreateEntryWidget(entryWidgetsByValue, allEntryWidgets, entryWidgetFactory, configValue));
 		}
 		return entryWidgets;
 	}
 
-	private static List<IConfigCategory> createCategories(IConfigFile configFile) {
-		return List.copyOf(configFile.getCategories());
+	private static List<ConfigScreenCategory> createCategories(ConfigScreenSchema schema) {
+		return List.copyOf(schema.getCategories());
 	}
 
 	private static ConfigEntryWidget<?> getOrCreateEntryWidget(
-		Map<IConfigValue<?>, ConfigEntryWidget<?>> entryWidgetsByValue,
+		Map<IConfigScreenValue<?>, ConfigEntryWidget<?>> entryWidgetsByValue,
 		List<ConfigEntryWidget<?>> allEntryWidgets,
 		ConfigEntryWidgetFactory entryWidgetFactory,
-		IConfigValue<?> configValue
+		IConfigScreenValue<?> configValue
 	) {
 		ConfigEntryWidget<?> entryWidget = entryWidgetsByValue.get(configValue);
 		if (entryWidget == null) {
@@ -195,7 +192,8 @@ public class ConfigScreen extends Screen {
 				ImmutableRect2i displayArea = layout.getContentArea();
 				if (!entry.getArea().equals(ImmutableRect2i.EMPTY) &&
 					displayArea.contains(input.getMouseX(), input.getMouseY()) &&
-					entry.isMouseOver(input.getMouseX(), input.getMouseY())) {
+					entry.isMouseOver(input.getMouseX(), input.getMouseY())
+				) {
 					return entryInputHandler.handleUserInput(screen, input);
 				}
 				return Optional.empty();
@@ -217,7 +215,14 @@ public class ConfigScreen extends Screen {
 	}
 
 	private void updateSearchTextColor(String searchText) {
-		this.searchBox.setTextColor(searchText.isEmpty() ? SEARCH_HINT_COLOR : SEARCH_TEXT_COLOR);
+		this.searchBox.setTextColor(getSearchTextColor(searchText));
+	}
+
+	private static int getSearchTextColor(String searchText) {
+		if (searchText.isEmpty()) {
+			return SEARCH_HINT_COLOR;
+		}
+		return SEARCH_TEXT_COLOR;
 	}
 
 	private void openValueSelector(ConfigPopupSelector selector) {
@@ -248,7 +253,8 @@ public class ConfigScreen extends Screen {
 		}
 		ImmutableRect2i clipArea = ConfigScreenView.getValueSelectorClipArea(layout.getContentArea());
 		valueSelector.updateBounds(clipArea);
-		@Nullable ImmutableRect2i intersection = getIntersection(valueSelector.getArea(), clipArea);
+		@Nullable
+		ImmutableRect2i intersection = getIntersection(valueSelector.getArea(), clipArea);
 		if (intersection == null) {
 			return null;
 		}
@@ -335,7 +341,7 @@ public class ConfigScreen extends Screen {
 				closeWithoutPrompt();
 			},
 			() -> minecraft.setScreen(this),
-			controller.getPendingUpdateType(),
+			controller.pendingChangesRequireRestart(),
 			controller.getPendingConfigChanges()
 		);
 		minecraft.setScreen(pendingChangesScreen);

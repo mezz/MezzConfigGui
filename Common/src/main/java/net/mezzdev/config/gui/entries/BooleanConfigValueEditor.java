@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui.entries;
 
-import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.gui.api.ConfigInfo;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueEditor;
 import net.mezzdev.config.gui.info.ConfigValueIcon;
 import net.mezzdev.config.gui.info.ConfigValueInfoFactory;
@@ -18,12 +18,12 @@ final class BooleanConfigValueEditor implements IConfigValueEditor<Boolean> {
 	private static final int BUTTON_SIZE = 18;
 
 	@Override
-	public int getControlWidth(IConfigValue<Boolean> configValue, Boolean value) {
+	public int getControlWidth(IConfigScreenValue<Boolean> configValue, Boolean value) {
 		return BUTTON_SIZE;
 	}
 
 	@Override
-	public int getControlHeight(IConfigValue<Boolean> configValue, Boolean value) {
+	public int getControlHeight(IConfigScreenValue<Boolean> configValue, Boolean value) {
 		return BUTTON_SIZE;
 	}
 
@@ -31,7 +31,7 @@ final class BooleanConfigValueEditor implements IConfigValueEditor<Boolean> {
 	public void draw(
 		GuiGraphics guiGraphics,
 		Rect2i area,
-		IConfigValue<Boolean> configValue,
+		IConfigScreenValue<Boolean> configValue,
 		Boolean value,
 		boolean hovered,
 		boolean hasPendingChange
@@ -42,7 +42,7 @@ final class BooleanConfigValueEditor implements IConfigValueEditor<Boolean> {
 	@Override
 	public Optional<ConfigInfo> getTooltipInfo(
 		Rect2i area,
-		IConfigValue<Boolean> configValue,
+		IConfigScreenValue<Boolean> configValue,
 		Boolean value,
 		boolean hasPendingChange,
 		double mouseX,
@@ -54,7 +54,7 @@ final class BooleanConfigValueEditor implements IConfigValueEditor<Boolean> {
 	@Override
 	public Optional<Boolean> getClickedValue(
 		Rect2i area,
-		IConfigValue<Boolean> configValue,
+		IConfigScreenValue<Boolean> configValue,
 		Boolean value,
 		double mouseX,
 		double mouseY,

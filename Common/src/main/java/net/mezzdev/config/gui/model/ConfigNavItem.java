@@ -94,7 +94,7 @@ public final class ConfigNavItem implements ConfigInputHandler {
 		int bottom = area.getY() + area.getHeight();
 		int hoverBottom = hoverArea.getY() + hoverArea.getHeight();
 
-		guiGraphics.fill(x, y, right, bottom, active ? ACTIVE_BACKGROUND_COLOR : BACKGROUND_COLOR);
+		guiGraphics.fill(x, y, right, bottom, getBackgroundColor(active));
 		if (hovered) {
 			guiGraphics.fill(x, y, right, hoverBottom, HOVER_BACKGROUND_COLOR);
 		}
@@ -103,14 +103,35 @@ public final class ConfigNavItem implements ConfigInputHandler {
 		}
 		guiGraphics.fill(x, bottom - 1, right, bottom, DIVIDER_COLOR);
 
-		int textColor = active || hovered ? ConfigEntryWidget.HOVER_TEXT_COLOR : ConfigEntryWidget.TEXT_COLOR;
-		int textX = area.getX() + (active ? ACTIVE_TEXT_LEFT_PADDING : TEXT_LEFT_PADDING);
+		int textColor = getTextColor(active, hovered);
+		int textX = area.getX() + getTextLeftPadding(active);
 		int textHeight = visibleNameLines.size() * font.lineHeight;
 		int textY = area.getY() + Math.round((area.getHeight() - textHeight) / 2.0f);
 		for (FormattedCharSequence visibleNameLine : visibleNameLines) {
 			guiGraphics.drawString(font, visibleNameLine, textX, textY, textColor, false);
 			textY += font.lineHeight;
 		}
+	}
+
+	private static int getBackgroundColor(boolean active) {
+		if (active) {
+			return ACTIVE_BACKGROUND_COLOR;
+		}
+		return BACKGROUND_COLOR;
+	}
+
+	private static int getTextColor(boolean active, boolean hovered) {
+		if (active || hovered) {
+			return ConfigEntryWidget.HOVER_TEXT_COLOR;
+		}
+		return ConfigEntryWidget.TEXT_COLOR;
+	}
+
+	private static int getTextLeftPadding(boolean active) {
+		if (active) {
+			return ACTIVE_TEXT_LEFT_PADDING;
+		}
+		return TEXT_LEFT_PADDING;
 	}
 
 	public ConfigInfo getInfo() {
@@ -122,7 +143,8 @@ public final class ConfigNavItem implements ConfigInputHandler {
 		ImmutableRect2i navArea = navAreaSupplier.get();
 		if (navArea.contains(input.getMouseX(), input.getMouseY())
 			&& isMouseOver(input.getMouseX(), input.getMouseY())
-			&& ConfigInputUtil.isLeftClick(input)) {
+			&& ConfigInputUtil.isLeftClick(input)
+		) {
 			if (!input.isSimulate()) {
 				categorySelector.accept(categoryIndex);
 			}

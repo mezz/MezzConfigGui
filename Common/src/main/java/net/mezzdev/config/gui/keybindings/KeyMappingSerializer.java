@@ -1,9 +1,10 @@
 package net.mezzdev.config.gui.keybindings;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import net.mezzdev.config.api.value.ConfigValueEditorType;
-import net.mezzdev.config.api.value.ConfigValueEditorTypes;
-import net.mezzdev.config.api.value.IConfigValueEditorSerializer;
+import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.gui.api.ConfigValueEditorType;
+import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
+import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.minecraft.network.chat.Component;
 
 import java.util.Collection;
@@ -33,10 +34,13 @@ final class KeyMappingSerializer implements IConfigValueEditorSerializer<KeyMapp
 		try {
 			String[] parts = string.trim().split(":", 2);
 			InputConstants.Key key = InputConstants.getKey(parts[0]);
-			ConfigKeyModifier modifier = parts.length > 1 ? getModifier(parts[1]) : ConfigKeyModifier.NONE;
-			return new KeyMappingDeserializeResult<>(defaultValue.withBinding(new ConfigKeyBinding(key.getName(), modifier)));
+			ConfigKeyModifier modifier = ConfigKeyModifier.NONE;
+			if (parts.length > 1) {
+				modifier = getModifier(parts[1]);
+			}
+			return IDeserializeResult.success(defaultValue.withBinding(new ConfigKeyBinding(key.getName(), modifier)));
 		} catch (IllegalArgumentException e) {
-			return new KeyMappingDeserializeResult<>(null, e.getMessage());
+			return IDeserializeResult.failure(e.getMessage());
 		}
 	}
 

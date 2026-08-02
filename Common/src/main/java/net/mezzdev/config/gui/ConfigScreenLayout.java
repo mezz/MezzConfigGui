@@ -338,20 +338,23 @@ public final class ConfigScreenLayout {
 	}
 
 	private void updateContentAndScrollBarAreas() {
-		ImmutableRect2i contentColumnArea = contentScrollBarVisible ?
-			contentWithScrollArea.cropRight(SCROLLBAR_WIDTH + SCROLLBAR_GAP) :
-			contentWithScrollArea;
+		ImmutableRect2i contentColumnArea = contentWithScrollArea;
+		if (contentScrollBarVisible) {
+			contentColumnArea = contentWithScrollArea.cropRight(SCROLLBAR_WIDTH + SCROLLBAR_GAP);
+		}
 		contentArea = getScrollableContentArea(contentColumnArea);
 
-		scrollBarArea = contentScrollBarVisible ?
-			getScrollableContentArea(contentWithScrollArea.keepRight(SCROLLBAR_WIDTH)) :
-			ImmutableRect2i.EMPTY;
+		scrollBarArea = ImmutableRect2i.EMPTY;
+		if (contentScrollBarVisible) {
+			scrollBarArea = getScrollableContentArea(contentWithScrollArea.keepRight(SCROLLBAR_WIDTH));
+		}
 	}
 
 	private void updateNavScrollBarArea() {
-		navScrollBarArea = navScrollBarVisible ?
-			navArea.keepRight(SCROLLBAR_WIDTH) :
-			ImmutableRect2i.EMPTY;
+		navScrollBarArea = ImmutableRect2i.EMPTY;
+		if (navScrollBarVisible) {
+			navScrollBarArea = navArea.keepRight(SCROLLBAR_WIDTH);
+		}
 	}
 
 	private int getMaxNavScroll() {

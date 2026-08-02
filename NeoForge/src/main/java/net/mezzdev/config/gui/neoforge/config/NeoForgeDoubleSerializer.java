@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.neoforge.config;
 
+import net.mezzdev.config.api.value.IDeserializeResult;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 final class NeoForgeDoubleSerializer extends NeoForgeTextSerializer<Double> {
@@ -23,16 +24,16 @@ final class NeoForgeDoubleSerializer extends NeoForgeTextSerializer<Double> {
 	}
 
 	@Override
-	public NeoForgeDeserializeResult<Double> deserialize(String string) {
+	public IDeserializeResult<Double> deserialize(String string) {
 		string = string.trim();
 		try {
 			double value = Double.parseDouble(string);
 			if (!isValid(value)) {
-				return new NeoForgeDeserializeResult<>(null, "Invalid decimal number. Must be: " + getValidValuesDescription());
+				return IDeserializeResult.failure("Invalid decimal number. Must be: " + getValidValuesDescription());
 			}
-			return new NeoForgeDeserializeResult<>(value);
+			return IDeserializeResult.success(value);
 		} catch (NumberFormatException e) {
-			return new NeoForgeDeserializeResult<>(null, "Unable to parse decimal number: '%s' with error:\n%s".formatted(string, e.getMessage()));
+			return IDeserializeResult.failure("Unable to parse decimal number: '%s' with error:\n%s".formatted(string, e.getMessage()));
 		}
 	}
 

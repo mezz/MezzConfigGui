@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui.info;
 
-import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueIcon;
 import net.mezzdev.config.gui.api.IConfigValueIconProvider;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
@@ -18,20 +18,25 @@ public final class ConfigValueIcon {
 	public static final int ICON_SIZE = 18;
 	static final int TEXT_GAP = 3;
 	private static final int BUTTON_ICON_SIZE = 16;
+	private static final ResourceLocation ENABLED_ICON = ResourceLocation.withDefaultNamespace("container/beacon/confirm");
+	private static final ResourceLocation DISABLED_ICON = ResourceLocation.withDefaultNamespace("container/beacon/cancel");
 
 	private ConfigValueIcon() {
 
 	}
 
-	public static <T> int getTextOffset(IConfigValue<T> configValue, T value) {
+	public static <T> int getTextOffset(IConfigScreenValue<T> configValue, T value) {
 		return getTextOffset(configValue.getSerializer(), value);
 	}
 
 	public static <T> int getTextOffset(IConfigValueSerializer<T> serializer, T value) {
-		return getIcon(serializer, value).isEmpty() ? 0 : ICON_SIZE + TEXT_GAP;
+		if (getIcon(serializer, value).isEmpty()) {
+			return 0;
+		}
+		return ICON_SIZE + TEXT_GAP;
 	}
 
-	public static <T> void draw(GuiGraphics guiGraphics, IConfigValue<T> configValue, T value, int x, int y) {
+	public static <T> void draw(GuiGraphics guiGraphics, IConfigScreenValue<T> configValue, T value, int x, int y) {
 		draw(guiGraphics, configValue.getSerializer(), value, x, y);
 	}
 
@@ -40,7 +45,7 @@ public final class ConfigValueIcon {
 			.ifPresent(icon -> icon.draw(guiGraphics, new Rect2i(x, y, ICON_SIZE, ICON_SIZE)));
 	}
 
-	public static <T> void drawInButton(GuiGraphics guiGraphics, IConfigValue<T> configValue, T value, ImmutableRect2i buttonArea) {
+	public static <T> void drawInButton(GuiGraphics guiGraphics, IConfigScreenValue<T> configValue, T value, ImmutableRect2i buttonArea) {
 		getIcon(configValue.getSerializer(), value)
 			.ifPresent(icon -> {
 				int x = buttonArea.getX() + Math.round((buttonArea.getWidth() - BUTTON_ICON_SIZE) / 2.0f);
@@ -54,8 +59,10 @@ public final class ConfigValueIcon {
 		if (icon.isPresent()) {
 			return icon;
 		}
-		return serializer.getValueIcon(value)
-			.map(SpriteConfigValueIcon::new);
+		if (value instanceof Boolean booleanValue) {
+			return Optional.of(new SpriteConfigValueIcon(getBooleanIconLocation(booleanValue)));
+		}
+		return Optional.empty();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -65,6 +72,13 @@ public final class ConfigValueIcon {
 			return typedIconProvider.getIcon(value);
 		}
 		return Optional.empty();
+	}
+
+	private static ResourceLocation getBooleanIconLocation(boolean value) {
+		if (value) {
+			return ENABLED_ICON;
+		}
+		return DISABLED_ICON;
 	}
 
 	private record SpriteConfigValueIcon(ResourceLocation location) implements IConfigValueIcon {

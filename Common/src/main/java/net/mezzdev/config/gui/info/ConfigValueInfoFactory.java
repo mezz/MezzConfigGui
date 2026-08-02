@@ -1,8 +1,9 @@
 package net.mezzdev.config.gui.info;
 
-import net.mezzdev.config.api.value.ConfigValueUpdateType;
-import net.mezzdev.config.api.value.IConfigValue;
+import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.ConfigInfo;
+import net.mezzdev.config.gui.api.ConfigValueLocalization;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,13 +19,13 @@ public final class ConfigValueInfoFactory {
 	}
 
 	@Nullable
-	public static <T> ConfigInfo create(IConfigValue<T> configValue, T value, boolean hasPendingChange) {
+	public static <T> ConfigInfo create(IConfigScreenValue<T> configValue, T value, boolean hasPendingChange) {
 		return getValueTooltipDescription(configValue, value)
 			.map(description -> appendUpdateInfo(configValue, new ConfigInfo(description, List.of()), hasPendingChange))
 			.orElseGet(() -> createUpdateInfo(configValue, value, hasPendingChange));
 	}
 
-	public static ConfigInfo createBooleanToggle(IConfigValue<Boolean> configValue, boolean value, boolean hasPendingChange) {
+	public static ConfigInfo createBooleanToggle(IConfigScreenValue<Boolean> configValue, boolean value, boolean hasPendingChange) {
 		Component description = getValueDescription(configValue, value);
 		Component action = Component.translatableWithFallback(
 			"mezz_config.config.value.boolean.clickTo",
@@ -34,12 +35,12 @@ public final class ConfigValueInfoFactory {
 		return appendUpdateInfo(configValue, new ConfigInfo(description, action), hasPendingChange);
 	}
 
-	public static ConfigInfo createSharedInfo(IConfigValue<?> configValue, boolean hasPendingChange) {
-		ConfigInfo info = new ConfigInfo(configValue.getLocalizedName(), configValue.getLocalizedDescription());
+	public static ConfigInfo createSharedInfo(IConfigScreenValue<?> configValue, boolean hasPendingChange) {
+		ConfigInfo info = new ConfigInfo(ConfigValueLocalization.getName(configValue), ConfigValueLocalization.getDescription(configValue));
 		return appendUpdateInfo(configValue, info, hasPendingChange);
 	}
 
-	public static ConfigInfo createResetInfo(IConfigValue<?> configValue) {
+	public static ConfigInfo createResetInfo(IConfigScreenValue<?> configValue) {
 		ConfigInfo info = new ConfigInfo(
 			Component.translatable("mezz_config.config.screen.reset"),
 			Component.translatable("mezz_config.config.screen.reset.value.info")
@@ -48,20 +49,20 @@ public final class ConfigValueInfoFactory {
 	}
 
 	@Nullable
-	public static <T> ConfigInfo createUpdateInfo(IConfigValue<T> configValue, T value, boolean hasPendingChange) {
+	public static <T> ConfigInfo createUpdateInfo(IConfigScreenValue<T> configValue, T value, boolean hasPendingChange) {
 		return getUpdateInfo(configValue, hasPendingChange)
 			.map(updateInfo -> new ConfigInfo(getValueName(configValue, value), updateInfo))
 			.orElse(null);
 	}
 
 	@Nullable
-	public static <T> ConfigInfo createPendingChangeValueInfo(IConfigValue<T> configValue, T value) {
+	public static <T> ConfigInfo createPendingChangeValueInfo(IConfigScreenValue<T> configValue, T value) {
 		return getSpecificValueDescription(configValue, value)
 			.map(description -> new ConfigInfo(description, List.of()))
 			.orElse(null);
 	}
 
-	private static ConfigInfo appendUpdateInfo(IConfigValue<?> configValue, ConfigInfo info, boolean hasPendingChange) {
+	private static ConfigInfo appendUpdateInfo(IConfigScreenValue<?> configValue, ConfigInfo info, boolean hasPendingChange) {
 		Optional<Component> updateInfo = getUpdateInfo(configValue, hasPendingChange);
 		if (updateInfo.isEmpty()) {
 			return info;
@@ -71,21 +72,37 @@ public final class ConfigValueInfoFactory {
 		return new ConfigInfo(info.title(), lines);
 	}
 
-	private static Optional<Component> getUpdateInfo(IConfigValue<?> configValue, boolean hasPendingChange) {
-		ConfigValueUpdateType updateType = configValue.getUpdateType();
-		return switch (updateType) {
-			case IMMEDIATE -> Optional.empty();
-			case ON_APPLY -> Optional.of(Component.translatable(hasPendingChange ? "mezz_config.config.screen.update.onApply.pending" : "mezz_config.config.screen.update.onApply.info"));
-			case RESTART -> Optional.of(Component.translatable(hasPendingChange ? "mezz_config.config.screen.update.restart.pending" : "mezz_config.config.screen.update.restart.info"));
-		};
+	private static Optional<Component> getUpdateInfo(IConfigScreenValue<?> configValue, boolean hasPendingChange) {
+		if (configValue.requiresRestart()) {
+			return Optional.of(getUpdateInfoComponent(
+				hasPendingChange,
+				"mezz_config.config.screen.update.restart.pending",
+				"mezz_config.config.screen.update.restart.info"
+			));
+		}
+		if (configValue.getApplyMode() == ConfigValueApplyMode.ON_APPLY) {
+			return Optional.of(getUpdateInfoComponent(
+				hasPendingChange,
+				"mezz_config.config.screen.update.onApply.pending",
+				"mezz_config.config.screen.update.onApply.info"
+			));
+		}
+		return Optional.empty();
 	}
 
-	private static <T> Component getValueDescription(IConfigValue<T> configValue, T value) {
+	private static Component getUpdateInfoComponent(boolean hasPendingChange, String pendingKey, String infoKey) {
+		if (hasPendingChange) {
+			return Component.translatable(pendingKey);
+		}
+		return Component.translatable(infoKey);
+	}
+
+	private static <T> Component getValueDescription(IConfigScreenValue<T> configValue, T value) {
 		return getSpecificValueDescription(configValue, value)
 			.orElseGet(() -> getValueName(configValue, value));
 	}
 
-	private static <T> Optional<Component> getValueTooltipDescription(IConfigValue<T> configValue, T value) {
+	private static <T> Optional<Component> getValueTooltipDescription(IConfigScreenValue<T> configValue, T value) {
 		Optional<Component> valueDescription = getSpecificValueDescription(configValue, value);
 		if (valueDescription.isPresent()) {
 			return valueDescription;
@@ -93,16 +110,14 @@ public final class ConfigValueInfoFactory {
 		if (configValue.getSerializer().getAllValidValues().isPresent()) {
 			return Optional.empty();
 		}
-		return Optional.of(configValue.getLocalizedDescription());
+		return Optional.of(ConfigValueLocalization.getDescription(configValue));
 	}
 
-	private static <T> Component getValueName(IConfigValue<T> configValue, T value) {
-		return configValue.getSerializer()
-			.getLocalizedValueName(configValue.getLocalizationKey(), value);
+	private static <T> Component getValueName(IConfigScreenValue<T> configValue, T value) {
+		return ConfigValueLocalization.getValueName(configValue, value);
 	}
 
-	private static <T> Optional<Component> getSpecificValueDescription(IConfigValue<T> configValue, T value) {
-		return configValue.getSerializer()
-			.getLocalizedValueDescription(configValue.getLocalizationKey(), value);
+	private static <T> Optional<Component> getSpecificValueDescription(IConfigScreenValue<T> configValue, T value) {
+		return ConfigValueLocalization.getValueDescription(configValue, value);
 	}
 }

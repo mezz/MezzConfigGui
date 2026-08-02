@@ -8,8 +8,7 @@ import java.util.function.Supplier;
 
 final class ConfigKeyMappingPlatformServices {
 	private static final Logger LOGGER = LogManager.getLogger();
-	public static final IConfigKeyMappingPlatformHelper PLATFORM_HELPER =
-		load(IConfigKeyMappingPlatformHelper.class, VanillaConfigKeyMappingPlatformHelper::new);
+	public static final IConfigKeyMappingPlatformHelper PLATFORM_HELPER = load(IConfigKeyMappingPlatformHelper.class, VanillaConfigKeyMappingPlatformHelper::new);
 
 	private ConfigKeyMappingPlatformServices() {
 

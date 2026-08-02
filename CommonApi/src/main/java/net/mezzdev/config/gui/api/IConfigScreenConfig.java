@@ -1,6 +1,6 @@
 package net.mezzdev.config.gui.api;
 
-import net.mezzdev.config.api.schema.IConfigEditableSchema;
+import net.mezzdev.config.api.schema.IConfigSchema;
 import net.minecraft.network.chat.Component;
 
 /**
@@ -28,7 +28,7 @@ public interface IConfigScreenConfig {
 	 *
 	 * @since 0.1.0
 	 */
-	IConfigEditableSchema getSchema();
+	IConfigSchema getSchema();
 
 	/**
 	 * Called when applying saved changes requires the owner mod to restart or reload.

@@ -1,13 +1,14 @@
 package net.mezzdev.config.gui;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import net.mezzdev.config.api.schema.IConfigCategory;
-import net.mezzdev.config.api.value.ConfigValueEditorType;
-import net.mezzdev.config.api.value.ConfigValueEditorTypes;
-import net.mezzdev.config.api.value.ConfigValueUpdateType;
-import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.api.value.IConfigValueEditorSerializer;
+import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.gui.api.ConfigValueApplyMode;
+import net.mezzdev.config.gui.api.ConfigValueEditorType;
+import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
+import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenBuilder;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
+import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
@@ -32,7 +33,7 @@ class ConfigGuiPluginLoaderTest {
 		TestConfigValue keyMappingValue = new TestConfigValue("key.test_mod.open");
 		TestCategory originalCategory = new TestCategory("general", List.of(originalValue));
 
-		List<IConfigCategory> categories = createCategories(
+		List<ConfigScreenCategory> categories = createCategories(
 			List.of(originalCategory),
 			screenBuilder -> {},
 			(modId, allValues) -> {
@@ -50,7 +51,7 @@ class ConfigGuiPluginLoaderTest {
 	void skipsDefaultKeyMappingsCategoryWhenNoMappingsAreDetected() {
 		TestCategory originalCategory = new TestCategory("general", List.of(new TestConfigValue("enabled")));
 
-		List<IConfigCategory> categories = createCategories(
+		List<ConfigScreenCategory> categories = createCategories(
 			List.of(originalCategory),
 			screenBuilder -> {},
 			(modId, allValues) -> List.of()
@@ -63,7 +64,7 @@ class ConfigGuiPluginLoaderTest {
 	void usesConfiguredKeyMappingsCategoryForDefaultMappingsWhenNoMappingsWereAddedExplicitly() {
 		TestConfigValue keyMappingValue = new TestConfigValue("key.test_mod.open");
 
-		List<IConfigCategory> categories = createCategories(
+		List<ConfigScreenCategory> categories = createCategories(
 			List.of(),
 			screenBuilder -> screenBuilder.addCategory("keyMappings")
 				.setTitle(Component.literal("Controls")),
@@ -81,7 +82,7 @@ class ConfigGuiPluginLoaderTest {
 		KeyMapping primaryKeyMapping = keyMapping("key.test_mod.primary", GLFW.GLFW_KEY_K);
 		KeyMapping secondaryKeyMapping = keyMapping("key.test_mod.secondary", GLFW.GLFW_KEY_L);
 
-		List<IConfigCategory> categories = createCategories(
+		List<ConfigScreenCategory> categories = createCategories(
 			List.of(),
 			screenBuilder -> {
 				screenBuilder.addCategory("primaryKeys")
@@ -108,10 +109,10 @@ class ConfigGuiPluginLoaderTest {
 		TestConfigValue modeValue = new TestConfigValue("mode");
 		TestCategory originalCategory = new TestCategory("controls", List.of(primaryValue, secondaryValue, modeValue));
 
-		List<IConfigCategory> categories = createCategories(
+		List<ConfigScreenCategory> categories = createCategories(
 			List.of(originalCategory),
 			screenBuilder -> screenBuilder.addCategory("controls")
-				.addValue(modeValue),
+				.addScreenValue(modeValue),
 			(modId, allValues) -> List.of()
 		);
 
@@ -127,10 +128,10 @@ class ConfigGuiPluginLoaderTest {
 		TestCategory generalCategory = new TestCategory("general", List.of(generalValue));
 		TestCategory advancedCategory = new TestCategory("advanced", List.of(advancedValue));
 
-		List<IConfigCategory> categories = createCategories(
+		List<ConfigScreenCategory> categories = createCategories(
 			List.of(generalCategory, advancedCategory),
 			screenBuilder -> screenBuilder.addCategory("overview")
-				.addValue(overviewValue),
+				.addScreenValue(overviewValue),
 			(modId, allValues) -> List.of()
 		);
 
@@ -146,10 +147,10 @@ class ConfigGuiPluginLoaderTest {
 		TestCategory generalCategory = new TestCategory("general", List.of(generalValue));
 		TestCategory advancedCategory = new TestCategory("advanced", List.of(advancedValue));
 
-		List<IConfigCategory> categories = createCategories(
+		List<ConfigScreenCategory> categories = createCategories(
 			List.of(generalCategory, advancedCategory),
 			screenBuilder -> screenBuilder.configureCategory("advanced")
-				.addValue(replacementValue),
+				.addScreenValue(replacementValue),
 			(modId, allValues) -> List.of()
 		);
 
@@ -162,7 +163,7 @@ class ConfigGuiPluginLoaderTest {
 		TestConfigValue advancedValue = new TestConfigValue("refreshTicks");
 		TestCategory advancedCategory = new TestCategory("advanced", List.of(advancedValue));
 
-		List<IConfigCategory> categories = createCategories(
+		List<ConfigScreenCategory> categories = createCategories(
 			List.of(advancedCategory),
 			screenBuilder -> screenBuilder.configureCategory("advanced")
 				.setTitle(Component.literal("Advanced Settings")),
@@ -174,8 +175,27 @@ class ConfigGuiPluginLoaderTest {
 		assertEquals(List.of("refreshTicks"), valueNames(categories.getFirst()));
 	}
 
-	private static List<IConfigCategory> createCategories(
-		List<? extends IConfigCategory> originalCategories,
+	@Test
+	void appliesConfiguredApplyModesToCategoryValues() {
+		TestConfigValue immediateValue = new TestConfigValue("enabled");
+		TestConfigValue onApplyValue = new TestConfigValue("mode");
+		TestCategory originalCategory = new TestCategory("general", List.of(immediateValue, onApplyValue));
+
+		List<ConfigScreenCategory> categories = createCategories(
+			List.of(originalCategory),
+			screenBuilder -> screenBuilder.configureCategory("general")
+				.setDefaultApplyMode(ConfigValueApplyMode.IMMEDIATE)
+				.setScreenValueApplyMode(onApplyValue, ConfigValueApplyMode.ON_APPLY),
+			(modId, allValues) -> List.of()
+		);
+
+		List<? extends IConfigScreenValue<?>> values = List.copyOf(categories.getFirst().getConfigValues());
+		assertEquals(ConfigValueApplyMode.IMMEDIATE, values.get(0).getApplyMode());
+		assertEquals(ConfigValueApplyMode.ON_APPLY, values.get(1).getApplyMode());
+	}
+
+	private static List<ConfigScreenCategory> createCategories(
+		List<? extends ConfigScreenCategory> originalCategories,
 		Consumer<IConfigScreenBuilder> screenCustomizer,
 		ConfigGuiPluginLoader.ConfigScreenValueProvider defaultKeyMappingsProvider
 	) {
@@ -187,16 +207,16 @@ class ConfigGuiPluginLoaderTest {
 		);
 	}
 
-	private static List<String> categoryNames(List<IConfigCategory> categories) {
+	private static List<String> categoryNames(List<ConfigScreenCategory> categories) {
 		return categories.stream()
-			.map(IConfigCategory::getName)
+			.map(ConfigScreenCategory::getName)
 			.toList();
 	}
 
-	private static List<String> valueNames(IConfigCategory category) {
+	private static List<String> valueNames(ConfigScreenCategory category) {
 		return category.getConfigValues()
 			.stream()
-			.map(IConfigValue::getName)
+			.map(IConfigScreenValue::getName)
 			.toList();
 	}
 
@@ -211,10 +231,15 @@ class ConfigGuiPluginLoaderTest {
 
 	private record TestCategory(
 		String name,
-		List<IConfigValue<?>> values
-	) implements IConfigCategory {
+		List<IConfigScreenValue<?>> values
+	) implements ConfigScreenCategory {
 		@Override
 		public String getName() {
+			return name;
+		}
+
+		@Override
+		public String getLocalizationKey() {
 			return name;
 		}
 
@@ -229,14 +254,14 @@ class ConfigGuiPluginLoaderTest {
 		}
 
 		@Override
-		public Collection<? extends IConfigValue<?>> getConfigValues() {
+		public Collection<? extends IConfigScreenValue<?>> getConfigValues() {
 			return values;
 		}
 	}
 
 	private record TestConfigValue(
 		String name
-	) implements IConfigValue<String> {
+	) implements IConfigScreenValue<String>, IConfigLocalizedValue {
 		@Override
 		public String getName() {
 			return name;
@@ -278,11 +303,6 @@ class ConfigGuiPluginLoaderTest {
 		}
 
 		@Override
-		public ConfigValueUpdateType getUpdateType() {
-			return ConfigValueUpdateType.IMMEDIATE;
-		}
-
-		@Override
 		public IConfigValueEditorSerializer<String> getSerializer() {
 			return TestSerializer.INSTANCE;
 		}
@@ -298,7 +318,7 @@ class ConfigGuiPluginLoaderTest {
 
 		@Override
 		public IDeserializeResult<String> deserialize(String string) {
-			return new TestDeserializeResult(string);
+			return IDeserializeResult.success(string);
 		}
 
 		@Override
@@ -327,17 +347,4 @@ class ConfigGuiPluginLoaderTest {
 		}
 	}
 
-	private record TestDeserializeResult(
-		String value
-	) implements IConfigValueEditorSerializer.IDeserializeResult<String> {
-		@Override
-		public Optional<String> getResult() {
-			return Optional.of(value);
-		}
-
-		@Override
-		public List<String> getErrors() {
-			return List.of();
-		}
-	}
 }

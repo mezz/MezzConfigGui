@@ -16,7 +16,8 @@ final class ConfigScreenGuiHandler implements IGlobalGuiHandler {
 	@Override
 	public Collection<Rect2i> getGuiExtraAreas() {
 		Minecraft minecraft = Minecraft.getInstance();
-		@Nullable Rect2i selectorArea = getValueSelectorArea(minecraft.screen);
+		@Nullable
+		Rect2i selectorArea = getValueSelectorArea(minecraft.screen);
 		if (selectorArea != null) {
 			return List.of(selectorArea);
 		}

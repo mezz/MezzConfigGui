@@ -47,7 +47,7 @@ val parchmentVersionFabric: String by extra
 val jsr305Version: String by extra
 val mezzConfigVersion: String by extra
 val mezzConfigApiDependency: String by rootProject.extra
-val mezzConfigApiFabricDependency: String by rootProject.extra
+val mezzConfigFabricDependency: String by rootProject.extra
 val configGuiApiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui-api")
 val testModId = "mezz_config_gui_test_fabric_defaults"
 
@@ -86,8 +86,7 @@ dependencies {
     compileOnly("com.google.code.findbugs:jsr305:$jsr305Version")
     compileOnly(mezzConfigApiDependency)
     compileOnly(configGuiApiProject)
-    modRuntimeOnly(mezzConfigApiFabricDependency)
-    modRuntimeOnly("$configModGroup:${configModId}-${minecraftVersion}-fabric:$mezzConfigVersion")
+    modRuntimeOnly(mezzConfigFabricDependency)
 }
 
 loom {

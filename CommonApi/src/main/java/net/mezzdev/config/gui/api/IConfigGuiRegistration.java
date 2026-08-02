@@ -1,8 +1,6 @@
 package net.mezzdev.config.gui.api;
 
-import net.mezzdev.config.api.schema.IConfigEditableSchema;
-import net.mezzdev.config.api.value.ConfigValueEditorType;
-import net.mezzdev.config.api.value.ConfigValueUpdateType;
+import net.mezzdev.config.api.schema.IConfigSchema;
 import net.minecraft.network.chat.Component;
 
 import java.util.function.Consumer;
@@ -53,7 +51,7 @@ public interface IConfigGuiRegistration {
 	 * Register a config screen.
 	 *
 	 * The restart handler is called when applying saved changes requires the owner mod to restart or reload
-	 * (see {@link ConfigValueUpdateType#RESTART}). Return {@link ConfigRestartResult#NEXT_GAME_START} when the mod
+	 * (see {@link net.mezzdev.config.api.value.IConfigValue#requiresRestart()}). Return {@link ConfigRestartResult#NEXT_GAME_START} when the mod
 	 * cannot apply the saved changes until the game starts again.
 	 *
 	 * @param title the title shown at the top of the config screen
@@ -64,7 +62,7 @@ public interface IConfigGuiRegistration {
 	 */
 	void registerScreen(
 		Component title,
-		Supplier<? extends IConfigEditableSchema> schemaSupplier,
+		Supplier<? extends IConfigSchema> schemaSupplier,
 		IConfigRestartHandler restartHandler
 	);
 }

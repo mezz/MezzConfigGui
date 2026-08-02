@@ -1,12 +1,13 @@
 package net.mezzdev.config.gui.entries;
 
-import net.mezzdev.config.api.value.IConfigListValueSerializer;
-import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.gui.ConfigInputHandler;
 import net.mezzdev.config.gui.ConfigInputUtil;
 import net.mezzdev.config.gui.api.ConfigInfo;
+import net.mezzdev.config.gui.api.ConfigValueLocalization;
+import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigListValueEditorOptions;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.info.ConfigValueIcon;
 import net.mezzdev.config.gui.info.ConfigValueInfoFactory;
 import net.mezzdev.config.gui.input.UserInput;
@@ -70,14 +71,14 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	private DragSession dragSession;
 
 	ListConfigEntry(
-		IConfigValue<List<T>> listValue,
-		IConfigListValueSerializer<T> listSerializer,
+		IConfigScreenValue<List<T>> listValue,
+		IConfigListValueEditorSerializer<T> listSerializer,
 		Runnable layoutUpdater,
 		ConfigTextures textures
 	) {
 		super(listValue, textures);
 		this.layoutUpdater = layoutUpdater;
-		this.elementSerializer = listSerializer.getListValueSerializer();
+		this.elementSerializer = listSerializer.getElementSerializer();
 		this.allowsRemovingValues = !(listSerializer instanceof IConfigListValueEditorOptions editorOptions) ||
 			editorOptions.allowsRemovingValues();
 		this.allValidValues = elementSerializer.getAllValidValues()
@@ -132,30 +133,30 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		int unusedValueTopGap = getUnusedValueTopGap();
 		if (rowCount > 0) {
 			valueGroupArea = new ImmutableRect2i(
-					area.getX() + 4,
-					y - 1,
-					Math.max(0, area.getWidth() - 8),
-					rowCount * ENTRY_ROW_HEIGHT + unusedValueTopGap + VALUE_GROUP_BORDER_SIZE * 2
+				area.getX() + 4,
+				y - 1,
+				Math.max(0, area.getWidth() - 8),
+				rowCount * ENTRY_ROW_HEIGHT + unusedValueTopGap + VALUE_GROUP_BORDER_SIZE * 2
 			);
 		} else {
 			valueGroupArea = ImmutableRect2i.EMPTY;
 		}
 		for (ListValueRow row : valueRows) {
 			row.updateBounds(new ImmutableRect2i(
-					valueGroupArea.getX() + VALUE_GROUP_BORDER_SIZE,
-					y,
-					Math.max(0, valueGroupArea.getWidth() - VALUE_GROUP_BORDER_SIZE * 2),
-					ENTRY_ROW_HEIGHT
+				valueGroupArea.getX() + VALUE_GROUP_BORDER_SIZE,
+				y,
+				Math.max(0, valueGroupArea.getWidth() - VALUE_GROUP_BORDER_SIZE * 2),
+				ENTRY_ROW_HEIGHT
 			));
 			y += ENTRY_ROW_HEIGHT;
 		}
 		y += unusedValueTopGap;
 		for (ListValueRow row : unusedValueRows) {
 			row.updateBounds(new ImmutableRect2i(
-					valueGroupArea.getX() + VALUE_GROUP_BORDER_SIZE,
-					y,
-					Math.max(0, valueGroupArea.getWidth() - VALUE_GROUP_BORDER_SIZE * 2),
-					ENTRY_ROW_HEIGHT
+				valueGroupArea.getX() + VALUE_GROUP_BORDER_SIZE,
+				y,
+				Math.max(0, valueGroupArea.getWidth() - VALUE_GROUP_BORDER_SIZE * 2),
+				ENTRY_ROW_HEIGHT
 			));
 			y += ENTRY_ROW_HEIGHT;
 		}
@@ -173,7 +174,8 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		drawName(guiGraphics);
 
 		drawValueGroup(guiGraphics, valueGroupArea);
-		@Nullable DragSession dragSession = this.dragSession;
+		@Nullable
+		DragSession dragSession = this.dragSession;
 		for (ListValueRow row : valueRows) {
 			if (dragSession != null && dragSession.isDragging(row)) {
 				row.drawDragGap(guiGraphics);
@@ -214,7 +216,8 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	@Override
 	@Nullable
 	public ConfigInfo getTooltipInfo(double mouseX, double mouseY) {
-		@Nullable ConfigInfo resetInfo = super.getTooltipInfo(mouseX, mouseY);
+		@Nullable
+		ConfigInfo resetInfo = super.getTooltipInfo(mouseX, mouseY);
 		if (resetInfo != null) {
 			return resetInfo;
 		}
@@ -224,28 +227,28 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		for (ListValueRow row : valueRows) {
 			if (row.moveUpArea.contains(mouseX, mouseY)) {
 				return new ConfigInfo(
-						Component.translatable("mezz_config.config.screen.moveUp"),
-						List.of()
+					Component.translatable("mezz_config.config.screen.moveUp"),
+					List.of()
 				);
 			}
 			if (row.moveDownArea.contains(mouseX, mouseY)) {
 				return new ConfigInfo(
-						Component.translatable("mezz_config.config.screen.moveDown"),
-						List.of()
+					Component.translatable("mezz_config.config.screen.moveDown"),
+					List.of()
 				);
 			}
 			if (row.deleteArea.contains(mouseX, mouseY)) {
 				return new ConfigInfo(
-						Component.translatable("mezz_config.config.screen.remove"),
-						List.of()
+					Component.translatable("mezz_config.config.screen.remove"),
+					List.of()
 				);
 			}
 		}
 		for (ListValueRow row : unusedValueRows) {
 			if (row.addArea.contains(mouseX, mouseY)) {
 				return new ConfigInfo(
-						Component.translatable("mezz_config.config.screen.add"),
-						List.of()
+					Component.translatable("mezz_config.config.screen.add"),
+					List.of()
 				);
 			}
 		}
@@ -266,7 +269,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		List<T> newValue = getValue();
 		Component valueChange = getListChangeSummary(oldValue, newValue);
 		return Optional.of(PendingConfigChange.createSummary(
-			configValue.getLocalizedName(),
+			ConfigValueLocalization.getName(configValue),
 			valueChange,
 			getInfo()
 		));
@@ -316,7 +319,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		return findSingleMove(oldValue, newValue)
 			.<Component>map(move -> Component.translatable(
 				"mezz_config.config.screen.pendingChanges.list.move",
-				elementSerializer.getLocalizedValueName(configValue.getLocalizationKey(), move.value()),
+				ConfigValueLocalization.getValueName(elementSerializer, configValue.getLocalizationKey(), move.value()),
 				move.oldIndex() + 1,
 				move.newIndex() + 1
 			))
@@ -583,7 +586,8 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		}
 
 		public void drawFloatingRow(GuiGraphics guiGraphics) {
-			@Nullable ListValueRow row = getDraggingRow();
+			@Nullable
+			ListValueRow row = getDraggingRow();
 			if (row != null) {
 				row.drawFloating(guiGraphics, getFloatingRowY());
 			}
@@ -629,13 +633,16 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			int cy = area.getY() + (area.getHeight() - BUTTON_SIZE) / 2;
 			addArea = ImmutableRect2i.EMPTY;
 			if (selected) {
-				deleteArea = allowsRemovingValues ? createButtonArea(area, cy, 0) : ImmutableRect2i.EMPTY;
+				deleteArea = ImmutableRect2i.EMPTY;
+				if (allowsRemovingValues) {
+					deleteArea = createButtonArea(area, cy, 0);
+				}
 			} else {
 				deleteArea = ImmutableRect2i.EMPTY;
 				addArea = createButtonArea(area, cy, 0);
 			}
 			if (selected) {
-				int moveButtonOffset = allowsRemovingValues ? 1 : 0;
+				int moveButtonOffset = getMoveButtonOffset();
 				moveDownArea = createButtonArea(area, cy, moveButtonOffset);
 				moveUpArea = createButtonArea(area, cy, moveButtonOffset + 1);
 			} else {
@@ -644,13 +651,20 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			}
 		}
 
+		private int getMoveButtonOffset() {
+			if (allowsRemovingValues) {
+				return 1;
+			}
+			return 0;
+		}
+
 		private ImmutableRect2i createButtonArea(ImmutableRect2i area, int y, int buttonsFromRight) {
 			int xOffset = (BUTTON_SIZE + BUTTON_GAP) * buttonsFromRight;
 			return new ImmutableRect2i(
-					area.getX() + area.getWidth() - BUTTON_SIZE - xOffset,
-					y,
-					BUTTON_SIZE,
-					BUTTON_SIZE
+				area.getX() + area.getWidth() - BUTTON_SIZE - xOffset,
+				y,
+				BUTTON_SIZE,
+				BUTTON_SIZE
 			);
 		}
 
@@ -664,9 +678,9 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 
 		boolean isControlMouseOver(double mouseX, double mouseY) {
 			return moveUpArea.contains(mouseX, mouseY) ||
-					moveDownArea.contains(mouseX, mouseY) ||
-					deleteArea.contains(mouseX, mouseY) ||
-					addArea.contains(mouseX, mouseY);
+				moveDownArea.contains(mouseX, mouseY) ||
+				deleteArea.contains(mouseX, mouseY) ||
+				addArea.contains(mouseX, mouseY);
 		}
 
 		boolean canStartDrag(double mouseX, double mouseY) {
@@ -677,7 +691,10 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 
 		private int getControlsWidth() {
 			if (selected) {
-				return allowsRemovingValues ? ROW_BUTTONS_WIDTH : ROW_MOVE_BUTTONS_WIDTH;
+				if (allowsRemovingValues) {
+					return ROW_BUTTONS_WIDTH;
+				}
+				return ROW_MOVE_BUTTONS_WIDTH;
 			}
 			return BUTTON_SIZE;
 		}
@@ -718,8 +735,8 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 
 			int backgroundColor = getBackgroundColor(floating);
 			guiGraphics.fill(rowArea.getX(), rowArea.getY(),
-					rowArea.getX() + rowArea.getWidth(), rowArea.getY() + rowArea.getHeight(),
-					backgroundColor);
+				rowArea.getX() + rowArea.getWidth(), rowArea.getY() + rowArea.getHeight(),
+				backgroundColor);
 			if (index > 0) {
 				guiGraphics.fill(rowArea.getX(), rowArea.getY(), rowArea.getX() + rowArea.getWidth(), rowArea.getY() + 1, ORDERED_ROW_DIVIDER_COLOR);
 			}
@@ -730,16 +747,16 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 				drawOrderNumber(guiGraphics, font, rowArea);
 			}
 
-			Component valueName = elementSerializer.getLocalizedValueName(configValue.getLocalizationKey(), value);
+			Component valueName = ConfigValueLocalization.getValueName(elementSerializer, configValue.getLocalizationKey(), value);
 			int textX = rowArea.getX() + VALUE_ROW_HORIZONTAL_PADDING + ORDERED_ROW_NUMBER_WIDTH;
 			int iconY = rowArea.getY() + (rowArea.getHeight() - ConfigValueIcon.ICON_SIZE) / 2;
 			ConfigValueIcon.draw(guiGraphics, elementSerializer, value, textX, iconY);
 			textX += ConfigValueIcon.getTextOffset(elementSerializer, value);
 			ImmutableRect2i textArea = new ImmutableRect2i(
-					textX,
-					rowArea.getY(),
-					Math.max(0, rowArea.getX() + rowArea.getWidth() - textX - getControlsWidth() - 6),
-					rowArea.getHeight()
+				textX,
+				rowArea.getY(),
+				Math.max(0, rowArea.getX() + rowArea.getWidth() - textX - getControlsWidth() - 6),
+				rowArea.getHeight()
 			);
 			int textColor = TEXT_COLOR;
 			if (!selected) {
@@ -764,7 +781,10 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			if (floating) {
 				return ORDERED_ROW_DRAG_FLOAT_BACKGROUND_COLOR;
 			}
-			return selected ? ORDERED_ROW_BACKGROUND_COLOR : UNUSED_ROW_BACKGROUND_COLOR;
+			if (selected) {
+				return ORDERED_ROW_BACKGROUND_COLOR;
+			}
+			return UNUSED_ROW_BACKGROUND_COLOR;
 		}
 
 		private void drawFloatingHighlight(GuiGraphics guiGraphics, ImmutableRect2i rowArea) {
@@ -787,7 +807,8 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		}
 
 		private int getDisplayIndex() {
-			@Nullable DragSession dragSession = ListConfigEntry.this.dragSession;
+			@Nullable
+			DragSession dragSession = ListConfigEntry.this.dragSession;
 			if (dragSession != null) {
 				return dragSession.getDisplayIndex(this);
 			}
@@ -795,13 +816,13 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		}
 
 		private void drawMoveButton(
-				GuiGraphics guiGraphics,
-				ConfigTextures textures,
-				ImmutableRect2i buttonArea,
-				ConfigDrawableStatic icon,
-				boolean active,
-				double mouseX,
-				double mouseY
+			GuiGraphics guiGraphics,
+			ConfigTextures textures,
+			ImmutableRect2i buttonArea,
+			ConfigDrawableStatic icon,
+			boolean active,
+			double mouseX,
+			double mouseY
 		) {
 			boolean hovered = active && buttonArea.contains(mouseX, mouseY);
 			ConfigEntryWidget.drawButtonBackground(guiGraphics, textures, buttonArea, active, hovered);
@@ -822,13 +843,20 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		private void drawDeleteButton(GuiGraphics guiGraphics, ConfigTextures textures, Font font, double mouseX, double mouseY) {
 			boolean deleteHovered = deleteArea.contains(mouseX, mouseY);
 			ConfigEntryWidget.drawButtonBackground(guiGraphics, textures, deleteArea, true, deleteHovered);
-			ConfigEntryWidget.drawCenteredButtonText(guiGraphics, font, "x", deleteArea, deleteHovered ? HOVER_TEXT_COLOR : TEXT_COLOR);
+			ConfigEntryWidget.drawCenteredButtonText(guiGraphics, font, "x", deleteArea, getControlTextColor(deleteHovered));
 		}
 
 		private void drawAddButton(GuiGraphics guiGraphics, ConfigTextures textures, Font font, double mouseX, double mouseY) {
 			boolean addHovered = addArea.contains(mouseX, mouseY);
 			ConfigEntryWidget.drawButtonBackground(guiGraphics, textures, addArea, true, addHovered);
-			ConfigEntryWidget.drawCenteredButtonText(guiGraphics, font, "+", addArea, addHovered ? HOVER_TEXT_COLOR : TEXT_COLOR);
+			ConfigEntryWidget.drawCenteredButtonText(guiGraphics, font, "+", addArea, getControlTextColor(addHovered));
+		}
+
+		private static int getControlTextColor(boolean hovered) {
+			if (hovered) {
+				return HOVER_TEXT_COLOR;
+			}
+			return TEXT_COLOR;
 		}
 	}
 

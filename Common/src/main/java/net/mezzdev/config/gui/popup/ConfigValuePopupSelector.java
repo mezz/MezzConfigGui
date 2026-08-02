@@ -1,10 +1,11 @@
 package net.mezzdev.config.gui.popup;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import net.mezzdev.config.api.value.IConfigValue;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValuePopup;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.info.ConfigValueInfoFactory;
+import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.input.UserInput;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.gui.GuiGraphics;
@@ -20,7 +21,7 @@ import java.util.function.Supplier;
  * Adapts config value popup content to the internal popup selector lifecycle.
  */
 public final class ConfigValuePopupSelector<T> implements ConfigPopupSelector {
-	private final IConfigValue<T> configValue;
+	private final IConfigScreenValue<T> configValue;
 	private final IConfigValuePopup<T> popup;
 	private final Supplier<ImmutableRect2i> anchorAreaSupplier;
 	private final BooleanSupplier pendingChangeSupplier;
@@ -28,7 +29,7 @@ public final class ConfigValuePopupSelector<T> implements ConfigPopupSelector {
 	private ImmutableRect2i area = ImmutableRect2i.EMPTY;
 
 	public ConfigValuePopupSelector(
-		IConfigValue<T> configValue,
+		IConfigScreenValue<T> configValue,
 		IConfigValuePopup<T> popup,
 		Supplier<ImmutableRect2i> anchorAreaSupplier,
 		BooleanSupplier pendingChangeSupplier,
@@ -58,7 +59,7 @@ public final class ConfigValuePopupSelector<T> implements ConfigPopupSelector {
 
 	@Override
 	public ConfigInfo getInfo() {
-		return new ConfigInfo(configValue.getLocalizedName(), configValue.getLocalizedDescription());
+		return new ConfigInfo(ConfigValueLocalization.getName(configValue), ConfigValueLocalization.getDescription(configValue));
 	}
 
 	@Override

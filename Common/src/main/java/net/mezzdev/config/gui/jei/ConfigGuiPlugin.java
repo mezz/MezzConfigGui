@@ -33,7 +33,8 @@ public class ConfigGuiPlugin implements IModPlugin {
 		if (ConfigScreen.isCapturingKeyBinding(screen)) {
 			return null;
 		}
-		@Nullable Rect2i area = getScreenArea(screen);
+		@Nullable
+		Rect2i area = getScreenArea(screen);
 		if (area == null || screen.width <= 0 || screen.height <= 0) {
 			return null;
 		}

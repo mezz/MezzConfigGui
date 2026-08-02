@@ -1,9 +1,9 @@
 package net.mezzdev.config.gui.neoforge.config;
 
-import net.mezzdev.config.api.value.ConfigValueChange;
-import net.mezzdev.config.api.value.ConfigValueUpdateType;
-import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.api.value.IConfigValueEditorSerializer;
+import net.mezzdev.config.gui.api.ConfigValueApplyMode;
+import net.mezzdev.config.gui.api.IConfigLocalizedValue;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
+import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.minecraft.network.chat.Component;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-final class NeoForgeConfigValue<T> implements IConfigValue<T> {
+final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLocalizedValue {
 	private static final Logger LOGGER = LogManager.getLogger();
 
 	private final String name;
@@ -27,7 +27,7 @@ final class NeoForgeConfigValue<T> implements IConfigValue<T> {
 	private final ModConfigSpec.ConfigValue<T> configValue;
 	private final T defaultValue;
 	private final IConfigValueEditorSerializer<T> serializer;
-	private final ConfigValueUpdateType updateType;
+	private final boolean requiresRestart;
 	@Nullable
 	private List<Consumer<T>> listeners;
 
@@ -48,14 +48,12 @@ final class NeoForgeConfigValue<T> implements IConfigValue<T> {
 		this.configValue = configValue;
 		this.defaultValue = configValue.getDefault();
 		this.serializer = serializer;
-		this.updateType = getUpdateType(modConfig, valueSpec);
+		this.requiresRestart = requiresRestart(modConfig, valueSpec);
 	}
 
-	private static ConfigValueUpdateType getUpdateType(ModConfig modConfig, ModConfigSpec.ValueSpec valueSpec) {
-		if (modConfig.getType() == ModConfig.Type.STARTUP || valueSpec.restartType() != ModConfigSpec.RestartType.NONE) {
-			return ConfigValueUpdateType.RESTART;
-		}
-		return ConfigValueUpdateType.ON_APPLY;
+	private static boolean requiresRestart(ModConfig modConfig, ModConfigSpec.ValueSpec valueSpec) {
+		return modConfig.getType() == ModConfig.Type.STARTUP ||
+			valueSpec.restartType() != ModConfigSpec.RestartType.NONE;
 	}
 
 	@Override
@@ -98,25 +96,9 @@ final class NeoForgeConfigValue<T> implements IConfigValue<T> {
 			return false;
 		}
 		configValue.set(value);
+		modConfigSpec.save();
 		notifyListeners(value);
 		return true;
-	}
-
-	public boolean apply(ConfigValueChange<?> change) {
-		return apply(change.value());
-	}
-
-	@SuppressWarnings("unchecked")
-	private boolean apply(Object value) {
-		return set((T) value);
-	}
-
-	public ModConfigSpec getModConfigSpec() {
-		return modConfigSpec;
-	}
-
-	boolean matches(ModConfigSpec.ConfigValue<?> configValue) {
-		return this.configValue == configValue;
 	}
 
 	@Override
@@ -134,8 +116,13 @@ final class NeoForgeConfigValue<T> implements IConfigValue<T> {
 	}
 
 	@Override
-	public ConfigValueUpdateType getUpdateType() {
-		return updateType;
+	public ConfigValueApplyMode getApplyMode() {
+		return ConfigValueApplyMode.ON_APPLY;
+	}
+
+	@Override
+	public boolean requiresRestart() {
+		return requiresRestart;
 	}
 
 	@Override

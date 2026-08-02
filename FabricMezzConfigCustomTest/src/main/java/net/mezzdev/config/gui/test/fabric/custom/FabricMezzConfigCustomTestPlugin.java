@@ -5,22 +5,26 @@ import net.mezzdev.config.api.plugin.ConfigPlugin;
 import net.mezzdev.config.api.plugin.IConfigPlugin;
 import net.mezzdev.config.api.plugin.IConfigRegistration;
 import net.mezzdev.config.api.schema.IConfigCategoryBuilder;
-import net.mezzdev.config.api.schema.IConfigEditableSchema;
+import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.schema.IConfigSchemaBuilder;
-import net.mezzdev.config.api.value.ConfigValueEditorType;
-import net.mezzdev.config.api.value.ConfigValueEditorTypes;
-import net.mezzdev.config.api.value.ConfigValueUpdateType;
-import net.mezzdev.config.api.value.IConfigListValueSerializer;
+import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.gui.api.ConfigValueEditorType;
+import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.api.value.IConfigValueEditorSerializer;
+import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.ConfigGuiPlugin;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.api.ConfigRestartResult;
+import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigGuiRegistration;
+import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
+import net.mezzdev.config.gui.api.IConfigLocalizedValue;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueEditor;
 import net.mezzdev.config.gui.api.IConfigValuePopup;
+import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -58,7 +62,7 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 	);
 
 	@Nullable
-	private static IConfigEditableSchema schema;
+	private static IConfigSchema schema;
 	@Nullable
 	private static IConfigValue<Boolean> primaryEnabled;
 	@Nullable
@@ -77,20 +81,19 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 	public void registerConfigFiles(IConfigRegistration registration) {
 		IConfigSchemaBuilder schemaBuilder = registration.createSchemaBuilder("config-gui-fabric-custom-test.ini", LOCALIZATION_PATH);
 		IConfigCategoryBuilder controls = schemaBuilder.addCategory("controls");
-		primaryEnabled = controls.addBoolean("primaryEnabled", true, ConfigValueUpdateType.IMMEDIATE);
-		secondaryEnabled = controls.addBoolean("secondaryEnabled", false, ConfigValueUpdateType.RESTART);
-		mode = controls.addEnum("mode", TestMode.BALANCED, ConfigValueUpdateType.ON_APPLY);
-		accentColor = controls.addValue("accentColor", TestColor.GREEN, TestColorSerializer.INSTANCE, ConfigValueUpdateType.IMMEDIATE);
+		primaryEnabled = controls.addBoolean("primaryEnabled", true).build();
+		secondaryEnabled = controls.addBoolean("secondaryEnabled", false).setRequiresRestart().build();
+		mode = controls.addEnum("mode", TestMode.BALANCED).build();
+		accentColor = controls.addValue("accentColor", TestColor.GREEN, TestColorSerializer.INSTANCE).build();
 
 		IConfigCategoryBuilder advanced = schemaBuilder.addCategory("advanced");
-		advanced.addValue("displayName", "Fabric Custom", TextSerializer.INSTANCE, ConfigValueUpdateType.ON_APPLY);
-		advanced.addList(
+		advanced.addValue("displayName", "Fabric Custom", TextSerializer.INSTANCE).build();
+		advanced.addValue(
 			"favoriteModes",
 			List.of(TestMode.BALANCED, TestMode.FAST),
-			ModeListSerializer.INSTANCE,
-			ConfigValueUpdateType.ON_APPLY
-		);
-		advanced.addInteger("refreshTicks", 20, 1, 200, ConfigValueUpdateType.ON_APPLY);
+			ModeListSerializer.INSTANCE
+		).build();
+		advanced.addInteger("refreshTicks", 20, 1, 200).build();
 		schema = schemaBuilder.build();
 	}
 
@@ -103,7 +106,8 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 			screenBuilder.addCategory("overview")
 				.setTitle(Component.translatable("%s.config.category.overview".formatted(MOD_ID)))
 				.setDescription(Component.translatable("%s.config.category.overview.description".formatted(MOD_ID)))
-				.addValue(new CombinedEnabledValue(getPrimaryEnabled(), getSecondaryEnabled()))
+				.setDefaultApplyMode(ConfigValueApplyMode.IMMEDIATE)
+				.addScreenValue(new CombinedEnabledValue(getPrimaryEnabled(), getSecondaryEnabled()))
 				.addValue(getAccentColor());
 			screenBuilder.addCategory("controls")
 				.setTitle(Component.translatable("%s.config.category.controls".formatted(MOD_ID)))
@@ -124,7 +128,7 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 		);
 	}
 
-	private static IConfigEditableSchema getSchema() {
+	private static IConfigSchema getSchema() {
 		return Objects.requireNonNull(schema, "schema");
 	}
 
@@ -191,29 +195,6 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 		}
 	}
 
-	private record DeserializeResult<T>(
-		@Nullable T value,
-		List<String> errors
-	) implements IConfigValueSerializer.IDeserializeResult<T> {
-		public DeserializeResult(@Nullable T value) {
-			this(value, List.of());
-		}
-
-		public DeserializeResult(@Nullable T value, String error) {
-			this(value, List.of(error));
-		}
-
-		@Override
-		public Optional<T> getResult() {
-			return Optional.ofNullable(value);
-		}
-
-		@Override
-		public List<String> getErrors() {
-			return errors;
-		}
-	}
-
 	private enum TextSerializer implements IConfigValueEditorSerializer<String> {
 		INSTANCE;
 
@@ -226,9 +207,9 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 		public IDeserializeResult<String> deserialize(String string) {
 			String value = string.trim();
 			if (!isValid(value)) {
-				return new DeserializeResult<>(null, "Text must be between 1 and 40 characters.");
+				return IDeserializeResult.failure("Text must be between 1 and 40 characters.");
 			}
-			return new DeserializeResult<>(value);
+			return IDeserializeResult.success(value);
 		}
 
 		@Override
@@ -270,9 +251,9 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 		@Override
 		public IDeserializeResult<TestColor> deserialize(String string) {
 			try {
-				return new DeserializeResult<>(TestColor.valueOf(string.trim().toUpperCase(Locale.ROOT)));
+				return IDeserializeResult.success(TestColor.valueOf(string.trim().toUpperCase(Locale.ROOT)));
 			} catch (IllegalArgumentException e) {
-				return new DeserializeResult<>(null, "Expected one of: " + getValidValuesDescription());
+				return IDeserializeResult.failure("Expected one of: " + getValidValuesDescription());
 			}
 		}
 
@@ -314,9 +295,9 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 		@Override
 		public IDeserializeResult<CombinedEnabled> deserialize(String string) {
 			try {
-				return new DeserializeResult<>(CombinedEnabled.valueOf(string.trim().toUpperCase(Locale.ROOT)));
+				return IDeserializeResult.success(CombinedEnabled.valueOf(string.trim().toUpperCase(Locale.ROOT)));
 			} catch (IllegalArgumentException e) {
-				return new DeserializeResult<>(null, "Expected one of: " + getValidValuesDescription());
+				return IDeserializeResult.failure("Expected one of: " + getValidValuesDescription());
 			}
 		}
 
@@ -358,9 +339,9 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 		@Override
 		public IDeserializeResult<TestMode> deserialize(String string) {
 			try {
-				return new DeserializeResult<>(TestMode.valueOf(string.trim().toUpperCase(Locale.ROOT)));
+				return IDeserializeResult.success(TestMode.valueOf(string.trim().toUpperCase(Locale.ROOT)));
 			} catch (IllegalArgumentException e) {
-				return new DeserializeResult<>(null, "Expected one of: " + getValidValuesDescription());
+				return IDeserializeResult.failure("Expected one of: " + getValidValuesDescription());
 			}
 		}
 
@@ -391,11 +372,11 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 		}
 	}
 
-	private enum ModeListSerializer implements IConfigListValueSerializer<TestMode> {
+	private enum ModeListSerializer implements IConfigListValueEditorSerializer<TestMode> {
 		INSTANCE;
 
 		@Override
-		public IConfigValueSerializer<TestMode> getListValueSerializer() {
+		public IConfigValueSerializer<TestMode> getElementSerializer() {
 			return ModeSerializer.INSTANCE;
 		}
 
@@ -417,9 +398,9 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 				})
 				.toList();
 			if (!errors.isEmpty()) {
-				return new DeserializeResult<>(null, errors);
+				return IDeserializeResult.failure(errors);
 			}
-			return new DeserializeResult<>(values);
+			return IDeserializeResult.success(values);
 		}
 
 		@Override
@@ -442,16 +423,12 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 			return "A comma-separated list containing values of: " + ModeSerializer.INSTANCE.getValidValuesDescription();
 		}
 
-		@Override
-		public ConfigValueEditorType<List<TestMode>> getEditorType() {
-			return ConfigValueEditorTypes.getList();
-		}
 	}
 
 	private record CombinedEnabledValue(
 		IConfigValue<Boolean> primary,
 		IConfigValue<Boolean> secondary
-	) implements IConfigValue<CombinedEnabled> {
+	) implements IConfigScreenValue<CombinedEnabled>, IConfigLocalizedValue {
 		@Override
 		public String getName() {
 			return "combinedEnabled";
@@ -496,8 +473,8 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 		}
 
 		@Override
-		public ConfigValueUpdateType getUpdateType() {
-			return ConfigValueUpdateType.RESTART;
+		public boolean requiresRestart() {
+			return primary.requiresRestart() || secondary.requiresRestart();
 		}
 
 		@Override
@@ -511,12 +488,12 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 		private static final int HEIGHT = 18;
 
 		@Override
-		public int getControlWidth(IConfigValue<TestColor> configValue, TestColor value) {
+		public int getControlWidth(IConfigScreenValue<TestColor> configValue, TestColor value) {
 			return WIDTH;
 		}
 
 		@Override
-		public int getControlHeight(IConfigValue<TestColor> configValue, TestColor value) {
+		public int getControlHeight(IConfigScreenValue<TestColor> configValue, TestColor value) {
 			return HEIGHT;
 		}
 
@@ -524,21 +501,21 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 		public void draw(
 			GuiGraphics guiGraphics,
 			Rect2i area,
-			IConfigValue<TestColor> configValue,
+			IConfigScreenValue<TestColor> configValue,
 			TestColor value,
 			boolean hovered,
 			boolean hasPendingChange
 		) {
 			guiGraphics.fill(area.getX(), area.getY(), area.getX() + area.getWidth(), area.getY() + area.getHeight(), value.getArgb());
 			Font font = Minecraft.getInstance().font;
-			Component valueName = configValue.getSerializer().getLocalizedValueName(configValue.getLocalizationKey(), value);
+			Component valueName = ConfigValueLocalization.getValueName(configValue, value);
 			guiGraphics.drawString(font, valueName, area.getX() + 4, area.getY() + 5, 0xFFFFFFFF, false);
 		}
 
 		@Override
 		public Optional<ConfigInfo> getTooltipInfo(
 			Rect2i area,
-			IConfigValue<TestColor> configValue,
+			IConfigScreenValue<TestColor> configValue,
 			TestColor value,
 			boolean hasPendingChange,
 			double mouseX,
@@ -553,7 +530,7 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 		@Override
 		public Optional<IConfigValuePopup<TestColor>> createPopup(
 			Rect2i area,
-			IConfigValue<TestColor> configValue,
+			IConfigScreenValue<TestColor> configValue,
 			TestColor value,
 			double mouseX,
 			double mouseY,
@@ -567,7 +544,7 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 	}
 
 	private record TestColorPopup(
-		IConfigValue<TestColor> configValue
+		IConfigScreenValue<TestColor> configValue
 	) implements IConfigValuePopup<TestColor> {
 		private static final int WIDTH = 104;
 		private static final int ROW_HEIGHT = 18;
@@ -599,7 +576,7 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 				TestColor color = TestColor.values()[i];
 				int y = area.getY() + i * ROW_HEIGHT;
 				guiGraphics.fill(area.getX(), y, area.getX() + area.getWidth(), y + ROW_HEIGHT, color.getArgb());
-				Component valueName = configValue.getSerializer().getLocalizedValueName(configValue.getLocalizationKey(), color);
+				Component valueName = ConfigValueLocalization.getValueName(configValue, color);
 				guiGraphics.drawString(font, valueName, area.getX() + 4, y + 5, 0xFFFFFFFF, false);
 			}
 		}

@@ -1,6 +1,5 @@
 package net.mezzdev.config.gui.api;
 
-import net.mezzdev.config.api.value.IConfigValue;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
 
@@ -17,31 +16,31 @@ public interface IConfigValueEditor<T> {
 	/**
 	 * The preferred width of the value control inside a config row.
 	 *
-	 * @param configValue the config value being edited
+	 * @param configValue the config screen value being edited
 	 * @param value the currently displayed value, including pending edits
 	 * @return the preferred control width
 	 *
 	 * @since 0.1.0
 	 */
-	int getControlWidth(IConfigValue<T> configValue, T value);
+	int getControlWidth(IConfigScreenValue<T> configValue, T value);
 
 	/**
 	 * The preferred height of the value control inside a config row.
 	 *
-	 * @param configValue the config value being edited
+	 * @param configValue the config screen value being edited
 	 * @param value the currently displayed value, including pending edits
 	 * @return the preferred control height
 	 *
 	 * @since 0.1.0
 	 */
-	int getControlHeight(IConfigValue<T> configValue, T value);
+	int getControlHeight(IConfigScreenValue<T> configValue, T value);
 
 	/**
 	 * Draw the value control inside the given row area.
 	 *
 	 * @param guiGraphics the draw context
 	 * @param area the control bounds
-	 * @param configValue the config value being edited
+	 * @param configValue the config screen value being edited
 	 * @param value the currently displayed value, including pending edits
 	 * @param hovered true when the mouse is over the control
 	 * @param hasPendingChange true when the displayed value differs from the applied value
@@ -51,7 +50,7 @@ public interface IConfigValueEditor<T> {
 	void draw(
 		GuiGraphics guiGraphics,
 		Rect2i area,
-		IConfigValue<T> configValue,
+		IConfigScreenValue<T> configValue,
 		T value,
 		boolean hovered,
 		boolean hasPendingChange
@@ -61,7 +60,7 @@ public interface IConfigValueEditor<T> {
 	 * Get info for the current mouse position, or {@link Optional#empty()} to use the standard value info.
 	 *
 	 * @param area the control bounds
-	 * @param configValue the config value being edited
+	 * @param configValue the config screen value being edited
 	 * @param value the currently displayed value, including pending edits
 	 * @param hasPendingChange true when the displayed value differs from the applied value
 	 * @param mouseX the current mouse x-coordinate
@@ -72,7 +71,7 @@ public interface IConfigValueEditor<T> {
 	 */
 	Optional<ConfigInfo> getTooltipInfo(
 		Rect2i area,
-		IConfigValue<T> configValue,
+		IConfigScreenValue<T> configValue,
 		T value,
 		boolean hasPendingChange,
 		double mouseX,
@@ -84,7 +83,7 @@ public interface IConfigValueEditor<T> {
 	 * The config GUI controls popup placement and clipping.
 	 *
 	 * @param area the control bounds
-	 * @param configValue the config value being edited
+	 * @param configValue the config screen value being edited
 	 * @param value the currently displayed value, including pending edits
 	 * @param mouseX the click x-coordinate
 	 * @param mouseY the click y-coordinate
@@ -95,7 +94,7 @@ public interface IConfigValueEditor<T> {
 	 */
 	default Optional<IConfigValuePopup<T>> createPopup(
 		Rect2i area,
-		IConfigValue<T> configValue,
+		IConfigScreenValue<T> configValue,
 		T value,
 		double mouseX,
 		double mouseY,
@@ -108,7 +107,7 @@ public interface IConfigValueEditor<T> {
 	 * Get the value selected by a mouse click, or {@link Optional#empty()} when this editor did not handle the click.
 	 *
 	 * @param area the control bounds
-	 * @param configValue the config value being edited
+	 * @param configValue the config screen value being edited
 	 * @param value the currently displayed value, including pending edits
 	 * @param mouseX the click x-coordinate
 	 * @param mouseY the click y-coordinate
@@ -119,7 +118,7 @@ public interface IConfigValueEditor<T> {
 	 */
 	default Optional<T> getClickedValue(
 		Rect2i area,
-		IConfigValue<T> configValue,
+		IConfigScreenValue<T> configValue,
 		T value,
 		double mouseX,
 		double mouseY,

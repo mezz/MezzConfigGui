@@ -36,7 +36,7 @@ val configGuiModId: String by extra
 val configModGroup: String by extra
 val modJavaVersion: String by extra
 val mezzConfigApiDependency: String by rootProject.extra
-val mezzConfigApiNeoForgeDependency: String by rootProject.extra
+val mezzConfigNeoForgeDependency: String by rootProject.extra
 val configGuiApiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui-api")
 val configGuiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui")
 val neoForgeNativeDefaultsTestModId = "mezz_config_gui_test_neoforge_defaults"
@@ -146,7 +146,7 @@ sourceSets {
 
 dependencies {
     compileOnly(mezzConfigApiDependency)
-    runtimeOnly(mezzConfigApiNeoForgeDependency)
+    runtimeOnly(mezzConfigNeoForgeDependency)
     dependencyProjects.forEach {
         implementation(it)
     }
@@ -218,7 +218,7 @@ publishing {
             artifact(tasks.jar.get())
             artifact(sourcesJarTask.get())
 
-            val dependencyInfos = listOf(dependencyInfo(mezzConfigApiNeoForgeDependency)) + dependencyProjects.map {
+            val dependencyInfos = listOf(dependencyInfo(mezzConfigNeoForgeDependency)) + dependencyProjects.map {
                 mapOf(
                     "groupId" to it.group,
                     "artifactId" to it.base.archivesName.get(),

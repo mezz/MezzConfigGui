@@ -22,7 +22,7 @@ val log4jVersion: String by extra
 val fastutilVersion: String by extra
 val jsr305Version: String by extra
 val mezzConfigApiDependency: String by rootProject.extra
-val mezzConfigApiForgeDependency: String by rootProject.extra
+val mezzConfigForgeDependency: String by rootProject.extra
 val jeiApiDependency: Any by rootProject.extra
 val configGuiApiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui-api")
 val configGuiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui")
@@ -120,7 +120,7 @@ dependencies {
 	compileOnly("com.google.code.findbugs:jsr305:$jsr305Version")
 	compileOnly(jeiApiDependency)
 	compileOnly(mezzConfigApiDependency)
-	runtimeOnly(mezzConfigApiForgeDependency)
+	runtimeOnly(mezzConfigForgeDependency)
 	dependencyProjects.forEach {
 		compileOnly(it)
 	}
@@ -197,7 +197,7 @@ publishing {
 			artifact(tasks.jar.get())
 			artifact(sourcesJarTask.get())
 
-			val dependencyInfos = listOf(dependencyInfo(mezzConfigApiForgeDependency)) + dependencyProjects.map {
+			val dependencyInfos = listOf(dependencyInfo(mezzConfigForgeDependency)) + dependencyProjects.map {
 				mapOf(
 					"groupId" to it.group,
 					"artifactId" to it.base.archivesName.get(),

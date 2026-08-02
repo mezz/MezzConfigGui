@@ -47,16 +47,26 @@ final class NeoForgeConfigLocalization {
 	}
 
 	public static Component getValueName(String localizationKey, List<String> path) {
-		String name = path.isEmpty() ? localizationKey : path.getLast();
+		String name = localizationKey;
+		if (!path.isEmpty()) {
+			name = path.getLast();
+		}
 		return Component.translatableWithFallback(localizationKey, getDisplayNameFallback(name));
 	}
 
 	public static Component getValueDescription(String localizationKey, @Nullable String comment) {
 		String tooltipKey = localizationKey + ".tooltip";
 		if (I18n.exists(tooltipKey) || !Strings.isBlank(comment)) {
-			return Component.translatableWithFallback(tooltipKey, comment == null ? "" : comment);
+			return Component.translatableWithFallback(tooltipKey, getCommentFallback(comment));
 		}
 		return Component.empty();
+	}
+
+	private static String getCommentFallback(@Nullable String comment) {
+		if (comment == null) {
+			return "";
+		}
+		return comment;
 	}
 
 	public static String getDisplayNameFallback(String name) {

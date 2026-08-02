@@ -1,11 +1,10 @@
 package net.mezzdev.config.gui;
 
-import net.mezzdev.config.api.value.ConfigValueChange;
-import net.mezzdev.config.api.value.ConfigValueUpdateType;
+import net.mezzdev.config.gui.model.ConfigValueChange;
 
 import java.util.List;
 
 @FunctionalInterface
 interface ConfigChangesHandler {
-	ConfigValueUpdateType applyChanges(List<ConfigValueChange<?>> changes);
+	boolean applyChanges(List<ConfigValueChange<?>> changes);
 }

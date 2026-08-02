@@ -1,13 +1,14 @@
 package net.mezzdev.config.gui.entries;
 
-import net.mezzdev.config.api.value.IConfigIntegerValueSerializer;
-import net.mezzdev.config.api.value.IConfigValue;
+import net.mezzdev.config.api.value.ConfigValueRange;
+import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.gui.api.ConfigInfo;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
+import net.mezzdev.config.gui.info.ConfigValueInfoFactory;
+import net.mezzdev.config.gui.input.UserInput;
 import net.mezzdev.config.gui.textures.ConfigDrawableStatic;
 import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
-import net.mezzdev.config.gui.api.ConfigInfo;
-import net.mezzdev.config.gui.info.ConfigValueInfoFactory;
-import net.mezzdev.config.gui.input.UserInput;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -34,7 +35,9 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 	private static final int NORMAL_STEP = 1;
 	private static final int SHIFT_STEP = 10;
 
-	private final IConfigIntegerValueSerializer serializer;
+	private final IConfigValueSerializer<Integer> serializer;
+	private final int min;
+	private final int max;
 	private ImmutableRect2i valueBoxArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i upArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i downArea = ImmutableRect2i.EMPTY;
@@ -42,9 +45,16 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 	private boolean editing = false;
 	private String editText = "";
 
-	IntegerConfigEntry(IConfigValue<Integer> value, IConfigIntegerValueSerializer serializer, ConfigTextures textures) {
+	IntegerConfigEntry(
+		IConfigScreenValue<Integer> value,
+		IConfigValueSerializer<Integer> serializer,
+		ConfigValueRange<Integer> range,
+		ConfigTextures textures
+	) {
 		super(value, textures);
 		this.serializer = serializer;
+		this.min = range.min();
+		this.max = range.max();
 	}
 
 	@Override
@@ -54,22 +64,22 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 		int controlX = area.getX() + area.getWidth() - CONTROL_WIDTH - VALUE_CONTROL_RIGHT_RESERVE;
 
 		valueBoxArea = new ImmutableRect2i(
-				controlX,
-				cy,
-				VALUE_BOX_WIDTH,
-				VALUE_BOX_HEIGHT
+			controlX,
+			cy,
+			VALUE_BOX_WIDTH,
+			VALUE_BOX_HEIGHT
 		);
 		upArea = new ImmutableRect2i(
-				valueBoxArea.getX() + valueBoxArea.getWidth() + BUTTON_GAP,
-				cy,
-				BUTTON_SIZE,
-				BUTTON_SIZE
+			valueBoxArea.getX() + valueBoxArea.getWidth() + BUTTON_GAP,
+			cy,
+			BUTTON_SIZE,
+			BUTTON_SIZE
 		);
 		downArea = new ImmutableRect2i(
-				upArea.getX() + upArea.getWidth() + BUTTON_GAP,
-				cy,
-				BUTTON_SIZE,
-				BUTTON_SIZE
+			upArea.getX() + upArea.getWidth() + BUTTON_GAP,
+			cy,
+			BUTTON_SIZE,
+			BUTTON_SIZE
 		);
 		recomputeNameArea(area, Math.max(NAME_RIGHT_RESERVE, CONTROL_WIDTH + VALUE_CONTROL_RIGHT_RESERVE + 4));
 	}
@@ -89,7 +99,7 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 			if (!editText.isEmpty() && !editText.equals("-")) {
 				try {
 					int parsed = Integer.parseInt(editText);
-					if (parsed < serializer.getMin() || parsed > serializer.getMax()) {
+					if (parsed < min || parsed > max) {
 						textColor = 0xFFFF7070;
 					}
 				} catch (NumberFormatException ignored) {
@@ -101,7 +111,7 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 			drawRightAlignedText(guiGraphics, font, getValue().toString(), textY, TEXT_COLOR);
 		}
 
-		boolean canUp = getValue() < serializer.getMax();
+		boolean canUp = getValue() < max;
 		boolean upHovered = canUp && upArea.contains(mouseX, mouseY);
 		drawButtonBackground(guiGraphics, textures, upArea, canUp, upHovered);
 		ConfigDrawableStatic upIcon = textures.getArrowUp();
@@ -117,7 +127,7 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 			guiGraphics.pose().popPose();
 		}
 
-		boolean canDown = getValue() > serializer.getMin();
+		boolean canDown = getValue() > min;
 		boolean downHovered = canDown && downArea.contains(mouseX, mouseY);
 		drawButtonBackground(guiGraphics, textures, downArea, canDown, downHovered);
 		ConfigDrawableStatic downIcon = textures.getArrowDown();
@@ -145,7 +155,7 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 	public ConfigInfo getInfo() {
 		ConfigInfo info = super.getInfo();
 		List<Component> lines = new ArrayList<>(info.lines());
-		lines.add(Component.translatable("mezz_config.config.screen.range", serializer.getMin(), serializer.getMax()));
+		lines.add(Component.translatable("mezz_config.config.screen.range", min, max));
 		lines.add(Component.translatable("mezz_config.config.screen.number.shiftStep", SHIFT_STEP));
 		return new ConfigInfo(info.title(), lines);
 	}
@@ -153,7 +163,8 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 	@Override
 	@Nullable
 	public ConfigInfo getTooltipInfo(double mouseX, double mouseY) {
-		@Nullable ConfigInfo resetInfo = super.getTooltipInfo(mouseX, mouseY);
+		@Nullable
+		ConfigInfo resetInfo = super.getTooltipInfo(mouseX, mouseY);
 		if (resetInfo != null) {
 			return resetInfo;
 		}
@@ -179,14 +190,14 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 		if (editing && !input.isSimulate()) {
 			commitEdit();
 		}
-		if (getValue() < serializer.getMax() && upArea.contains(input.getMouseX(), input.getMouseY())) {
+		if (getValue() < max && upArea.contains(input.getMouseX(), input.getMouseY())) {
 			if (!input.isSimulate()) {
 				commitEdit();
 				incrementValue(getStep());
 			}
 			return true;
 		}
-		if (getValue() > serializer.getMin() && downArea.contains(input.getMouseX(), input.getMouseY())) {
+		if (getValue() > min && downArea.contains(input.getMouseX(), input.getMouseY())) {
 			if (!input.isSimulate()) {
 				commitEdit();
 				incrementValue(-getStep());
@@ -208,10 +219,9 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 		editing = false;
 		try {
 			int val = Integer.parseInt(editText.trim());
-			val = Math.clamp(val, serializer.getMin(), serializer.getMax());
+			val = Math.clamp(val, min, max);
 			setValue(val);
-		} catch (NumberFormatException ignored) {
-		}
+		} catch (NumberFormatException ignored) {}
 		editText = "";
 	}
 
@@ -263,15 +273,21 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 	}
 
 	private int getStep() {
-		return Screen.hasShiftDown() ? SHIFT_STEP : NORMAL_STEP;
+		if (Screen.hasShiftDown()) {
+			return SHIFT_STEP;
+		}
+		return NORMAL_STEP;
 	}
 
 	private static int getStep(int modifiers) {
-		return (modifiers & GLFW.GLFW_MOD_SHIFT) != 0 ? SHIFT_STEP : NORMAL_STEP;
+		if ((modifiers & GLFW.GLFW_MOD_SHIFT) != 0) {
+			return SHIFT_STEP;
+		}
+		return NORMAL_STEP;
 	}
 
 	private void incrementValue(int increment) {
-		int value = (int) Math.clamp((long) getValue() + increment, serializer.getMin(), serializer.getMax());
+		int value = (int) Math.clamp((long) getValue() + increment, min, max);
 		setValue(value);
 	}
 

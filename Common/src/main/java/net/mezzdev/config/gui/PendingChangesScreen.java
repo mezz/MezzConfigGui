@@ -1,7 +1,6 @@
 package net.mezzdev.config.gui;
 
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
-import net.mezzdev.config.api.value.ConfigValueUpdateType;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.model.PendingConfigChange;
@@ -53,7 +52,7 @@ final class PendingChangesScreen extends Screen {
 
 	private final BooleanConsumer callback;
 	private final Runnable backAction;
-	private final ConfigValueUpdateType updateType;
+	private final boolean requiresRestart;
 	private final List<PendingConfigChange> pendingChanges;
 	private int scrollOffset;
 	private ImmutableRect2i changeListArea = ImmutableRect2i.EMPTY;
@@ -62,13 +61,13 @@ final class PendingChangesScreen extends Screen {
 	public PendingChangesScreen(
 		BooleanConsumer callback,
 		Runnable backAction,
-		ConfigValueUpdateType updateType,
+		boolean requiresRestart,
 		List<PendingConfigChange> pendingChanges
 	) {
 		super(Component.translatable("mezz_config.config.screen.pendingChanges.title"));
 		this.callback = callback;
 		this.backAction = backAction;
-		this.updateType = updateType;
+		this.requiresRestart = requiresRestart;
 		this.pendingChanges = List.copyOf(pendingChanges);
 	}
 
@@ -84,7 +83,7 @@ final class PendingChangesScreen extends Screen {
 			button -> callback.accept(true)
 		)
 			.bounds(x, actionButtonY, BUTTON_WIDTH, BUTTON_HEIGHT)
-			.tooltip(Tooltip.create(getApplyInfo(updateType)))
+			.tooltip(Tooltip.create(getApplyInfo(requiresRestart)))
 			.build());
 		addRenderableWidget(Button.builder(
 			Component.translatable("mezz_config.config.screen.discard"),
@@ -102,7 +101,8 @@ final class PendingChangesScreen extends Screen {
 	@Override
 	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
 		renderBackground(guiGraphics, mouseX, mouseY, partialTick);
-		@Nullable PendingConfigChange hoveredChange = drawContent(guiGraphics, mouseX, mouseY);
+		@Nullable
+		PendingConfigChange hoveredChange = drawContent(guiGraphics, mouseX, mouseY);
 		super.render(guiGraphics, mouseX, mouseY, partialTick);
 		drawTooltip(guiGraphics, mouseX, mouseY, hoveredChange);
 	}
@@ -115,7 +115,7 @@ final class PendingChangesScreen extends Screen {
 	@Nullable
 	private PendingConfigChange drawContent(GuiGraphics guiGraphics, int mouseX, int mouseY) {
 		ScreenLayout screenLayout = getScreenLayout();
-		Component message = getPendingChangesMessage(updateType);
+		Component message = getPendingChangesMessage(requiresRestart);
 		List<FormattedCharSequence> messageLines = font.split(message, screenLayout.contentWidth());
 		int messageY = screenLayout.messageY();
 
@@ -149,7 +149,8 @@ final class PendingChangesScreen extends Screen {
 
 		clampScrollOffset();
 
-		@Nullable PendingConfigChange hoveredChange = null;
+		@Nullable
+		PendingConfigChange hoveredChange = null;
 		guiGraphics.enableScissor(
 			innerArea.getX(),
 			innerArea.getY(),
@@ -186,7 +187,7 @@ final class PendingChangesScreen extends Screen {
 		int height,
 		boolean hovered
 	) {
-		int color = hovered ? ROW_HOVER_COLOR : index % 2 == 0 ? ROW_BACKGROUND_COLOR : ROW_ALTERNATE_BACKGROUND_COLOR;
+		int color = getRowColor(index, hovered);
 		guiGraphics.fill(x, y, x + width, y + height, color);
 
 		int textX = x + ROW_PADDING;
@@ -201,6 +202,16 @@ final class PendingChangesScreen extends Screen {
 			guiGraphics.drawString(font, line, textX, textY, CHANGE_TEXT_COLOR);
 			textY += font.lineHeight;
 		}
+	}
+
+	private static int getRowColor(int index, boolean hovered) {
+		if (hovered) {
+			return ROW_HOVER_COLOR;
+		}
+		if (index % 2 == 0) {
+			return ROW_BACKGROUND_COLOR;
+		}
+		return ROW_ALTERNATE_BACKGROUND_COLOR;
 	}
 
 	private int calculateChangeListHeight(int width) {
@@ -282,7 +293,7 @@ final class PendingChangesScreen extends Screen {
 	private ScreenLayout getScreenLayout() {
 		int contentWidth = Math.min(CONTENT_MAX_WIDTH, Math.max(CONTENT_MIN_WIDTH, width - SCREEN_PADDING * 2));
 		int contentX = (width - contentWidth) / 2;
-		Component message = getPendingChangesMessage(updateType);
+		Component message = getPendingChangesMessage(requiresRestart);
 		List<FormattedCharSequence> messageLines = font.split(message, contentWidth);
 		int messageHeight = messageLines.size() * font.lineHeight;
 		int headerHeight = font.lineHeight + TITLE_MESSAGE_GAP + messageHeight + MESSAGE_PANEL_GAP;
@@ -338,15 +349,15 @@ final class PendingChangesScreen extends Screen {
 		backAction.run();
 	}
 
-	private static Component getPendingChangesMessage(ConfigValueUpdateType updateType) {
-		if (updateType == ConfigValueUpdateType.RESTART) {
+	private static Component getPendingChangesMessage(boolean requiresRestart) {
+		if (requiresRestart) {
 			return Component.translatable("mezz_config.config.screen.pendingChanges.restart.message");
 		}
 		return Component.translatable("mezz_config.config.screen.pendingChanges.message");
 	}
 
-	private static Component getApplyInfo(ConfigValueUpdateType updateType) {
-		if (updateType == ConfigValueUpdateType.RESTART) {
+	private static Component getApplyInfo(boolean requiresRestart) {
+		if (requiresRestart) {
 			return Component.translatable("mezz_config.config.screen.apply.restart.info");
 		}
 		return Component.translatable("mezz_config.config.screen.apply.info");

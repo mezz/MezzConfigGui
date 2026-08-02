@@ -40,6 +40,55 @@ public interface IConfigScreenCategoryBuilder {
 	IConfigScreenCategoryBuilder setDescription(Component description);
 
 	/**
+	 * Set the default apply mode for config screen values in this category.
+	 * <p>
+	 * Individual values can override this with {@link #setValueApplyMode(IConfigScreenValueReference, ConfigValueApplyMode)}.
+	 *
+	 * @param applyMode when edits for this category's values are saved
+	 * @return this builder
+	 *
+	 * @since 0.1.0
+	 */
+	IConfigScreenCategoryBuilder setDefaultApplyMode(ConfigValueApplyMode applyMode);
+
+	/**
+	 * Set the apply mode for one config value in this category.
+	 *
+	 * @param value config value to configure
+	 * @param applyMode when edits for this value are saved
+	 * @return this builder
+	 *
+	 * @since 0.1.0
+	 */
+	default IConfigScreenCategoryBuilder setValueApplyMode(IConfigValue<?> value, ConfigValueApplyMode applyMode) {
+		return setValueApplyMode(IConfigScreenValueReference.configValue(value), applyMode);
+	}
+
+	/**
+	 * Set the apply mode for one config screen value in this category.
+	 *
+	 * @param value config screen value to configure
+	 * @param applyMode when edits for this value are saved
+	 * @return this builder
+	 *
+	 * @since 0.1.0
+	 */
+	default IConfigScreenCategoryBuilder setScreenValueApplyMode(IConfigScreenValue<?> value, ConfigValueApplyMode applyMode) {
+		return setValueApplyMode(IConfigScreenValueReference.screenValue(value), applyMode);
+	}
+
+	/**
+	 * Set the apply mode for one config screen value in this category by reference.
+	 *
+	 * @param valueReference config screen value reference
+	 * @param applyMode when edits for this value are saved
+	 * @return this builder
+	 *
+	 * @since 0.1.0
+	 */
+	IConfigScreenCategoryBuilder setValueApplyMode(IConfigScreenValueReference valueReference, ConfigValueApplyMode applyMode);
+
+	/**
 	 * Add one config value to this category.
 	 * <p>
 	 * Adding values to a category replaces that category's automatically detected values.
@@ -49,7 +98,21 @@ public interface IConfigScreenCategoryBuilder {
 	 *
 	 * @since 0.1.0
 	 */
-	IConfigScreenCategoryBuilder addValue(IConfigValue<?> value);
+	default IConfigScreenCategoryBuilder addValue(IConfigValue<?> value) {
+		return addScreenValue(IConfigScreenValue.configValue(value));
+	}
+
+	/**
+	 * Add one config screen value to this category.
+	 * <p>
+	 * Adding values to a category replaces that category's automatically detected values.
+	 *
+	 * @param value config screen value to display
+	 * @return this builder
+	 *
+	 * @since 0.1.0
+	 */
+	IConfigScreenCategoryBuilder addScreenValue(IConfigScreenValue<?> value);
 
 	/**
 	 * Add config values to this category.
@@ -61,7 +124,23 @@ public interface IConfigScreenCategoryBuilder {
 	 *
 	 * @since 0.1.0
 	 */
-	IConfigScreenCategoryBuilder addValues(Collection<? extends IConfigValue<?>> values);
+	default IConfigScreenCategoryBuilder addValues(Collection<? extends IConfigValue<?>> values) {
+		return addScreenValues(values.stream()
+			.map(IConfigScreenValue::configValue)
+			.toList());
+	}
+
+	/**
+	 * Add config screen values to this category.
+	 * <p>
+	 * Adding values to a category replaces that category's automatically detected values.
+	 *
+	 * @param values config screen values to display
+	 * @return this builder
+	 *
+	 * @since 0.1.0
+	 */
+	IConfigScreenCategoryBuilder addScreenValues(Collection<? extends IConfigScreenValue<?>> values);
 
 	/**
 	 * Add config values to this category when the screen is opened.
@@ -73,7 +152,24 @@ public interface IConfigScreenCategoryBuilder {
 	 *
 	 * @since 0.1.0
 	 */
-	IConfigScreenCategoryBuilder addValues(Supplier<? extends Collection<? extends IConfigValue<?>>> valuesSupplier);
+	default IConfigScreenCategoryBuilder addValues(Supplier<? extends Collection<? extends IConfigValue<?>>> valuesSupplier) {
+		return addScreenValues(() -> valuesSupplier.get()
+			.stream()
+			.map(IConfigScreenValue::configValue)
+			.toList());
+	}
+
+	/**
+	 * Add config screen values to this category when the screen is opened.
+	 * <p>
+	 * Adding values to a category replaces that category's automatically detected values.
+	 *
+	 * @param valuesSupplier supplies config screen values to display
+	 * @return this builder
+	 *
+	 * @since 0.1.0
+	 */
+	IConfigScreenCategoryBuilder addScreenValues(Supplier<? extends Collection<? extends IConfigScreenValue<?>>> valuesSupplier);
 
 	/**
 	 * Hide one schema config value from this category.
@@ -86,7 +182,22 @@ public interface IConfigScreenCategoryBuilder {
 	 *
 	 * @since 0.1.0
 	 */
-	IConfigScreenCategoryBuilder hideValue(IConfigValue<?> value);
+	default IConfigScreenCategoryBuilder hideValue(IConfigValue<?> value) {
+		return hideScreenValue(IConfigScreenValue.configValue(value));
+	}
+
+	/**
+	 * Hide one config screen value from this category.
+	 * <p>
+	 * This is only needed when this category keeps automatically detected values and some of those values should still
+	 * be omitted.
+	 *
+	 * @param value config screen value to hide
+	 * @return this builder
+	 *
+	 * @since 0.1.0
+	 */
+	IConfigScreenCategoryBuilder hideScreenValue(IConfigScreenValue<?> value);
 
 	/**
 	 * Hide schema config values from this category.
@@ -99,7 +210,24 @@ public interface IConfigScreenCategoryBuilder {
 	 *
 	 * @since 0.1.0
 	 */
-	IConfigScreenCategoryBuilder hideValues(Collection<? extends IConfigValue<?>> values);
+	default IConfigScreenCategoryBuilder hideValues(Collection<? extends IConfigValue<?>> values) {
+		return hideScreenValues(values.stream()
+			.map(IConfigScreenValue::configValue)
+			.toList());
+	}
+
+	/**
+	 * Hide config screen values from this category.
+	 * <p>
+	 * This is only needed when this category keeps automatically detected values and some of those values should still
+	 * be omitted.
+	 *
+	 * @param values config screen values to hide
+	 * @return this builder
+	 *
+	 * @since 0.1.0
+	 */
+	IConfigScreenCategoryBuilder hideScreenValues(Collection<? extends IConfigScreenValue<?>> values);
 
 	/**
 	 * Hide schema config values from this category when the screen is opened.
@@ -112,7 +240,25 @@ public interface IConfigScreenCategoryBuilder {
 	 *
 	 * @since 0.1.0
 	 */
-	IConfigScreenCategoryBuilder hideValues(Supplier<? extends Collection<? extends IConfigValue<?>>> valuesSupplier);
+	default IConfigScreenCategoryBuilder hideValues(Supplier<? extends Collection<? extends IConfigValue<?>>> valuesSupplier) {
+		return hideScreenValues(() -> valuesSupplier.get()
+			.stream()
+			.map(IConfigScreenValue::configValue)
+			.toList());
+	}
+
+	/**
+	 * Hide config screen values from this category when the screen is opened.
+	 * <p>
+	 * This is only needed when this category keeps automatically detected values and some of those values should still
+	 * be omitted.
+	 *
+	 * @param valuesSupplier supplies config screen values to hide
+	 * @return this builder
+	 *
+	 * @since 0.1.0
+	 */
+	IConfigScreenCategoryBuilder hideScreenValues(Supplier<? extends Collection<? extends IConfigScreenValue<?>>> valuesSupplier);
 
 	/**
 	 * Add one config value to this category by reference.

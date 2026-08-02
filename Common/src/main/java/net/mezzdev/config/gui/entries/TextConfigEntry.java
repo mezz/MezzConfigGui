@@ -1,9 +1,9 @@
 package net.mezzdev.config.gui.entries;
 
-import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.api.value.IConfigValueEditorSerializer;
+import net.mezzdev.config.api.value.IDeserializeResult;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.ConfigInfo;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.info.ConfigValueInfoFactory;
 import net.mezzdev.config.gui.input.UserInput;
 import net.mezzdev.config.gui.textures.ConfigTextures;
@@ -31,13 +31,13 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 	private static final int MAX_EDIT_TEXT_LENGTH = 512;
 	private static final int INVALID_TEXT_COLOR = 0xFFFF7070;
 
-	private final IConfigValueEditorSerializer<T> serializer;
+	private final IConfigValueSerializer<T> serializer;
 	private ImmutableRect2i valueArea = ImmutableRect2i.EMPTY;
 
 	private boolean editing;
 	private String editText = "";
 
-	TextConfigEntry(IConfigValue<T> value, IConfigValueEditorSerializer<T> serializer, ConfigTextures textures) {
+	TextConfigEntry(IConfigScreenValue<T> value, IConfigValueSerializer<T> serializer, ConfigTextures textures) {
 		super(value, textures);
 		this.serializer = serializer;
 	}
@@ -48,10 +48,10 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 		int availableWidth = Math.max(40, area.getWidth() - VALUE_CONTROL_RIGHT_RESERVE - MIN_NAME_WIDTH);
 		int width = Math.min(VALUE_BOX_WIDTH, availableWidth);
 		valueArea = new ImmutableRect2i(
-				area.getX() + area.getWidth() - width - VALUE_CONTROL_RIGHT_RESERVE,
-				area.getY() + (area.getHeight() - VALUE_BOX_HEIGHT) / 2,
-				width,
-				VALUE_BOX_HEIGHT
+			area.getX() + area.getWidth() - width - VALUE_CONTROL_RIGHT_RESERVE,
+			area.getY() + (area.getHeight() - VALUE_BOX_HEIGHT) / 2,
+			width,
+			VALUE_BOX_HEIGHT
 		);
 		recomputeNameArea(area, Math.max(NAME_RIGHT_RESERVE, width + VALUE_CONTROL_RIGHT_RESERVE + 4));
 	}
@@ -66,8 +66,15 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 		drawButtonBackground(guiGraphics, textures, valueArea, true, hovered);
 
 		String displayText = getDisplayText();
-		int textColor = editing && !isValidEditText() ? INVALID_TEXT_COLOR : TEXT_COLOR;
+		int textColor = getTextColor();
 		drawValueText(guiGraphics, font, displayText, textColor);
+	}
+
+	private int getTextColor() {
+		if (editing && !isValidEditText()) {
+			return INVALID_TEXT_COLOR;
+		}
+		return TEXT_COLOR;
 	}
 
 	private String getDisplayText() {
@@ -102,7 +109,8 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 	@Override
 	@Nullable
 	public ConfigInfo getTooltipInfo(double mouseX, double mouseY) {
-		@Nullable ConfigInfo resetInfo = super.getTooltipInfo(mouseX, mouseY);
+		@Nullable
+		ConfigInfo resetInfo = super.getTooltipInfo(mouseX, mouseY);
 		if (resetInfo != null) {
 			return resetInfo;
 		}
@@ -116,7 +124,7 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 	}
 
 	private ConfigInfo createInvalidValueInfo() {
-		IConfigValueSerializer.IDeserializeResult<T> result = serializer.deserialize(editText);
+		IDeserializeResult<T> result = serializer.deserialize(editText);
 		List<Component> lines = new ArrayList<>();
 		for (String error : result.getErrors()) {
 			lines.add(Component.literal(error));

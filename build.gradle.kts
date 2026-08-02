@@ -53,9 +53,9 @@ val jeiVersion: String by extra
 val specificationVersion: String by extra
 
 extra["mezzConfigApiDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-config-api:$mezzConfigVersion"
-extra["mezzConfigApiFabricDependency"] = "$configModGroup:${configApiModId}-${minecraftVersion}-fabric:$mezzConfigVersion"
-extra["mezzConfigApiForgeDependency"] = "$configModGroup:${configApiModId}-${minecraftVersion}-forge:$mezzConfigVersion"
-extra["mezzConfigApiNeoForgeDependency"] = "$configModGroup:${configApiModId}-${minecraftVersion}-neoforge:$mezzConfigVersion"
+extra["mezzConfigFabricDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-fabric:$mezzConfigVersion"
+extra["mezzConfigForgeDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-forge:$mezzConfigVersion"
+extra["mezzConfigNeoForgeDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-neoforge:$mezzConfigVersion"
 extra["jeiApiDependency"] = files("${jeiLocalPath}/CommonApi/build/libs/jei-${minecraftVersion}-common-api-${jeiVersion}.jar")
 
 javaFormatting {
@@ -64,7 +64,13 @@ javaFormatting {
 }
 
 subprojects {
-    version = specificationVersion
+    //adds the build number to the end of the version string if on a build server
+    var buildNumber = project.findProperty("BUILD_NUMBER")
+    if (buildNumber == null) {
+        buildNumber = "9999"
+    }
+
+    version = "${specificationVersion}.${buildNumber}"
     group = modGroup
 
     tasks.withType<Javadoc> {

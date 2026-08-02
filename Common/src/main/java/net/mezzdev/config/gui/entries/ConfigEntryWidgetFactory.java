@@ -1,11 +1,13 @@
 package net.mezzdev.config.gui.entries;
 
-import net.mezzdev.config.api.value.ConfigValueEditorType;
-import net.mezzdev.config.api.value.ConfigValueEditorTypes;
-import net.mezzdev.config.api.value.IConfigIntegerValueSerializer;
-import net.mezzdev.config.api.value.IConfigListValueSerializer;
-import net.mezzdev.config.api.value.IConfigValue;
+import net.mezzdev.config.api.value.ConfigValueRange;
+import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.gui.api.ConfigValueEditorType;
+import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
+import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueEditor;
+import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigValueEditorFactory;
 import net.mezzdev.config.gui.keybindings.KeyMappingConfigEntry;
 import net.mezzdev.config.gui.keybindings.KeyMappingValue;
@@ -61,8 +63,8 @@ public final class ConfigEntryWidgetFactory {
 		});
 	}
 
-	public ConfigEntryWidget<?> create(IConfigValue<?> value) {
-		ConfigValueEditorType<?> editorType = value.getSerializer().getEditorType();
+	public ConfigEntryWidget<?> create(IConfigScreenValue<?> value) {
+		ConfigValueEditorType<?> editorType = getEditorType(value);
 		ConfigEntryWidgetCreator<?> creator = creators.get(editorType);
 		if (creator == null) {
 			throw new UnsupportedOperationException("Unsupported config value editor type: " + editorType);
@@ -70,27 +72,46 @@ public final class ConfigEntryWidgetFactory {
 		return create(creator, value);
 	}
 
-	private ConfigEntryWidget<KeyMappingValue> createKeyMappingEntry(IConfigValue<KeyMappingValue> value) {
+	private static ConfigValueEditorType<?> getEditorType(IConfigScreenValue<?> value) {
+		IConfigValueSerializer<?> serializer = value.getSerializer();
+		if (serializer instanceof IConfigValueEditorSerializer<?> editorSerializer) {
+			return editorSerializer.getEditorType();
+		}
+		if (value.getValue() instanceof Integer && serializer.getRange().isPresent()) {
+			return ConfigValueEditorTypes.INTEGER;
+		}
+		if (value.getValue() instanceof Boolean) {
+			return ConfigValueEditorTypes.BOOLEAN;
+		}
+		if (serializer.getAllValidValues().isPresent()) {
+			return ConfigValueEditorTypes.getSelection();
+		}
+		return ConfigValueEditorTypes.getText();
+	}
+
+	private ConfigEntryWidget<KeyMappingValue> createKeyMappingEntry(IConfigScreenValue<KeyMappingValue> value) {
 		return new KeyMappingConfigEntry(value, textures);
 	}
 
 	@SuppressWarnings("unchecked")
-	private static <T> ConfigEntryWidget<T> create(ConfigEntryWidgetCreator<?> creator, IConfigValue<?> value) {
-		return ((ConfigEntryWidgetCreator<T>) creator).create((IConfigValue<T>) value);
+	private static <T> ConfigEntryWidget<T> create(ConfigEntryWidgetCreator<?> creator, IConfigScreenValue<?> value) {
+		return ((ConfigEntryWidgetCreator<T>) creator).create((IConfigScreenValue<T>) value);
 	}
 
-	private ConfigEntryWidget<Integer> createIntegerEntry(IConfigValue<Integer> value) {
-		IConfigIntegerValueSerializer serializer = (IConfigIntegerValueSerializer) value.getSerializer();
-		return new IntegerConfigEntry(value, serializer, textures);
+	private ConfigEntryWidget<Integer> createIntegerEntry(IConfigScreenValue<Integer> value) {
+		IConfigValueSerializer<Integer> serializer = value.getSerializer();
+		ConfigValueRange<Integer> range = serializer.getRange()
+			.orElseThrow(() -> new UnsupportedOperationException("Integer editor requires a config value range."));
+		return new IntegerConfigEntry(value, serializer, range, textures);
 	}
 
-	private <T> ConfigEntryWidget<T> createTextEntry(IConfigValue<T> value) {
+	private <T> ConfigEntryWidget<T> createTextEntry(IConfigScreenValue<T> value) {
 		return new TextConfigEntry<>(value, value.getSerializer(), textures);
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T> ConfigEntryWidget<List<T>> createListEntry(IConfigValue<List<T>> value) {
-		IConfigListValueSerializer<T> serializer = (IConfigListValueSerializer<T>) value.getSerializer();
+	private <T> ConfigEntryWidget<List<T>> createListEntry(IConfigScreenValue<List<T>> value) {
+		IConfigListValueEditorSerializer<T> serializer = (IConfigListValueEditorSerializer<T>) value.getSerializer();
 		return new ListConfigEntry<>(value, serializer, layoutUpdater, textures);
 	}
 
@@ -100,6 +121,6 @@ public final class ConfigEntryWidgetFactory {
 
 	@FunctionalInterface
 	private interface ConfigEntryWidgetCreator<T> {
-		ConfigEntryWidget<T> create(IConfigValue<T> value);
+		ConfigEntryWidget<T> create(IConfigScreenValue<T> value);
 	}
 }

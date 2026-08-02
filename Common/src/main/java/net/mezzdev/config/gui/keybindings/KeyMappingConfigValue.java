@@ -1,8 +1,9 @@
 package net.mezzdev.config.gui.keybindings;
 
-import net.mezzdev.config.api.value.ConfigValueUpdateType;
-import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.api.value.IConfigValueEditorSerializer;
+import net.mezzdev.config.gui.api.ConfigValueApplyMode;
+import net.mezzdev.config.gui.api.IConfigLocalizedValue;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
+import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -12,7 +13,7 @@ import java.util.function.Consumer;
 /**
  * Adapts key mapping metadata into a config value for the config screen.
  */
-public final class KeyMappingConfigValue implements IConfigValue<KeyMappingValue> {
+public final class KeyMappingConfigValue implements IConfigScreenValue<KeyMappingValue>, IConfigLocalizedValue {
 	private final IConfigKeyMapping configKeyMapping;
 	private final KeyMappingSerializer serializer;
 
@@ -70,8 +71,8 @@ public final class KeyMappingConfigValue implements IConfigValue<KeyMappingValue
 	}
 
 	@Override
-	public ConfigValueUpdateType getUpdateType() {
-		return ConfigValueUpdateType.IMMEDIATE;
+	public ConfigValueApplyMode getApplyMode() {
+		return ConfigValueApplyMode.IMMEDIATE;
 	}
 
 	@Override

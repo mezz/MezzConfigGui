@@ -1,12 +1,12 @@
 package net.mezzdev.config.gui.neoforge.config;
 
-import net.mezzdev.config.api.schema.IConfigEditableSchema;
+import net.mezzdev.config.gui.ConfigScreenConfig;
+import net.mezzdev.config.gui.ConfigScreenSchema;
 import net.mezzdev.config.gui.api.ConfigRestartResult;
-import net.mezzdev.config.gui.api.IConfigScreenConfig;
 import net.minecraft.network.chat.Component;
 import net.neoforged.fml.ModContainer;
 
-final class NeoForgeConfigScreenConfig implements IConfigScreenConfig {
+final class NeoForgeConfigScreenConfig implements ConfigScreenConfig {
 	private final ModContainer modContainer;
 	private final Component title;
 
@@ -26,8 +26,8 @@ final class NeoForgeConfigScreenConfig implements IConfigScreenConfig {
 	}
 
 	@Override
-	public IConfigEditableSchema getSchema() {
-		return new NeoForgeConfigSchema(getModId(), NeoForgeConfigScreenConfigs.getCategories(modContainer));
+	public ConfigScreenSchema getSchema() {
+		return new NeoForgeConfigSchema(NeoForgeConfigScreenConfigs.getCategories(modContainer));
 	}
 
 	@Override

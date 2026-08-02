@@ -1,14 +1,18 @@
 package net.mezzdev.config.gui;
 
 import net.mezzdev.config.api.sorting.ISortingConfig;
-import net.mezzdev.config.api.value.ConfigValueEditorTypes;
-import net.mezzdev.config.api.value.ConfigValueUpdateType;
-import net.mezzdev.config.api.value.IConfigListValueSerializer;
-import net.mezzdev.config.api.value.IConfigValue;
+import net.mezzdev.config.api.value.IDeserializeResult;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.gui.api.ConfigValueApplyMode;
+import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
+import net.mezzdev.config.gui.api.ConfigValueLocalization;
+import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigListValueEditorOptions;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
+import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigValueIcon;
 import net.mezzdev.config.gui.api.IConfigValueIconProvider;
+import net.mezzdev.config.gui.api.IConfigValueLocalizationProvider;
 import net.mezzdev.config.gui.api.ISortableConfigValueFactory;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
@@ -20,6 +24,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -34,7 +39,7 @@ class SortableConfigValueFactoryTest {
 	void createsStringListConfigValueBackedBySortingConfig() {
 		TestSortingConfig sortingConfig = new TestSortingConfig(true);
 		IConfigValueIcon firstIcon = (guiGraphics, area) -> {};
-		IConfigValue<List<String>> configValue = SORTABLE_CONFIG_VALUES.createStringList(
+		IConfigScreenValue<List<String>> configValue = SORTABLE_CONFIG_VALUES.createStringList(
 			"sortOrder",
 			"test.sortOrder",
 			sortingConfig,
@@ -48,19 +53,19 @@ class SortableConfigValueFactoryTest {
 		assertEquals("test.sortOrder", configValue.getLocalizationKey());
 		assertEquals(List.of("first", "second"), configValue.getDefaultValue());
 		assertEquals(List.of("first", "second"), configValue.getValue());
-		assertEquals(ConfigValueUpdateType.ON_APPLY, configValue.getUpdateType());
+		assertEquals(ConfigValueApplyMode.ON_APPLY, configValue.getApplyMode());
 
-		IConfigListValueSerializer<String> listSerializer = getListSerializer(configValue);
-		assertSame(ConfigValueEditorTypes.getList(), listSerializer.getEditorType());
-		assertEquals(List.of("first", "second"), List.copyOf(listSerializer.getListValueSerializer().getAllValidValues().orElseThrow()));
-		assertEquals("First", listSerializer.getListValueSerializer()
-			.getLocalizedValueName("test.sortOrder", "first")
+		IConfigListValueEditorSerializer<String> listSerializer = getListSerializer(configValue);
+		assertSame(ConfigValueEditorTypes.getList(), getEditorSerializer(listSerializer).getEditorType());
+		assertEquals(List.of("first", "second"), List.copyOf(listSerializer.getElementSerializer().getAllValidValues().orElseThrow()));
+		assertEquals("First", ConfigValueLocalization
+			.getValueName(listSerializer.getElementSerializer(), "test.sortOrder", "first")
 			.getString());
-		assertEquals("First description", listSerializer.getListValueSerializer()
-			.getLocalizedValueDescription("test.sortOrder", "first")
+		assertEquals("First description", ConfigValueLocalization
+			.getValueDescription(listSerializer.getElementSerializer(), "test.sortOrder", "first")
 			.orElseThrow()
 			.getString());
-		IConfigValueIconProvider<String> iconProvider = getIconProvider(listSerializer.getListValueSerializer());
+		IConfigValueIconProvider<String> iconProvider = getIconProvider(listSerializer.getElementSerializer());
 		assertSame(firstIcon, iconProvider.getIcon("first").orElseThrow());
 		IConfigListValueEditorOptions editorOptions = assertInstanceOf(IConfigListValueEditorOptions.class, listSerializer);
 		assertTrue(editorOptions.allowsRemovingValues());
@@ -69,7 +74,7 @@ class SortableConfigValueFactoryTest {
 	@Test
 	void rejectsBlankOrDuplicateStringValues() {
 		TestSortingConfig sortingConfig = new TestSortingConfig(true);
-		IConfigValue<List<String>> configValue = SORTABLE_CONFIG_VALUES.createStringList(
+		IConfigScreenValue<List<String>> configValue = SORTABLE_CONFIG_VALUES.createStringList(
 			"sortOrder",
 			"test.sortOrder",
 			sortingConfig,
@@ -87,7 +92,7 @@ class SortableConfigValueFactoryTest {
 	@Test
 	void savesValidValuesAndNotifiesListeners() {
 		TestSortingConfig sortingConfig = new TestSortingConfig(true);
-		IConfigValue<List<String>> configValue = SORTABLE_CONFIG_VALUES.createStringList(
+		IConfigScreenValue<List<String>> configValue = SORTABLE_CONFIG_VALUES.createStringList(
 			"sortOrder",
 			"test.sortOrder",
 			sortingConfig,
@@ -97,7 +102,7 @@ class SortableConfigValueFactoryTest {
 			Map.of()
 		);
 		List<List<String>> listenerValues = new ArrayList<>();
-		configValue.addListener(listenerValues::add);
+		configValue.addListener((Consumer<List<String>>) listenerValues::add);
 
 		assertTrue(configValue.set(List.of("second", "first")));
 
@@ -108,7 +113,7 @@ class SortableConfigValueFactoryTest {
 	@Test
 	void genericFactoryExposesRuntimeValuesThroughElementSerializer() {
 		TestSortingConfig sortingConfig = new TestSortingConfig(false);
-		IConfigValue<List<String>> configValue = SORTABLE_CONFIG_VALUES.create(
+		IConfigScreenValue<List<String>> configValue = SORTABLE_CONFIG_VALUES.create(
 			"sortOrder",
 			"test.sortOrder",
 			sortingConfig,
@@ -116,19 +121,24 @@ class SortableConfigValueFactoryTest {
 			TestStringSerializer.INSTANCE
 		);
 
-		IConfigListValueSerializer<String> listSerializer = getListSerializer(configValue);
-		assertEquals(List.of("first", "second"), List.copyOf(listSerializer.getListValueSerializer().getAllValidValues().orElseThrow()));
+		IConfigListValueEditorSerializer<String> listSerializer = getListSerializer(configValue);
+		assertEquals(List.of("first", "second"), List.copyOf(listSerializer.getElementSerializer().getAllValidValues().orElseThrow()));
 		IConfigListValueEditorOptions editorOptions = assertInstanceOf(IConfigListValueEditorOptions.class, listSerializer);
 		assertFalse(editorOptions.allowsRemovingValues());
 	}
 
-	private static IConfigListValueSerializer<String> getListSerializer(IConfigValue<List<String>> configValue) {
+	private static IConfigListValueEditorSerializer<String> getListSerializer(IConfigScreenValue<List<String>> configValue) {
 		return getListSerializer(configValue.getSerializer());
 	}
 
 	@SuppressWarnings("unchecked")
-	private static IConfigListValueSerializer<String> getListSerializer(Object serializer) {
-		return (IConfigListValueSerializer<String>) assertInstanceOf(IConfigListValueSerializer.class, serializer);
+	private static IConfigListValueEditorSerializer<String> getListSerializer(Object serializer) {
+		return (IConfigListValueEditorSerializer<String>) assertInstanceOf(IConfigListValueEditorSerializer.class, serializer);
+	}
+
+	@SuppressWarnings("unchecked")
+	private static IConfigValueEditorSerializer<List<String>> getEditorSerializer(Object serializer) {
+		return (IConfigValueEditorSerializer<List<String>>) assertInstanceOf(IConfigValueEditorSerializer.class, serializer);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -195,7 +205,7 @@ class SortableConfigValueFactoryTest {
 		}
 	}
 
-	private enum TestStringSerializer implements IConfigValueSerializer<String> {
+	private enum TestStringSerializer implements IConfigValueSerializer<String>, IConfigValueLocalizationProvider<String> {
 		INSTANCE;
 
 		@Override
@@ -205,7 +215,7 @@ class SortableConfigValueFactoryTest {
 
 		@Override
 		public IDeserializeResult<String> deserialize(String string) {
-			return new TestDeserializeResult(string);
+			return IDeserializeResult.success(string);
 		}
 
 		@Override
@@ -229,17 +239,4 @@ class SortableConfigValueFactoryTest {
 		}
 	}
 
-	private record TestDeserializeResult(
-		String value
-	) implements IConfigValueSerializer.IDeserializeResult<String> {
-		@Override
-		public Optional<String> getResult() {
-			return Optional.of(value);
-		}
-
-		@Override
-		public List<String> getErrors() {
-			return List.of();
-		}
-	}
 }

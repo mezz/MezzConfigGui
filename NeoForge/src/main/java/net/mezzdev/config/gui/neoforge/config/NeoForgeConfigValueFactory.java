@@ -18,7 +18,8 @@ final class NeoForgeConfigValueFactory {
 			defaultValue instanceof Integer ||
 			defaultValue instanceof String ||
 			defaultValue instanceof Long ||
-			defaultValue instanceof Double) {
+			defaultValue instanceof Double
+		) {
 			return true;
 		}
 		if (defaultValue instanceof Enum<?> enumValue) {
@@ -146,7 +147,7 @@ final class NeoForgeConfigValueFactory {
 		);
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	private static Optional<NeoForgeConfigValue<?>> createEnum(
 		String modId,
 		ModConfig modConfig,

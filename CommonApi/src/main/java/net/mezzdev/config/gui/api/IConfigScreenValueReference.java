@@ -23,7 +23,32 @@ public interface IConfigScreenValueReference {
 		IConfigValue<?> checkedConfigValue = Objects.requireNonNull(configValue, "configValue");
 		return new IConfigScreenValueReference() {
 			@Override
-			public boolean matches(IConfigValue<?> value) {
+			public boolean matches(IConfigScreenValue<?> value) {
+				return value.getConfigValue()
+					.filter(configValue -> configValue == checkedConfigValue)
+					.isPresent();
+			}
+
+			@Override
+			public String toString() {
+				return checkedConfigValue.getName();
+			}
+		};
+	}
+
+	/**
+	 * Reference a config screen value by object identity.
+	 *
+	 * @param configValue config screen value to reference
+	 * @return a config screen value reference for the given config screen value
+	 *
+	 * @since 0.1.0
+	 */
+	static IConfigScreenValueReference screenValue(IConfigScreenValue<?> configValue) {
+		IConfigScreenValue<?> checkedConfigValue = Objects.requireNonNull(configValue, "configValue");
+		return new IConfigScreenValueReference() {
+			@Override
+			public boolean matches(IConfigScreenValue<?> value) {
 				return checkedConfigValue == value;
 			}
 
@@ -37,10 +62,10 @@ public interface IConfigScreenValueReference {
 	/**
 	 * Returns true when this reference points to the given config value.
 	 *
-	 * @param value config value to test
-	 * @return true when this reference points to the given config value
+	 * @param value config screen value to test
+	 * @return true when this reference points to the given config screen value
 	 *
 	 * @since 0.1.0
 	 */
-	boolean matches(IConfigValue<?> value);
+	boolean matches(IConfigScreenValue<?> value);
 }

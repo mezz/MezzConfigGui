@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.neoforge.config;
 
+import net.mezzdev.config.api.value.IDeserializeResult;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 final class NeoForgeLongSerializer extends NeoForgeTextSerializer<Long> {
@@ -23,16 +24,16 @@ final class NeoForgeLongSerializer extends NeoForgeTextSerializer<Long> {
 	}
 
 	@Override
-	public NeoForgeDeserializeResult<Long> deserialize(String string) {
+	public IDeserializeResult<Long> deserialize(String string) {
 		string = string.trim();
 		try {
 			long value = Long.parseLong(string);
 			if (!isValid(value)) {
-				return new NeoForgeDeserializeResult<>(null, "Invalid long integer. Must be: " + getValidValuesDescription());
+				return IDeserializeResult.failure("Invalid long integer. Must be: " + getValidValuesDescription());
 			}
-			return new NeoForgeDeserializeResult<>(value);
+			return IDeserializeResult.success(value);
 		} catch (NumberFormatException e) {
-			return new NeoForgeDeserializeResult<>(null, "Unable to parse long integer: '%s' with error:\n%s".formatted(string, e.getMessage()));
+			return IDeserializeResult.failure("Unable to parse long integer: '%s' with error:\n%s".formatted(string, e.getMessage()));
 		}
 	}
 }

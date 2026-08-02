@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui.keybindings;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import net.mezzdev.config.api.value.IConfigValue;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.mezzdev.config.gui.entries.ConfigEntryWidget;
@@ -36,7 +36,7 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 	private boolean lastModifierHeldDown = false;
 	private boolean lastKeyHeldDown = false;
 
-	public KeyMappingConfigEntry(IConfigValue<KeyMappingValue> value, ConfigTextures textures) {
+	public KeyMappingConfigEntry(IConfigScreenValue<KeyMappingValue> value, ConfigTextures textures) {
 		super(value, textures);
 		this.configKeyMapping = value.getValue().configKeyMapping();
 	}
@@ -123,7 +123,8 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 	@Override
 	@Nullable
 	public ConfigInfo getTooltipInfo(double mouseX, double mouseY) {
-		@Nullable ConfigInfo resetInfo = super.getTooltipInfo(mouseX, mouseY);
+		@Nullable
+		ConfigInfo resetInfo = super.getTooltipInfo(mouseX, mouseY);
 		if (resetInfo != null) {
 			return resetInfo;
 		}

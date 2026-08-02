@@ -28,7 +28,7 @@ Shared config GUI support for Minecraft mods.
     side="BOTH"
 
 [[dependencies.${configGuiModId}]]
-    modId="${configApiModId}"
+    modId="${configModId}"
     mandatory=true
     versionRange="[0,)"
     ordering="AFTER"

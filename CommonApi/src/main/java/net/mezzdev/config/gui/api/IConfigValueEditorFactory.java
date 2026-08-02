@@ -1,7 +1,5 @@
 package net.mezzdev.config.gui.api;
 
-import net.mezzdev.config.api.value.IConfigValue;
-
 /**
  * Creates custom value editors for config value rows.
  *
@@ -14,10 +12,10 @@ public interface IConfigValueEditorFactory<T> {
 	/**
 	 * Create an editor for one config value row.
 	 *
-	 * @param configValue the config value being edited
+	 * @param configValue the config screen value being edited
 	 * @return the editor for this row
 	 *
 	 * @since 0.1.0
 	 */
-	IConfigValueEditor<T> createEditor(IConfigValue<T> configValue);
+	IConfigValueEditor<T> createEditor(IConfigScreenValue<T> configValue);
 }

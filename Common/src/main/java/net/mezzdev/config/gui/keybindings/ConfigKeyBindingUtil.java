@@ -87,16 +87,14 @@ public final class ConfigKeyBindingUtil {
 			case GLFW.GLFW_KEY_LEFT_SHIFT, GLFW.GLFW_KEY_RIGHT_SHIFT -> ConfigKeyModifier.SHIFT;
 			case GLFW.GLFW_KEY_LEFT_ALT, GLFW.GLFW_KEY_RIGHT_ALT -> ConfigKeyModifier.ALT;
 			case GLFW.GLFW_KEY_LEFT_CONTROL, GLFW.GLFW_KEY_RIGHT_CONTROL -> ConfigKeyModifier.CONTROL_OR_COMMAND;
-			case GLFW.GLFW_KEY_LEFT_SUPER, GLFW.GLFW_KEY_RIGHT_SUPER -> Minecraft.ON_OSX ? ConfigKeyModifier.CONTROL_OR_COMMAND : ConfigKeyModifier.NONE;
+			case GLFW.GLFW_KEY_LEFT_SUPER, GLFW.GLFW_KEY_RIGHT_SUPER -> getMacControlOrCommandModifier();
 			default -> ConfigKeyModifier.NONE;
 		};
 	}
 
 	public static Component getCombinedName(ConfigKeyModifier modifier, Component component) {
 		return switch (modifier) {
-			case CONTROL_OR_COMMAND -> Minecraft.ON_OSX ?
-				Component.translatable("mezz_config.key.combo.command", component) :
-				Component.translatable("mezz_config.key.combo.control", component);
+			case CONTROL_OR_COMMAND -> getControlOrCommandName(component);
 			case SHIFT -> Component.translatable("mezz_config.key.combo.shift", component);
 			case ALT -> Component.translatable("mezz_config.key.combo.alt", component);
 			case NONE -> component;
@@ -105,12 +103,31 @@ public final class ConfigKeyBindingUtil {
 
 	private static Component getDisplayName(ConfigKeyModifier modifier) {
 		return switch (modifier) {
-			case CONTROL_OR_COMMAND -> Minecraft.ON_OSX ?
-				Component.translatable("mezz_config.key.modifier.command") :
-				Component.translatable("mezz_config.key.modifier.control");
+			case CONTROL_OR_COMMAND -> getControlOrCommandDisplayName();
 			case SHIFT -> Component.translatable("mezz_config.key.modifier.shift");
 			case ALT -> Component.translatable("mezz_config.key.modifier.alt");
 			case NONE -> Component.empty();
 		};
+	}
+
+	private static ConfigKeyModifier getMacControlOrCommandModifier() {
+		if (Minecraft.ON_OSX) {
+			return ConfigKeyModifier.CONTROL_OR_COMMAND;
+		}
+		return ConfigKeyModifier.NONE;
+	}
+
+	private static Component getControlOrCommandName(Component component) {
+		if (Minecraft.ON_OSX) {
+			return Component.translatable("mezz_config.key.combo.command", component);
+		}
+		return Component.translatable("mezz_config.key.combo.control", component);
+	}
+
+	private static Component getControlOrCommandDisplayName() {
+		if (Minecraft.ON_OSX) {
+			return Component.translatable("mezz_config.key.modifier.command");
+		}
+		return Component.translatable("mezz_config.key.modifier.control");
 	}
 }

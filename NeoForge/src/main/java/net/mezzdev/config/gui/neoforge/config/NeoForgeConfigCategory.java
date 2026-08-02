@@ -1,7 +1,8 @@
 package net.mezzdev.config.gui.neoforge.config;
 
-import net.mezzdev.config.api.schema.IConfigCategory;
-import net.mezzdev.config.api.value.IConfigValue;
+import net.mezzdev.config.gui.ConfigScreenCategory;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
+import net.mezzdev.config.gui.api.IConfigLocalizedCategory;
 import net.minecraft.network.chat.Component;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
@@ -11,12 +12,13 @@ import java.util.List;
 
 record NeoForgeConfigCategory(
 	String name,
+	String localizationKey,
 	Component localizedName,
 	Component localizedDescription,
 	ModConfig modConfig,
 	ModConfigSpec modConfigSpec,
 	List<NeoForgeConfigValue<?>> configValues
-) implements IConfigCategory {
+) implements ConfigScreenCategory, IConfigLocalizedCategory {
 	public NeoForgeConfigCategory {
 		configValues = List.copyOf(configValues);
 	}
@@ -24,6 +26,11 @@ record NeoForgeConfigCategory(
 	@Override
 	public String getName() {
 		return name;
+	}
+
+	@Override
+	public String getLocalizationKey() {
+		return localizationKey;
 	}
 
 	@Override
@@ -37,7 +44,7 @@ record NeoForgeConfigCategory(
 	}
 
 	@Override
-	public Collection<? extends IConfigValue<?>> getConfigValues() {
+	public Collection<? extends IConfigScreenValue<?>> getConfigValues() {
 		return configValues;
 	}
 }
