@@ -1,6 +1,6 @@
 plugins {
 	// https://github.com/mezz/JavaFormatting
-	id("net.mezzdev.java-formatting") version("0.2.3")
+	id("net.mezzdev.java-formatting") version("0.2.4")
 
     // https://plugins.gradle.org/plugin/com.dorongold.task-tree
     id("com.dorongold.task-tree") version("4.0.0")
