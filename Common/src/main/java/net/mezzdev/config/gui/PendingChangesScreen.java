@@ -79,16 +79,16 @@ final class PendingChangesScreen extends Screen {
 		int totalWidth = BUTTON_WIDTH * 2 + BUTTON_GAP;
 		int x = (width - totalWidth) / 2;
 		addRenderableWidget(Button.builder(
-			Component.translatable("mezz_config.config.screen.apply"),
-			button -> callback.accept(true)
-		)
+				Component.translatable("mezz_config.config.screen.apply"),
+				button -> callback.accept(true)
+			)
 			.bounds(x, actionButtonY, BUTTON_WIDTH, BUTTON_HEIGHT)
 			.tooltip(Tooltip.create(getApplyInfo(requiresRestart)))
 			.build());
 		addRenderableWidget(Button.builder(
-			Component.translatable("mezz_config.config.screen.discard"),
-			button -> callback.accept(false)
-		)
+				Component.translatable("mezz_config.config.screen.discard"),
+				button -> callback.accept(false)
+			)
 			.bounds(x + BUTTON_WIDTH + BUTTON_GAP, actionButtonY, BUTTON_WIDTH, BUTTON_HEIGHT)
 			.tooltip(Tooltip.create(Component.translatable("mezz_config.config.screen.discard.info")))
 			.build());

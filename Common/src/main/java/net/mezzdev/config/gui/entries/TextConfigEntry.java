@@ -19,6 +19,7 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Config entry widget for values edited directly as serialized text.
@@ -158,10 +159,16 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 	}
 
 	private boolean isValidEditText() {
-		return serializer.deserialize(editText)
-			.getResult()
-			.filter(serializer::isValid)
-			.isPresent();
+		return getParsedEditValue().isPresent();
+	}
+
+	private Optional<T> getParsedEditValue() {
+		IDeserializeResult<T> result = serializer.deserialize(editText);
+		if (!result.getErrors().isEmpty()) {
+			return Optional.empty();
+		}
+		return result.getResult()
+			.filter(serializer::isValid);
 	}
 
 	private void commitEdit() {
@@ -169,8 +176,7 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 			return;
 		}
 		editing = false;
-		serializer.deserialize(editText)
-			.getResult()
+		getParsedEditValue()
 			.ifPresent(this::setValue);
 		editText = "";
 	}

@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.entries;
 
+import net.mezzdev.config.api.value.IDeserializeResult;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.gui.ConfigInputHandler;
 import net.mezzdev.config.gui.ConfigInputUtil;
@@ -20,7 +21,9 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.StringUtil;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,8 +47,11 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	private static final int VALUE_GROUP_BOTTOM_PADDING = 3;
 	private static final int VALUE_GROUP_BORDER_SIZE = 1;
 	private static final int UNUSED_VALUE_TOP_GAP = 1;
+	private static final int ADD_VALUE_TOP_GAP = 2;
 	private static final int VALUE_ROW_HORIZONTAL_PADDING = 4;
 	private static final int ORDERED_ROW_NUMBER_WIDTH = 18;
+	private static final int ADD_VALUE_TEXT_PADDING = 4;
+	private static final int MAX_ADD_VALUE_TEXT_LENGTH = 512;
 	private static final int ORDERED_ROW_DRAG_FLOAT_Z_OFFSET = 200;
 	private static final int ORDERED_GROUP_BACKGROUND_COLOR = 0x22000000;
 	private static final int ORDERED_GROUP_BORDER_DARK_COLOR = 0x90000000;
@@ -59,6 +65,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	private static final int ORDERED_ROW_DIVIDER_COLOR = 0x18FFFFFF;
 	private static final int UNUSED_ROW_BACKGROUND_COLOR = 0x30000000;
 	private static final int UNUSED_ROW_TEXT_COLOR = 0xFF707070;
+	private static final int INVALID_TEXT_COLOR = 0xFFFF7070;
 
 	private final List<ListValueRow> valueRows = new ArrayList<>();
 	private final List<ListValueRow> unusedValueRows = new ArrayList<>();
@@ -66,9 +73,15 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	private final IConfigValueSerializer<T> elementSerializer;
 	private final Runnable layoutUpdater;
 	private final boolean allowsRemovingValues;
+	private final boolean allowsTypedInput;
 	private ImmutableRect2i valueGroupArea = ImmutableRect2i.EMPTY;
+	private ImmutableRect2i addValueRowArea = ImmutableRect2i.EMPTY;
+	private ImmutableRect2i addValueTextArea = ImmutableRect2i.EMPTY;
+	private ImmutableRect2i addValueButtonArea = ImmutableRect2i.EMPTY;
 	@Nullable
 	private DragSession dragSession;
+	private boolean addingValue;
+	private String addValueText = "";
 
 	ListConfigEntry(
 		IConfigScreenValue<List<T>> listValue,
@@ -81,6 +94,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		this.elementSerializer = listSerializer.getElementSerializer();
 		this.allowsRemovingValues = !(listSerializer instanceof IConfigListValueEditorOptions editorOptions) ||
 			editorOptions.allowsRemovingValues();
+		this.allowsTypedInput = allowsRemovingValues;
 		this.allValidValues = elementSerializer.getAllValidValues()
 			.map(List::copyOf)
 			.orElse(List.of());
@@ -110,14 +124,20 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 
 	@Override
 	public int getHeight() {
-		if (valueRows.isEmpty() && unusedValueRows.isEmpty()) {
+		if (valueRows.isEmpty() && unusedValueRows.isEmpty() && !allowsTypedInput) {
 			return super.getHeight();
 		}
-		int height = super.getHeight() + VALUE_GROUP_TOP_GAP;
-		height += valueRows.size() * ENTRY_ROW_HEIGHT;
+		return super.getHeight() + VALUE_GROUP_TOP_GAP + getValueGroupContentHeight() + VALUE_GROUP_BOTTOM_PADDING;
+	}
+
+	private int getValueGroupContentHeight() {
+		int height = valueRows.size() * ENTRY_ROW_HEIGHT;
 		height += getUnusedValueTopGap();
 		height += unusedValueRows.size() * ENTRY_ROW_HEIGHT;
-		height += VALUE_GROUP_BOTTOM_PADDING;
+		if (allowsTypedInput) {
+			height += getAddValueTopGap();
+			height += ENTRY_ROW_HEIGHT;
+		}
 		return height;
 	}
 
@@ -129,14 +149,13 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		this.area = area;
 
 		int y = area.getY() + headerHeight + VALUE_GROUP_TOP_GAP;
-		int rowCount = valueRows.size() + unusedValueRows.size();
-		int unusedValueTopGap = getUnusedValueTopGap();
-		if (rowCount > 0) {
+		int valueGroupContentHeight = getValueGroupContentHeight();
+		if (valueGroupContentHeight > 0) {
 			valueGroupArea = new ImmutableRect2i(
 				area.getX() + 4,
 				y - 1,
 				Math.max(0, area.getWidth() - 8),
-				rowCount * ENTRY_ROW_HEIGHT + unusedValueTopGap + VALUE_GROUP_BORDER_SIZE * 2
+				valueGroupContentHeight + VALUE_GROUP_BORDER_SIZE * 2
 			);
 		} else {
 			valueGroupArea = ImmutableRect2i.EMPTY;
@@ -150,7 +169,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			));
 			y += ENTRY_ROW_HEIGHT;
 		}
-		y += unusedValueTopGap;
+		y += getUnusedValueTopGap();
 		for (ListValueRow row : unusedValueRows) {
 			row.updateBounds(new ImmutableRect2i(
 				valueGroupArea.getX() + VALUE_GROUP_BORDER_SIZE,
@@ -160,6 +179,8 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			));
 			y += ENTRY_ROW_HEIGHT;
 		}
+		y += getAddValueTopGap();
+		updateAddValueBounds(y);
 	}
 
 	private int getUnusedValueTopGap() {
@@ -167,6 +188,36 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			return UNUSED_VALUE_TOP_GAP;
 		}
 		return 0;
+	}
+
+	private int getAddValueTopGap() {
+		if (allowsTypedInput && (!valueRows.isEmpty() || !unusedValueRows.isEmpty())) {
+			return ADD_VALUE_TOP_GAP;
+		}
+		return 0;
+	}
+
+	private void updateAddValueBounds(int y) {
+		if (!allowsTypedInput || valueGroupArea.isEmpty()) {
+			addValueRowArea = ImmutableRect2i.EMPTY;
+			addValueTextArea = ImmutableRect2i.EMPTY;
+			addValueButtonArea = ImmutableRect2i.EMPTY;
+			return;
+		}
+		addValueRowArea = new ImmutableRect2i(
+			valueGroupArea.getX() + VALUE_GROUP_BORDER_SIZE,
+			y,
+			Math.max(0, valueGroupArea.getWidth() - VALUE_GROUP_BORDER_SIZE * 2),
+			ENTRY_ROW_HEIGHT
+		);
+		int cy = addValueRowArea.getY() + (addValueRowArea.getHeight() - BUTTON_SIZE) / 2;
+		addValueButtonArea = createButtonArea(addValueRowArea, cy, 0);
+		addValueTextArea = new ImmutableRect2i(
+			addValueRowArea.getX() + VALUE_ROW_HORIZONTAL_PADDING,
+			cy,
+			Math.max(0, addValueRowArea.getWidth() - BUTTON_SIZE - BUTTON_GAP - VALUE_ROW_HORIZONTAL_PADDING * 2),
+			BUTTON_SIZE
+		);
 	}
 
 	@Override
@@ -186,6 +237,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		for (ListValueRow row : unusedValueRows) {
 			row.draw(guiGraphics, mouseX, mouseY);
 		}
+		drawAddValueRow(guiGraphics, mouseX, mouseY);
 		if (dragSession != null) {
 			guiGraphics.flush();
 			guiGraphics.pose().pushPose();
@@ -194,6 +246,62 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			guiGraphics.pose().popPose();
 			guiGraphics.flush();
 		}
+	}
+
+	private void drawAddValueRow(GuiGraphics guiGraphics, double mouseX, double mouseY) {
+		if (!allowsTypedInput || addValueRowArea.isEmpty()) {
+			return;
+		}
+		Font font = Minecraft.getInstance().font;
+		ConfigTextures textures = getTextures();
+
+		guiGraphics.fill(
+			addValueRowArea.getX(),
+			addValueRowArea.getY(),
+			addValueRowArea.getX() + addValueRowArea.getWidth(),
+			addValueRowArea.getY() + addValueRowArea.getHeight(),
+			UNUSED_ROW_BACKGROUND_COLOR
+		);
+		drawButtonBackground(guiGraphics, textures, addValueTextArea, true, addValueTextArea.contains(mouseX, mouseY));
+		String displayText = getAddValueDisplayText();
+		int textColor = getAddValueTextColor();
+		drawAddValueText(guiGraphics, font, displayText, textColor);
+
+		boolean canAdd = canAddTypedValue();
+		boolean addHovered = canAdd && addValueButtonArea.contains(mouseX, mouseY);
+		drawButtonBackground(guiGraphics, textures, addValueButtonArea, canAdd, addHovered);
+		drawCenteredButtonText(guiGraphics, font, "+", addValueButtonArea, getControlTextColor(addHovered));
+	}
+
+	private String getAddValueDisplayText() {
+		if (addingValue) {
+			return addValueText + "_";
+		}
+		return elementSerializer.getValidValuesDescription();
+	}
+
+	private int getAddValueTextColor() {
+		if (addingValue && !addValueText.isEmpty() && !canAddTypedValue()) {
+			return INVALID_TEXT_COLOR;
+		}
+		if (addingValue) {
+			return TEXT_COLOR;
+		}
+		return UNUSED_ROW_TEXT_COLOR;
+	}
+
+	private void drawAddValueText(GuiGraphics guiGraphics, Font font, String text, int color) {
+		ImmutableRect2i textArea = addValueTextArea.cropLeft(ADD_VALUE_TEXT_PADDING).cropRight(ADD_VALUE_TEXT_PADDING);
+		int y = getCenteredTextY(font, textArea);
+		String visibleText = getVisibleText(font, text, textArea.getWidth());
+		drawText(guiGraphics, font, visibleText, textArea.getX(), y, color);
+	}
+
+	private static String getVisibleText(Font font, String text, int maxWidth) {
+		if (font.width(text) <= maxWidth) {
+			return text;
+		}
+		return font.plainSubstrByWidth(text, maxWidth, true);
 	}
 
 	private void drawValueGroup(GuiGraphics guiGraphics, ImmutableRect2i groupArea) {
@@ -211,6 +319,23 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		guiGraphics.fill(x, y, x + 1, bottom, ORDERED_GROUP_BORDER_DARK_COLOR);
 		guiGraphics.fill(right - 1, y, right, bottom, ORDERED_GROUP_BORDER_LIGHT_COLOR);
 		guiGraphics.fill(x, bottom - 1, right, bottom, ORDERED_GROUP_BORDER_LIGHT_COLOR);
+	}
+
+	private static ImmutableRect2i createButtonArea(ImmutableRect2i area, int y, int buttonsFromRight) {
+		int xOffset = (BUTTON_SIZE + BUTTON_GAP) * buttonsFromRight;
+		return new ImmutableRect2i(
+			area.getX() + area.getWidth() - BUTTON_SIZE - xOffset,
+			y,
+			BUTTON_SIZE,
+			BUTTON_SIZE
+		);
+	}
+
+	private static int getControlTextColor(boolean hovered) {
+		if (hovered) {
+			return HOVER_TEXT_COLOR;
+		}
+		return TEXT_COLOR;
 	}
 
 	@Override
@@ -252,7 +377,35 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 				);
 			}
 		}
+		if (allowsTypedInput && addValueTextArea.contains(mouseX, mouseY)) {
+			if (addingValue && !addValueText.isEmpty() && !canAddTypedValue()) {
+				return createInvalidAddValueInfo();
+			}
+			return new ConfigInfo(
+				Component.translatable("mezz_config.config.screen.add"),
+				List.of(Component.translatable("mezz_config.config.screen.validValues", elementSerializer.getValidValuesDescription()))
+			);
+		}
+		if (allowsTypedInput && addValueButtonArea.contains(mouseX, mouseY)) {
+			return new ConfigInfo(
+				Component.translatable("mezz_config.config.screen.add"),
+				List.of(Component.translatable("mezz_config.config.screen.validValues", elementSerializer.getValidValuesDescription()))
+			);
+		}
 		return null;
+	}
+
+	private ConfigInfo createInvalidAddValueInfo() {
+		IDeserializeResult<T> result = elementSerializer.deserialize(addValueText);
+		List<Component> lines = new ArrayList<>();
+		for (String error : result.getErrors()) {
+			lines.add(Component.literal(error));
+		}
+		if (lines.isEmpty()) {
+			lines.add(Component.translatable("mezz_config.config.screen.text.invalid.info"));
+		}
+		lines.add(Component.translatable("mezz_config.config.screen.validValues", elementSerializer.getValidValuesDescription()));
+		return new ConfigInfo(Component.translatable("mezz_config.config.screen.text.invalid"), lines);
 	}
 
 	@Override
@@ -281,6 +434,75 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	}
 
 	@Override
+	protected boolean onMouseClicked(UserInput input) {
+		if (super.onMouseClicked(input)) {
+			cancelAddValue();
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public boolean charTyped(char codePoint, int modifiers) {
+		if (!addingValue) {
+			return false;
+		}
+		appendAddValueCharacter(codePoint);
+		return true;
+	}
+
+	private void appendAddValueCharacter(char codePoint) {
+		if (addValueText.length() >= MAX_ADD_VALUE_TEXT_LENGTH || !StringUtil.isAllowedChatCharacter(codePoint)) {
+			return;
+		}
+		addValueText += codePoint;
+	}
+
+	@Override
+	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+		if (!addingValue) {
+			return false;
+		}
+		if (Screen.isPaste(keyCode)) {
+			appendAddValueText(Minecraft.getInstance().keyboardHandler.getClipboard());
+			return true;
+		}
+		if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+			commitAddValue();
+			return true;
+		}
+		if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+			cancelAddValue();
+			return true;
+		}
+		if (keyCode == GLFW.GLFW_KEY_BACKSPACE && !addValueText.isEmpty()) {
+			addValueText = addValueText.substring(0, addValueText.length() - 1);
+			return true;
+		}
+		if (keyCode == GLFW.GLFW_KEY_DELETE) {
+			addValueText = "";
+			return true;
+		}
+		return true;
+	}
+
+	private void appendAddValueText(String text) {
+		for (int i = 0; i < text.length(); i++) {
+			appendAddValueCharacter(text.charAt(i));
+		}
+	}
+
+	@Override
+	public boolean isCapturingKeyboardInput() {
+		return addingValue;
+	}
+
+	@Override
+	public void unfocus() {
+		commitAddValue();
+	}
+
+	@Override
 	protected void onValueChanged() {
 		rebuildRows();
 		layoutUpdater.run();
@@ -290,6 +512,64 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		List<T> current = new ArrayList<>(getValue());
 		current.add(value);
 		setValue(current);
+	}
+
+	private boolean onAddValueMouseClicked(UserInput input) {
+		if (!allowsTypedInput) {
+			return false;
+		}
+		if (addValueTextArea.contains(input.getMouseX(), input.getMouseY())) {
+			if (!input.isSimulate()) {
+				addingValue = true;
+			}
+			return true;
+		}
+		if (addValueButtonArea.contains(input.getMouseX(), input.getMouseY())) {
+			if (!input.isSimulate()) {
+				commitAddValue();
+			}
+			return true;
+		}
+		if (addingValue && !input.isSimulate()) {
+			commitAddValue();
+		}
+		return false;
+	}
+
+	private boolean canAddTypedValue() {
+		return getAddValue()
+			.isPresent();
+	}
+
+	private Optional<T> getAddValue() {
+		if (!allowsTypedInput || addValueText.isEmpty()) {
+			return Optional.empty();
+		}
+		IDeserializeResult<T> result = elementSerializer.deserialize(addValueText);
+		if (!result.getErrors().isEmpty()) {
+			return Optional.empty();
+		}
+		return result.getResult()
+			.filter(elementSerializer::isValid)
+			.filter(this::canAddValue);
+	}
+
+	private boolean canAddValue(T value) {
+		List<T> current = new ArrayList<>(getValue());
+		current.add(value);
+		return configValue.getSerializer()
+			.isValid(current);
+	}
+
+	private void commitAddValue() {
+		getAddValue()
+			.ifPresent(this::addValue);
+		cancelAddValue();
+	}
+
+	private void cancelAddValue() {
+		addingValue = false;
+		addValueText = "";
 	}
 
 	private void moveValue(int index, int offset) {
@@ -430,6 +710,9 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			if (onMouseClicked(input)) {
 				return Optional.of(this);
 			}
+			if (onAddValueMouseClicked(input)) {
+				return Optional.of(this);
+			}
 
 			for (ListValueRow row : valueRows) {
 				if (row.moveUpArea.contains(input.getMouseX(), input.getMouseY())) {
@@ -477,6 +760,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 
 		@Override
 		public void unfocus() {
+			ListConfigEntry.this.unfocus();
 			dragSession = null;
 		}
 	}
@@ -656,16 +940,6 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 				return 1;
 			}
 			return 0;
-		}
-
-		private ImmutableRect2i createButtonArea(ImmutableRect2i area, int y, int buttonsFromRight) {
-			int xOffset = (BUTTON_SIZE + BUTTON_GAP) * buttonsFromRight;
-			return new ImmutableRect2i(
-				area.getX() + area.getWidth() - BUTTON_SIZE - xOffset,
-				y,
-				BUTTON_SIZE,
-				BUTTON_SIZE
-			);
 		}
 
 		boolean canMoveUp() {
@@ -852,12 +1126,6 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			ConfigEntryWidget.drawCenteredButtonText(guiGraphics, font, "+", addArea, getControlTextColor(addHovered));
 		}
 
-		private static int getControlTextColor(boolean hovered) {
-			if (hovered) {
-				return HOVER_TEXT_COLOR;
-			}
-			return TEXT_COLOR;
-		}
 	}
 
 	private record ListMove<T>(T value, int oldIndex, int newIndex) {

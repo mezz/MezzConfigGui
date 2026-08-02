@@ -77,6 +77,9 @@ public final class ConfigEntryWidgetFactory {
 		if (serializer instanceof IConfigValueEditorSerializer<?> editorSerializer) {
 			return editorSerializer.getEditorType();
 		}
+		if (value.getValue() instanceof List<?> && ConfigListValueEditorSerializers.canAdapt(serializer)) {
+			return ConfigValueEditorTypes.getList();
+		}
 		if (value.getValue() instanceof Integer && serializer.getRange().isPresent()) {
 			return ConfigValueEditorTypes.INTEGER;
 		}
@@ -111,7 +114,7 @@ public final class ConfigEntryWidgetFactory {
 
 	@SuppressWarnings("unchecked")
 	private <T> ConfigEntryWidget<List<T>> createListEntry(IConfigScreenValue<List<T>> value) {
-		IConfigListValueEditorSerializer<T> serializer = (IConfigListValueEditorSerializer<T>) value.getSerializer();
+		IConfigListValueEditorSerializer<T> serializer = ConfigListValueEditorSerializers.adapt((IConfigValueSerializer<List<T>>) value.getSerializer());
 		return new ListConfigEntry<>(value, serializer, layoutUpdater, textures);
 	}
 

@@ -1,0 +1,101 @@
+package net.mezzdev.config.gui.entries;
+
+import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
+import org.junit.jupiter.api.Test;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class ConfigListValueEditorSerializersTest {
+	@Test
+	void adaptsListSerializerWithPublicElementSerializer() {
+		StringSerializer elementSerializer = new StringSerializer();
+		StringListSerializer listSerializer = new StringListSerializer(elementSerializer);
+
+		assertTrue(ConfigListValueEditorSerializers.canAdapt(listSerializer));
+
+		IConfigListValueEditorSerializer<String> adapter = ConfigListValueEditorSerializers.adapt(listSerializer);
+		assertSame(elementSerializer, adapter.getElementSerializer());
+		assertEquals("alpha, beta", adapter.serialize(List.of("alpha", "beta")));
+		assertEquals(List.of("alpha", "beta"), adapter.deserialize("alpha, beta").getResult().orElseThrow());
+	}
+
+	@Test
+	void doesNotAdaptPlainValueSerializer() {
+		StringSerializer serializer = new StringSerializer();
+
+		assertFalse(ConfigListValueEditorSerializers.canAdapt(serializer));
+	}
+
+	private static final class StringListSerializer implements IConfigValueSerializer<List<String>> {
+		private final IConfigValueSerializer<String> elementSerializer;
+
+		private StringListSerializer(IConfigValueSerializer<String> elementSerializer) {
+			this.elementSerializer = elementSerializer;
+		}
+
+		public IConfigValueSerializer<String> getElementSerializer() {
+			return elementSerializer;
+		}
+
+		@Override
+		public String serialize(List<String> value) {
+			return String.join(", ", value);
+		}
+
+		@Override
+		public IDeserializeResult<List<String>> deserialize(String string) {
+			return IDeserializeResult.success(List.of(string.split(", ")));
+		}
+
+		@Override
+		public boolean isValid(List<String> value) {
+			return true;
+		}
+
+		@Override
+		public Optional<Collection<List<String>>> getAllValidValues() {
+			return Optional.empty();
+		}
+
+		@Override
+		public String getValidValuesDescription() {
+			return "String list";
+		}
+	}
+
+	private static final class StringSerializer implements IConfigValueSerializer<String> {
+		@Override
+		public String serialize(String value) {
+			return value;
+		}
+
+		@Override
+		public IDeserializeResult<String> deserialize(String string) {
+			return IDeserializeResult.success(string);
+		}
+
+		@Override
+		public boolean isValid(String value) {
+			return true;
+		}
+
+		@Override
+		public Optional<Collection<String>> getAllValidValues() {
+			return Optional.empty();
+		}
+
+		@Override
+		public String getValidValuesDescription() {
+			return "String";
+		}
+	}
+}
