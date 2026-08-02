@@ -120,7 +120,8 @@ public class ConfigScreen extends Screen {
 				category,
 				entryWidgetsByValue,
 				allEntryWidgets,
-				entryWidgetFactory
+				entryWidgetFactory,
+				controller
 			);
 			ConfigCategoryWidget widget = new ConfigCategoryWidget(
 				category,
@@ -156,11 +157,12 @@ public class ConfigScreen extends Screen {
 		ConfigScreenCategory category,
 		Map<IConfigScreenValue<?>, ConfigEntryWidget<?>> entryWidgetsByValue,
 		List<ConfigEntryWidget<?>> allEntryWidgets,
-		ConfigEntryWidgetFactory entryWidgetFactory
+		ConfigEntryWidgetFactory entryWidgetFactory,
+		ConfigScreenController controller
 	) {
 		List<ConfigEntryWidget<?>> entryWidgets = new ArrayList<>();
 		for (IConfigScreenValue<?> configValue : category.getConfigValues()) {
-			entryWidgets.add(getOrCreateEntryWidget(entryWidgetsByValue, allEntryWidgets, entryWidgetFactory, configValue));
+			entryWidgets.add(getOrCreateEntryWidget(entryWidgetsByValue, allEntryWidgets, entryWidgetFactory, controller, configValue));
 		}
 		return entryWidgets;
 	}
@@ -173,11 +175,13 @@ public class ConfigScreen extends Screen {
 		Map<IConfigScreenValue<?>, ConfigEntryWidget<?>> entryWidgetsByValue,
 		List<ConfigEntryWidget<?>> allEntryWidgets,
 		ConfigEntryWidgetFactory entryWidgetFactory,
+		ConfigScreenController controller,
 		IConfigScreenValue<?> configValue
 	) {
 		ConfigEntryWidget<?> entryWidget = entryWidgetsByValue.get(configValue);
 		if (entryWidget == null) {
 			entryWidget = entryWidgetFactory.create(configValue);
+			entryWidget.setAppliedChangeListener(controller::recordAppliedChange);
 			entryWidgetsByValue.put(configValue, entryWidget);
 			allEntryWidgets.add(entryWidget);
 		}
@@ -351,6 +355,10 @@ public class ConfigScreen extends Screen {
 		controller.applyPendingChanges();
 	}
 
+	private void undoChanges() {
+		controller.undoChanges();
+	}
+
 	@Override
 	public boolean charTyped(char codePoint, int modifiers) {
 		if (searchBox.isFocused() && searchBox.charTyped(codePoint, modifiers)) {
@@ -420,6 +428,9 @@ public class ConfigScreen extends Screen {
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		if (button == 0 && isActionButton(mouseX, mouseY)) {
+			return true;
+		}
 		if (button == 1 && searchBox.isMouseOver(mouseX, mouseY)) {
 			if (!searchBox.getValue().isEmpty()) {
 				searchBox.setValue("");
@@ -447,6 +458,15 @@ public class ConfigScreen extends Screen {
 		if (button == 0 && (controller.stopContentScrollDrag() || controller.stopNavScrollDrag())) {
 			return true;
 		}
+		if (button == 0) {
+			if (handleActionButton(mouseX, mouseY)) {
+				Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+				return true;
+			}
+			if (isActionButton(mouseX, mouseY)) {
+				return true;
+			}
+		}
 		boolean ret = UserInput.fromVanilla(mouseX, mouseY, button, InputType.EXECUTE)
 			.map(this::handleInput)
 			.orElse(false);
@@ -454,6 +474,31 @@ public class ConfigScreen extends Screen {
 			Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
 		}
 		return ret || super.mouseReleased(mouseX, mouseY, button);
+	}
+
+	private boolean isActionButton(double mouseX, double mouseY) {
+		return layout.getApplyPendingChangesButtonArea().contains(mouseX, mouseY) ||
+			layout.getUndoChangesButtonArea().contains(mouseX, mouseY);
+	}
+
+	private boolean handleActionButton(double mouseX, double mouseY) {
+		if (layout.getApplyPendingChangesButtonArea().contains(mouseX, mouseY)) {
+			flushPendingInput();
+			if (controller.hasPendingChanges()) {
+				applyPendingChanges();
+				return true;
+			}
+			return false;
+		}
+		if (layout.getUndoChangesButtonArea().contains(mouseX, mouseY)) {
+			flushPendingInput();
+			if (controller.hasUndoableChanges()) {
+				undoChanges();
+				return true;
+			}
+			return false;
+		}
+		return false;
 	}
 
 	@Override

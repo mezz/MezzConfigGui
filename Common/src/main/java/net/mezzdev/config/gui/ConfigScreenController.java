@@ -7,6 +7,7 @@ import net.mezzdev.config.gui.model.ConfigCategoryWidget;
 import net.mezzdev.config.gui.model.ConfigNavItem;
 import net.mezzdev.config.gui.model.ConfigScreenModel;
 import net.mezzdev.config.gui.model.PendingConfigChange;
+import net.mezzdev.config.gui.model.AppliedConfigValueChange;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +20,7 @@ final class ConfigScreenController {
 	private final ConfigScreenModel model;
 	private final ConfigScreenLayout layout;
 	private final Runnable clearSearchInput;
+	private final AppliedConfigChangeTracker appliedChangeTracker = new AppliedConfigChangeTracker();
 
 	public ConfigScreenController(
 		ConfigChangesHandler changesHandler,
@@ -63,14 +65,38 @@ final class ConfigScreenController {
 			.anyMatch(ConfigEntryWidget::hasPendingChange);
 	}
 
+	public boolean hasUndoableChanges() {
+		return hasPendingChanges() || appliedChangeTracker.hasChanges();
+	}
+
+	public void recordAppliedChange(AppliedConfigValueChange<?> change) {
+		appliedChangeTracker.add(change);
+	}
+
 	public boolean pendingChangesRequireRestart() {
 		return ConfigValueChange.requiresRestart(getPendingChanges());
 	}
 
 	public boolean applyPendingChanges() {
-		boolean requiresRestart = changesHandler.applyChanges(getPendingChanges());
+		List<ConfigValueChange<?>> changes = getPendingChanges();
+		recordAppliedChanges(changes);
+		boolean requiresRestart = changesHandler.applyChanges(changes);
 		updateContentLayout();
 		return requiresRestart;
+	}
+
+	private void recordAppliedChanges(List<ConfigValueChange<?>> changes) {
+		for (ConfigValueChange<?> change : changes) {
+			recordAppliedChange(change);
+		}
+	}
+
+	private <T> void recordAppliedChange(ConfigValueChange<T> change) {
+		recordAppliedChange(new AppliedConfigValueChange<>(
+			change.configValue(),
+			change.configValue().getValue(),
+			change.value()
+		));
 	}
 
 	private List<ConfigValueChange<?>> getPendingChanges() {
@@ -90,10 +116,25 @@ final class ConfigScreenController {
 	}
 
 	public void discardPendingChanges() {
+		discardPendingChangesInternal();
+		updateContentLayout();
+	}
+
+	private void discardPendingChangesInternal() {
 		model.getAllEntryWidgets()
 			.filter(ConfigEntryWidget::hasPendingChange)
 			.forEach(ConfigEntryWidget::discardPendingChange);
+	}
+
+	public boolean undoChanges() {
+		discardPendingChangesInternal();
+		List<ConfigValueChange<?>> undoChanges = appliedChangeTracker.getUndoChanges();
+		appliedChangeTracker.clear();
+		boolean requiresRestart = changesHandler.applyChanges(undoChanges);
+		model.getAllEntryWidgets()
+			.forEach(ConfigEntryWidget::discardPendingChange);
 		updateContentLayout();
+		return requiresRestart;
 	}
 
 	public List<ConfigEntryWidget<?>> getVisibleEntryWidgets() {

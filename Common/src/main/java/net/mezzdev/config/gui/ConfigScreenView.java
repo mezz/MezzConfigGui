@@ -31,6 +31,8 @@ final class ConfigScreenView {
 	private static final int INFO_TITLE_COLOR = 0xFFF3F6FF;
 	private static final int INFO_TEXT_COLOR = 0xFFC9D3E2;
 	private static final int TITLE_TEXT_COLOR = 0xFF404040;
+	private static final int CONTROL_TEXT_COLOR = 0xFFFFFFFF;
+	private static final int CONTROL_DISABLED_TEXT_COLOR = 0xFFA0A0A0;
 	private static final int VALUE_AREA_BACKGROUND_COLOR = 0x82000000;
 	private static final int INSET_BORDER_DARK_COLOR = 0xB0000000;
 	private static final int INSET_BORDER_LIGHT_COLOR = 0x35FFFFFF;
@@ -73,11 +75,13 @@ final class ConfigScreenView {
 	) {
 		Font font = Minecraft.getInstance().font;
 		ImmutableRect2i area = layout.getArea();
-		ImmutableRect2i titleArea = layout.getTitleArea();
+		ImmutableRect2i titleArea = layout.getTitleTextArea();
 		ImmutableRect2i navArea = layout.getNavArea();
 		ImmutableRect2i contentArea = layout.getContentArea();
 		ImmutableRect2i valueSelectorClipArea = getValueSelectorClipArea(contentArea);
 		ImmutableRect2i searchBackgroundArea = layout.getSearchBackgroundArea();
+		ImmutableRect2i applyPendingChangesButtonArea = layout.getApplyPendingChangesButtonArea();
+		ImmutableRect2i undoChangesButtonArea = layout.getUndoChangesButtonArea();
 		@Nullable
 		ConfigInfo hoveredValueSelectorInfo = getValueSelectorInfo(valueSelector, valueSelectorClipArea, mouseX, mouseY);
 		@Nullable
@@ -91,11 +95,12 @@ final class ConfigScreenView {
 			mouseY
 		);
 		@Nullable
-		ConfigInfo hoveredControlInfo = getControlInfo(searchBackgroundArea, mouseX, mouseY);
+		ConfigInfo hoveredControlInfo = getControlInfo(searchBackgroundArea, applyPendingChangesButtonArea, undoChangesButtonArea, mouseX, mouseY);
 
 		guiGraphics.pose().pushPose();
 		background.draw(guiGraphics, area);
 		drawTitle(guiGraphics, font, titleArea, title);
+		drawActionButtons(guiGraphics, font, applyPendingChangesButtonArea, undoChangesButtonArea, mouseX, mouseY);
 		drawNavBackground(guiGraphics, navArea);
 		@Nullable
 		ConfigNavItem hoveredNavItem = drawNavItems(guiGraphics, navArea, mouseX, mouseY);
@@ -135,6 +140,52 @@ final class ConfigScreenView {
 			TITLE_TEXT_COLOR,
 			true
 		);
+	}
+
+	private void drawActionButtons(
+		GuiGraphics guiGraphics,
+		Font font,
+		ImmutableRect2i applyPendingChangesButtonArea,
+		ImmutableRect2i undoChangesButtonArea,
+		int mouseX,
+		int mouseY
+	) {
+		drawActionButton(
+			guiGraphics,
+			font,
+			undoChangesButtonArea,
+			Component.translatable("mezz_config.config.screen.undo"),
+			controller.hasUndoableChanges(),
+			undoChangesButtonArea.contains(mouseX, mouseY)
+		);
+		drawActionButton(
+			guiGraphics,
+			font,
+			applyPendingChangesButtonArea,
+			Component.translatable("mezz_config.config.screen.applyPending"),
+			controller.hasPendingChanges(),
+			applyPendingChangesButtonArea.contains(mouseX, mouseY)
+		);
+	}
+
+	private void drawActionButton(
+		GuiGraphics guiGraphics,
+		Font font,
+		ImmutableRect2i area,
+		Component label,
+		boolean active,
+		boolean hovered
+	) {
+		ConfigEntryWidget.drawButtonBackground(guiGraphics, textures, area, active, active && hovered);
+		int textColor = getControlTextColor(active);
+		ConfigEntryWidget.drawCenteredButtonText(guiGraphics, font, label, area, textColor);
+	}
+
+	private static int getControlTextColor(boolean active) {
+		if (active) {
+			return CONTROL_TEXT_COLOR;
+		}
+		return CONTROL_DISABLED_TEXT_COLOR;
 	}
 
 	private static void drawNavBackground(GuiGraphics guiGraphics, ImmutableRect2i navArea) {
@@ -345,11 +396,19 @@ final class ConfigScreenView {
 	@Nullable
 	private ConfigInfo getControlInfo(
 		ImmutableRect2i searchBackgroundArea,
+		ImmutableRect2i applyPendingChangesButtonArea,
+		ImmutableRect2i undoChangesButtonArea,
 		int mouseX,
 		int mouseY
 	) {
 		if (searchBackgroundArea.contains(mouseX, mouseY)) {
 			return getSearchInfo();
+		}
+		if (undoChangesButtonArea.contains(mouseX, mouseY)) {
+			return getUndoChangesInfo();
+		}
+		if (applyPendingChangesButtonArea.contains(mouseX, mouseY)) {
+			return getApplyPendingChangesInfo();
 		}
 		return null;
 	}
@@ -359,6 +418,36 @@ final class ConfigScreenView {
 			Component.translatable("mezz_config.config.screen.search.info.title"),
 			Component.translatable("mezz_config.config.screen.search.info")
 		);
+	}
+
+	private ConfigInfo getUndoChangesInfo() {
+		String infoKey = getUndoChangesInfoKey();
+		return new ConfigInfo(
+			Component.translatable("mezz_config.config.screen.undo.title"),
+			Component.translatable(infoKey)
+		);
+	}
+
+	private String getUndoChangesInfoKey() {
+		if (controller.hasUndoableChanges()) {
+			return "mezz_config.config.screen.undo.info";
+		}
+		return "mezz_config.config.screen.undo.disabled.info";
+	}
+
+	private ConfigInfo getApplyPendingChangesInfo() {
+		String infoKey = getApplyPendingChangesInfoKey();
+		return new ConfigInfo(
+			Component.translatable("mezz_config.config.screen.applyPending.title"),
+			Component.translatable(infoKey)
+		);
+	}
+
+	private String getApplyPendingChangesInfoKey() {
+		if (controller.hasPendingChanges()) {
+			return "mezz_config.config.screen.applyPending.info";
+		}
+		return "mezz_config.config.screen.applyPending.disabled.info";
 	}
 
 	private void drawInfoPanel(GuiGraphics guiGraphics, Font font, @Nullable ConfigInfo info) {

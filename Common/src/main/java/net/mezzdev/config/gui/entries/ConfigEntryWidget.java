@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui.entries;
 
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
+import net.mezzdev.config.gui.model.AppliedConfigValueChange;
 import net.mezzdev.config.gui.model.ConfigValueChange;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.textures.ConfigTextures;
@@ -25,7 +26,9 @@ import net.minecraft.util.FormattedCharSequence;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * Base widget for one editable config value row, including reset and pending-change handling.
@@ -131,6 +134,7 @@ public abstract class ConfigEntryWidget<T> {
 	private final ConfigTextures textures;
 	private final Component fullName;
 	private T value;
+	private Consumer<AppliedConfigValueChange<?>> appliedChangeListener = change -> {};
 
 	protected List<FormattedCharSequence> nameLines = List.of();
 
@@ -196,6 +200,10 @@ public abstract class ConfigEntryWidget<T> {
 
 	public ConfigInputHandler createInputHandler() {
 		return new EntryWidgetInputHandler();
+	}
+
+	public void setAppliedChangeListener(Consumer<AppliedConfigValueChange<?>> appliedChangeListener) {
+		this.appliedChangeListener = Objects.requireNonNull(appliedChangeListener, "appliedChangeListener");
 	}
 
 	protected boolean onMouseClicked(UserInput input) {
@@ -366,10 +374,14 @@ public abstract class ConfigEntryWidget<T> {
 		}
 		this.value = value;
 		if (appliesImmediately()) {
+			T oldValue = configValue.getValue();
 			boolean changed = configValue.set(value);
 			if (!changed && !configValue.getValue().equals(value)) {
 				this.value = configValue.getValue();
 				return false;
+			}
+			if (changed) {
+				appliedChangeListener.accept(new AppliedConfigValueChange<>(configValue, oldValue, configValue.getValue()));
 			}
 		}
 		onValueChanged();

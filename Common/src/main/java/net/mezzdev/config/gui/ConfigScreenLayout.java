@@ -10,7 +10,7 @@ import net.minecraft.util.Mth;
 public final class ConfigScreenLayout {
 	public static final int NAV_ITEM_HEIGHT = 20;
 	public static final int NAV_ITEM_GAP = 2;
-	static final int TITLE_HEIGHT = 12;
+	static final int TITLE_HEIGHT = 18;
 	static final int SEARCH_HEIGHT = 18;
 	static final int INFO_AREA_HEIGHT = 57;
 
@@ -25,6 +25,9 @@ public final class ConfigScreenLayout {
 	private static final int SEARCH_TEXT_LEFT_PADDING = 5;
 	private static final int SEARCH_TEXT_RIGHT_PADDING = 4;
 	private static final int SEARCH_TEXT_HEIGHT = 8;
+	private static final int ACTION_BUTTON_WIDTH = 46;
+	private static final int ACTION_BUTTON_HEIGHT = 16;
+	private static final int ACTION_BUTTON_GAP = 3;
 	private static final int MIN_SCROLL_MARKER_HEIGHT = 10;
 	private static final int SCROLL_MARKER_TRACK_INSET = 1;
 	private static final double SCROLL_SPEED = 10.0;
@@ -34,6 +37,9 @@ public final class ConfigScreenLayout {
 
 	private ImmutableRect2i area = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i titleArea = ImmutableRect2i.EMPTY;
+	private ImmutableRect2i titleTextArea = ImmutableRect2i.EMPTY;
+	private ImmutableRect2i applyPendingChangesButtonArea = ImmutableRect2i.EMPTY;
+	private ImmutableRect2i undoChangesButtonArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i navArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i navScrollBarArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i contentArea = ImmutableRect2i.EMPTY;
@@ -65,6 +71,7 @@ public final class ConfigScreenLayout {
 
 		ImmutableRect2i innerArea = area.insetBy(BORDER_PADDING);
 		titleArea = innerArea.keepTop(TITLE_HEIGHT);
+		updateTitleRowAreas();
 		infoArea = innerArea.keepBottom(INFO_AREA_HEIGHT);
 
 		ImmutableRect2i mainArea = innerArea
@@ -92,6 +99,18 @@ public final class ConfigScreenLayout {
 
 	public ImmutableRect2i getTitleArea() {
 		return titleArea;
+	}
+
+	public ImmutableRect2i getTitleTextArea() {
+		return titleTextArea;
+	}
+
+	public ImmutableRect2i getApplyPendingChangesButtonArea() {
+		return applyPendingChangesButtonArea;
+	}
+
+	public ImmutableRect2i getUndoChangesButtonArea() {
+		return undoChangesButtonArea;
 	}
 
 	public ImmutableRect2i getNavArea() {
@@ -355,6 +374,27 @@ public final class ConfigScreenLayout {
 		if (navScrollBarVisible) {
 			navScrollBarArea = navArea.keepRight(SCROLLBAR_WIDTH);
 		}
+	}
+
+	private void updateTitleRowAreas() {
+		int actionButtonsWidth = ACTION_BUTTON_WIDTH * 2 + ACTION_BUTTON_GAP;
+		ImmutableRect2i actionButtonsArea = titleArea.keepRight(actionButtonsWidth);
+		applyPendingChangesButtonArea = centerVertically(actionButtonsArea.keepRight(ACTION_BUTTON_WIDTH), ACTION_BUTTON_HEIGHT);
+		undoChangesButtonArea = centerVertically(
+			actionButtonsArea.cropRight(ACTION_BUTTON_WIDTH + ACTION_BUTTON_GAP).keepRight(ACTION_BUTTON_WIDTH),
+			ACTION_BUTTON_HEIGHT
+		);
+		titleTextArea = titleArea.cropRight(actionButtonsWidth + SECTION_GAP);
+	}
+
+	private static ImmutableRect2i centerVertically(ImmutableRect2i area, int height) {
+		int centeredHeight = Math.min(height, area.getHeight());
+		return new ImmutableRect2i(
+			area.getX(),
+			area.getY() + (area.getHeight() - centeredHeight) / 2,
+			area.getWidth(),
+			centeredHeight
+		);
 	}
 
 	private int getMaxNavScroll() {
