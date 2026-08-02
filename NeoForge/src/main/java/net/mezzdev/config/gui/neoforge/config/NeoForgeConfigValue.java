@@ -1,9 +1,9 @@
 package net.mezzdev.config.gui.neoforge.config;
 
+import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
-import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.minecraft.network.chat.Component;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
@@ -26,7 +26,7 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 	private final ModConfigSpec modConfigSpec;
 	private final ModConfigSpec.ConfigValue<T> configValue;
 	private final T defaultValue;
-	private final IConfigValueEditorSerializer<T> serializer;
+	private final IConfigValueSerializer<T> serializer;
 	private final boolean requiresRestart;
 	@Nullable
 	private List<Consumer<T>> listeners;
@@ -37,7 +37,7 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 		ModConfigSpec modConfigSpec,
 		ModConfigSpec.ConfigValue<T> configValue,
 		ModConfigSpec.ValueSpec valueSpec,
-		IConfigValueEditorSerializer<T> serializer
+		IConfigValueSerializer<T> serializer
 	) {
 		List<String> path = configValue.getPath();
 		this.name = String.join(".", path);
@@ -126,7 +126,7 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 	}
 
 	@Override
-	public IConfigValueEditorSerializer<T> getSerializer() {
+	public IConfigValueSerializer<T> getSerializer() {
 		return serializer;
 	}
 }

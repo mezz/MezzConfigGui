@@ -1,11 +1,8 @@
 package net.mezzdev.config.gui.neoforge.config;
 
 import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.api.value.IConfigListValueSerializer;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
-import net.mezzdev.config.gui.api.ConfigValueEditorType;
-import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
-import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
-import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.ArrayList;
@@ -15,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-final class NeoForgeListSerializer<T> implements IConfigListValueEditorSerializer<T> {
+final class NeoForgeListSerializer<T> implements IConfigListValueSerializer<T> {
 	private final ModConfigSpec.ValueSpec valueSpec;
 	private final IConfigValueSerializer<T> elementSerializer;
 
@@ -109,20 +106,7 @@ final class NeoForgeListSerializer<T> implements IConfigListValueEditorSerialize
 	}
 
 	@Override
-	public Component getLocalizedValueName(String configValueLocalizationKey, List<T> value) {
-		if (value.isEmpty()) {
-			return Component.translatable("mezz_config.config.value.list.empty");
-		}
-		return Component.literal(serialize(value));
-	}
-
-	@Override
 	public String getValidValuesDescription() {
 		return "A comma-separated list containing values of:\n%s".formatted(elementSerializer.getValidValuesDescription());
-	}
-
-	@Override
-	public ConfigValueEditorType<List<T>> getEditorType() {
-		return ConfigValueEditorTypes.getList();
 	}
 }

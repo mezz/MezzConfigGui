@@ -1,17 +1,13 @@
 package net.mezzdev.config.gui.entries;
 
-import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.api.value.IConfigListValueSerializer;
+import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
 
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Optional;
 
 final class ConfigListValueEditorSerializers {
-	private static final String CORE_LIST_SERIALIZER_CLASS_NAME = "net.mezzdev.config.serializers.ListSerializer";
-	private static final String CORE_LIST_VALUE_SERIALIZER_FIELD_NAME = "valueSerializer";
-
 	private ConfigListValueEditorSerializers() {
 
 	}
@@ -34,24 +30,6 @@ final class ConfigListValueEditorSerializers {
 	private static Optional<IConfigValueSerializer<?>> getElementSerializer(IConfigValueSerializer<?> serializer) {
 		if (serializer instanceof IConfigListValueSerializer<?> listSerializer) {
 			return Optional.of(listSerializer.getElementSerializer());
-		}
-		return getElementSerializerFromCoreListSerializerField(serializer);
-	}
-
-	private static Optional<IConfigValueSerializer<?>> getElementSerializerFromCoreListSerializerField(IConfigValueSerializer<?> serializer) {
-		Class<?> serializerClass = serializer.getClass();
-		if (!serializerClass.getName().equals(CORE_LIST_SERIALIZER_CLASS_NAME)) {
-			return Optional.empty();
-		}
-		try {
-			Field field = serializerClass.getDeclaredField(CORE_LIST_VALUE_SERIALIZER_FIELD_NAME);
-			field.setAccessible(true);
-			Object elementSerializer = field.get(serializer);
-			if (elementSerializer instanceof IConfigValueSerializer<?> typedElementSerializer) {
-				return Optional.of(typedElementSerializer);
-			}
-		} catch (IllegalAccessException | NoSuchFieldException e) {
-			return Optional.empty();
 		}
 		return Optional.empty();
 	}
