@@ -12,7 +12,9 @@ import java.util.function.Consumer;
  * Represents a value shown on a config screen.
  * <p>
  * MezzConfig-managed values can be adapted with {@link #configValue(IConfigValue)}. Screen-only values can implement
- * this interface directly without implementing MezzConfig's non-extendable {@link IConfigValue}.
+ * this interface directly without implementing MezzConfig's non-extendable {@link IConfigValue}. Platform-native
+ * config adapters, such as the native NeoForge config adapter, should also implement this interface directly and use
+ * {@link IConfigScreenValueReference#named(String)} or a platform-specific reference helper for GUI customization.
  *
  * @param <T> the value type
  *
@@ -231,6 +233,9 @@ public interface IConfigScreenValue<T> {
 
 	/**
 	 * Get the backing MezzConfig value, if this screen value adapts one.
+	 * <p>
+	 * Platform-native values should leave this empty and provide their own identity through stable names or
+	 * platform-specific reference helpers.
 	 *
 	 * @since 0.1.0
 	 */

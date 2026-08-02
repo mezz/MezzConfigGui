@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.neoforge.config;
 
+import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
@@ -26,6 +27,10 @@ final class NeoForgeConfigValueFactory {
 			Class<?> enumClass = enumValue.getDeclaringClass();
 			return Arrays.stream(enumClass.getEnumConstants())
 				.anyMatch(valueSpec::test);
+		}
+		if (defaultValue instanceof List<?> defaultValues) {
+			return NeoForgeListElementSerializers.create(defaultValues, valueSpec)
+				.isPresent();
 		}
 		return false;
 	}
@@ -55,6 +60,9 @@ final class NeoForgeConfigValueFactory {
 		}
 		if (defaultValue instanceof Enum<?> enumValue) {
 			return createEnum(modId, modConfig, modConfigSpec, configValue, valueSpec, enumValue);
+		}
+		if (defaultValue instanceof List<?> defaultValues) {
+			return createList(modId, modConfig, modConfigSpec, configValue, valueSpec, defaultValues);
 		}
 		return Optional.empty();
 	}
@@ -173,6 +181,29 @@ final class NeoForgeConfigValueFactory {
 		));
 	}
 
+	@SuppressWarnings({"rawtypes", "unchecked"})
+	private static Optional<NeoForgeConfigValue<?>> createList(
+		String modId,
+		ModConfig modConfig,
+		ModConfigSpec modConfigSpec,
+		ModConfigSpec.ConfigValue<?> configValue,
+		ModConfigSpec.ValueSpec valueSpec,
+		List<?> defaultValues
+	) {
+		Optional<IConfigValueSerializer<?>> elementSerializer = NeoForgeListElementSerializers.create(defaultValues, valueSpec);
+		if (elementSerializer.isEmpty()) {
+			return Optional.empty();
+		}
+		return Optional.of(new NeoForgeConfigValue<>(
+			modId,
+			modConfig,
+			modConfigSpec,
+			cast(configValue),
+			valueSpec,
+			new NeoForgeListSerializer(valueSpec, elementSerializer.get())
+		));
+	}
+
 	private static IntegerRange getIntegerRange(ModConfigSpec.ValueSpec valueSpec) {
 		ModConfigSpec.Range<?> range = valueSpec.getRange();
 		if (range != null && range.getMin() instanceof Integer min && range.getMax() instanceof Integer max) {
@@ -203,9 +234,19 @@ final class NeoForgeConfigValueFactory {
 			return "default value is null";
 		}
 		if (defaultValue instanceof List<?>) {
-			return "lists need an element-value policy before they can be auto-adapted";
+			return getUnsupportedListDescription((List<?>) defaultValue);
 		}
 		return "default value type is %s".formatted(defaultValue.getClass().getName());
+	}
+
+	private static String getUnsupportedListDescription(List<?> defaultValues) {
+		if (defaultValues.isEmpty()) {
+			return "empty list default does not provide an element type";
+		}
+		if (defaultValues.stream().anyMatch(value -> value == null)) {
+			return "list default contains null elements";
+		}
+		return "list element type is %s".formatted(defaultValues.getFirst().getClass().getName());
 	}
 
 	@SuppressWarnings("unchecked")

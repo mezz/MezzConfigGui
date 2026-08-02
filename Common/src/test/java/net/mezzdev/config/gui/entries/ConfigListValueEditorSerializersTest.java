@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui.entries;
 
 import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.api.value.IConfigListValueSerializer;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
 import org.junit.jupiter.api.Test;
@@ -16,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigListValueEditorSerializersTest {
 	@Test
-	void adaptsListSerializerWithPublicElementSerializer() {
+	void adaptsConfigListValueSerializer() {
 		StringSerializer elementSerializer = new StringSerializer();
 		StringListSerializer listSerializer = new StringListSerializer(elementSerializer);
 
@@ -35,7 +36,7 @@ class ConfigListValueEditorSerializersTest {
 		assertFalse(ConfigListValueEditorSerializers.canAdapt(serializer));
 	}
 
-	private static final class StringListSerializer implements IConfigValueSerializer<List<String>> {
+	private static final class StringListSerializer implements IConfigListValueSerializer<String> {
 		private final IConfigValueSerializer<String> elementSerializer;
 
 		private StringListSerializer(IConfigValueSerializer<String> elementSerializer) {

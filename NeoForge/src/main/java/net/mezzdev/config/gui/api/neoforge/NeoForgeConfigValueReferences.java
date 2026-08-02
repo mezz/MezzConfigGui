@@ -1,6 +1,5 @@
 package net.mezzdev.config.gui.api.neoforge;
 
-import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigScreenValueReference;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
@@ -29,16 +28,6 @@ public final class NeoForgeConfigValueReferences {
 		ModConfigSpec.ConfigValue<?> checkedConfigValue = Objects.requireNonNull(configValue, "configValue");
 		List<String> path = List.copyOf(checkedConfigValue.getPath());
 		String name = String.join(".", path);
-		return new IConfigScreenValueReference() {
-			@Override
-			public boolean matches(IConfigScreenValue<?> value) {
-				return value.getName().equals(name);
-			}
-
-			@Override
-			public String toString() {
-				return name;
-			}
-		};
+		return IConfigScreenValueReference.named(name);
 	}
 }

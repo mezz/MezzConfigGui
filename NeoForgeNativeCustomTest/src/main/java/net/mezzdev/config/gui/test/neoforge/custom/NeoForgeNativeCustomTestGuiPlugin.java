@@ -59,7 +59,7 @@ public final class NeoForgeNativeCustomTestGuiPlugin implements IConfigGuiPlugin
 
 	private static IConfigScreenValueReference configValue(ModConfigSpec.ConfigValue<?> configValue) {
 		String name = String.join(".", configValue.getPath());
-		return value -> value.getName().equals(name);
+		return IConfigScreenValueReference.named(name);
 	}
 
 	private static final class CyclingSelectionEditor<T> implements IConfigValueEditor<T> {

@@ -214,6 +214,15 @@ class ConfigGuiPluginLoaderTest {
 		assertTrue(values.get(1).requiresRestart());
 	}
 
+	@Test
+	void namedReferenceMatchesScreenValueByName() {
+		IConfigScreenValueReference reference = IConfigScreenValueReference.named("mode");
+
+		assertTrue(reference.matches(new TestConfigValue("mode")));
+		assertFalse(reference.matches(new TestConfigValue("enabled")));
+		assertEquals("mode", reference.toString());
+	}
+
 	private static List<ConfigScreenCategory> createCategories(
 		List<? extends ConfigScreenCategory> originalCategories,
 		Consumer<IConfigScreenBuilder> screenCustomizer,
