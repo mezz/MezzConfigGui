@@ -24,6 +24,11 @@ import java.util.List;
  * Draws the config screen frame, navigation, value rows, info panel, popups, and tooltips.
  */
 final class ConfigScreenView {
+	private enum ActionButtonIcon {
+		UNDO,
+		APPLY
+	}
+
 	private static final int VALUE_SELECTOR_Z_OFFSET = 350;
 	private static final int INFO_PADDING = 5;
 	private static final int INFO_BACKGROUND_COLOR = 0xE0101218;
@@ -31,8 +36,10 @@ final class ConfigScreenView {
 	private static final int INFO_TITLE_COLOR = 0xFFF3F6FF;
 	private static final int INFO_TEXT_COLOR = 0xFFC9D3E2;
 	private static final int TITLE_TEXT_COLOR = 0xFF404040;
-	private static final int CONTROL_TEXT_COLOR = 0xFFFFFFFF;
-	private static final int CONTROL_DISABLED_TEXT_COLOR = 0xFFA0A0A0;
+	private static final int CONTROL_ICON_COLOR = 0xFFFFFFFF;
+	private static final int CONTROL_DISABLED_ICON_COLOR = 0xFFA0A0A0;
+	private static final int ACTION_ICON_LINE_LENGTH = 8;
+	private static final int ACTION_ICON_STROKE_SIZE = 2;
 	private static final int VALUE_AREA_BACKGROUND_COLOR = 0x82000000;
 	private static final int INSET_BORDER_DARK_COLOR = 0xB0000000;
 	private static final int INSET_BORDER_LIGHT_COLOR = 0x35FFFFFF;
@@ -100,7 +107,7 @@ final class ConfigScreenView {
 		guiGraphics.pose().pushPose();
 		background.draw(guiGraphics, area);
 		drawTitle(guiGraphics, font, titleArea, title);
-		drawActionButtons(guiGraphics, font, applyPendingChangesButtonArea, undoChangesButtonArea, mouseX, mouseY);
+		drawActionButtons(guiGraphics, applyPendingChangesButtonArea, undoChangesButtonArea, mouseX, mouseY);
 		drawNavBackground(guiGraphics, navArea);
 		@Nullable
 		ConfigNavItem hoveredNavItem = drawNavItems(guiGraphics, navArea, mouseX, mouseY);
@@ -144,7 +151,6 @@ final class ConfigScreenView {
 
 	private void drawActionButtons(
 		GuiGraphics guiGraphics,
-		Font font,
 		ImmutableRect2i applyPendingChangesButtonArea,
 		ImmutableRect2i undoChangesButtonArea,
 		int mouseX,
@@ -152,17 +158,15 @@ final class ConfigScreenView {
 	) {
 		drawActionButton(
 			guiGraphics,
-			font,
 			undoChangesButtonArea,
-			Component.translatable("mezz_config.config.screen.undo"),
+			ActionButtonIcon.UNDO,
 			controller.hasUndoableChanges(),
 			undoChangesButtonArea.contains(mouseX, mouseY)
 		);
 		drawActionButton(
 			guiGraphics,
-			font,
 			applyPendingChangesButtonArea,
-			Component.translatable("mezz_config.config.screen.applyPending"),
+			ActionButtonIcon.APPLY,
 			controller.hasPendingChanges(),
 			applyPendingChangesButtonArea.contains(mouseX, mouseY)
 		);
@@ -170,22 +174,66 @@ final class ConfigScreenView {
 
 	private void drawActionButton(
 		GuiGraphics guiGraphics,
-		Font font,
 		ImmutableRect2i area,
-		Component label,
+		ActionButtonIcon icon,
 		boolean active,
 		boolean hovered
 	) {
 		ConfigEntryWidget.drawButtonBackground(guiGraphics, textures, area, active, active && hovered);
-		int textColor = getControlTextColor(active);
-		ConfigEntryWidget.drawCenteredButtonText(guiGraphics, font, label, area, textColor);
+		int iconColor = getControlIconColor(active);
+		drawActionIcon(guiGraphics, area, icon, iconColor);
 	}
 
-	private static int getControlTextColor(boolean active) {
+	private static int getControlIconColor(boolean active) {
 		if (active) {
-			return CONTROL_TEXT_COLOR;
+			return CONTROL_ICON_COLOR;
 		}
-		return CONTROL_DISABLED_TEXT_COLOR;
+		return CONTROL_DISABLED_ICON_COLOR;
+	}
+
+	private static void drawActionIcon(GuiGraphics guiGraphics, ImmutableRect2i area, ActionButtonIcon icon, int color) {
+		if (icon == ActionButtonIcon.UNDO) {
+			drawUndoIcon(guiGraphics, area, color);
+			return;
+		}
+		drawApplyIcon(guiGraphics, area, color);
+	}
+
+	private static void drawUndoIcon(GuiGraphics guiGraphics, ImmutableRect2i area, int color) {
+		int iconSize = ACTION_ICON_LINE_LENGTH + ACTION_ICON_STROKE_SIZE - 1;
+		int x = area.getX() + (area.getWidth() - iconSize) / 2;
+		int y = area.getY() + (area.getHeight() - iconSize) / 2;
+		drawDownRightIconLine(guiGraphics, x, y, ACTION_ICON_LINE_LENGTH, color);
+		drawUpRightIconLine(guiGraphics, x, y + ACTION_ICON_LINE_LENGTH - 1, ACTION_ICON_LINE_LENGTH, color);
+	}
+
+	private static void drawApplyIcon(GuiGraphics guiGraphics, ImmutableRect2i area, int color) {
+		int x = area.getX() + (area.getWidth() - 11) / 2;
+		int y = area.getY() + (area.getHeight() - 9) / 2;
+		drawDownRightIconLine(guiGraphics, x, y + 5, 4, color);
+		drawUpRightIconLine(guiGraphics, x + 3, y + 8, 7, color);
+	}
+
+	private static void drawDownRightIconLine(GuiGraphics guiGraphics, int x, int y, int length, int color) {
+		for (int i = 0; i < length; i++) {
+			drawIconStroke(guiGraphics, x + i, y + i, color);
+		}
+	}
+
+	private static void drawUpRightIconLine(GuiGraphics guiGraphics, int x, int y, int length, int color) {
+		for (int i = 0; i < length; i++) {
+			drawIconStroke(guiGraphics, x + i, y - i, color);
+		}
+	}
+
+	private static void drawIconStroke(GuiGraphics guiGraphics, int x, int y, int color) {
+		guiGraphics.fill(
+			x,
+			y,
+			x + ACTION_ICON_STROKE_SIZE,
+			y + ACTION_ICON_STROKE_SIZE,
+			color
+		);
 	}
 
 	private static void drawNavBackground(GuiGraphics guiGraphics, ImmutableRect2i navArea) {

@@ -25,8 +25,7 @@ public final class ConfigScreenLayout {
 	private static final int SEARCH_TEXT_LEFT_PADDING = 5;
 	private static final int SEARCH_TEXT_RIGHT_PADDING = 4;
 	private static final int SEARCH_TEXT_HEIGHT = 8;
-	private static final int ACTION_BUTTON_WIDTH = 46;
-	private static final int ACTION_BUTTON_HEIGHT = 16;
+	private static final int ACTION_BUTTON_SIZE = 18;
 	private static final int ACTION_BUTTON_GAP = 3;
 	private static final int MIN_SCROLL_MARKER_HEIGHT = 10;
 	private static final int SCROLL_MARKER_TRACK_INSET = 1;
@@ -377,12 +376,12 @@ public final class ConfigScreenLayout {
 	}
 
 	private void updateTitleRowAreas() {
-		int actionButtonsWidth = ACTION_BUTTON_WIDTH * 2 + ACTION_BUTTON_GAP;
+		int actionButtonsWidth = ACTION_BUTTON_SIZE * 2 + ACTION_BUTTON_GAP;
 		ImmutableRect2i actionButtonsArea = titleArea.keepRight(actionButtonsWidth);
-		applyPendingChangesButtonArea = centerVertically(actionButtonsArea.keepRight(ACTION_BUTTON_WIDTH), ACTION_BUTTON_HEIGHT);
+		applyPendingChangesButtonArea = centerVertically(actionButtonsArea.keepRight(ACTION_BUTTON_SIZE), ACTION_BUTTON_SIZE);
 		undoChangesButtonArea = centerVertically(
-			actionButtonsArea.cropRight(ACTION_BUTTON_WIDTH + ACTION_BUTTON_GAP).keepRight(ACTION_BUTTON_WIDTH),
-			ACTION_BUTTON_HEIGHT
+			actionButtonsArea.cropRight(ACTION_BUTTON_SIZE + ACTION_BUTTON_GAP).keepRight(ACTION_BUTTON_SIZE),
+			ACTION_BUTTON_SIZE
 		);
 		titleTextArea = titleArea.cropRight(actionButtonsWidth + SECTION_GAP);
 	}
