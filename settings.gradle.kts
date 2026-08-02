@@ -22,6 +22,10 @@ pluginManagement {
 			includeGroup("codechicken")
 			includeGroup("net.covers1624")
 		}
+		exclusiveMaven("https://maven.blamejared.com/") {
+			includeGroup("net.mezzdev.java-formatting")
+			includeModule("net.mezzdev.gradle", "JavaFormatting")
+		}
 		gradlePluginPortal()
 	}
 	resolutionStrategy {

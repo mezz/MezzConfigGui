@@ -1,6 +1,6 @@
 plugins {
-    // https://plugins.gradle.org/plugin/com.diffplug.gradle.spotless
-	id("com.diffplug.spotless") version("8.7.0")
+	// https://github.com/mezz/JavaFormatting
+	id("net.mezzdev.java-formatting") version("0.2.3")
 
     // https://plugins.gradle.org/plugin/com.dorongold.task-tree
     id("com.dorongold.task-tree") version("4.0.0")
@@ -58,17 +58,9 @@ extra["mezzConfigApiForgeDependency"] = "$configModGroup:${configApiModId}-${min
 extra["mezzConfigApiNeoForgeDependency"] = "$configModGroup:${configApiModId}-${minecraftVersion}-neoforge:$mezzConfigVersion"
 extra["jeiApiDependency"] = files("${jeiLocalPath}/CommonApi/build/libs/jei-${minecraftVersion}-common-api-${jeiVersion}.jar")
 
-spotless {
-	java {
-		target("*/src/*/java/net/mezzdev/**/*.java")
-
-		endWithNewline()
-		trimTrailingWhitespace()
-		removeUnusedImports()
-        leadingSpacesToTabs(4)
-        replaceRegex("class-level javadoc indentation fix", "^\\*", " *")
-        replaceRegex("method-level javadoc indentation fix", "\t\\*", "\t *")
-	}
+javaFormatting {
+	target("*/src/*/java/net/mezzdev/**/*.java")
+	all()
 }
 
 subprojects {
