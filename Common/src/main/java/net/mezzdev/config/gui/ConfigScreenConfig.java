@@ -2,12 +2,10 @@ package net.mezzdev.config.gui;
 
 import net.mezzdev.config.gui.api.ConfigRestartResult;
 import net.minecraft.network.chat.Component;
-import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Internal config screen metadata.
  */
-@ApiStatus.Internal
 public interface ConfigScreenConfig {
 	/**
 	 * The mod id that owns this config screen.

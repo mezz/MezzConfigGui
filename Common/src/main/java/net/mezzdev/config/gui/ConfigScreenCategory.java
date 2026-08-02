@@ -4,7 +4,6 @@ import net.mezzdev.config.api.schema.IConfigCategory;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.minecraft.network.chat.Component;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.Collection;
@@ -13,7 +12,6 @@ import java.util.Objects;
 /**
  * Internal config category view used by config screens.
  */
-@ApiStatus.Internal
 public interface ConfigScreenCategory {
 	/**
 	 * Adapt a MezzConfig-managed category for display on a config screen.

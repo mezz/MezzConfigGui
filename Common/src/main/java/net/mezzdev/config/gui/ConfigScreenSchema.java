@@ -1,7 +1,6 @@
 package net.mezzdev.config.gui;
 
 import net.mezzdev.config.api.schema.IConfigSchema;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
@@ -10,7 +9,6 @@ import java.util.Objects;
 /**
  * Internal config schema view used by config screens.
  */
-@ApiStatus.Internal
 @FunctionalInterface
 public interface ConfigScreenSchema {
 	/**
