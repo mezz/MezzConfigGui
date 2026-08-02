@@ -57,9 +57,8 @@ public interface IConfigScreenCategoryBuilder {
 	/**
 	 * Set the default apply mode for config screen values in this category.
 	 * <p>
-	 * Individual values can override this with {@link #setValueApplyMode(IConfigValue, ConfigValueApplyMode)},
-	 * {@link #setScreenValueApplyMode(IConfigScreenValue, ConfigValueApplyMode)}, or
-	 * {@link #setValueApplyModeByName(String, ConfigValueApplyMode)}.
+	 * Individual values can override this with {@link #getValueBuilder(IConfigValue)},
+	 * {@link #getScreenValueBuilder(IConfigScreenValue)}, or {@link #getValueBuilderByName(String)}.
 	 *
 	 * @param applyMode when edits for this category's values are saved
 	 * @return this builder
@@ -69,7 +68,90 @@ public interface IConfigScreenCategoryBuilder {
 	IConfigScreenCategoryBuilder setDefaultApplyMode(ConfigValueApplyMode applyMode);
 
 	/**
+	 * Get a builder for configuring one config value in this category.
+	 *
+	 * @param value config value to configure
+	 * @return value builder
+	 *
+	 * @since 0.1.0
+	 */
+	default IConfigScreenValueBuilder getValueBuilder(IConfigValue<?> value) {
+		IConfigValue<?> checkedValue = Objects.requireNonNull(value, "value");
+		return new IConfigScreenValueBuilder() {
+			@Override
+			public IConfigScreenValueBuilder setApplyMode(ConfigValueApplyMode applyMode) {
+				ConfigValueApplyMode checkedApplyMode = Objects.requireNonNull(applyMode, "applyMode");
+				IConfigScreenCategoryBuilder.this.setValueApplyMode(checkedValue, checkedApplyMode);
+				return this;
+			}
+
+			@Override
+			public IConfigScreenValueBuilder setRequiresRestart(boolean requiresRestart) {
+				IConfigScreenCategoryBuilder.this.setValueRequiresRestart(checkedValue, requiresRestart);
+				return this;
+			}
+		};
+	}
+
+	/**
+	 * Get a builder for configuring one config screen value in this category.
+	 *
+	 * @param value config screen value to configure
+	 * @return value builder
+	 *
+	 * @since 0.1.0
+	 */
+	default IConfigScreenValueBuilder getScreenValueBuilder(IConfigScreenValue<?> value) {
+		IConfigScreenValue<?> checkedValue = Objects.requireNonNull(value, "value");
+		return new IConfigScreenValueBuilder() {
+			@Override
+			public IConfigScreenValueBuilder setApplyMode(ConfigValueApplyMode applyMode) {
+				ConfigValueApplyMode checkedApplyMode = Objects.requireNonNull(applyMode, "applyMode");
+				IConfigScreenCategoryBuilder.this.setScreenValueApplyMode(checkedValue, checkedApplyMode);
+				return this;
+			}
+
+			@Override
+			public IConfigScreenValueBuilder setRequiresRestart(boolean requiresRestart) {
+				IConfigScreenCategoryBuilder.this.setScreenValueRequiresRestart(checkedValue, requiresRestart);
+				return this;
+			}
+		};
+	}
+
+	/**
+	 * Get a builder for configuring one config screen value in this category by stable name.
+	 * <p>
+	 * The value name is resolved against this category first, so category-local value names can be used safely when
+	 * multiple categories contain the same value name.
+	 *
+	 * @param valueName stable config screen value name
+	 * @return value builder
+	 *
+	 * @since 0.1.0
+	 */
+	default IConfigScreenValueBuilder getValueBuilderByName(String valueName) {
+		String checkedValueName = Objects.requireNonNull(valueName, "valueName");
+		return new IConfigScreenValueBuilder() {
+			@Override
+			public IConfigScreenValueBuilder setApplyMode(ConfigValueApplyMode applyMode) {
+				ConfigValueApplyMode checkedApplyMode = Objects.requireNonNull(applyMode, "applyMode");
+				IConfigScreenCategoryBuilder.this.setValueApplyModeByName(checkedValueName, checkedApplyMode);
+				return this;
+			}
+
+			@Override
+			public IConfigScreenValueBuilder setRequiresRestart(boolean requiresRestart) {
+				IConfigScreenCategoryBuilder.this.setValueRequiresRestartByName(checkedValueName, requiresRestart);
+				return this;
+			}
+		};
+	}
+
+	/**
 	 * Set the apply mode for one config value in this category.
+	 * <p>
+	 * Equivalent to {@code getValueBuilder(value).setApplyMode(applyMode)}.
 	 *
 	 * @param value config value to configure
 	 * @param applyMode when edits for this value are saved
@@ -81,6 +163,8 @@ public interface IConfigScreenCategoryBuilder {
 
 	/**
 	 * Set the apply mode for one config screen value in this category.
+	 * <p>
+	 * Equivalent to {@code getScreenValueBuilder(value).setApplyMode(applyMode)}.
 	 *
 	 * @param value config screen value to configure
 	 * @param applyMode when edits for this value are saved
@@ -92,6 +176,8 @@ public interface IConfigScreenCategoryBuilder {
 
 	/**
 	 * Set the apply mode for one config screen value in this category by stable name.
+	 * <p>
+	 * Equivalent to {@code getValueBuilderByName(valueName).setApplyMode(applyMode)}.
 	 * <p>
 	 * This is useful for screen values that do not have a MezzConfig {@link IConfigValue} backing object, such as
 	 * platform-native config values adapted for the config GUI.
@@ -118,6 +204,8 @@ public interface IConfigScreenCategoryBuilder {
 
 	/**
 	 * Set whether one config value in this category requires a restart or larger reload after it is saved.
+	 * <p>
+	 * Equivalent to {@code getValueBuilder(value).setRequiresRestart(requiresRestart)}.
 	 *
 	 * @param value config value to configure
 	 * @param requiresRestart true if saving this value requires a restart or larger reload
@@ -141,6 +229,8 @@ public interface IConfigScreenCategoryBuilder {
 
 	/**
 	 * Set whether one config screen value in this category requires a restart or larger reload after it is saved.
+	 * <p>
+	 * Equivalent to {@code getScreenValueBuilder(value).setRequiresRestart(requiresRestart)}.
 	 *
 	 * @param value config screen value to configure
 	 * @param requiresRestart true if saving this value requires a restart or larger reload
@@ -164,6 +254,8 @@ public interface IConfigScreenCategoryBuilder {
 
 	/**
 	 * Set whether one config screen value in this category by stable name requires a restart or larger reload after it is saved.
+	 * <p>
+	 * Equivalent to {@code getValueBuilderByName(valueName).setRequiresRestart(requiresRestart)}.
 	 * <p>
 	 * This is useful for screen values that do not have a MezzConfig {@link IConfigValue} backing object, such as
 	 * platform-native config values adapted for the config GUI.

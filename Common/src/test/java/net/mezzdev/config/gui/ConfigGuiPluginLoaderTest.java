@@ -1,12 +1,17 @@
 package net.mezzdev.config.gui;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import net.mezzdev.config.api.value.ConfigValueEditMode;
 import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.api.value.IConfigValue;
+import net.mezzdev.config.api.value.IConfigValueBatchChangeListener;
+import net.mezzdev.config.api.value.IConfigValueChangeListener;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.ConfigValueEditorType;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenBuilder;
+import net.mezzdev.config.gui.api.IConfigScreenCategoryBuilder;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.minecraft.client.KeyMapping;
@@ -310,9 +315,12 @@ class ConfigGuiPluginLoaderTest {
 
 		List<ConfigScreenCategory> categories = createCategories(
 			List.of(originalCategory),
-			screenBuilder -> screenBuilder.configureCategory("general")
-				.setDefaultApplyMode(ConfigValueApplyMode.IMMEDIATE)
-				.setScreenValueApplyMode(onApplyValue, ConfigValueApplyMode.ON_APPLY),
+			screenBuilder -> {
+				IConfigScreenCategoryBuilder categoryBuilder = screenBuilder.configureCategory("general")
+					.setDefaultApplyMode(ConfigValueApplyMode.IMMEDIATE);
+				categoryBuilder.getScreenValueBuilder(onApplyValue)
+					.setApplyMode(ConfigValueApplyMode.ON_APPLY);
+			},
 			lookup -> List.of()
 		);
 
@@ -330,13 +338,34 @@ class ConfigGuiPluginLoaderTest {
 		List<ConfigScreenCategory> categories = createCategories(
 			List.of(originalCategory),
 			screenBuilder -> screenBuilder.configureCategory("general")
-				.setScreenValueRequiresRestart(restartValue),
+				.getScreenValueBuilder(restartValue)
+				.setRequiresRestart(),
 			lookup -> List.of()
 		);
 
 		List<? extends IConfigScreenValue<?>> values = List.copyOf(categories.getFirst().getConfigValues());
 		assertFalse(values.get(0).requiresRestart());
 		assertTrue(values.get(1).requiresRestart());
+	}
+
+	@Test
+	void valueBuilderConfiguresMezzConfigValue() {
+		TestBackingConfigValue backingValue = new TestBackingConfigValue("mode");
+		IConfigScreenValue<String> screenValue = IConfigScreenValue.configValue(backingValue);
+		TestCategory originalCategory = new TestCategory("general", List.of(screenValue));
+
+		List<ConfigScreenCategory> categories = createCategories(
+			List.of(originalCategory),
+			screenBuilder -> screenBuilder.configureCategory("general")
+				.getValueBuilder(backingValue)
+				.setApplyMode(ConfigValueApplyMode.IMMEDIATE)
+				.setRequiresRestart(),
+			lookup -> List.of()
+		);
+
+		IConfigScreenValue<?> configuredValue = List.copyOf(categories.getFirst().getConfigValues()).getFirst();
+		assertEquals(ConfigValueApplyMode.IMMEDIATE, configuredValue.getApplyMode());
+		assertTrue(configuredValue.requiresRestart());
 	}
 
 	@Test
@@ -388,60 +417,71 @@ class ConfigGuiPluginLoaderTest {
 		List<ConfigScreenCategory> categories = createCategories(
 			List.of(clientCategory, commonCategory),
 			screenBuilder -> {
-				screenBuilder.addCategory("quick")
+				IConfigScreenCategoryBuilder quickCategory = screenBuilder.addCategory("quick")
 					.setTitle(Component.literal("Quick"))
 					.setDescription(Component.literal("Frequently changed native values"))
-					.setDefaultApplyMode(ConfigValueApplyMode.IMMEDIATE)
-					.setValueApplyModeByName("client.mode", ConfigValueApplyMode.ON_APPLY)
-					.setValueRequiresRestartByName("client.mode")
-					.addValuesByName(List.of(
-						"client.enabled",
-						"client.mode",
-						"client.rowCount"
-					));
-				screenBuilder.addCategory("lists")
+					.setDefaultApplyMode(ConfigValueApplyMode.IMMEDIATE);
+				quickCategory.getValueBuilderByName("client.mode")
+					.setApplyMode(ConfigValueApplyMode.ON_APPLY)
+					.setRequiresRestart();
+				quickCategory.addValuesByName(List.of(
+					"client.enabled",
+					"client.mode",
+					"client.rowCount"
+				));
+
+				IConfigScreenCategoryBuilder listsCategory = screenBuilder.addCategory("lists")
 					.setTitle(Component.literal("Native Lists"))
 					.setDescription(Component.literal("Native list values"))
-					.setDefaultApplyMode(ConfigValueApplyMode.ON_APPLY)
-					.setValueApplyModeByName("client.aliases", ConfigValueApplyMode.IMMEDIATE)
-					.setValueRequiresRestartByName("client.opacitySteps")
-					.addValuesByName(List.of(
-						"client.enabledHistory",
-						"client.favoriteRows",
-						"client.favoriteModes",
-						"client.aliases",
-						"client.cacheBreakpoints",
-						"client.opacitySteps"
-					));
+					.setDefaultApplyMode(ConfigValueApplyMode.ON_APPLY);
+				listsCategory.getValueBuilderByName("client.aliases")
+					.setApplyMode(ConfigValueApplyMode.IMMEDIATE);
+				listsCategory.getValueBuilderByName("client.opacitySteps")
+					.setRequiresRestart();
+				listsCategory.addValuesByName(List.of(
+					"client.enabledHistory",
+					"client.favoriteRows",
+					"client.favoriteModes",
+					"client.aliases",
+					"client.cacheBreakpoints",
+					"client.opacitySteps"
+				));
+
 				screenBuilder.addCategory("keyMappings")
 					.setTitle(Component.literal("Key Mappings"))
 					.setDescription(Component.literal("Native screen key mappings"))
 					.addKeyMapping(openKey)
 					.addKeyMappings(() -> List.of(toggleKey));
-				screenBuilder.configureCategory(clientCategoryName)
+
+				IConfigScreenCategoryBuilder clientCategoryBuilder = screenBuilder.configureCategory(clientCategoryName)
 					.setTitle(Component.literal("Remaining Native Values"))
 					.setDescription(Component.literal("Native values kept in their original category"))
-					.setDefaultApplyMode(ConfigValueApplyMode.ON_APPLY)
-					.setValueApplyModeByName("client.extraEffects", ConfigValueApplyMode.IMMEDIATE)
-					.setValueRequiresRestartByName("client.label")
-					.hideValuesByName(List.of(
-						"client.enabled",
-						"client.secretDiagnostics",
-						"client.mode",
-						"client.rowCount",
-						"client.enabledHistory",
-						"client.favoriteRows",
-						"client.favoriteModes",
-						"client.aliases",
-						"client.cacheBreakpoints",
-						"client.opacitySteps"
-					));
-				screenBuilder.configureCategory(commonCategoryName)
+					.setDefaultApplyMode(ConfigValueApplyMode.ON_APPLY);
+				clientCategoryBuilder.getValueBuilderByName("client.extraEffects")
+					.setApplyMode(ConfigValueApplyMode.IMMEDIATE);
+				clientCategoryBuilder.getValueBuilderByName("client.label")
+					.setRequiresRestart();
+				clientCategoryBuilder.hideValuesByName(List.of(
+					"client.enabled",
+					"client.secretDiagnostics",
+					"client.mode",
+					"client.rowCount",
+					"client.enabledHistory",
+					"client.favoriteRows",
+					"client.favoriteModes",
+					"client.aliases",
+					"client.cacheBreakpoints",
+					"client.opacitySteps"
+				));
+
+				IConfigScreenCategoryBuilder commonCategoryBuilder = screenBuilder.configureCategory(commonCategoryName)
 					.setTitle(Component.literal("Common Native Values"))
 					.setDescription(Component.literal("Common native values kept in their original category"))
-					.setDefaultApplyMode(ConfigValueApplyMode.ON_APPLY)
-					.setValueApplyModeByName("common.enabled", ConfigValueApplyMode.IMMEDIATE)
-					.setValueRequiresRestartByName("common.cacheBudget");
+					.setDefaultApplyMode(ConfigValueApplyMode.ON_APPLY);
+				commonCategoryBuilder.getValueBuilderByName("common.enabled")
+					.setApplyMode(ConfigValueApplyMode.IMMEDIATE);
+				commonCategoryBuilder.getValueBuilderByName("common.cacheBudget")
+					.setRequiresRestart();
 			},
 			lookup -> {
 				defaultProviderCalled.set(true);
@@ -616,6 +656,65 @@ class ConfigGuiPluginLoaderTest {
 		@Override
 		public boolean requiresRestart() {
 			return requiresRestart;
+		}
+	}
+
+	private record TestBackingConfigValue(
+		String name
+	) implements IConfigValue<String> {
+		@Override
+		public String getName() {
+			return name;
+		}
+
+		@Override
+		public String getLocalizationKey() {
+			return name;
+		}
+
+		@Override
+		public String getValue() {
+			return name;
+		}
+
+		@Override
+		public String getDefaultValue() {
+			return name;
+		}
+
+		@Override
+		public ConfigValueEditMode getEditMode() {
+			return ConfigValueEditMode.BATCH;
+		}
+
+		@Override
+		public List<String> getEditorCategoryNames() {
+			return List.of();
+		}
+
+		@Override
+		public boolean set(String value) {
+			return false;
+		}
+
+		@Override
+		public void addListener(Consumer<String> listener) {
+
+		}
+
+		@Override
+		public void addListener(IConfigValueChangeListener<String> listener) {
+
+		}
+
+		@Override
+		public void addBatchListener(IConfigValueBatchChangeListener listener) {
+
+		}
+
+		@Override
+		public IConfigValueEditorSerializer<String> getSerializer() {
+			return TestSerializer.INSTANCE;
 		}
 	}
 
