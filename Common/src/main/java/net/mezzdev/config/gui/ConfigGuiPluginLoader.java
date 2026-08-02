@@ -285,6 +285,7 @@ final class ConfigGuiPluginLoader {
 		private final List<ConfigScreenValueProvider> valueProviders = new ArrayList<>();
 		private final List<ConfigScreenValueProvider> hiddenValueProviders = new ArrayList<>();
 		private final List<ConfigScreenValueApplyModeOverride> applyModeOverrides = new ArrayList<>();
+		private final List<ConfigScreenValueRestartRequirementOverride> restartRequirementOverrides = new ArrayList<>();
 		@Nullable
 		private Component title;
 		@Nullable
@@ -330,6 +331,13 @@ final class ConfigGuiPluginLoader {
 			IConfigScreenValueReference checkedValueReference = ErrorUtil.checkNotNull(valueReference, "valueReference");
 			ConfigValueApplyMode checkedApplyMode = ErrorUtil.checkNotNull(applyMode, "applyMode");
 			applyModeOverrides.add(new ConfigScreenValueApplyModeOverride(checkedValueReference, checkedApplyMode));
+			return this;
+		}
+
+		@Override
+		public IConfigScreenCategoryBuilder setValueRequiresRestart(IConfigScreenValueReference valueReference, boolean requiresRestart) {
+			IConfigScreenValueReference checkedValueReference = ErrorUtil.checkNotNull(valueReference, "valueReference");
+			restartRequirementOverrides.add(new ConfigScreenValueRestartRequirementOverride(checkedValueReference, requiresRestart));
 			return this;
 		}
 
@@ -452,7 +460,8 @@ final class ConfigGuiPluginLoader {
 				containsKeyMappings,
 				valueProviders,
 				hiddenValueProviders,
-				applyModeOverrides
+				applyModeOverrides,
+				restartRequirementOverrides
 			);
 		}
 	}
@@ -467,12 +476,14 @@ final class ConfigGuiPluginLoader {
 		boolean containsKeyMappings,
 		List<ConfigScreenValueProvider> valueProviders,
 		List<ConfigScreenValueProvider> hiddenValueProviders,
-		List<ConfigScreenValueApplyModeOverride> applyModeOverrides
+		List<ConfigScreenValueApplyModeOverride> applyModeOverrides,
+		List<ConfigScreenValueRestartRequirementOverride> restartRequirementOverrides
 	) {
 		private ConfiguredScreenCategory {
 			valueProviders = List.copyOf(valueProviders);
 			hiddenValueProviders = List.copyOf(hiddenValueProviders);
 			applyModeOverrides = List.copyOf(applyModeOverrides);
+			restartRequirementOverrides = List.copyOf(restartRequirementOverrides);
 		}
 
 		private static ConfiguredScreenCategory createDefaultKeyMappingsCategory(ConfigScreenValueProvider defaultKeyMappingsProvider) {
@@ -485,6 +496,7 @@ final class ConfigGuiPluginLoader {
 				false,
 				true,
 				List.of(defaultKeyMappingsProvider),
+				List.of(),
 				List.of(),
 				List.of()
 			);
@@ -503,7 +515,8 @@ final class ConfigGuiPluginLoader {
 				containsKeyMappings,
 				valueProviders,
 				hiddenValueProviders,
-				applyModeOverrides
+				applyModeOverrides,
+				restartRequirementOverrides
 			);
 		}
 	}
@@ -511,6 +524,13 @@ final class ConfigGuiPluginLoader {
 	private record ConfigScreenValueApplyModeOverride(
 		IConfigScreenValueReference valueReference,
 		ConfigValueApplyMode applyMode
+	) {
+
+	}
+
+	private record ConfigScreenValueRestartRequirementOverride(
+		IConfigScreenValueReference valueReference,
+		boolean requiresRestart
 	) {
 
 	}
@@ -704,7 +724,7 @@ final class ConfigGuiPluginLoader {
 		if (includeOriginalValues && configuredCategory.ordered()) {
 			addRemainingOriginalValues(configuredCategory.name(), resolvedCategories, usedValues, values);
 		}
-		values = applyConfiguredApplyModes(modId, configuredCategory, values);
+		values = applyConfiguredValueSettings(modId, configuredCategory, values);
 		if (!values.isEmpty()) {
 			screenCategories.add(new ConfiguredScreenConfigCategory(
 				configuredCategory.name(),
@@ -715,18 +735,23 @@ final class ConfigGuiPluginLoader {
 		}
 	}
 
-	private static List<IConfigScreenValue<?>> applyConfiguredApplyModes(
+	private static List<IConfigScreenValue<?>> applyConfiguredValueSettings(
 		String modId,
 		ConfiguredScreenCategory configuredCategory,
 		List<IConfigScreenValue<?>> values
 	) {
-		if (values.isEmpty() || (configuredCategory.defaultApplyMode() == null && configuredCategory.applyModeOverrides().isEmpty())) {
+		if (values.isEmpty() ||
+			(configuredCategory.defaultApplyMode() == null &&
+			configuredCategory.applyModeOverrides().isEmpty() &&
+			configuredCategory.restartRequirementOverrides().isEmpty())
+		) {
 			return values;
 		}
 		List<IConfigScreenValue<?>> configuredValues = new ArrayList<>(values.size());
 		for (IConfigScreenValue<?> value : values) {
 			ConfigValueApplyMode applyMode = getConfiguredApplyMode(modId, configuredCategory, value, values);
-			configuredValues.add(withApplyMode(value, applyMode));
+			boolean requiresRestart = getConfiguredRestartRequirement(modId, configuredCategory, value, values);
+			configuredValues.add(withValueSettings(value, applyMode, requiresRestart));
 		}
 		return List.copyOf(configuredValues);
 	}
@@ -752,6 +777,23 @@ final class ConfigGuiPluginLoader {
 		return applyMode;
 	}
 
+	private static boolean getConfiguredRestartRequirement(
+		String modId,
+		ConfiguredScreenCategory configuredCategory,
+		IConfigScreenValue<?> value,
+		List<IConfigScreenValue<?>> values
+	) {
+		boolean requiresRestart = value.requiresRestart();
+		for (ConfigScreenValueRestartRequirementOverride restartRequirementOverride : configuredCategory.restartRequirementOverrides()) {
+			IConfigScreenValueReference valueReference = restartRequirementOverride.valueReference();
+			if (valueReference.matches(value)) {
+				validateRestartRequirementReference(modId, configuredCategory, valueReference, values);
+				requiresRestart = restartRequirementOverride.requiresRestart();
+			}
+		}
+		return requiresRestart;
+	}
+
 	private static void validateApplyModeReference(
 		String modId,
 		ConfiguredScreenCategory configuredCategory,
@@ -772,9 +814,40 @@ final class ConfigGuiPluginLoader {
 		}
 	}
 
+	private static void validateRestartRequirementReference(
+		String modId,
+		ConfiguredScreenCategory configuredCategory,
+		IConfigScreenValueReference valueReference,
+		List<IConfigScreenValue<?>> values
+	) {
+		long matchCount = values.stream()
+			.filter(valueReference::matches)
+			.limit(2)
+			.count();
+		if (matchCount > 1) {
+			LOGGER.error(
+				"Config value restart requirement reference matched multiple values for mod id: {}, category: {}, value reference: {}",
+				modId,
+				configuredCategory.name(),
+				valueReference
+			);
+		}
+	}
+
 	@SuppressWarnings("unchecked")
-	private static <T> IConfigScreenValue<T> withApplyMode(IConfigScreenValue<T> value, ConfigValueApplyMode applyMode) {
-		return IConfigScreenValue.withApplyMode(value, applyMode);
+	private static <T> IConfigScreenValue<T> withValueSettings(
+		IConfigScreenValue<T> value,
+		ConfigValueApplyMode applyMode,
+		boolean requiresRestart
+	) {
+		IConfigScreenValue<T> configuredValue = value;
+		if (applyMode != value.getApplyMode()) {
+			configuredValue = IConfigScreenValue.withApplyMode(configuredValue, applyMode);
+		}
+		if (requiresRestart != value.requiresRestart()) {
+			configuredValue = IConfigScreenValue.withRestartRequirement(configuredValue, requiresRestart);
+		}
+		return configuredValue;
 	}
 
 	private static void addHiddenConfiguredValues(

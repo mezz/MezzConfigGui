@@ -35,6 +35,19 @@ public interface IConfigScreenValue<T> {
 	 * @since 0.1.0
 	 */
 	static <T> IConfigScreenValue<T> configValue(IConfigValue<T> configValue, ConfigValueApplyMode applyMode) {
+		return configValue(configValue, applyMode, false);
+	}
+
+	/**
+	 * Adapt a MezzConfig-managed config value for display on a config screen.
+	 *
+	 * @since 0.1.0
+	 */
+	static <T> IConfigScreenValue<T> configValue(
+		IConfigValue<T> configValue,
+		ConfigValueApplyMode applyMode,
+		boolean requiresRestart
+	) {
 		IConfigValue<T> checkedConfigValue = Objects.requireNonNull(configValue, "configValue");
 		ConfigValueApplyMode checkedApplyMode = Objects.requireNonNull(applyMode, "applyMode");
 		return new IConfigScreenValue<>() {
@@ -75,7 +88,7 @@ public interface IConfigScreenValue<T> {
 
 			@Override
 			public boolean requiresRestart() {
-				return checkedConfigValue.requiresRestart();
+				return requiresRestart;
 			}
 
 			@Override
@@ -125,6 +138,19 @@ public interface IConfigScreenValue<T> {
 			return new ConfigScreenValueWithApplyMode.Localized<>(checkedConfigValue, checkedApplyMode, localizedValue);
 		}
 		return new ConfigScreenValueWithApplyMode<>(checkedConfigValue, checkedApplyMode);
+	}
+
+	/**
+	 * Override whether this config screen value needs a restart or larger reload after it is saved.
+	 *
+	 * @since 0.1.0
+	 */
+	static <T> IConfigScreenValue<T> withRestartRequirement(IConfigScreenValue<T> configValue, boolean requiresRestart) {
+		IConfigScreenValue<T> checkedConfigValue = Objects.requireNonNull(configValue, "configValue");
+		if (checkedConfigValue instanceof IConfigLocalizedValue localizedValue) {
+			return new ConfigScreenValueWithRestartRequirement.Localized<>(checkedConfigValue, requiresRestart, localizedValue);
+		}
+		return new ConfigScreenValueWithRestartRequirement<>(checkedConfigValue, requiresRestart);
 	}
 
 	/**

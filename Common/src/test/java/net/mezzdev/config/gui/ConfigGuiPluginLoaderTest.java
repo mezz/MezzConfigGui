@@ -8,6 +8,7 @@ import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenBuilder;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
+import net.mezzdev.config.gui.api.IConfigScreenValueReference;
 import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.network.chat.Component;
@@ -23,6 +24,7 @@ import java.util.function.Consumer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigGuiPluginLoaderTest {
 	private static final String MOD_ID = "test_mod";
@@ -192,6 +194,24 @@ class ConfigGuiPluginLoaderTest {
 		List<? extends IConfigScreenValue<?>> values = List.copyOf(categories.getFirst().getConfigValues());
 		assertEquals(ConfigValueApplyMode.IMMEDIATE, values.get(0).getApplyMode());
 		assertEquals(ConfigValueApplyMode.ON_APPLY, values.get(1).getApplyMode());
+	}
+
+	@Test
+	void appliesConfiguredRestartRequirementsToCategoryValues() {
+		TestConfigValue regularValue = new TestConfigValue("enabled");
+		TestConfigValue restartValue = new TestConfigValue("requiresRestart");
+		TestCategory originalCategory = new TestCategory("general", List.of(regularValue, restartValue));
+
+		List<ConfigScreenCategory> categories = createCategories(
+			List.of(originalCategory),
+			screenBuilder -> screenBuilder.configureCategory("general")
+				.setValueRequiresRestart(IConfigScreenValueReference.screenValue(restartValue)),
+			(modId, allValues) -> List.of()
+		);
+
+		List<? extends IConfigScreenValue<?>> values = List.copyOf(categories.getFirst().getConfigValues());
+		assertFalse(values.get(0).requiresRestart());
+		assertTrue(values.get(1).requiresRestart());
 	}
 
 	private static List<ConfigScreenCategory> createCategories(

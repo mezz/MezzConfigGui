@@ -50,9 +50,8 @@ public interface IConfigGuiRegistration {
 	/**
 	 * Register a config screen.
 	 *
-	 * The restart handler is called when applying saved changes requires the owner mod to restart or reload
-	 * (see {@link net.mezzdev.config.api.value.IConfigValue#requiresRestart()}). Return {@link ConfigRestartResult#NEXT_GAME_START} when the mod
-	 * cannot apply the saved changes until the game starts again.
+	 * The restart handler is called when applying saved changes requires the owner mod to restart or reload. Return
+	 * {@link ConfigRestartResult#NEXT_GAME_START} when the mod cannot apply the saved changes until the game starts again.
 	 *
 	 * @param title the title shown at the top of the config screen
 	 * @param schemaSupplier supplies the config schema each time the screen is opened

@@ -82,7 +82,7 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 		IConfigSchemaBuilder schemaBuilder = registration.createSchemaBuilder("config-gui-fabric-custom-test.ini", LOCALIZATION_PATH);
 		IConfigCategoryBuilder controls = schemaBuilder.addCategory("controls");
 		primaryEnabled = controls.addBoolean("primaryEnabled", true).build();
-		secondaryEnabled = controls.addBoolean("secondaryEnabled", false).setRequiresRestart().build();
+		secondaryEnabled = controls.addBoolean("secondaryEnabled", false).build();
 		mode = controls.addEnum("mode", TestMode.BALANCED).build();
 		accentColor = controls.addValue("accentColor", TestColor.GREEN, TestColorSerializer.INSTANCE).build();
 
@@ -474,7 +474,7 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 
 		@Override
 		public boolean requiresRestart() {
-			return primary.requiresRestart() || secondary.requiresRestart();
+			return true;
 		}
 
 		@Override

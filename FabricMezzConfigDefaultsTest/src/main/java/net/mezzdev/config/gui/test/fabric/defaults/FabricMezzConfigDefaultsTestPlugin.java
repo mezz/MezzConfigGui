@@ -32,6 +32,8 @@ public final class FabricMezzConfigDefaultsTestPlugin implements IConfigPlugin, 
 	@Nullable
 	private static IConfigSchema schema;
 	@Nullable
+	private static IConfigValue<Boolean> requiresRestart;
+	@Nullable
 	private static IConfigValue<Integer> tinySelectionRange;
 
 	@Override
@@ -44,7 +46,7 @@ public final class FabricMezzConfigDefaultsTestPlugin implements IConfigPlugin, 
 		IConfigSchemaBuilder schemaBuilder = registration.createSchemaBuilder("config-gui-fabric-defaults-test.ini", LOCALIZATION_PATH);
 		IConfigCategoryBuilder general = schemaBuilder.addCategory("general");
 		general.addBoolean("enabled", true).build();
-		general.addBoolean("requiresRestart", false).setRequiresRestart().build();
+		requiresRestart = general.addBoolean("requiresRestart", false).build();
 
 		IConfigCategoryBuilder numbers = schemaBuilder.addCategory("numbers");
 		numbers.addInteger("maxVisibleRows", 8, 1, 16).build();
@@ -67,7 +69,8 @@ public final class FabricMezzConfigDefaultsTestPlugin implements IConfigPlugin, 
 	public void register(IConfigGuiRegistration registration) {
 		registration.configureScreen(screenBuilder -> {
 			screenBuilder.configureCategory("general")
-				.setDefaultApplyMode(ConfigValueApplyMode.IMMEDIATE);
+				.setDefaultApplyMode(ConfigValueApplyMode.IMMEDIATE)
+				.setValueRequiresRestart(getRequiresRestart());
 			screenBuilder.configureCategory("numbers")
 				.setValueApplyMode(getTinySelectionRange(), ConfigValueApplyMode.IMMEDIATE);
 		});
@@ -84,6 +87,10 @@ public final class FabricMezzConfigDefaultsTestPlugin implements IConfigPlugin, 
 
 	private static IConfigValue<Integer> getTinySelectionRange() {
 		return Objects.requireNonNull(tinySelectionRange, "tinySelectionRange");
+	}
+
+	private static IConfigValue<Boolean> getRequiresRestart() {
+		return Objects.requireNonNull(requiresRestart, "requiresRestart");
 	}
 
 	private enum TestMode {

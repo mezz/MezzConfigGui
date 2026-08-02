@@ -89,6 +89,79 @@ public interface IConfigScreenCategoryBuilder {
 	IConfigScreenCategoryBuilder setValueApplyMode(IConfigScreenValueReference valueReference, ConfigValueApplyMode applyMode);
 
 	/**
+	 * Mark one config value in this category as requiring a restart or larger reload after it is saved.
+	 *
+	 * @param value config value to configure
+	 * @return this builder
+	 *
+	 * @since 0.1.0
+	 */
+	default IConfigScreenCategoryBuilder setValueRequiresRestart(IConfigValue<?> value) {
+		return setValueRequiresRestart(value, true);
+	}
+
+	/**
+	 * Set whether one config value in this category requires a restart or larger reload after it is saved.
+	 *
+	 * @param value config value to configure
+	 * @param requiresRestart true if saving this value requires a restart or larger reload
+	 * @return this builder
+	 *
+	 * @since 0.1.0
+	 */
+	default IConfigScreenCategoryBuilder setValueRequiresRestart(IConfigValue<?> value, boolean requiresRestart) {
+		return setValueRequiresRestart(IConfigScreenValueReference.configValue(value), requiresRestart);
+	}
+
+	/**
+	 * Mark one config screen value in this category as requiring a restart or larger reload after it is saved.
+	 *
+	 * @param value config screen value to configure
+	 * @return this builder
+	 *
+	 * @since 0.1.0
+	 */
+	default IConfigScreenCategoryBuilder setScreenValueRequiresRestart(IConfigScreenValue<?> value) {
+		return setScreenValueRequiresRestart(value, true);
+	}
+
+	/**
+	 * Set whether one config screen value in this category requires a restart or larger reload after it is saved.
+	 *
+	 * @param value config screen value to configure
+	 * @param requiresRestart true if saving this value requires a restart or larger reload
+	 * @return this builder
+	 *
+	 * @since 0.1.0
+	 */
+	default IConfigScreenCategoryBuilder setScreenValueRequiresRestart(IConfigScreenValue<?> value, boolean requiresRestart) {
+		return setValueRequiresRestart(IConfigScreenValueReference.screenValue(value), requiresRestart);
+	}
+
+	/**
+	 * Mark one config screen value in this category by reference as requiring a restart or larger reload after it is saved.
+	 *
+	 * @param valueReference config screen value reference
+	 * @return this builder
+	 *
+	 * @since 0.1.0
+	 */
+	default IConfigScreenCategoryBuilder setValueRequiresRestart(IConfigScreenValueReference valueReference) {
+		return setValueRequiresRestart(valueReference, true);
+	}
+
+	/**
+	 * Set whether one config screen value in this category by reference requires a restart or larger reload after it is saved.
+	 *
+	 * @param valueReference config screen value reference
+	 * @param requiresRestart true if saving this value requires a restart or larger reload
+	 * @return this builder
+	 *
+	 * @since 0.1.0
+	 */
+	IConfigScreenCategoryBuilder setValueRequiresRestart(IConfigScreenValueReference valueReference, boolean requiresRestart);
+
+	/**
 	 * Add one config value to this category.
 	 * <p>
 	 * Adding values to a category replaces that category's automatically detected values.
