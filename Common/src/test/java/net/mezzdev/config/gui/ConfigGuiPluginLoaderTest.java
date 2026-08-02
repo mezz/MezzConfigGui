@@ -223,6 +223,143 @@ class ConfigGuiPluginLoaderTest {
 		assertEquals("mode", reference.toString());
 	}
 
+	@Test
+	void configuresNativeScreenValuesByNameAcrossManualCategories() {
+		String clientCategoryName = "%s-client.toml".formatted(MOD_ID);
+		String commonCategoryName = "%s-common.toml".formatted(MOD_ID);
+		TestConfigValue enabled = new TestConfigValue("client.enabled");
+		TestConfigValue extraEffects = new TestConfigValue("client.extraEffects");
+		TestConfigValue secretDiagnostics = new TestConfigValue("client.secretDiagnostics");
+		TestConfigValue mode = new TestConfigValue("client.mode");
+		TestConfigValue label = new TestConfigValue("client.label");
+		TestConfigValue rowCount = new TestConfigValue("client.rowCount");
+		TestConfigValue opacity = new TestConfigValue("client.opacity", true);
+		TestConfigValue enabledHistory = new TestConfigValue("client.enabledHistory");
+		TestConfigValue favoriteRows = new TestConfigValue("client.favoriteRows");
+		TestConfigValue favoriteModes = new TestConfigValue("client.favoriteModes");
+		TestConfigValue aliases = new TestConfigValue("client.aliases");
+		TestConfigValue cacheBudget = new TestConfigValue("client.cacheBudget");
+		TestConfigValue cacheBreakpoints = new TestConfigValue("client.cacheBreakpoints");
+		TestConfigValue opacitySteps = new TestConfigValue("client.opacitySteps");
+		TestConfigValue commonEnabled = new TestConfigValue("common.enabled");
+		TestConfigValue commonAliases = new TestConfigValue("common.aliases");
+		TestConfigValue commonCacheBudget = new TestConfigValue("common.cacheBudget");
+		TestCategory clientCategory = new TestCategory(clientCategoryName, List.of(
+			enabled,
+			extraEffects,
+			secretDiagnostics,
+			mode,
+			label,
+			rowCount,
+			opacity,
+			enabledHistory,
+			favoriteRows,
+			favoriteModes,
+			aliases,
+			cacheBudget,
+			cacheBreakpoints,
+			opacitySteps
+		));
+		TestCategory commonCategory = new TestCategory(commonCategoryName, List.of(
+			commonEnabled,
+			commonAliases,
+			commonCacheBudget
+		));
+		KeyMapping openKey = keyMapping("key.test_mod.openNativeScreen", GLFW.GLFW_KEY_J);
+		KeyMapping toggleKey = keyMapping("key.test_mod.toggleNativeOverlay", GLFW.GLFW_KEY_O);
+		AtomicBoolean defaultProviderCalled = new AtomicBoolean(false);
+
+		List<ConfigScreenCategory> categories = createCategories(
+			List.of(clientCategory, commonCategory),
+			screenBuilder -> {
+				screenBuilder.addCategory("quick")
+					.setTitle(Component.literal("Quick"))
+					.setDescription(Component.literal("Frequently changed native values"))
+					.setDefaultApplyMode(ConfigValueApplyMode.IMMEDIATE)
+					.setValueApplyMode(named("client.mode"), ConfigValueApplyMode.ON_APPLY)
+					.setValueRequiresRestart(named("client.mode"))
+					.addValueReferences(List.of(
+						named("client.enabled"),
+						named("client.mode"),
+						named("client.rowCount")
+					));
+				screenBuilder.addCategory("lists")
+					.setTitle(Component.literal("Native Lists"))
+					.setDescription(Component.literal("Native list values"))
+					.setDefaultApplyMode(ConfigValueApplyMode.ON_APPLY)
+					.setValueApplyMode(named("client.aliases"), ConfigValueApplyMode.IMMEDIATE)
+					.setValueRequiresRestart(named("client.opacitySteps"))
+					.addValueReferences(List.of(
+						named("client.enabledHistory"),
+						named("client.favoriteRows"),
+						named("client.favoriteModes"),
+						named("client.aliases"),
+						named("client.cacheBreakpoints"),
+						named("client.opacitySteps")
+					));
+				screenBuilder.addCategory("keyMappings")
+					.setTitle(Component.literal("Key Mappings"))
+					.setDescription(Component.literal("Native screen key mappings"))
+					.addKeyMapping(openKey)
+					.addKeyMappings(() -> List.of(toggleKey));
+				screenBuilder.configureCategory(clientCategoryName)
+					.setTitle(Component.literal("Remaining Native Values"))
+					.setDescription(Component.literal("Native values kept in their original category"))
+					.setDefaultApplyMode(ConfigValueApplyMode.ON_APPLY)
+					.setValueApplyMode(named("client.extraEffects"), ConfigValueApplyMode.IMMEDIATE)
+					.setValueRequiresRestart(named("client.label"))
+					.hideValueReferences(List.of(named("client.secretDiagnostics")));
+				screenBuilder.configureCategory(commonCategoryName)
+					.setTitle(Component.literal("Common Native Values"))
+					.setDescription(Component.literal("Common native values kept in their original category"))
+					.setDefaultApplyMode(ConfigValueApplyMode.ON_APPLY)
+					.setValueApplyMode(named("common.enabled"), ConfigValueApplyMode.IMMEDIATE)
+					.setValueRequiresRestart(named("common.cacheBudget"));
+			},
+			(modId, allValues) -> {
+				defaultProviderCalled.set(true);
+				return List.of(new TestConfigValue("key.test_mod.default"));
+			}
+		);
+
+		assertFalse(defaultProviderCalled.get());
+		assertEquals(List.of("quick", "lists", "keyMappings", clientCategoryName, commonCategoryName), categoryNames(categories));
+		assertEquals("Quick", categories.get(0).getLocalizedName().getString());
+		assertEquals("Frequently changed native values", categories.get(0).getLocalizedDescription().getString());
+		assertEquals("Native Lists", categories.get(1).getLocalizedName().getString());
+		assertEquals("Native list values", categories.get(1).getLocalizedDescription().getString());
+		assertEquals("Key Mappings", categories.get(2).getLocalizedName().getString());
+		assertEquals("Native screen key mappings", categories.get(2).getLocalizedDescription().getString());
+		assertEquals("Remaining Native Values", categories.get(3).getLocalizedName().getString());
+		assertEquals("Native values kept in their original category", categories.get(3).getLocalizedDescription().getString());
+		assertEquals("Common Native Values", categories.get(4).getLocalizedName().getString());
+		assertEquals("Common native values kept in their original category", categories.get(4).getLocalizedDescription().getString());
+		assertEquals(List.of("client.enabled", "client.mode", "client.rowCount"), valueNames(categories.get(0)));
+		assertEquals(List.of(
+			"client.enabledHistory",
+			"client.favoriteRows",
+			"client.favoriteModes",
+			"client.aliases",
+			"client.cacheBreakpoints",
+			"client.opacitySteps"
+		), valueNames(categories.get(1)));
+		assertEquals(List.of("key.test_mod.openNativeScreen", "key.test_mod.toggleNativeOverlay"), valueNames(categories.get(2)));
+		assertEquals(List.of("client.extraEffects", "client.label", "client.opacity", "client.cacheBudget"), valueNames(categories.get(3)));
+		assertEquals(List.of("common.enabled", "common.aliases", "common.cacheBudget"), valueNames(categories.get(4)));
+
+		assertEquals(ConfigValueApplyMode.IMMEDIATE, valueByName(categories.get(0), "client.enabled").getApplyMode());
+		assertEquals(ConfigValueApplyMode.ON_APPLY, valueByName(categories.get(0), "client.mode").getApplyMode());
+		assertEquals(ConfigValueApplyMode.IMMEDIATE, valueByName(categories.get(0), "client.rowCount").getApplyMode());
+		assertTrue(valueByName(categories.get(0), "client.mode").requiresRestart());
+		assertEquals(ConfigValueApplyMode.IMMEDIATE, valueByName(categories.get(1), "client.aliases").getApplyMode());
+		assertTrue(valueByName(categories.get(1), "client.opacitySteps").requiresRestart());
+		assertEquals(ConfigValueApplyMode.IMMEDIATE, valueByName(categories.get(3), "client.extraEffects").getApplyMode());
+		assertTrue(valueByName(categories.get(3), "client.label").requiresRestart());
+		assertTrue(valueByName(categories.get(3), "client.opacity").requiresRestart());
+		assertEquals(ConfigValueApplyMode.IMMEDIATE, valueByName(categories.get(4), "common.enabled").getApplyMode());
+		assertTrue(valueByName(categories.get(4), "common.cacheBudget").requiresRestart());
+	}
+
 	private static List<ConfigScreenCategory> createCategories(
 		List<? extends ConfigScreenCategory> originalCategories,
 		Consumer<IConfigScreenBuilder> screenCustomizer,
@@ -247,6 +384,18 @@ class ConfigGuiPluginLoaderTest {
 			.stream()
 			.map(IConfigScreenValue::getName)
 			.toList();
+	}
+
+	private static IConfigScreenValue<?> valueByName(ConfigScreenCategory category, String name) {
+		return category.getConfigValues()
+			.stream()
+			.filter(value -> value.getName().equals(name))
+			.findFirst()
+			.orElseThrow();
+	}
+
+	private static IConfigScreenValueReference named(String name) {
+		return IConfigScreenValueReference.named(name);
 	}
 
 	private static KeyMapping keyMapping(String name, int keyCode) {
@@ -289,8 +438,13 @@ class ConfigGuiPluginLoaderTest {
 	}
 
 	private record TestConfigValue(
-		String name
+		String name,
+		boolean requiresRestart
 	) implements IConfigScreenValue<String>, IConfigLocalizedValue {
+		private TestConfigValue(String name) {
+			this(name, false);
+		}
+
 		@Override
 		public String getName() {
 			return name;
@@ -334,6 +488,11 @@ class ConfigGuiPluginLoaderTest {
 		@Override
 		public IConfigValueEditorSerializer<String> getSerializer() {
 			return TestSerializer.INSTANCE;
+		}
+
+		@Override
+		public boolean requiresRestart() {
+			return requiresRestart;
 		}
 	}
 

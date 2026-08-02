@@ -1,16 +1,17 @@
 package net.mezzdev.config.gui.test.neoforge.custom;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.gui.api.ConfigGuiPlugin;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.api.ConfigRestartResult;
+import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigGuiRegistration;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigScreenValueReference;
 import net.mezzdev.config.gui.api.IConfigValueEditor;
-import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -31,6 +32,12 @@ public final class NeoForgeNativeCustomTestGuiPlugin implements IConfigGuiPlugin
 		GLFW.GLFW_KEY_J,
 		"key.categories.%s".formatted(NeoForgeNativeCustomTestMod.MOD_ID)
 	);
+	private static final KeyMapping TOGGLE_NATIVE_OVERLAY_KEY = new KeyMapping(
+		"key.%s.toggleNativeOverlay".formatted(NeoForgeNativeCustomTestMod.MOD_ID),
+		InputConstants.Type.KEYSYM,
+		GLFW.GLFW_KEY_O,
+		"key.categories.%s".formatted(NeoForgeNativeCustomTestMod.MOD_ID)
+	);
 
 	@Override
 	public String getModId() {
@@ -46,14 +53,46 @@ public final class NeoForgeNativeCustomTestGuiPlugin implements IConfigGuiPlugin
 			screenBuilder.addCategory("quick")
 				.setTitle(Component.translatable("%s.configuration.category.quick".formatted(NeoForgeNativeCustomTestMod.MOD_ID)))
 				.setDescription(Component.translatable("%s.configuration.category.quick.tooltip".formatted(NeoForgeNativeCustomTestMod.MOD_ID)))
+				.setDefaultApplyMode(ConfigValueApplyMode.IMMEDIATE)
+				.setValueApplyMode(configValue(NeoForgeNativeCustomTestMod.MODE), ConfigValueApplyMode.ON_APPLY)
+				.setValueRequiresRestart(configValue(NeoForgeNativeCustomTestMod.MODE))
 				.addValueReferences(List.of(
 					configValue(NeoForgeNativeCustomTestMod.ENABLED),
-					configValue(NeoForgeNativeCustomTestMod.MODE)
+					configValue(NeoForgeNativeCustomTestMod.MODE),
+					configValue(NeoForgeNativeCustomTestMod.ROW_COUNT)
+				));
+			screenBuilder.addCategory("lists")
+				.setTitle(Component.translatable("%s.configuration.category.lists".formatted(NeoForgeNativeCustomTestMod.MOD_ID)))
+				.setDescription(Component.translatable("%s.configuration.category.lists.tooltip".formatted(NeoForgeNativeCustomTestMod.MOD_ID)))
+				.setDefaultApplyMode(ConfigValueApplyMode.ON_APPLY)
+				.setValueApplyMode(configValue(NeoForgeNativeCustomTestMod.ALIASES), ConfigValueApplyMode.IMMEDIATE)
+				.setValueRequiresRestart(configValue(NeoForgeNativeCustomTestMod.OPACITY_STEPS))
+				.addValueReferences(List.of(
+					configValue(NeoForgeNativeCustomTestMod.ENABLED_HISTORY),
+					configValue(NeoForgeNativeCustomTestMod.FAVORITE_ROWS),
+					configValue(NeoForgeNativeCustomTestMod.FAVORITE_MODES),
+					configValue(NeoForgeNativeCustomTestMod.ALIASES),
+					configValue(NeoForgeNativeCustomTestMod.CACHE_BREAKPOINTS),
+					configValue(NeoForgeNativeCustomTestMod.OPACITY_STEPS)
 				));
 			screenBuilder.addCategory("keyMappings")
 				.setTitle(Component.translatable("%s.configuration.category.keyMappings".formatted(NeoForgeNativeCustomTestMod.MOD_ID)))
 				.setDescription(Component.translatable("%s.configuration.category.keyMappings.tooltip".formatted(NeoForgeNativeCustomTestMod.MOD_ID)))
-				.addKeyMapping(OPEN_NATIVE_SCREEN_KEY);
+				.addKeyMapping(OPEN_NATIVE_SCREEN_KEY)
+				.addKeyMappings(List.of(TOGGLE_NATIVE_OVERLAY_KEY));
+			screenBuilder.configureCategory(NeoForgeNativeCustomTestMod.CLIENT_FILE_NAME)
+				.setTitle(Component.translatable("%s.configuration.category.native".formatted(NeoForgeNativeCustomTestMod.MOD_ID)))
+				.setDescription(Component.translatable("%s.configuration.category.native.tooltip".formatted(NeoForgeNativeCustomTestMod.MOD_ID)))
+				.setDefaultApplyMode(ConfigValueApplyMode.ON_APPLY)
+				.setValueApplyMode(configValue(NeoForgeNativeCustomTestMod.EXTRA_EFFECTS), ConfigValueApplyMode.IMMEDIATE)
+				.setValueRequiresRestart(configValue(NeoForgeNativeCustomTestMod.LABEL))
+				.hideValueReferences(List.of(configValue(NeoForgeNativeCustomTestMod.SECRET_DIAGNOSTICS)));
+			screenBuilder.configureCategory(NeoForgeNativeCustomTestMod.COMMON_FILE_NAME)
+				.setTitle(Component.translatable("%s.configuration.category.common".formatted(NeoForgeNativeCustomTestMod.MOD_ID)))
+				.setDescription(Component.translatable("%s.configuration.category.common.tooltip".formatted(NeoForgeNativeCustomTestMod.MOD_ID)))
+				.setDefaultApplyMode(ConfigValueApplyMode.ON_APPLY)
+				.setValueApplyMode(configValue(NeoForgeNativeCustomTestMod.COMMON_ENABLED), ConfigValueApplyMode.IMMEDIATE)
+				.setValueRequiresRestart(configValue(NeoForgeNativeCustomTestMod.COMMON_CACHE_BUDGET));
 		});
 	}
 
