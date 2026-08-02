@@ -5,6 +5,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.network.chat.Component;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -42,7 +43,9 @@ public interface IConfigScreenCategoryBuilder {
 	/**
 	 * Set the default apply mode for config screen values in this category.
 	 * <p>
-	 * Individual values can override this with {@link #setValueApplyMode(IConfigScreenValueReference, ConfigValueApplyMode)}.
+	 * Individual values can override this with {@link #setValueApplyMode(IConfigValue, ConfigValueApplyMode)},
+	 * {@link #setScreenValueApplyMode(IConfigScreenValue, ConfigValueApplyMode)}, or
+	 * {@link #setValueApplyModeByName(String, ConfigValueApplyMode)}.
 	 *
 	 * @param applyMode when edits for this category's values are saved
 	 * @return this builder
@@ -60,9 +63,7 @@ public interface IConfigScreenCategoryBuilder {
 	 *
 	 * @since 0.1.0
 	 */
-	default IConfigScreenCategoryBuilder setValueApplyMode(IConfigValue<?> value, ConfigValueApplyMode applyMode) {
-		return setValueApplyMode(IConfigScreenValueReference.configValue(value), applyMode);
-	}
+	IConfigScreenCategoryBuilder setValueApplyMode(IConfigValue<?> value, ConfigValueApplyMode applyMode);
 
 	/**
 	 * Set the apply mode for one config screen value in this category.
@@ -73,20 +74,21 @@ public interface IConfigScreenCategoryBuilder {
 	 *
 	 * @since 0.1.0
 	 */
-	default IConfigScreenCategoryBuilder setScreenValueApplyMode(IConfigScreenValue<?> value, ConfigValueApplyMode applyMode) {
-		return setValueApplyMode(IConfigScreenValueReference.screenValue(value), applyMode);
-	}
+	IConfigScreenCategoryBuilder setScreenValueApplyMode(IConfigScreenValue<?> value, ConfigValueApplyMode applyMode);
 
 	/**
-	 * Set the apply mode for one config screen value in this category by reference.
+	 * Set the apply mode for one config screen value in this category by stable name.
+	 * <p>
+	 * This is useful for screen values that do not have a MezzConfig {@link IConfigValue} backing object, such as
+	 * platform-native config values adapted for the config GUI.
 	 *
-	 * @param valueReference config screen value reference
+	 * @param valueName stable config screen value name
 	 * @param applyMode when edits for this value are saved
 	 * @return this builder
 	 *
 	 * @since 0.1.0
 	 */
-	IConfigScreenCategoryBuilder setValueApplyMode(IConfigScreenValueReference valueReference, ConfigValueApplyMode applyMode);
+	IConfigScreenCategoryBuilder setValueApplyModeByName(String valueName, ConfigValueApplyMode applyMode);
 
 	/**
 	 * Mark one config value in this category as requiring a restart or larger reload after it is saved.
@@ -109,9 +111,7 @@ public interface IConfigScreenCategoryBuilder {
 	 *
 	 * @since 0.1.0
 	 */
-	default IConfigScreenCategoryBuilder setValueRequiresRestart(IConfigValue<?> value, boolean requiresRestart) {
-		return setValueRequiresRestart(IConfigScreenValueReference.configValue(value), requiresRestart);
-	}
+	IConfigScreenCategoryBuilder setValueRequiresRestart(IConfigValue<?> value, boolean requiresRestart);
 
 	/**
 	 * Mark one config screen value in this category as requiring a restart or larger reload after it is saved.
@@ -134,32 +134,33 @@ public interface IConfigScreenCategoryBuilder {
 	 *
 	 * @since 0.1.0
 	 */
-	default IConfigScreenCategoryBuilder setScreenValueRequiresRestart(IConfigScreenValue<?> value, boolean requiresRestart) {
-		return setValueRequiresRestart(IConfigScreenValueReference.screenValue(value), requiresRestart);
-	}
+	IConfigScreenCategoryBuilder setScreenValueRequiresRestart(IConfigScreenValue<?> value, boolean requiresRestart);
 
 	/**
-	 * Mark one config screen value in this category by reference as requiring a restart or larger reload after it is saved.
+	 * Mark one config screen value in this category by stable name as requiring a restart or larger reload after it is saved.
 	 *
-	 * @param valueReference config screen value reference
+	 * @param valueName stable config screen value name
 	 * @return this builder
 	 *
 	 * @since 0.1.0
 	 */
-	default IConfigScreenCategoryBuilder setValueRequiresRestart(IConfigScreenValueReference valueReference) {
-		return setValueRequiresRestart(valueReference, true);
+	default IConfigScreenCategoryBuilder setValueRequiresRestartByName(String valueName) {
+		return setValueRequiresRestartByName(valueName, true);
 	}
 
 	/**
-	 * Set whether one config screen value in this category by reference requires a restart or larger reload after it is saved.
+	 * Set whether one config screen value in this category by stable name requires a restart or larger reload after it is saved.
+	 * <p>
+	 * This is useful for screen values that do not have a MezzConfig {@link IConfigValue} backing object, such as
+	 * platform-native config values adapted for the config GUI.
 	 *
-	 * @param valueReference config screen value reference
+	 * @param valueName stable config screen value name
 	 * @param requiresRestart true if saving this value requires a restart or larger reload
 	 * @return this builder
 	 *
 	 * @since 0.1.0
 	 */
-	IConfigScreenCategoryBuilder setValueRequiresRestart(IConfigScreenValueReference valueReference, boolean requiresRestart);
+	IConfigScreenCategoryBuilder setValueRequiresRestartByName(String valueName, boolean requiresRestart);
 
 	/**
 	 * Add one config value to this category.
@@ -334,54 +335,74 @@ public interface IConfigScreenCategoryBuilder {
 	IConfigScreenCategoryBuilder hideScreenValues(Supplier<? extends Collection<? extends IConfigScreenValue<?>>> valuesSupplier);
 
 	/**
-	 * Add one config value to this category by reference.
+	 * Add one config screen value to this category by stable name.
 	 * <p>
 	 * Adding values to a category replaces that category's automatically detected values.
+	 * This is useful for screen values that do not have a MezzConfig {@link IConfigValue} backing object, such as
+	 * platform-native config values adapted for the config GUI.
 	 *
-	 * @param valueReference config value reference
+	 * @param valueName stable config screen value name
 	 * @return this builder
 	 *
 	 * @since 0.1.0
 	 */
-	IConfigScreenCategoryBuilder addValueReference(IConfigScreenValueReference valueReference);
+	IConfigScreenCategoryBuilder addValueByName(String valueName);
 
 	/**
-	 * Hide one schema config value from this category by reference.
+	 * Hide one config screen value from this category by stable name.
 	 * <p>
 	 * This is only needed when this category keeps automatically detected values and some of those values should still
 	 * be omitted.
+	 * This is useful for screen values that do not have a MezzConfig {@link IConfigValue} backing object, such as
+	 * platform-native config values adapted for the config GUI.
 	 *
-	 * @param valueReference config value reference to hide
+	 * @param valueName stable config screen value name to hide
 	 * @return this builder
 	 *
 	 * @since 0.1.0
 	 */
-	IConfigScreenCategoryBuilder hideValueReference(IConfigScreenValueReference valueReference);
+	IConfigScreenCategoryBuilder hideValueByName(String valueName);
 
 	/**
-	 * Add config values to this category by reference.
+	 * Add config screen values to this category by stable name.
 	 * <p>
 	 * Adding values to a category replaces that category's automatically detected values.
+	 * This is useful for screen values that do not have a MezzConfig {@link IConfigValue} backing object, such as
+	 * platform-native config values adapted for the config GUI.
 	 *
-	 * @param valueReferences config value references
+	 * @param valueNames stable config screen value names
 	 * @return this builder
 	 *
 	 * @since 0.1.0
 	 */
-	IConfigScreenCategoryBuilder addValueReferences(Collection<? extends IConfigScreenValueReference> valueReferences);
+	default IConfigScreenCategoryBuilder addValuesByName(Collection<String> valueNames) {
+		Collection<String> checkedValueNames = Objects.requireNonNull(valueNames, "valueNames");
+		for (String valueName : checkedValueNames) {
+			addValueByName(valueName);
+		}
+		return this;
+	}
 
 	/**
-	 * Hide schema config values from this category by reference.
+	 * Hide config screen values from this category by stable name.
 	 * <p>
 	 * This is only needed when this category keeps automatically detected values and some of those values should still
 	 * be omitted.
+	 * This is useful for screen values that do not have a MezzConfig {@link IConfigValue} backing object, such as
+	 * platform-native config values adapted for the config GUI.
 	 *
-	 * @param valueReferences config value references to hide
+	 * @param valueNames stable config screen value names to hide
 	 * @return this builder
 	 *
 	 * @since 0.1.0
 	 */
-	IConfigScreenCategoryBuilder hideValueReferences(Collection<? extends IConfigScreenValueReference> valueReferences);
+	default IConfigScreenCategoryBuilder hideValuesByName(Collection<String> valueNames) {
+		Collection<String> checkedValueNames = Objects.requireNonNull(valueNames, "valueNames");
+		for (String valueName : checkedValueNames) {
+			hideValueByName(valueName);
+		}
+		return this;
+	}
 
 	/**
 	 * Add one key mapping to this category.

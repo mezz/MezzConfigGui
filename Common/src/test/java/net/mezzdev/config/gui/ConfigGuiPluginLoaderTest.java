@@ -8,7 +8,6 @@ import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenBuilder;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
-import net.mezzdev.config.gui.api.IConfigScreenValueReference;
 import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.network.chat.Component;
@@ -205,22 +204,13 @@ class ConfigGuiPluginLoaderTest {
 		List<ConfigScreenCategory> categories = createCategories(
 			List.of(originalCategory),
 			screenBuilder -> screenBuilder.configureCategory("general")
-				.setValueRequiresRestart(IConfigScreenValueReference.screenValue(restartValue)),
+				.setScreenValueRequiresRestart(restartValue),
 			(modId, allValues) -> List.of()
 		);
 
 		List<? extends IConfigScreenValue<?>> values = List.copyOf(categories.getFirst().getConfigValues());
 		assertFalse(values.get(0).requiresRestart());
 		assertTrue(values.get(1).requiresRestart());
-	}
-
-	@Test
-	void namedReferenceMatchesScreenValueByName() {
-		IConfigScreenValueReference reference = IConfigScreenValueReference.named("mode");
-
-		assertTrue(reference.matches(new TestConfigValue("mode")));
-		assertFalse(reference.matches(new TestConfigValue("enabled")));
-		assertEquals("mode", reference.toString());
 	}
 
 	@Test
@@ -276,26 +266,26 @@ class ConfigGuiPluginLoaderTest {
 					.setTitle(Component.literal("Quick"))
 					.setDescription(Component.literal("Frequently changed native values"))
 					.setDefaultApplyMode(ConfigValueApplyMode.IMMEDIATE)
-					.setValueApplyMode(named("client.mode"), ConfigValueApplyMode.ON_APPLY)
-					.setValueRequiresRestart(named("client.mode"))
-					.addValueReferences(List.of(
-						named("client.enabled"),
-						named("client.mode"),
-						named("client.rowCount")
+					.setValueApplyModeByName("client.mode", ConfigValueApplyMode.ON_APPLY)
+					.setValueRequiresRestartByName("client.mode")
+					.addValuesByName(List.of(
+						"client.enabled",
+						"client.mode",
+						"client.rowCount"
 					));
 				screenBuilder.addCategory("lists")
 					.setTitle(Component.literal("Native Lists"))
 					.setDescription(Component.literal("Native list values"))
 					.setDefaultApplyMode(ConfigValueApplyMode.ON_APPLY)
-					.setValueApplyMode(named("client.aliases"), ConfigValueApplyMode.IMMEDIATE)
-					.setValueRequiresRestart(named("client.opacitySteps"))
-					.addValueReferences(List.of(
-						named("client.enabledHistory"),
-						named("client.favoriteRows"),
-						named("client.favoriteModes"),
-						named("client.aliases"),
-						named("client.cacheBreakpoints"),
-						named("client.opacitySteps")
+					.setValueApplyModeByName("client.aliases", ConfigValueApplyMode.IMMEDIATE)
+					.setValueRequiresRestartByName("client.opacitySteps")
+					.addValuesByName(List.of(
+						"client.enabledHistory",
+						"client.favoriteRows",
+						"client.favoriteModes",
+						"client.aliases",
+						"client.cacheBreakpoints",
+						"client.opacitySteps"
 					));
 				screenBuilder.addCategory("keyMappings")
 					.setTitle(Component.literal("Key Mappings"))
@@ -306,15 +296,15 @@ class ConfigGuiPluginLoaderTest {
 					.setTitle(Component.literal("Remaining Native Values"))
 					.setDescription(Component.literal("Native values kept in their original category"))
 					.setDefaultApplyMode(ConfigValueApplyMode.ON_APPLY)
-					.setValueApplyMode(named("client.extraEffects"), ConfigValueApplyMode.IMMEDIATE)
-					.setValueRequiresRestart(named("client.label"))
-					.hideValueReferences(List.of(named("client.secretDiagnostics")));
+					.setValueApplyModeByName("client.extraEffects", ConfigValueApplyMode.IMMEDIATE)
+					.setValueRequiresRestartByName("client.label")
+					.hideValuesByName(List.of("client.secretDiagnostics"));
 				screenBuilder.configureCategory(commonCategoryName)
 					.setTitle(Component.literal("Common Native Values"))
 					.setDescription(Component.literal("Common native values kept in their original category"))
 					.setDefaultApplyMode(ConfigValueApplyMode.ON_APPLY)
-					.setValueApplyMode(named("common.enabled"), ConfigValueApplyMode.IMMEDIATE)
-					.setValueRequiresRestart(named("common.cacheBudget"));
+					.setValueApplyModeByName("common.enabled", ConfigValueApplyMode.IMMEDIATE)
+					.setValueRequiresRestartByName("common.cacheBudget");
 			},
 			(modId, allValues) -> {
 				defaultProviderCalled.set(true);
@@ -392,10 +382,6 @@ class ConfigGuiPluginLoaderTest {
 			.filter(value -> value.getName().equals(name))
 			.findFirst()
 			.orElseThrow();
-	}
-
-	private static IConfigScreenValueReference named(String name) {
-		return IConfigScreenValueReference.named(name);
 	}
 
 	private static KeyMapping keyMapping(String name, int keyCode) {

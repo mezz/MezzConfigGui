@@ -1,7 +1,10 @@
 package net.mezzdev.config.gui;
 
+import net.mezzdev.config.api.schema.IConfigSchema;
+import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.gui.api.ConfigRestartResult;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
+import net.mezzdev.config.gui.api.ConfigValueEditorType;
 import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigGuiRegistration;
 import net.mezzdev.config.gui.api.IConfigRestartHandler;
@@ -10,12 +13,9 @@ import net.mezzdev.config.gui.api.IConfigScreenCategoryBuilder;
 import net.mezzdev.config.gui.api.IConfigScreenFactory;
 import net.mezzdev.config.gui.api.IConfigScreenConfig;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
-import net.mezzdev.config.gui.api.IConfigScreenValueReference;
 import net.mezzdev.config.gui.api.IConfigValueEditorFactory;
 import net.mezzdev.config.gui.api.ISortableConfigValueFactory;
-import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.gui.model.ConfigValueChange;
-import net.mezzdev.config.gui.api.ConfigValueEditorType;
 import net.mezzdev.config.gui.keybindings.KeyMappingConfigValues;
 import net.mezzdev.config.gui.util.ErrorUtil;
 import net.minecraft.client.Minecraft;
@@ -327,17 +327,47 @@ final class ConfigGuiPluginLoader {
 		}
 
 		@Override
-		public IConfigScreenCategoryBuilder setValueApplyMode(IConfigScreenValueReference valueReference, ConfigValueApplyMode applyMode) {
-			IConfigScreenValueReference checkedValueReference = ErrorUtil.checkNotNull(valueReference, "valueReference");
+		public IConfigScreenCategoryBuilder setValueApplyMode(IConfigValue<?> value, ConfigValueApplyMode applyMode) {
+			ConfigScreenValueMatcher valueMatcher = ConfigScreenValueMatcher.configValue(value);
 			ConfigValueApplyMode checkedApplyMode = ErrorUtil.checkNotNull(applyMode, "applyMode");
-			applyModeOverrides.add(new ConfigScreenValueApplyModeOverride(checkedValueReference, checkedApplyMode));
+			applyModeOverrides.add(new ConfigScreenValueApplyModeOverride(valueMatcher, checkedApplyMode));
 			return this;
 		}
 
 		@Override
-		public IConfigScreenCategoryBuilder setValueRequiresRestart(IConfigScreenValueReference valueReference, boolean requiresRestart) {
-			IConfigScreenValueReference checkedValueReference = ErrorUtil.checkNotNull(valueReference, "valueReference");
-			restartRequirementOverrides.add(new ConfigScreenValueRestartRequirementOverride(checkedValueReference, requiresRestart));
+		public IConfigScreenCategoryBuilder setScreenValueApplyMode(IConfigScreenValue<?> value, ConfigValueApplyMode applyMode) {
+			ConfigScreenValueMatcher valueMatcher = ConfigScreenValueMatcher.screenValue(value);
+			ConfigValueApplyMode checkedApplyMode = ErrorUtil.checkNotNull(applyMode, "applyMode");
+			applyModeOverrides.add(new ConfigScreenValueApplyModeOverride(valueMatcher, checkedApplyMode));
+			return this;
+		}
+
+		@Override
+		public IConfigScreenCategoryBuilder setValueApplyModeByName(String valueName, ConfigValueApplyMode applyMode) {
+			ConfigScreenValueMatcher valueMatcher = ConfigScreenValueMatcher.named(valueName);
+			ConfigValueApplyMode checkedApplyMode = ErrorUtil.checkNotNull(applyMode, "applyMode");
+			applyModeOverrides.add(new ConfigScreenValueApplyModeOverride(valueMatcher, checkedApplyMode));
+			return this;
+		}
+
+		@Override
+		public IConfigScreenCategoryBuilder setValueRequiresRestart(IConfigValue<?> value, boolean requiresRestart) {
+			ConfigScreenValueMatcher valueMatcher = ConfigScreenValueMatcher.configValue(value);
+			restartRequirementOverrides.add(new ConfigScreenValueRestartRequirementOverride(valueMatcher, requiresRestart));
+			return this;
+		}
+
+		@Override
+		public IConfigScreenCategoryBuilder setScreenValueRequiresRestart(IConfigScreenValue<?> value, boolean requiresRestart) {
+			ConfigScreenValueMatcher valueMatcher = ConfigScreenValueMatcher.screenValue(value);
+			restartRequirementOverrides.add(new ConfigScreenValueRestartRequirementOverride(valueMatcher, requiresRestart));
+			return this;
+		}
+
+		@Override
+		public IConfigScreenCategoryBuilder setValueRequiresRestartByName(String valueName, boolean requiresRestart) {
+			ConfigScreenValueMatcher valueMatcher = ConfigScreenValueMatcher.named(valueName);
+			restartRequirementOverrides.add(new ConfigScreenValueRestartRequirementOverride(valueMatcher, requiresRestart));
 			return this;
 		}
 
@@ -380,39 +410,21 @@ final class ConfigGuiPluginLoader {
 		}
 
 		@Override
-		public IConfigScreenCategoryBuilder addValueReference(IConfigScreenValueReference valueReference) {
-			IConfigScreenValueReference checkedValueReference = ErrorUtil.checkNotNull(valueReference, "valueReference");
-			return addValueProvider((modId, allValues) -> findValue(modId, checkedValueReference, allValues)
+		public IConfigScreenCategoryBuilder addValueByName(String valueName) {
+			ConfigScreenValueMatcher valueMatcher = ConfigScreenValueMatcher.named(valueName);
+			return addValueProvider((modId, allValues) -> findValue(modId, valueMatcher, allValues)
 				.map(List::of)
 				.orElseGet(List::of)
 			);
 		}
 
 		@Override
-		public IConfigScreenCategoryBuilder hideValueReference(IConfigScreenValueReference valueReference) {
-			IConfigScreenValueReference checkedValueReference = ErrorUtil.checkNotNull(valueReference, "valueReference");
-			return addHiddenValueProvider((modId, allValues) -> findValue(modId, checkedValueReference, allValues)
+		public IConfigScreenCategoryBuilder hideValueByName(String valueName) {
+			ConfigScreenValueMatcher valueMatcher = ConfigScreenValueMatcher.named(valueName);
+			return addHiddenValueProvider((modId, allValues) -> findValue(modId, valueMatcher, allValues)
 				.map(List::of)
 				.orElseGet(List::of)
 			);
-		}
-
-		@Override
-		public IConfigScreenCategoryBuilder addValueReferences(Collection<? extends IConfigScreenValueReference> valueReferences) {
-			Collection<? extends IConfigScreenValueReference> checkedValueReferences = ErrorUtil.checkNotNull(valueReferences, "valueReferences");
-			for (IConfigScreenValueReference valueReference : checkedValueReferences) {
-				addValueReference(valueReference);
-			}
-			return this;
-		}
-
-		@Override
-		public IConfigScreenCategoryBuilder hideValueReferences(Collection<? extends IConfigScreenValueReference> valueReferences) {
-			Collection<? extends IConfigScreenValueReference> checkedValueReferences = ErrorUtil.checkNotNull(valueReferences, "valueReferences");
-			for (IConfigScreenValueReference valueReference : checkedValueReferences) {
-				hideValueReference(valueReference);
-			}
-			return this;
 		}
 
 		@Override
@@ -522,17 +534,69 @@ final class ConfigGuiPluginLoader {
 	}
 
 	private record ConfigScreenValueApplyModeOverride(
-		IConfigScreenValueReference valueReference,
+		ConfigScreenValueMatcher valueMatcher,
 		ConfigValueApplyMode applyMode
 	) {
 
 	}
 
 	private record ConfigScreenValueRestartRequirementOverride(
-		IConfigScreenValueReference valueReference,
+		ConfigScreenValueMatcher valueMatcher,
 		boolean requiresRestart
 	) {
 
+	}
+
+	@FunctionalInterface
+	private interface ConfigScreenValueMatcher {
+		static ConfigScreenValueMatcher configValue(IConfigValue<?> configValue) {
+			IConfigValue<?> checkedConfigValue = ErrorUtil.checkNotNull(configValue, "configValue");
+			return new ConfigScreenValueMatcher() {
+				@Override
+				public boolean matches(IConfigScreenValue<?> value) {
+					return value.getConfigValue()
+						.filter(configValue -> configValue == checkedConfigValue)
+						.isPresent();
+				}
+
+				@Override
+				public String toString() {
+					return checkedConfigValue.getName();
+				}
+			};
+		}
+
+		static ConfigScreenValueMatcher screenValue(IConfigScreenValue<?> configValue) {
+			IConfigScreenValue<?> checkedConfigValue = ErrorUtil.checkNotNull(configValue, "configValue");
+			return new ConfigScreenValueMatcher() {
+				@Override
+				public boolean matches(IConfigScreenValue<?> value) {
+					return checkedConfigValue == value;
+				}
+
+				@Override
+				public String toString() {
+					return checkedConfigValue.getName();
+				}
+			};
+		}
+
+		static ConfigScreenValueMatcher named(String name) {
+			String checkedName = validateName(name, "value name");
+			return new ConfigScreenValueMatcher() {
+				@Override
+				public boolean matches(IConfigScreenValue<?> value) {
+					return value.getName().equals(checkedName);
+				}
+
+				@Override
+				public String toString() {
+					return checkedName;
+				}
+			};
+		}
+
+		boolean matches(IConfigScreenValue<?> value);
 	}
 
 	private static final class CustomizedConfigScreenSchema implements ConfigScreenSchema {
@@ -765,9 +829,9 @@ final class ConfigGuiPluginLoader {
 		@Nullable
 		ConfigValueApplyMode applyMode = configuredCategory.defaultApplyMode();
 		for (ConfigScreenValueApplyModeOverride applyModeOverride : configuredCategory.applyModeOverrides()) {
-			IConfigScreenValueReference valueReference = applyModeOverride.valueReference();
-			if (valueReference.matches(value)) {
-				validateApplyModeReference(modId, configuredCategory, valueReference, values);
+			ConfigScreenValueMatcher valueMatcher = applyModeOverride.valueMatcher();
+			if (valueMatcher.matches(value)) {
+				validateApplyModeMatcher(modId, configuredCategory, valueMatcher, values);
 				applyMode = applyModeOverride.applyMode();
 			}
 		}
@@ -785,51 +849,51 @@ final class ConfigGuiPluginLoader {
 	) {
 		boolean requiresRestart = value.requiresRestart();
 		for (ConfigScreenValueRestartRequirementOverride restartRequirementOverride : configuredCategory.restartRequirementOverrides()) {
-			IConfigScreenValueReference valueReference = restartRequirementOverride.valueReference();
-			if (valueReference.matches(value)) {
-				validateRestartRequirementReference(modId, configuredCategory, valueReference, values);
+			ConfigScreenValueMatcher valueMatcher = restartRequirementOverride.valueMatcher();
+			if (valueMatcher.matches(value)) {
+				validateRestartRequirementMatcher(modId, configuredCategory, valueMatcher, values);
 				requiresRestart = restartRequirementOverride.requiresRestart();
 			}
 		}
 		return requiresRestart;
 	}
 
-	private static void validateApplyModeReference(
+	private static void validateApplyModeMatcher(
 		String modId,
 		ConfiguredScreenCategory configuredCategory,
-		IConfigScreenValueReference valueReference,
+		ConfigScreenValueMatcher valueMatcher,
 		List<IConfigScreenValue<?>> values
 	) {
 		long matchCount = values.stream()
-			.filter(valueReference::matches)
+			.filter(valueMatcher::matches)
 			.limit(2)
 			.count();
 		if (matchCount > 1) {
 			LOGGER.error(
-				"Config value apply mode reference matched multiple values for mod id: {}, category: {}, value reference: {}",
+				"Config value apply mode matcher matched multiple values for mod id: {}, category: {}, value matcher: {}",
 				modId,
 				configuredCategory.name(),
-				valueReference
+				valueMatcher
 			);
 		}
 	}
 
-	private static void validateRestartRequirementReference(
+	private static void validateRestartRequirementMatcher(
 		String modId,
 		ConfiguredScreenCategory configuredCategory,
-		IConfigScreenValueReference valueReference,
+		ConfigScreenValueMatcher valueMatcher,
 		List<IConfigScreenValue<?>> values
 	) {
 		long matchCount = values.stream()
-			.filter(valueReference::matches)
+			.filter(valueMatcher::matches)
 			.limit(2)
 			.count();
 		if (matchCount > 1) {
 			LOGGER.error(
-				"Config value restart requirement reference matched multiple values for mod id: {}, category: {}, value reference: {}",
+				"Config value restart requirement matcher matched multiple values for mod id: {}, category: {}, value matcher: {}",
 				modId,
 				configuredCategory.name(),
-				valueReference
+				valueMatcher
 			);
 		}
 	}
@@ -1016,15 +1080,15 @@ final class ConfigGuiPluginLoader {
 
 	private static Optional<IConfigScreenValue<?>> findValue(
 		String modId,
-		IConfigScreenValueReference valueReference,
+		ConfigScreenValueMatcher valueMatcher,
 		List<IConfigScreenValue<?>> values
 	) {
 		@Nullable
 		IConfigScreenValue<?> result = null;
 		for (IConfigScreenValue<?> value : values) {
-			if (valueReference.matches(value)) {
+			if (valueMatcher.matches(value)) {
 				if (result != null) {
-					LOGGER.error("Config value reference matched multiple values for mod id: {}, value reference: {}", modId, valueReference);
+					LOGGER.error("Config value matcher matched multiple values for mod id: {}, value matcher: {}", modId, valueMatcher);
 					return Optional.of(result);
 				}
 				result = value;

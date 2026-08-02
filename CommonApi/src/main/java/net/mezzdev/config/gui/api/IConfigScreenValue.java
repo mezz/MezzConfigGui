@@ -14,7 +14,7 @@ import java.util.function.Consumer;
  * MezzConfig-managed values can be adapted with {@link #configValue(IConfigValue)}. Screen-only values can implement
  * this interface directly without implementing MezzConfig's non-extendable {@link IConfigValue}. Platform-native
  * config adapters, such as the native NeoForge config adapter, should also implement this interface directly and use
- * {@link IConfigScreenValueReference#named(String)} or a platform-specific reference helper for GUI customization.
+ * the {@code ByName} methods on {@link IConfigScreenCategoryBuilder} for GUI customization.
  *
  * @param <T> the value type
  *
