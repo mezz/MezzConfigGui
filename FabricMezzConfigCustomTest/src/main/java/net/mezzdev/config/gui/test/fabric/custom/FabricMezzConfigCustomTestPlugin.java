@@ -15,7 +15,6 @@ import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.ConfigGuiPlugin;
 import net.mezzdev.config.gui.api.ConfigInfo;
-import net.mezzdev.config.gui.api.ConfigRestartResult;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigGuiRegistration;
@@ -102,7 +101,6 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 		registration.registerValueEditor(TestColorSerializer.EDITOR_TYPE, ignored -> new TestColorEditor());
 		registration.configureScreen(screenBuilder -> {
 			screenBuilder.setTitle(Component.translatable("%s.config.screen.custom.title".formatted(MOD_ID)));
-			screenBuilder.setRestartHandler(() -> ConfigRestartResult.HANDLED);
 			screenBuilder.addCategory("overview")
 				.setTitle(Component.translatable("%s.config.category.overview".formatted(MOD_ID)))
 				.setDescription(Component.translatable("%s.config.category.overview.description".formatted(MOD_ID)))
@@ -123,8 +121,7 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 		});
 		registration.registerScreen(
 			Component.translatable("%s.config.screen.title".formatted(MOD_ID)),
-			FabricMezzConfigCustomTestPlugin::getSchema,
-			() -> ConfigRestartResult.NEXT_GAME_START
+			FabricMezzConfigCustomTestPlugin::getSchema
 		);
 	}
 

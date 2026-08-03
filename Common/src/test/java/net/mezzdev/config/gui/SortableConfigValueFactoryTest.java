@@ -90,6 +90,31 @@ class SortableConfigValueFactoryTest {
 	}
 
 	@Test
+	void rejectsStringValuesOutsideRuntimeCandidates() {
+		TestSortingConfig sortingConfig = new TestSortingConfig(true);
+		IConfigScreenValue<List<String>> configValue = SORTABLE_CONFIG_VALUES.createStringList(
+			"sortOrder",
+			"test.sortOrder",
+			sortingConfig,
+			List.of("first", "second"),
+			Map.of(),
+			Map.of(),
+			Map.of()
+		);
+		IConfigListValueEditorSerializer<String> listSerializer = getListSerializer(configValue);
+		IConfigValueSerializer<String> elementSerializer = listSerializer.getElementSerializer();
+
+		assertFalse(elementSerializer.isValid("third"));
+		IDeserializeResult<String> elementResult = elementSerializer.deserialize("third");
+		assertTrue(elementResult.getResult().isEmpty());
+		assertTrue(elementResult.getErrors().stream().anyMatch(error -> error.contains("third")));
+		IDeserializeResult<List<String>> listResult = listSerializer.deserialize("first, third");
+		assertTrue(listResult.getErrors().stream().anyMatch(error -> error.contains("third")));
+		assertFalse(configValue.set(List.of("first", "third")));
+		assertEquals(List.of(), sortingConfig.savedValues);
+	}
+
+	@Test
 	void savesValidValuesAndNotifiesListeners() {
 		TestSortingConfig sortingConfig = new TestSortingConfig(true);
 		IConfigScreenValue<List<String>> configValue = SORTABLE_CONFIG_VALUES.createStringList(
@@ -125,6 +150,24 @@ class SortableConfigValueFactoryTest {
 		assertEquals(List.of("first", "second"), List.copyOf(listSerializer.getElementSerializer().getAllValidValues().orElseThrow()));
 		IConfigListValueEditorOptions editorOptions = assertInstanceOf(IConfigListValueEditorOptions.class, listSerializer);
 		assertFalse(editorOptions.allowsRemovingValues());
+	}
+
+	@Test
+	void genericFactoryRejectsValuesOutsideRuntimeCandidates() {
+		TestSortingConfig sortingConfig = new TestSortingConfig(true);
+		IConfigScreenValue<List<String>> configValue = SORTABLE_CONFIG_VALUES.create(
+			"sortOrder",
+			"test.sortOrder",
+			sortingConfig,
+			List.of("first", "second"),
+			TestStringSerializer.INSTANCE
+		);
+
+		IConfigValueSerializer<String> elementSerializer = getListSerializer(configValue).getElementSerializer();
+		assertFalse(elementSerializer.isValid("third"));
+		assertTrue(elementSerializer.deserialize("third").getErrors().stream().anyMatch(error -> error.contains("third")));
+		assertFalse(configValue.set(List.of("first", "third")));
+		assertEquals(List.of(), sortingConfig.savedValues);
 	}
 
 	private static IConfigListValueEditorSerializer<String> getListSerializer(IConfigScreenValue<List<String>> configValue) {

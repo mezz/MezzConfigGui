@@ -1,19 +1,21 @@
 package net.mezzdev.config.gui;
 
 import net.mezzdev.config.api.schema.IConfigSchema;
+import net.mezzdev.config.api.sorting.ISortingConfig;
 import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.gui.api.ConfigRestartResult;
+import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.ConfigValueEditorType;
 import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigGuiRegistration;
-import net.mezzdev.config.gui.api.IConfigRestartHandler;
 import net.mezzdev.config.gui.api.IConfigScreenBuilder;
 import net.mezzdev.config.gui.api.IConfigScreenCategoryBuilder;
 import net.mezzdev.config.gui.api.IConfigScreenFactory;
 import net.mezzdev.config.gui.api.IConfigScreenConfig;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
+import net.mezzdev.config.gui.api.IConfigScreenValueBuilder;
 import net.mezzdev.config.gui.api.IConfigValueEditorFactory;
+import net.mezzdev.config.gui.api.ISortingConfigGuiBuilder;
 import net.mezzdev.config.gui.api.ISortableConfigValueFactory;
 import net.mezzdev.config.gui.model.ConfigValueChange;
 import net.mezzdev.config.gui.keybindings.KeyMappingConfigValues;
@@ -167,13 +169,12 @@ final class ConfigGuiPluginLoader {
 		@Override
 		public void registerScreen(
 			Component title,
-			Supplier<? extends IConfigSchema> schemaSupplier,
-			IConfigRestartHandler restartHandler
+			Supplier<? extends IConfigSchema> schemaSupplier
 		) {
 			if (config != null) {
 				throw new IllegalStateException("A config screen has already been registered for mod id: " + modId);
 			}
-			config = new ConfigScreenFactoryConfig(title, createScreenSchemaSupplier(schemaSupplier), restartHandler);
+			config = new ConfigScreenFactoryConfig(title, createScreenSchemaSupplier(schemaSupplier));
 		}
 
 		public Optional<IConfigScreenFactory> createFactory() {
@@ -181,27 +182,11 @@ final class ConfigGuiPluginLoader {
 			if (config == null) {
 				return Optional.empty();
 			}
-			ConfigScreenBuilder screenBuilder = new ConfigScreenBuilder(modId, config.title(), config.restartHandler());
-			for (Consumer<IConfigScreenBuilder> screenCustomizer : screenCustomizers) {
-				screenCustomizer.accept(screenBuilder);
-			}
-
-			Supplier<? extends ConfigScreenSchema> schemaSupplier = config.schemaSupplier();
-			List<ConfiguredScreenCategory> configuredCategories = screenBuilder.getCategories();
-			boolean clearDefaultCategories = screenBuilder.isClearDefaultCategories();
-			Supplier<? extends ConfigScreenSchema> originalSchemaSupplier = schemaSupplier;
-			schemaSupplier = () -> {
-				ConfigScreenSchema schema = originalSchemaSupplier.get();
-				if (schema == null) {
-					throw new NullPointerException("schemaSupplier must not return null.");
-				}
-				return new CustomizedConfigScreenSchema(modId, schema, configuredCategories, clearDefaultCategories);
-			};
+			validateConfigScreenFactoryInputs(config.title(), config.schemaSupplier());
 			return Optional.of(createScreenFactory(
 				modId,
-				screenBuilder.getTitle(),
-				schemaSupplier,
-				screenBuilder.getRestartHandler(),
+				config,
+				screenCustomizers,
 				valueEditorFactories
 			));
 		}
@@ -220,8 +205,7 @@ final class ConfigGuiPluginLoader {
 			}
 			return new ConfigScreenFactoryConfig(
 				configScreen.getTitle(),
-				configScreen::getSchema,
-				configScreen::onRestartRequired
+				configScreen::getSchema
 			);
 		}
 	}
@@ -230,23 +214,16 @@ final class ConfigGuiPluginLoader {
 		private final String modId;
 		private final Map<String, ConfigScreenCategoryBuilder> categories = new LinkedHashMap<>();
 		private Component title;
-		private IConfigRestartHandler restartHandler;
 		private boolean clearDefaultCategories;
 
-		public ConfigScreenBuilder(String modId, Component title, IConfigRestartHandler restartHandler) {
+		public ConfigScreenBuilder(String modId, Component title) {
 			this.modId = modId;
 			this.title = title;
-			this.restartHandler = restartHandler;
 		}
 
 		@Override
 		public void setTitle(Component title) {
 			this.title = ErrorUtil.checkNotNull(title, "title");
-		}
-
-		@Override
-		public void setRestartHandler(IConfigRestartHandler restartHandler) {
-			this.restartHandler = ErrorUtil.checkNotNull(restartHandler, "restartHandler");
 		}
 
 		@Override
@@ -276,10 +253,6 @@ final class ConfigGuiPluginLoader {
 			return title;
 		}
 
-		public IConfigRestartHandler getRestartHandler() {
-			return restartHandler;
-		}
-
 		public boolean isClearDefaultCategories() {
 			return clearDefaultCategories;
 		}
@@ -296,6 +269,7 @@ final class ConfigGuiPluginLoader {
 		private final String name;
 		private final List<ConfigScreenValueProvider> valueProviders = new ArrayList<>();
 		private final List<ConfigScreenValueProvider> hiddenValueProviders = new ArrayList<>();
+		private final List<ConfigScreenValueInsertion> valueInsertions = new ArrayList<>();
 		private final List<ConfigScreenValueApplyModeOverride> applyModeOverrides = new ArrayList<>();
 		private final List<ConfigScreenValueRestartRequirementOverride> restartRequirementOverrides = new ArrayList<>();
 		@Nullable
@@ -345,6 +319,21 @@ final class ConfigGuiPluginLoader {
 		}
 
 		@Override
+		public IConfigScreenValueBuilder getValueBuilder(IConfigValue<?> value) {
+			return new ConfigScreenValueBuilder(ConfigScreenValueMatcher.configValue(value));
+		}
+
+		@Override
+		public IConfigScreenValueBuilder getScreenValueBuilder(IConfigScreenValue<?> value) {
+			return new ConfigScreenValueBuilder(ConfigScreenValueMatcher.screenValue(value));
+		}
+
+		@Override
+		public IConfigScreenValueBuilder getValueBuilderByName(String valueName) {
+			return new ConfigScreenValueBuilder(ConfigScreenValueMatcher.named(valueName));
+		}
+
+		@Override
 		public IConfigScreenCategoryBuilder setValueApplyMode(IConfigValue<?> value, ConfigValueApplyMode applyMode) {
 			ConfigScreenValueMatcher valueMatcher = ConfigScreenValueMatcher.configValue(value);
 			ConfigValueApplyMode checkedApplyMode = ErrorUtil.checkNotNull(applyMode, "applyMode");
@@ -369,10 +358,20 @@ final class ConfigGuiPluginLoader {
 		}
 
 		@Override
+		public IConfigScreenCategoryBuilder setValueRequiresRestart(IConfigValue<?> value) {
+			return setValueRequiresRestart(value, true);
+		}
+
+		@Override
 		public IConfigScreenCategoryBuilder setValueRequiresRestart(IConfigValue<?> value, boolean requiresRestart) {
 			ConfigScreenValueMatcher valueMatcher = ConfigScreenValueMatcher.configValue(value);
 			restartRequirementOverrides.add(new ConfigScreenValueRestartRequirementOverride(valueMatcher, requiresRestart));
 			return this;
+		}
+
+		@Override
+		public IConfigScreenCategoryBuilder setScreenValueRequiresRestart(IConfigScreenValue<?> value) {
+			return setScreenValueRequiresRestart(value, true);
 		}
 
 		@Override
@@ -383,6 +382,11 @@ final class ConfigGuiPluginLoader {
 		}
 
 		@Override
+		public IConfigScreenCategoryBuilder setValueRequiresRestartByName(String valueName) {
+			return setValueRequiresRestartByName(valueName, true);
+		}
+
+		@Override
 		public IConfigScreenCategoryBuilder setValueRequiresRestartByName(String valueName, boolean requiresRestart) {
 			ConfigScreenValueMatcher valueMatcher = ConfigScreenValueMatcher.named(valueName);
 			restartRequirementOverrides.add(new ConfigScreenValueRestartRequirementOverride(valueMatcher, requiresRestart));
@@ -390,9 +394,24 @@ final class ConfigGuiPluginLoader {
 		}
 
 		@Override
+		public IConfigScreenCategoryBuilder addValue(IConfigValue<?> value) {
+			IConfigValue<?> checkedValue = ErrorUtil.checkNotNull(value, "value");
+			return addScreenValue(IConfigScreenValue.configValue(checkedValue));
+		}
+
+		@Override
 		public IConfigScreenCategoryBuilder addScreenValue(IConfigScreenValue<?> value) {
 			IConfigScreenValue<?> checkedValue = ErrorUtil.checkNotNull(value, "value");
 			return addScreenValues(List.of(checkedValue));
+		}
+
+		@Override
+		public IConfigScreenCategoryBuilder addValues(Collection<? extends IConfigValue<?>> values) {
+			Collection<? extends IConfigValue<?>> checkedValues = ErrorUtil.checkNotNull(values, "values");
+			List<IConfigScreenValue<?>> valuesCopy = checkedValues.stream()
+				.map(ConfigGuiPluginLoader::createConfigScreenValue)
+				.toList();
+			return addScreenValues(valuesCopy);
 		}
 
 		@Override
@@ -403,9 +422,45 @@ final class ConfigGuiPluginLoader {
 		}
 
 		@Override
-		public IConfigScreenCategoryBuilder addScreenValues(Supplier<? extends Collection<? extends IConfigScreenValue<?>>> valuesSupplier) {
-			Supplier<? extends Collection<? extends IConfigScreenValue<?>>> checkedSupplier = ErrorUtil.checkNotNull(valuesSupplier, "valuesSupplier");
-			return addValueProvider(lookup -> getConfigValues(checkedSupplier));
+		public <T> ISortingConfigGuiBuilder<T> addSortingConfig(
+			String name,
+			String localizationKey,
+			ISortingConfig<T> sortingConfig,
+			Collection<T> values,
+			IConfigValueSerializer<T> valueSerializer
+		) {
+			SortableConfigValueFactory.SortingConfigGuiBuilder<T> builder = SortableConfigValueFactory.INSTANCE.builder(
+				name,
+				localizationKey,
+				sortingConfig,
+				values,
+				valueSerializer
+			);
+			addValueProvider(lookup -> List.of(builder.build()));
+			return builder;
+		}
+
+		@Override
+		public ISortingConfigGuiBuilder<String> addStringSortingConfig(
+			String name,
+			String localizationKey,
+			ISortingConfig<String> sortingConfig,
+			Collection<String> values
+		) {
+			SortableConfigValueFactory.SortingConfigGuiBuilder<String> builder = SortableConfigValueFactory.INSTANCE.stringBuilder(
+				name,
+				localizationKey,
+				sortingConfig,
+				values
+			);
+			addValueProvider(lookup -> List.of(builder.build()));
+			return builder;
+		}
+
+		@Override
+		public IConfigScreenCategoryBuilder hideValue(IConfigValue<?> value) {
+			IConfigValue<?> checkedValue = ErrorUtil.checkNotNull(value, "value");
+			return hideScreenValue(IConfigScreenValue.configValue(checkedValue));
 		}
 
 		@Override
@@ -415,16 +470,19 @@ final class ConfigGuiPluginLoader {
 		}
 
 		@Override
+		public IConfigScreenCategoryBuilder hideValues(Collection<? extends IConfigValue<?>> values) {
+			Collection<? extends IConfigValue<?>> checkedValues = ErrorUtil.checkNotNull(values, "values");
+			List<IConfigScreenValue<?>> valuesCopy = checkedValues.stream()
+				.map(ConfigGuiPluginLoader::createConfigScreenValue)
+				.toList();
+			return hideScreenValues(valuesCopy);
+		}
+
+		@Override
 		public IConfigScreenCategoryBuilder hideScreenValues(Collection<? extends IConfigScreenValue<?>> values) {
 			Collection<? extends IConfigScreenValue<?>> checkedValues = ErrorUtil.checkNotNull(values, "values");
 			List<IConfigScreenValue<?>> valuesCopy = List.copyOf(checkedValues);
 			return addHiddenValueProvider(lookup -> valuesCopy);
-		}
-
-		@Override
-		public IConfigScreenCategoryBuilder hideScreenValues(Supplier<? extends Collection<? extends IConfigScreenValue<?>>> valuesSupplier) {
-			Supplier<? extends Collection<? extends IConfigScreenValue<?>>> checkedSupplier = ErrorUtil.checkNotNull(valuesSupplier, "valuesSupplier");
-			return addHiddenValueProvider(lookup -> getConfigValues(checkedSupplier));
 		}
 
 		@Override
@@ -446,6 +504,24 @@ final class ConfigGuiPluginLoader {
 		}
 
 		@Override
+		public IConfigScreenCategoryBuilder addValuesByName(Collection<String> valueNames) {
+			Collection<String> checkedValueNames = ErrorUtil.checkNotNull(valueNames, "valueNames");
+			for (String valueName : checkedValueNames) {
+				addValueByName(valueName);
+			}
+			return this;
+		}
+
+		@Override
+		public IConfigScreenCategoryBuilder hideValuesByName(Collection<String> valueNames) {
+			Collection<String> checkedValueNames = ErrorUtil.checkNotNull(valueNames, "valueNames");
+			for (String valueName : checkedValueNames) {
+				hideValueByName(valueName);
+			}
+			return this;
+		}
+
+		@Override
 		public IConfigScreenCategoryBuilder addKeyMapping(KeyMapping keyMapping) {
 			KeyMapping checkedKeyMapping = ErrorUtil.checkNotNull(keyMapping, "keyMapping");
 			return addKeyMappings(List.of(checkedKeyMapping));
@@ -457,13 +533,6 @@ final class ConfigGuiPluginLoader {
 			List<KeyMapping> keyMappingsCopy = List.copyOf(checkedKeyMappings);
 			containsKeyMappings = true;
 			return addValueProvider(lookup -> KeyMappingConfigValues.create(keyMappingsCopy));
-		}
-
-		@Override
-		public IConfigScreenCategoryBuilder addKeyMappings(Supplier<? extends Collection<? extends KeyMapping>> keyMappingsSupplier) {
-			Supplier<? extends Collection<? extends KeyMapping>> checkedSupplier = ErrorUtil.checkNotNull(keyMappingsSupplier, "keyMappingsSupplier");
-			containsKeyMappings = true;
-			return addValueProvider(lookup -> KeyMappingConfigValues.create(getKeyMappings(checkedSupplier)));
 		}
 
 		private IConfigScreenCategoryBuilder addValueProvider(ConfigScreenValueProvider valueProvider) {
@@ -478,6 +547,18 @@ final class ConfigGuiPluginLoader {
 			return this;
 		}
 
+		private IConfigScreenCategoryBuilder insertValueProvider(
+			ConfigScreenValueMatcher valueMatcher,
+			ConfigScreenValueProvider valueProvider,
+			ConfigScreenValueInsertionPosition position
+		) {
+			ConfigScreenValueMatcher checkedValueMatcher = ErrorUtil.checkNotNull(valueMatcher, "valueMatcher");
+			ConfigScreenValueProvider checkedValueProvider = ErrorUtil.checkNotNull(valueProvider, "valueProvider");
+			ConfigScreenValueInsertionPosition checkedPosition = ErrorUtil.checkNotNull(position, "position");
+			valueInsertions.add(new ConfigScreenValueInsertion(checkedValueMatcher, checkedValueProvider, checkedPosition));
+			return this;
+		}
+
 		public ConfiguredScreenCategory build() {
 			return new ConfiguredScreenCategory(
 				name,
@@ -489,9 +570,81 @@ final class ConfigGuiPluginLoader {
 				containsKeyMappings,
 				valueProviders,
 				hiddenValueProviders,
+				valueInsertions,
 				applyModeOverrides,
 				restartRequirementOverrides
 			);
+		}
+
+		private final class ConfigScreenValueBuilder implements IConfigScreenValueBuilder {
+			private final ConfigScreenValueMatcher valueMatcher;
+
+			private ConfigScreenValueBuilder(ConfigScreenValueMatcher valueMatcher) {
+				this.valueMatcher = valueMatcher;
+			}
+
+			@Override
+			public IConfigScreenValueBuilder setApplyMode(ConfigValueApplyMode applyMode) {
+				ConfigValueApplyMode checkedApplyMode = ErrorUtil.checkNotNull(applyMode, "applyMode");
+				applyModeOverrides.add(new ConfigScreenValueApplyModeOverride(valueMatcher, checkedApplyMode));
+				return this;
+			}
+
+			@Override
+			public IConfigScreenValueBuilder setRequiresRestart() {
+				return setRequiresRestart(true);
+			}
+
+			@Override
+			public IConfigScreenValueBuilder setRequiresRestart(boolean requiresRestart) {
+				restartRequirementOverrides.add(new ConfigScreenValueRestartRequirementOverride(valueMatcher, requiresRestart));
+				return this;
+			}
+
+			@Override
+			public IConfigScreenValueBuilder hide() {
+				addHiddenValueProvider(lookup -> findValue(lookup, valueMatcher)
+					.map(List::of)
+					.orElseGet(List::of)
+				);
+				return this;
+			}
+
+			@Override
+			public IConfigScreenValueBuilder insertBefore(IConfigValue<?> value) {
+				IConfigValue<?> checkedValue = ErrorUtil.checkNotNull(value, "value");
+				IConfigScreenValue<?> screenValue = IConfigScreenValue.configValue(checkedValue);
+				return insertBefore(screenValue);
+			}
+
+			@Override
+			public IConfigScreenValueBuilder insertBefore(IConfigScreenValue<?> value) {
+				IConfigScreenValue<?> checkedValue = ErrorUtil.checkNotNull(value, "value");
+				insertValueProvider(
+					valueMatcher,
+					lookup -> List.of(checkedValue),
+					ConfigScreenValueInsertionPosition.BEFORE
+				);
+				return this;
+			}
+
+			@Override
+			public IConfigScreenValueBuilder insertAfter(IConfigValue<?> value) {
+				IConfigValue<?> checkedValue = ErrorUtil.checkNotNull(value, "value");
+				IConfigScreenValue<?> screenValue = IConfigScreenValue.configValue(checkedValue);
+				return insertAfter(screenValue);
+			}
+
+			@Override
+			public IConfigScreenValueBuilder insertAfter(IConfigScreenValue<?> value) {
+				IConfigScreenValue<?> checkedValue = ErrorUtil.checkNotNull(value, "value");
+				insertValueProvider(
+					valueMatcher,
+					lookup -> List.of(checkedValue),
+					ConfigScreenValueInsertionPosition.AFTER
+				);
+				return this;
+			}
 		}
 	}
 
@@ -505,12 +658,14 @@ final class ConfigGuiPluginLoader {
 		boolean containsKeyMappings,
 		List<ConfigScreenValueProvider> valueProviders,
 		List<ConfigScreenValueProvider> hiddenValueProviders,
+		List<ConfigScreenValueInsertion> valueInsertions,
 		List<ConfigScreenValueApplyModeOverride> applyModeOverrides,
 		List<ConfigScreenValueRestartRequirementOverride> restartRequirementOverrides
 	) {
 		private ConfiguredScreenCategory {
 			valueProviders = List.copyOf(valueProviders);
 			hiddenValueProviders = List.copyOf(hiddenValueProviders);
+			valueInsertions = List.copyOf(valueInsertions);
 			applyModeOverrides = List.copyOf(applyModeOverrides);
 			restartRequirementOverrides = List.copyOf(restartRequirementOverrides);
 		}
@@ -525,6 +680,7 @@ final class ConfigGuiPluginLoader {
 				false,
 				true,
 				List.of(defaultKeyMappingsProvider),
+				List.of(),
 				List.of(),
 				List.of(),
 				List.of()
@@ -544,10 +700,24 @@ final class ConfigGuiPluginLoader {
 				containsKeyMappings,
 				valueProviders,
 				hiddenValueProviders,
+				valueInsertions,
 				applyModeOverrides,
 				restartRequirementOverrides
 			);
 		}
+	}
+
+	private enum ConfigScreenValueInsertionPosition {
+		BEFORE,
+		AFTER
+	}
+
+	private record ConfigScreenValueInsertion(
+		ConfigScreenValueMatcher valueMatcher,
+		ConfigScreenValueProvider valueProvider,
+		ConfigScreenValueInsertionPosition position
+	) {
+
 	}
 
 	private record ConfigScreenValueApplyModeOverride(
@@ -665,13 +835,52 @@ final class ConfigGuiPluginLoader {
 		Consumer<IConfigScreenBuilder> screenCustomizer,
 		ConfigScreenValueProvider defaultKeyMappingsProvider
 	) {
-		ConfigScreenBuilder screenBuilder = new ConfigScreenBuilder(modId, Component.empty(), () -> ConfigRestartResult.HANDLED);
+		ConfigScreenBuilder screenBuilder = new ConfigScreenBuilder(modId, Component.empty());
 		screenCustomizer.accept(screenBuilder);
 		return createScreenCategories(
 			modId,
 			originalCategories,
 			screenBuilder.getCategories(),
 			screenBuilder.isClearDefaultCategories(),
+			defaultKeyMappingsProvider
+		);
+	}
+
+	static ConfigScreenSchema createCustomizedScreenSchemaForTests(
+		String modId,
+		Supplier<? extends ConfigScreenSchema> schemaSupplier,
+		List<Consumer<IConfigScreenBuilder>> screenCustomizers
+	) {
+		return createCustomizedScreenSchemaForTests(
+			modId,
+			schemaSupplier,
+			screenCustomizers,
+			lookup -> List.of()
+		);
+	}
+
+	static ConfigScreenSchema createCustomizedScreenSchemaForTests(
+		String modId,
+		Supplier<? extends ConfigScreenSchema> schemaSupplier,
+		List<Consumer<IConfigScreenBuilder>> screenCustomizers,
+		ConfigScreenValueProvider defaultKeyMappingsProvider
+	) {
+		ConfigScreenFactoryConfig config = new ConfigScreenFactoryConfig(
+			Component.empty(),
+			schemaSupplier
+		);
+		ConfigScreenBuilder screenBuilder = createScreenBuilder(modId, config, screenCustomizers);
+		ConfigScreenSchema schema = schemaSupplier.get();
+		if (schema == null) {
+			throw new NullPointerException("schemaSupplier must not return null.");
+		}
+		List<ConfiguredScreenCategory> configuredCategories = screenBuilder.getCategories();
+		boolean clearDefaultCategories = screenBuilder.isClearDefaultCategories();
+		return () -> createScreenCategories(
+			modId,
+			schema.getCategories(),
+			configuredCategories,
+			clearDefaultCategories,
 			defaultKeyMappingsProvider
 		);
 	}
@@ -795,11 +1004,11 @@ final class ConfigGuiPluginLoader {
 		List<IConfigScreenValue<?>> values = new ArrayList<>();
 		Set<IConfigScreenValue<?>> usedValues = new HashSet<>();
 		Set<IConfigScreenValue<?>> hiddenValues = getHiddenConfiguredValues(modId, resolvedCategories, configuredCategory);
+		ConfigScreenValueLookup lookup = new ConfigScreenValueLookup(modId, configuredCategory.name(), resolvedCategories);
 		if (!configuredCategory.clearDefaultValues()) {
-			addOriginalValues(configuredCategory.name(), resolvedCategories, hiddenValues, usedValues, values);
+			addOriginalValues(configuredCategory, lookup, resolvedCategories, hiddenValues, usedValues, values);
 		}
 		for (ConfigScreenValueProvider valueProvider : configuredCategory.valueProviders()) {
-			ConfigScreenValueLookup lookup = new ConfigScreenValueLookup(modId, configuredCategory.name(), resolvedCategories);
 			for (IConfigScreenValue<?> configValue : valueProvider.getValues(lookup)) {
 				addConfiguredValue(usedValues, values, configValue);
 			}
@@ -1059,20 +1268,45 @@ final class ConfigGuiPluginLoader {
 	}
 
 	private static void addOriginalValues(
-		String categoryName,
+		ConfiguredScreenCategory configuredCategory,
+		ConfigScreenValueLookup lookup,
 		List<ResolvedScreenCategory> originalCategories,
 		Set<IConfigScreenValue<?>> hiddenValues,
 		Set<IConfigScreenValue<?>> usedValues,
 		List<IConfigScreenValue<?>> values
 	) {
 		for (ResolvedScreenCategory originalCategory : originalCategories) {
-			if (!originalCategory.name().equals(categoryName)) {
+			if (!originalCategory.name().equals(configuredCategory.name())) {
 				continue;
 			}
 			for (IConfigScreenValue<?> value : originalCategory.values()) {
+				addInsertedValues(configuredCategory, lookup, value, ConfigScreenValueInsertionPosition.BEFORE, usedValues, values);
 				if (!hiddenValues.contains(value)) {
 					addConfiguredValue(usedValues, values, value);
 				}
+				addInsertedValues(configuredCategory, lookup, value, ConfigScreenValueInsertionPosition.AFTER, usedValues, values);
+			}
+		}
+	}
+
+	private static void addInsertedValues(
+		ConfiguredScreenCategory configuredCategory,
+		ConfigScreenValueLookup lookup,
+		IConfigScreenValue<?> anchorValue,
+		ConfigScreenValueInsertionPosition position,
+		Set<IConfigScreenValue<?>> usedValues,
+		List<IConfigScreenValue<?>> values
+	) {
+		for (ConfigScreenValueInsertion insertion : configuredCategory.valueInsertions()) {
+			if (insertion.position() != position) {
+				continue;
+			}
+			ConfigScreenValueMatcher valueMatcher = insertion.valueMatcher();
+			if (!valueMatcher.matches(configuredCategory.name(), anchorValue)) {
+				continue;
+			}
+			for (IConfigScreenValue<?> insertedValue : insertion.valueProvider().getValues(lookup)) {
+				addConfiguredValue(usedValues, values, insertedValue);
 			}
 		}
 	}
@@ -1210,20 +1444,8 @@ final class ConfigGuiPluginLoader {
 		}
 	}
 
-	private static List<IConfigScreenValue<?>> getConfigValues(Supplier<? extends Collection<? extends IConfigScreenValue<?>>> valuesSupplier) {
-		Collection<? extends IConfigScreenValue<?>> values = valuesSupplier.get();
-		if (values == null) {
-			throw new NullPointerException("valuesSupplier must not return null.");
-		}
-		return List.copyOf(values);
-	}
-
-	private static List<KeyMapping> getKeyMappings(Supplier<? extends Collection<? extends KeyMapping>> keyMappingsSupplier) {
-		Collection<? extends KeyMapping> keyMappings = keyMappingsSupplier.get();
-		if (keyMappings == null) {
-			throw new NullPointerException("keyMappingsSupplier must not return null.");
-		}
-		return List.copyOf(keyMappings);
+	private static IConfigScreenValue<?> createConfigScreenValue(IConfigValue<?> value) {
+		return IConfigScreenValue.configValue(value);
 	}
 
 	@FunctionalInterface
@@ -1233,35 +1455,59 @@ final class ConfigGuiPluginLoader {
 
 	private static IConfigScreenFactory createScreenFactory(
 		String modId,
-		Component title,
-		Supplier<? extends ConfigScreenSchema> schemaSupplier,
-		IConfigRestartHandler restartHandler,
+		ConfigScreenFactoryConfig config,
+		List<Consumer<IConfigScreenBuilder>> screenCustomizers,
 		Map<ConfigValueEditorType<?>, IConfigValueEditorFactory<?>> valueEditorFactories
 	) {
-		validateConfigScreenFactoryInputs(title, schemaSupplier, restartHandler);
+		validateConfigScreenFactoryInputs(config.title(), config.schemaSupplier());
+		List<Consumer<IConfigScreenBuilder>> screenCustomizersCopy = List.copyOf(screenCustomizers);
 		Map<ConfigValueEditorType<?>, IConfigValueEditorFactory<?>> valueEditorFactoriesCopy = Map.copyOf(valueEditorFactories);
 		return parent -> {
-			ConfigScreenSchema schema = schemaSupplier.get();
-			if (schema == null) {
-				throw new NullPointerException("schemaSupplier must not return null.");
-			}
-			ConfigChangesHandler changesHandler = createChangesHandler(modId, title, restartHandler);
+			ConfigScreenBuilder screenBuilder = createScreenBuilder(modId, config, screenCustomizersCopy);
+			ConfigScreenSchema schema = createCustomizedScreenSchema(modId, config.schemaSupplier(), screenBuilder);
+			Component title = screenBuilder.getTitle();
+			ConfigChangesHandler changesHandler = createChangesHandler(modId, title);
 			return ConfigScreen.create(parent, title, schema, changesHandler, valueEditorFactoriesCopy);
 		};
 	}
 
+	private static ConfigScreenBuilder createScreenBuilder(
+		String modId,
+		ConfigScreenFactoryConfig config,
+		List<Consumer<IConfigScreenBuilder>> screenCustomizers
+	) {
+		ConfigScreenBuilder screenBuilder = new ConfigScreenBuilder(modId, config.title());
+		for (Consumer<IConfigScreenBuilder> screenCustomizer : screenCustomizers) {
+			screenCustomizer.accept(screenBuilder);
+		}
+		return screenBuilder;
+	}
+
+	private static ConfigScreenSchema createCustomizedScreenSchema(
+		String modId,
+		Supplier<? extends ConfigScreenSchema> schemaSupplier,
+		ConfigScreenBuilder screenBuilder
+	) {
+		ConfigScreenSchema schema = schemaSupplier.get();
+		if (schema == null) {
+			throw new NullPointerException("schemaSupplier must not return null.");
+		}
+		return new CustomizedConfigScreenSchema(
+			modId,
+			schema,
+			screenBuilder.getCategories(),
+			screenBuilder.isClearDefaultCategories()
+		);
+	}
+
 	private static ConfigChangesHandler createChangesHandler(
 		String modId,
-		Component title,
-		IConfigRestartHandler restartHandler
+		Component title
 	) {
 		return changes -> {
 			boolean requiresRestart = applyChanges(changes);
 			if (requiresRestart) {
-				ConfigRestartResult restartResult = ErrorUtil.checkNotNull(restartHandler.onRestartRequired(), "restartHandler result");
-				if (restartResult == ConfigRestartResult.NEXT_GAME_START) {
-					notifyRestartDeferred(modId, title);
-				}
+				notifyRestartDeferred(modId, title);
 			}
 			return requiresRestart;
 		};
@@ -1288,12 +1534,10 @@ final class ConfigGuiPluginLoader {
 
 	private static void validateConfigScreenFactoryInputs(
 		Component title,
-		Supplier<? extends ConfigScreenSchema> schemaSupplier,
-		IConfigRestartHandler restartHandler
+		Supplier<? extends ConfigScreenSchema> schemaSupplier
 	) {
 		ErrorUtil.checkNotNull(title, "title");
 		ErrorUtil.checkNotNull(schemaSupplier, "schemaSupplier");
-		ErrorUtil.checkNotNull(restartHandler, "restartHandler");
 	}
 
 	private static String validateName(@Nullable String name, String parameterName) {
@@ -1330,17 +1574,11 @@ final class ConfigGuiPluginLoader {
 		public ConfigScreenSchema getSchema() {
 			return ConfigScreenSchema.from(configScreen.getSchema());
 		}
-
-		@Override
-		public ConfigRestartResult onRestartRequired() {
-			return configScreen.onRestartRequired();
-		}
 	}
 
 	private record ConfigScreenFactoryConfig(
 		Component title,
-		Supplier<? extends ConfigScreenSchema> schemaSupplier,
-		IConfigRestartHandler restartHandler
+		Supplier<? extends ConfigScreenSchema> schemaSupplier
 	) {
 
 	}

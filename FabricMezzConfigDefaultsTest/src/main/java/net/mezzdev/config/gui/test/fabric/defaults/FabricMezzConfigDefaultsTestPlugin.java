@@ -6,7 +6,6 @@ import net.mezzdev.config.api.schema.IConfigCategoryBuilder;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.schema.IConfigSchemaBuilder;
 import net.mezzdev.config.api.value.ConfigValueEditMode;
-import net.mezzdev.config.gui.api.ConfigRestartResult;
 import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigGuiRegistration;
 import net.minecraft.network.chat.Component;
@@ -69,8 +68,7 @@ public final class FabricMezzConfigDefaultsTestPlugin implements IConfigPlugin, 
 	public void register(IConfigGuiRegistration registration) {
 		registration.registerScreen(
 			Component.translatable(MOD_ID + ".config.screen.title"),
-			FabricMezzConfigDefaultsTestPlugin::getSchema,
-			() -> ConfigRestartResult.NEXT_GAME_START
+			FabricMezzConfigDefaultsTestPlugin::getSchema
 		);
 	}
 

@@ -14,6 +14,7 @@ import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueIcon;
 import net.mezzdev.config.gui.api.IConfigValueIconProvider;
 import net.mezzdev.config.gui.api.IConfigValueLocalizationProvider;
+import net.mezzdev.config.gui.api.ISortingConfigGuiBuilder;
 import net.mezzdev.config.gui.api.ISortableConfigValueFactory;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 final class SortableConfigValueFactory implements ISortableConfigValueFactory {
@@ -34,6 +36,33 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 
 	private SortableConfigValueFactory() {
 
+	}
+
+	<T> SortingConfigGuiBuilder<T> builder(
+		String name,
+		String localizationKey,
+		ISortingConfig<T> sortingConfig,
+		Collection<T> values,
+		IConfigValueSerializer<T> valueSerializer
+	) {
+		Objects.requireNonNull(values, "values");
+		List<T> valuesCopy = List.copyOf(values);
+		Objects.requireNonNull(name, "name");
+		Objects.requireNonNull(localizationKey, "localizationKey");
+		Objects.requireNonNull(sortingConfig, "sortingConfig");
+		Objects.requireNonNull(valueSerializer, "valueSerializer");
+		return new SortingConfigGuiBuilder<>(name, localizationKey, sortingConfig, valuesCopy, valueSerializer);
+	}
+
+	SortingConfigGuiBuilder<String> stringBuilder(
+		String name,
+		String localizationKey,
+		ISortingConfig<String> sortingConfig,
+		Collection<String> values
+	) {
+		Objects.requireNonNull(values, "values");
+		List<String> valuesCopy = List.copyOf(values);
+		return builder(name, localizationKey, sortingConfig, valuesCopy, StringValueSerializer.INSTANCE);
 	}
 
 	@Override
@@ -56,28 +85,9 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		IConfigValueSerializer<T> valueSerializer,
 		ConfigValueApplyMode applyMode
 	) {
-		Objects.requireNonNull(name, "name");
-		Objects.requireNonNull(localizationKey, "localizationKey");
-		Objects.requireNonNull(sortingConfig, "sortingConfig");
-		Objects.requireNonNull(values, "values");
-		Objects.requireNonNull(valueSerializer, "valueSerializer");
-		Objects.requireNonNull(applyMode, "applyMode");
-
-		List<T> valuesCopy = List.copyOf(values);
-		List<T> defaultValues = List.copyOf(sortingConfig.getDefaultSortedValues(valuesCopy));
-		IConfigListValueEditorSerializer<T> listSerializer = new SortableListSerializer<>(
-			defaultValues,
-			sortingConfig.allowsRemovingValues(),
-			valueSerializer
-		);
-		return new SortableConfigValue<>(
-			name,
-			localizationKey,
-			sortingConfig,
-			defaultValues,
-			listSerializer,
-			applyMode
-		);
+		SortingConfigGuiBuilder<T> builder = builder(name, localizationKey, sortingConfig, values, valueSerializer);
+		builder.setApplyMode(applyMode);
+		return builder.build();
 	}
 
 	@Override
@@ -113,14 +123,140 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		Map<String, IConfigValueIcon> valueIcons,
 		ConfigValueApplyMode applyMode
 	) {
-		Objects.requireNonNull(values, "values");
-		IConfigValueSerializer<String> valueSerializer = new StringRuntimeValueSerializer(
-			values,
-			valueNames,
-			valueDescriptions,
-			valueIcons
+		SortingConfigGuiBuilder<String> builder = stringBuilder(name, localizationKey, sortingConfig, values);
+		builder.setValueNames(valueNames);
+		builder.setValueDescriptions(valueDescriptions);
+		builder.setValueIcons(valueIcons);
+		builder.setApplyMode(applyMode);
+		return builder.build();
+	}
+
+	private static <T> IConfigScreenValue<List<T>> create(
+		String name,
+		String localizationKey,
+		ISortingConfig<T> sortingConfig,
+		Collection<T> values,
+		IConfigValueSerializer<T> valueSerializer,
+		RuntimeValueDisplay<T> display,
+		ConfigValueApplyMode applyMode,
+		boolean requiresRestart
+	) {
+		List<T> valuesCopy = List.copyOf(values);
+		List<T> defaultValues = List.copyOf(sortingConfig.getDefaultSortedValues(valuesCopy));
+		IConfigListValueEditorSerializer<T> listSerializer = new SortableListSerializer<>(
+			defaultValues,
+			sortingConfig.allowsRemovingValues(),
+			valueSerializer,
+			display
 		);
-		return create(name, localizationKey, sortingConfig, values, valueSerializer, applyMode);
+		return new SortableConfigValue<>(
+			name,
+			localizationKey,
+			sortingConfig,
+			defaultValues,
+			listSerializer,
+			applyMode,
+			requiresRestart
+		);
+	}
+
+	static final class SortingConfigGuiBuilder<T> implements ISortingConfigGuiBuilder<T> {
+		private final String name;
+		private final String localizationKey;
+		private final ISortingConfig<T> sortingConfig;
+		private final List<T> values;
+		private final IConfigValueSerializer<T> valueSerializer;
+		private Function<T, Optional<Component>> valueNameFactory = value -> Optional.empty();
+		private Function<T, Optional<Component>> valueDescriptionFactory = value -> Optional.empty();
+		private Function<T, Optional<IConfigValueIcon>> valueIconFactory = value -> Optional.empty();
+		private ConfigValueApplyMode applyMode = DEFAULT_APPLY_MODE;
+		private boolean requiresRestart;
+
+		private SortingConfigGuiBuilder(
+			String name,
+			String localizationKey,
+			ISortingConfig<T> sortingConfig,
+			List<T> values,
+			IConfigValueSerializer<T> valueSerializer
+		) {
+			this.name = name;
+			this.localizationKey = localizationKey;
+			this.sortingConfig = sortingConfig;
+			this.values = List.copyOf(values);
+			this.valueSerializer = valueSerializer;
+		}
+
+		@Override
+		public ISortingConfigGuiBuilder<T> setApplyMode(ConfigValueApplyMode applyMode) {
+			this.applyMode = Objects.requireNonNull(applyMode, "applyMode");
+			return this;
+		}
+
+		@Override
+		public ISortingConfigGuiBuilder<T> setRequiresRestart(boolean requiresRestart) {
+			this.requiresRestart = requiresRestart;
+			return this;
+		}
+
+		@Override
+		public ISortingConfigGuiBuilder<T> setValueNames(Map<T, Component> valueNames) {
+			Map<T, Component> valueNamesCopy = Map.copyOf(Objects.requireNonNull(valueNames, "valueNames"));
+			this.valueNameFactory = value -> Optional.ofNullable(valueNamesCopy.get(value));
+			return this;
+		}
+
+		@Override
+		public ISortingConfigGuiBuilder<T> setValueName(Function<T, Component> valueNameFactory) {
+			Function<T, Component> checkedFactory = Objects.requireNonNull(valueNameFactory, "valueNameFactory");
+			this.valueNameFactory = value -> Optional.of(Objects.requireNonNull(checkedFactory.apply(value), "valueName"));
+			return this;
+		}
+
+		@Override
+		public ISortingConfigGuiBuilder<T> setValueDescriptions(Map<T, Component> valueDescriptions) {
+			Map<T, Component> valueDescriptionsCopy = Map.copyOf(Objects.requireNonNull(valueDescriptions, "valueDescriptions"));
+			this.valueDescriptionFactory = value -> Optional.ofNullable(valueDescriptionsCopy.get(value));
+			return this;
+		}
+
+		@Override
+		public ISortingConfigGuiBuilder<T> setValueDescription(Function<T, Optional<Component>> valueDescriptionFactory) {
+			Function<T, Optional<Component>> checkedFactory = Objects.requireNonNull(valueDescriptionFactory, "valueDescriptionFactory");
+			this.valueDescriptionFactory = value -> Objects.requireNonNull(checkedFactory.apply(value), "valueDescription");
+			return this;
+		}
+
+		@Override
+		public ISortingConfigGuiBuilder<T> setValueIcons(Map<T, IConfigValueIcon> valueIcons) {
+			Map<T, IConfigValueIcon> valueIconsCopy = Map.copyOf(Objects.requireNonNull(valueIcons, "valueIcons"));
+			this.valueIconFactory = value -> Optional.ofNullable(valueIconsCopy.get(value));
+			return this;
+		}
+
+		@Override
+		public ISortingConfigGuiBuilder<T> setValueIcon(Function<T, Optional<IConfigValueIcon>> valueIconFactory) {
+			Function<T, Optional<IConfigValueIcon>> checkedFactory = Objects.requireNonNull(valueIconFactory, "valueIconFactory");
+			this.valueIconFactory = value -> Objects.requireNonNull(checkedFactory.apply(value), "valueIcon");
+			return this;
+		}
+
+		IConfigScreenValue<List<T>> build() {
+			RuntimeValueDisplay<T> display = new RuntimeValueDisplay<>(
+				valueNameFactory,
+				valueDescriptionFactory,
+				valueIconFactory
+			);
+			return create(
+				name,
+				localizationKey,
+				sortingConfig,
+				values,
+				valueSerializer,
+				display,
+				applyMode,
+				requiresRestart
+			);
+		}
 	}
 
 	private static final class SortableConfigValue<T> implements IConfigScreenValue<List<T>>, IConfigLocalizedValue {
@@ -130,6 +266,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		private final List<T> values;
 		private final IConfigListValueEditorSerializer<T> serializer;
 		private final ConfigValueApplyMode applyMode;
+		private final boolean requiresRestart;
 		private final List<Consumer<List<T>>> listeners = new ArrayList<>();
 
 		private SortableConfigValue(
@@ -138,7 +275,8 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 			ISortingConfig<T> sortingConfig,
 			List<T> values,
 			IConfigListValueEditorSerializer<T> serializer,
-			ConfigValueApplyMode applyMode
+			ConfigValueApplyMode applyMode,
+			boolean requiresRestart
 		) {
 			this.name = name;
 			this.localizationKey = localizationKey;
@@ -146,6 +284,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 			this.values = List.copyOf(values);
 			this.serializer = serializer;
 			this.applyMode = applyMode;
+			this.requiresRestart = requiresRestart;
 		}
 
 		@Override
@@ -204,8 +343,31 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		}
 
 		@Override
+		public boolean requiresRestart() {
+			return requiresRestart;
+		}
+
+		@Override
 		public IConfigListValueEditorSerializer<T> getSerializer() {
 			return serializer;
+		}
+	}
+
+	private record RuntimeValueDisplay<T>(
+		Function<T, Optional<Component>> valueNameFactory,
+		Function<T, Optional<Component>> valueDescriptionFactory,
+		Function<T, Optional<IConfigValueIcon>> valueIconFactory
+	) {
+		private Optional<Component> getValueName(T value) {
+			return Objects.requireNonNull(valueNameFactory.apply(value), "valueName");
+		}
+
+		private Optional<Component> getValueDescription(T value) {
+			return Objects.requireNonNull(valueDescriptionFactory.apply(value), "valueDescription");
+		}
+
+		private Optional<IConfigValueIcon> getValueIcon(T value) {
+			return Objects.requireNonNull(valueIconFactory.apply(value), "valueIcon");
 		}
 	}
 
@@ -216,9 +378,10 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		private SortableListSerializer(
 			List<T> validValues,
 			boolean allowsRemovingValues,
-			IConfigValueSerializer<T> valueSerializer
+			IConfigValueSerializer<T> valueSerializer,
+			RuntimeValueDisplay<T> display
 		) {
-			this.valueSerializer = new RuntimeValueSerializer<>(validValues, valueSerializer);
+			this.valueSerializer = new RuntimeValueSerializer<>(validValues, valueSerializer, display);
 			this.allowsRemovingValues = allowsRemovingValues;
 		}
 
@@ -311,10 +474,16 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 	private static final class RuntimeValueSerializer<T> implements IConfigValueSerializer<T>, IConfigValueLocalizationProvider<T>, IConfigValueIconProvider<T> {
 		private final List<T> validValues;
 		private final IConfigValueSerializer<T> valueSerializer;
+		private final RuntimeValueDisplay<T> display;
 
-		private RuntimeValueSerializer(List<T> validValues, IConfigValueSerializer<T> valueSerializer) {
+		private RuntimeValueSerializer(
+			List<T> validValues,
+			IConfigValueSerializer<T> valueSerializer,
+			RuntimeValueDisplay<T> display
+		) {
 			this.validValues = List.copyOf(validValues);
 			this.valueSerializer = valueSerializer;
+			this.display = display;
 		}
 
 		@Override
@@ -324,12 +493,19 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 
 		@Override
 		public IDeserializeResult<T> deserialize(String string) {
-			return valueSerializer.deserialize(string);
+			IDeserializeResult<T> result = valueSerializer.deserialize(string);
+			Optional<T> value = result.getResult();
+			if (value.isPresent() && !isRuntimeValue(value.get())) {
+				List<String> errors = new ArrayList<>(result.getErrors());
+				errors.add("Unknown value '%s'. Must be %s.".formatted(valueSerializer.serialize(value.get()), getValidValuesDescription()));
+				return IDeserializeResult.failure(errors);
+			}
+			return result;
 		}
 
 		@Override
 		public boolean isValid(T value) {
-			return valueSerializer.isValid(value);
+			return valueSerializer.isValid(value) && isRuntimeValue(value);
 		}
 
 		@Override
@@ -339,16 +515,28 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 
 		@Override
 		public Component getLocalizedValueName(String configValueLocalizationKey, T value) {
+			Optional<Component> providedName = display.getValueName(value);
+			if (providedName.isPresent()) {
+				return providedName.get();
+			}
 			return ConfigValueLocalization.getValueName(valueSerializer, configValueLocalizationKey, value);
 		}
 
 		@Override
 		public Optional<Component> getLocalizedValueDescription(String configValueLocalizationKey, T value) {
+			Optional<Component> providedDescription = display.getValueDescription(value);
+			if (providedDescription.isPresent()) {
+				return providedDescription;
+			}
 			return ConfigValueLocalization.getValueDescription(valueSerializer, configValueLocalizationKey, value);
 		}
 
 		@Override
 		public Optional<IConfigValueIcon> getIcon(T value) {
+			Optional<IConfigValueIcon> providedIcon = display.getValueIcon(value);
+			if (providedIcon.isPresent()) {
+				return providedIcon;
+			}
 			if (valueSerializer instanceof IConfigValueIconProvider<?> iconProvider) {
 				@SuppressWarnings("unchecked")
 				IConfigValueIconProvider<T> typedIconProvider = (IConfigValueIconProvider<T>) iconProvider;
@@ -359,27 +547,21 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 
 		@Override
 		public String getValidValuesDescription() {
-			return valueSerializer.getValidValuesDescription();
+			if (validValues.isEmpty()) {
+				return "no values are currently available";
+			}
+			return "one of: " + validValues.stream()
+				.map(valueSerializer::serialize)
+				.collect(Collectors.joining(", "));
+		}
+
+		private boolean isRuntimeValue(T value) {
+			return validValues.contains(value);
 		}
 	}
 
-	private static final class StringRuntimeValueSerializer implements IConfigValueSerializer<String>, IConfigValueLocalizationProvider<String>, IConfigValueIconProvider<String> {
-		private final List<String> validValues;
-		private final Map<String, Component> valueNames;
-		private final Map<String, Component> valueDescriptions;
-		private final Map<String, IConfigValueIcon> valueIcons;
-
-		private StringRuntimeValueSerializer(
-			Collection<String> validValues,
-			Map<String, Component> valueNames,
-			Map<String, Component> valueDescriptions,
-			Map<String, IConfigValueIcon> valueIcons
-		) {
-			this.validValues = List.copyOf(validValues);
-			this.valueNames = Map.copyOf(valueNames);
-			this.valueDescriptions = Map.copyOf(valueDescriptions);
-			this.valueIcons = Map.copyOf(valueIcons);
-		}
+	private enum StringValueSerializer implements IConfigValueSerializer<String> {
+		INSTANCE;
 
 		@Override
 		public String serialize(String value) {
@@ -401,22 +583,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 
 		@Override
 		public Optional<Collection<String>> getAllValidValues() {
-			return Optional.of(validValues);
-		}
-
-		@Override
-		public Component getLocalizedValueName(String configValueLocalizationKey, String value) {
-			return valueNames.getOrDefault(value, Component.literal(value));
-		}
-
-		@Override
-		public Optional<Component> getLocalizedValueDescription(String configValueLocalizationKey, String value) {
-			return Optional.ofNullable(valueDescriptions.get(value));
-		}
-
-		@Override
-		public Optional<IConfigValueIcon> getIcon(String value) {
-			return Optional.ofNullable(valueIcons.get(value));
+			return Optional.empty();
 		}
 
 		@Override

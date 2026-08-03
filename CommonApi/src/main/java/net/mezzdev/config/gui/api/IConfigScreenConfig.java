@@ -30,12 +30,4 @@ public interface IConfigScreenConfig {
 	 */
 	IConfigSchema getSchema();
 
-	/**
-	 * Called when applying saved changes requires the owner mod to restart or reload.
-	 *
-	 * @return the result of trying to restart or reload the owner mod
-	 *
-	 * @since 0.1.0
-	 */
-	ConfigRestartResult onRestartRequired();
 }

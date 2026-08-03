@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -94,8 +95,9 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		this.elementSerializer = listSerializer.getElementSerializer();
 		this.allowsRemovingValues = !(listSerializer instanceof IConfigListValueEditorOptions editorOptions) ||
 			editorOptions.allowsRemovingValues();
-		this.allowsTypedInput = allowsRemovingValues;
-		this.allValidValues = elementSerializer.getAllValidValues()
+		Optional<Collection<T>> allValidValues = elementSerializer.getAllValidValues();
+		this.allowsTypedInput = allowsRemovingValues && allValidValues.isEmpty();
+		this.allValidValues = allValidValues
 			.map(List::copyOf)
 			.orElse(List.of());
 		rebuildRows();

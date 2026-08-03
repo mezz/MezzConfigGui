@@ -1,12 +1,12 @@
 package net.mezzdev.config.gui.api;
 
+import net.mezzdev.config.api.sorting.ISortingConfig;
 import net.mezzdev.config.api.value.IConfigValue;
+import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.network.chat.Component;
 
 import java.util.Collection;
-import java.util.Objects;
-import java.util.function.Supplier;
 
 /**
  * Customizes one category in a config screen.
@@ -50,9 +50,7 @@ public interface IConfigScreenCategoryBuilder {
 	 *
 	 * @since 0.1.0
 	 */
-	default IConfigScreenCategoryBuilder clearDefaultValues() {
-		return this;
-	}
+	IConfigScreenCategoryBuilder clearDefaultValues();
 
 	/**
 	 * Set the default apply mode for config screen values in this category.
@@ -75,23 +73,7 @@ public interface IConfigScreenCategoryBuilder {
 	 *
 	 * @since 0.1.0
 	 */
-	default IConfigScreenValueBuilder getValueBuilder(IConfigValue<?> value) {
-		IConfigValue<?> checkedValue = Objects.requireNonNull(value, "value");
-		return new IConfigScreenValueBuilder() {
-			@Override
-			public IConfigScreenValueBuilder setApplyMode(ConfigValueApplyMode applyMode) {
-				ConfigValueApplyMode checkedApplyMode = Objects.requireNonNull(applyMode, "applyMode");
-				IConfigScreenCategoryBuilder.this.setValueApplyMode(checkedValue, checkedApplyMode);
-				return this;
-			}
-
-			@Override
-			public IConfigScreenValueBuilder setRequiresRestart(boolean requiresRestart) {
-				IConfigScreenCategoryBuilder.this.setValueRequiresRestart(checkedValue, requiresRestart);
-				return this;
-			}
-		};
-	}
+	IConfigScreenValueBuilder getValueBuilder(IConfigValue<?> value);
 
 	/**
 	 * Get a builder for configuring one config screen value in this category.
@@ -101,23 +83,7 @@ public interface IConfigScreenCategoryBuilder {
 	 *
 	 * @since 0.1.0
 	 */
-	default IConfigScreenValueBuilder getScreenValueBuilder(IConfigScreenValue<?> value) {
-		IConfigScreenValue<?> checkedValue = Objects.requireNonNull(value, "value");
-		return new IConfigScreenValueBuilder() {
-			@Override
-			public IConfigScreenValueBuilder setApplyMode(ConfigValueApplyMode applyMode) {
-				ConfigValueApplyMode checkedApplyMode = Objects.requireNonNull(applyMode, "applyMode");
-				IConfigScreenCategoryBuilder.this.setScreenValueApplyMode(checkedValue, checkedApplyMode);
-				return this;
-			}
-
-			@Override
-			public IConfigScreenValueBuilder setRequiresRestart(boolean requiresRestart) {
-				IConfigScreenCategoryBuilder.this.setScreenValueRequiresRestart(checkedValue, requiresRestart);
-				return this;
-			}
-		};
-	}
+	IConfigScreenValueBuilder getScreenValueBuilder(IConfigScreenValue<?> value);
 
 	/**
 	 * Get a builder for configuring one config screen value in this category by stable name.
@@ -130,23 +96,7 @@ public interface IConfigScreenCategoryBuilder {
 	 *
 	 * @since 0.1.0
 	 */
-	default IConfigScreenValueBuilder getValueBuilderByName(String valueName) {
-		String checkedValueName = Objects.requireNonNull(valueName, "valueName");
-		return new IConfigScreenValueBuilder() {
-			@Override
-			public IConfigScreenValueBuilder setApplyMode(ConfigValueApplyMode applyMode) {
-				ConfigValueApplyMode checkedApplyMode = Objects.requireNonNull(applyMode, "applyMode");
-				IConfigScreenCategoryBuilder.this.setValueApplyModeByName(checkedValueName, checkedApplyMode);
-				return this;
-			}
-
-			@Override
-			public IConfigScreenValueBuilder setRequiresRestart(boolean requiresRestart) {
-				IConfigScreenCategoryBuilder.this.setValueRequiresRestartByName(checkedValueName, requiresRestart);
-				return this;
-			}
-		};
-	}
+	IConfigScreenValueBuilder getValueBuilderByName(String valueName);
 
 	/**
 	 * Set the apply mode for one config value in this category.
@@ -198,9 +148,7 @@ public interface IConfigScreenCategoryBuilder {
 	 *
 	 * @since 0.1.0
 	 */
-	default IConfigScreenCategoryBuilder setValueRequiresRestart(IConfigValue<?> value) {
-		return setValueRequiresRestart(value, true);
-	}
+	IConfigScreenCategoryBuilder setValueRequiresRestart(IConfigValue<?> value);
 
 	/**
 	 * Set whether one config value in this category requires a restart or larger reload after it is saved.
@@ -223,9 +171,7 @@ public interface IConfigScreenCategoryBuilder {
 	 *
 	 * @since 0.1.0
 	 */
-	default IConfigScreenCategoryBuilder setScreenValueRequiresRestart(IConfigScreenValue<?> value) {
-		return setScreenValueRequiresRestart(value, true);
-	}
+	IConfigScreenCategoryBuilder setScreenValueRequiresRestart(IConfigScreenValue<?> value);
 
 	/**
 	 * Set whether one config screen value in this category requires a restart or larger reload after it is saved.
@@ -248,9 +194,7 @@ public interface IConfigScreenCategoryBuilder {
 	 *
 	 * @since 0.1.0
 	 */
-	default IConfigScreenCategoryBuilder setValueRequiresRestartByName(String valueName) {
-		return setValueRequiresRestartByName(valueName, true);
-	}
+	IConfigScreenCategoryBuilder setValueRequiresRestartByName(String valueName);
 
 	/**
 	 * Set whether one config screen value in this category by stable name requires a restart or larger reload after it is saved.
@@ -279,9 +223,7 @@ public interface IConfigScreenCategoryBuilder {
 	 *
 	 * @since 0.1.0
 	 */
-	default IConfigScreenCategoryBuilder addValue(IConfigValue<?> value) {
-		return addScreenValue(IConfigScreenValue.configValue(value));
-	}
+	IConfigScreenCategoryBuilder addValue(IConfigValue<?> value);
 
 	/**
 	 * Add one config screen value to this category.
@@ -307,11 +249,7 @@ public interface IConfigScreenCategoryBuilder {
 	 *
 	 * @since 0.1.0
 	 */
-	default IConfigScreenCategoryBuilder addValues(Collection<? extends IConfigValue<?>> values) {
-		return addScreenValues(values.stream()
-			.map(IConfigScreenValue::configValue)
-			.toList());
-	}
+	IConfigScreenCategoryBuilder addValues(Collection<? extends IConfigValue<?>> values);
 
 	/**
 	 * Add config screen values to this category.
@@ -327,35 +265,46 @@ public interface IConfigScreenCategoryBuilder {
 	IConfigScreenCategoryBuilder addScreenValues(Collection<? extends IConfigScreenValue<?>> values);
 
 	/**
-	 * Add config values to this category when the screen is opened.
+	 * Add a GUI list editor for a MezzConfig sorting config.
 	 * <p>
-	 * Added values are appended to this category's automatically detected values. Call {@link #clearDefaultValues()} to
-	 * replace the automatically detected values.
+	 * The sorting config keeps owning storage and sorting behavior. The config GUI adapts it into a list editor for the
+	 * given runtime value set.
 	 *
-	 * @param valuesSupplier supplies config values to display
-	 * @return this builder
+	 * @param name stable config screen value name
+	 * @param localizationKey translation key for this sort-order value's name
+	 * @param sortingConfig sorting config that stores and applies the edited order
+	 * @param values complete runtime value set to expose in the list editor
+	 * @param valueSerializer serializer and display metadata for one sortable value
+	 * @param <T> the sortable value type
+	 * @return builder for configuring how this sorting config is shown
 	 *
 	 * @since 0.1.0
 	 */
-	default IConfigScreenCategoryBuilder addValues(Supplier<? extends Collection<? extends IConfigValue<?>>> valuesSupplier) {
-		return addScreenValues(() -> valuesSupplier.get()
-			.stream()
-			.map(IConfigScreenValue::configValue)
-			.toList());
-	}
+	<T> ISortingConfigGuiBuilder<T> addSortingConfig(
+		String name,
+		String localizationKey,
+		ISortingConfig<T> sortingConfig,
+		Collection<T> values,
+		IConfigValueSerializer<T> valueSerializer
+	);
 
 	/**
-	 * Add config screen values to this category when the screen is opened.
-	 * <p>
-	 * Added values are appended to this category's automatically detected values. Call {@link #clearDefaultValues()} to
-	 * replace the automatically detected values.
+	 * Add a GUI list editor for a string-backed MezzConfig sorting config.
 	 *
-	 * @param valuesSupplier supplies config screen values to display
-	 * @return this builder
+	 * @param name stable config screen value name
+	 * @param localizationKey translation key for this sort-order value's name
+	 * @param sortingConfig sorting config that stores and applies the edited order
+	 * @param values complete runtime value set to expose in the list editor
+	 * @return builder for configuring how this sorting config is shown
 	 *
 	 * @since 0.1.0
 	 */
-	IConfigScreenCategoryBuilder addScreenValues(Supplier<? extends Collection<? extends IConfigScreenValue<?>>> valuesSupplier);
+	ISortingConfigGuiBuilder<String> addStringSortingConfig(
+		String name,
+		String localizationKey,
+		ISortingConfig<String> sortingConfig,
+		Collection<String> values
+	);
 
 	/**
 	 * Hide one schema config value from this category.
@@ -368,9 +317,7 @@ public interface IConfigScreenCategoryBuilder {
 	 *
 	 * @since 0.1.0
 	 */
-	default IConfigScreenCategoryBuilder hideValue(IConfigValue<?> value) {
-		return hideScreenValue(IConfigScreenValue.configValue(value));
-	}
+	IConfigScreenCategoryBuilder hideValue(IConfigValue<?> value);
 
 	/**
 	 * Hide one config screen value from this category.
@@ -396,11 +343,7 @@ public interface IConfigScreenCategoryBuilder {
 	 *
 	 * @since 0.1.0
 	 */
-	default IConfigScreenCategoryBuilder hideValues(Collection<? extends IConfigValue<?>> values) {
-		return hideScreenValues(values.stream()
-			.map(IConfigScreenValue::configValue)
-			.toList());
-	}
+	IConfigScreenCategoryBuilder hideValues(Collection<? extends IConfigValue<?>> values);
 
 	/**
 	 * Hide config screen values from this category.
@@ -414,37 +357,6 @@ public interface IConfigScreenCategoryBuilder {
 	 * @since 0.1.0
 	 */
 	IConfigScreenCategoryBuilder hideScreenValues(Collection<? extends IConfigScreenValue<?>> values);
-
-	/**
-	 * Hide schema config values from this category when the screen is opened.
-	 * <p>
-	 * This is only needed when this category keeps automatically detected values and some of those values should still
-	 * be omitted.
-	 *
-	 * @param valuesSupplier supplies config values to hide
-	 * @return this builder
-	 *
-	 * @since 0.1.0
-	 */
-	default IConfigScreenCategoryBuilder hideValues(Supplier<? extends Collection<? extends IConfigValue<?>>> valuesSupplier) {
-		return hideScreenValues(() -> valuesSupplier.get()
-			.stream()
-			.map(IConfigScreenValue::configValue)
-			.toList());
-	}
-
-	/**
-	 * Hide config screen values from this category when the screen is opened.
-	 * <p>
-	 * This is only needed when this category keeps automatically detected values and some of those values should still
-	 * be omitted.
-	 *
-	 * @param valuesSupplier supplies config screen values to hide
-	 * @return this builder
-	 *
-	 * @since 0.1.0
-	 */
-	IConfigScreenCategoryBuilder hideScreenValues(Supplier<? extends Collection<? extends IConfigScreenValue<?>>> valuesSupplier);
 
 	/**
 	 * Add one config screen value to this category by stable name.
@@ -492,13 +404,7 @@ public interface IConfigScreenCategoryBuilder {
 	 *
 	 * @since 0.1.0
 	 */
-	default IConfigScreenCategoryBuilder addValuesByName(Collection<String> valueNames) {
-		Collection<String> checkedValueNames = Objects.requireNonNull(valueNames, "valueNames");
-		for (String valueName : checkedValueNames) {
-			addValueByName(valueName);
-		}
-		return this;
-	}
+	IConfigScreenCategoryBuilder addValuesByName(Collection<String> valueNames);
 
 	/**
 	 * Hide config screen values from this category by stable name.
@@ -514,13 +420,7 @@ public interface IConfigScreenCategoryBuilder {
 	 *
 	 * @since 0.1.0
 	 */
-	default IConfigScreenCategoryBuilder hideValuesByName(Collection<String> valueNames) {
-		Collection<String> checkedValueNames = Objects.requireNonNull(valueNames, "valueNames");
-		for (String valueName : checkedValueNames) {
-			hideValueByName(valueName);
-		}
-		return this;
-	}
+	IConfigScreenCategoryBuilder hideValuesByName(Collection<String> valueNames);
 
 	/**
 	 * Add one key mapping to this category.
@@ -547,17 +447,4 @@ public interface IConfigScreenCategoryBuilder {
 	 * @since 0.1.0
 	 */
 	IConfigScreenCategoryBuilder addKeyMappings(Collection<? extends KeyMapping> keyMappings);
-
-	/**
-	 * Add key mappings to this category when the screen is opened.
-	 * <p>
-	 * Adding key mappings to any configured category disables the automatically detected key mappings category for this
-	 * screen. Added key mappings are appended to this category's automatically detected values.
-	 *
-	 * @param keyMappingsSupplier supplies key mappings to display
-	 * @return this builder
-	 *
-	 * @since 0.1.0
-	 */
-	IConfigScreenCategoryBuilder addKeyMappings(Supplier<? extends Collection<? extends KeyMapping>> keyMappingsSupplier);
 }

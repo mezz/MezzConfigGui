@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import net.mezzdev.config.api.sorting.ISortingConfig;
 import net.mezzdev.config.api.value.ConfigValueEditMode;
 import net.mezzdev.config.api.value.IDeserializeResult;
 import net.mezzdev.config.api.value.IConfigValue;
@@ -9,20 +10,30 @@ import net.mezzdev.config.api.value.IConfigValueChangeListener;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.ConfigValueEditorType;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
+import net.mezzdev.config.gui.api.ConfigValueLocalization;
+import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
+import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigScreenBuilder;
 import net.mezzdev.config.gui.api.IConfigScreenCategoryBuilder;
+import net.mezzdev.config.gui.api.IConfigScreenFactory;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
+import net.mezzdev.config.gui.api.IConfigValueIcon;
+import net.mezzdev.config.gui.api.IConfigValueIconProvider;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -204,6 +215,172 @@ class ConfigGuiPluginLoaderTest {
 
 		assertEquals(List.of("controls"), categoryNames(categories));
 		assertEquals(List.of("mode"), valueNames(categories.getFirst()));
+	}
+
+	@Test
+	void valueBuilderInsertsValuesRelativeToDefaultValues() {
+		TestConfigValue maxRows = new TestConfigValue("maxRows");
+		TestConfigValue maxColumns = new TestConfigValue("maxColumns");
+		TestConfigValue horizontalAlignment = new TestConfigValue("horizontalAlignment");
+		TestConfigValue verticalAlignment = new TestConfigValue("verticalAlignment");
+		TestConfigValue buttonNavigationVisibility = new TestConfigValue("buttonNavigationVisibility");
+		TestConfigValue drawBackground = new TestConfigValue("drawBackground");
+		TestConfigValue toastReflowEnabled = new TestConfigValue("toastReflowEnabled");
+		TestConfigValue alignment = new TestConfigValue("alignment");
+		TestCategory originalCategory = new TestCategory("ingredientList", List.of(
+			maxRows,
+			maxColumns,
+			horizontalAlignment,
+			verticalAlignment,
+			buttonNavigationVisibility,
+			drawBackground,
+			toastReflowEnabled
+		));
+
+		List<ConfigScreenCategory> categories = createCategories(
+			List.of(originalCategory),
+			screenBuilder -> {
+				IConfigScreenCategoryBuilder categoryBuilder = screenBuilder.configureCategory("ingredientList");
+				categoryBuilder.getValueBuilderByName("maxColumns")
+					.insertAfter(alignment);
+				categoryBuilder.getValueBuilderByName("horizontalAlignment")
+					.hide();
+				categoryBuilder.getValueBuilderByName("verticalAlignment")
+					.hide();
+			},
+			lookup -> List.of()
+		);
+
+		ConfigScreenCategory category = categories.getFirst();
+		assertEquals(List.of("ingredientList"), categoryNames(categories));
+		assertEquals(
+			List.of("maxRows", "maxColumns", "alignment", "buttonNavigationVisibility", "drawBackground", "toastReflowEnabled"),
+			valueNames(category)
+		);
+		IConfigScreenValue<?> insertedValue = valueByName(category, "alignment");
+		assertEquals(ConfigValueApplyMode.ON_APPLY, insertedValue.getApplyMode());
+		assertFalse(insertedValue.requiresRestart());
+	}
+
+	@Test
+	void categoryAddsSortingConfigBackedByRuntimeValues() {
+		TestSortingConfig sortingConfig = new TestSortingConfig(true);
+		IConfigValueIcon firstIcon = (guiGraphics, area) -> {};
+
+		List<ConfigScreenCategory> categories = createCategories(
+			List.of(),
+			screenBuilder -> screenBuilder.addCategory("sorting")
+				.addStringSortingConfig(
+					"sortOrder",
+					"test.sortOrder",
+					sortingConfig,
+					List.of("second", "first")
+				)
+				.setValueNames(Map.of("first", Component.literal("First")))
+				.setValueDescriptions(Map.of("first", Component.literal("First description")))
+				.setValueIcons(Map.of("first", firstIcon))
+				.setApplyMode(ConfigValueApplyMode.IMMEDIATE)
+				.setRequiresRestart(true),
+			lookup -> List.of()
+		);
+
+		assertEquals(List.of("sorting"), categoryNames(categories));
+		IConfigScreenValue<?> value = valueByName(categories.getFirst(), "sortOrder");
+		assertEquals("test.sortOrder", value.getLocalizationKey());
+		assertEquals(List.of("first", "second"), value.getDefaultValue());
+		assertEquals(List.of("first", "second"), value.getValue());
+		assertEquals(ConfigValueApplyMode.IMMEDIATE, value.getApplyMode());
+		assertTrue(value.requiresRestart());
+
+		IConfigListValueEditorSerializer<String> listSerializer = getStringListSerializer(value);
+		assertEquals(List.of("first", "second"), List.copyOf(listSerializer.getElementSerializer().getAllValidValues().orElseThrow()));
+		assertEquals("First", ConfigValueLocalization
+			.getValueName(listSerializer.getElementSerializer(), "test.sortOrder", "first")
+			.getString());
+		assertEquals("second", ConfigValueLocalization
+			.getValueName(listSerializer.getElementSerializer(), "test.sortOrder", "second")
+			.getString());
+		assertEquals("First description", ConfigValueLocalization
+			.getValueDescription(listSerializer.getElementSerializer(), "test.sortOrder", "first")
+			.orElseThrow()
+			.getString());
+		assertTrue(ConfigValueLocalization
+			.getValueDescription(listSerializer.getElementSerializer(), "test.sortOrder", "second")
+			.isEmpty());
+
+		IConfigValueIconProvider<String> iconProvider = getStringIconProvider(listSerializer);
+		assertSame(firstIcon, iconProvider.getIcon("first").orElseThrow());
+		assertTrue(iconProvider.getIcon("second").isEmpty());
+
+		assertTrue(getStringListValue(value).set(List.of("second", "first")));
+		assertEquals(List.of(List.of("second", "first")), sortingConfig.savedValues);
+	}
+
+	@Test
+	void screenCustomizersAreDeferredUntilScreenCreation() {
+		AtomicInteger factoryCreationCustomizerCalls = new AtomicInteger();
+		IConfigGuiPlugin plugin = new IConfigGuiPlugin() {
+			@Override
+			public String getModId() {
+				return MOD_ID;
+			}
+
+			@Override
+			public void register(net.mezzdev.config.gui.api.IConfigGuiRegistration registration) {
+				registration.configureScreen(screenBuilder -> {
+					factoryCreationCustomizerCalls.incrementAndGet();
+					screenBuilder.addCategory("runtime")
+						.addScreenValue(new TestConfigValue("runtime"));
+				});
+			}
+		};
+
+		Map<String, IConfigScreenFactory> factories = ConfigGuiPluginLoader.createScreenFactoriesFromInternalConfigs(
+			List.of(new TestScreenConfig(MOD_ID, Component.literal("Test"), () -> List.of())),
+			List.of(plugin)
+		);
+
+		assertTrue(factories.containsKey(MOD_ID));
+		assertEquals(0, factoryCreationCustomizerCalls.get());
+	}
+
+	@Test
+	void deferredScreenCustomizersUseCurrentStateEachTime() {
+		AtomicInteger customizerCalls = new AtomicInteger();
+		AtomicInteger schemaVersion = new AtomicInteger(1);
+		Consumer<IConfigScreenBuilder> screenCustomizer = screenBuilder -> {
+			int customizerCall = customizerCalls.incrementAndGet();
+			screenBuilder.addCategory("runtime")
+				.addScreenValue(new TestConfigValue("runtime" + customizerCall));
+		};
+
+		ConfigScreenSchema firstSchema = ConfigGuiPluginLoader.createCustomizedScreenSchemaForTests(
+			MOD_ID,
+			() -> {
+				int version = schemaVersion.get();
+				return () -> List.of(new TestCategory("base", List.of(new TestConfigValue("base" + version))));
+			},
+			List.of(screenCustomizer)
+		);
+		schemaVersion.incrementAndGet();
+		ConfigScreenSchema secondSchema = ConfigGuiPluginLoader.createCustomizedScreenSchemaForTests(
+			MOD_ID,
+			() -> {
+				int version = schemaVersion.get();
+				return () -> List.of(new TestCategory("base", List.of(new TestConfigValue("base" + version))));
+			},
+			List.of(screenCustomizer)
+		);
+
+		assertEquals(2, customizerCalls.get());
+		List<? extends ConfigScreenCategory> firstCategories = firstSchema.getCategories();
+		List<? extends ConfigScreenCategory> secondCategories = secondSchema.getCategories();
+		assertEquals(List.of("runtime", "base"), categoryNames(firstCategories));
+		assertEquals(List.of("runtime", "base"), categoryNames(secondCategories));
+		assertEquals(List.of("runtime1"), valueNames(firstCategories.getFirst()));
+		assertEquals(List.of("base1"), valueNames(firstCategories.get(1)));
+		assertEquals(List.of("runtime2"), valueNames(secondCategories.getFirst()));
+		assertEquals(List.of("base2"), valueNames(secondCategories.get(1)));
 	}
 
 	@Test
@@ -451,7 +628,7 @@ class ConfigGuiPluginLoaderTest {
 					.setTitle(Component.literal("Key Mappings"))
 					.setDescription(Component.literal("Native screen key mappings"))
 					.addKeyMapping(openKey)
-					.addKeyMappings(() -> List.of(toggleKey));
+					.addKeyMapping(toggleKey);
 
 				IConfigScreenCategoryBuilder clientCategoryBuilder = screenBuilder.configureCategory(clientCategoryName)
 					.setTitle(Component.literal("Remaining Native Values"))
@@ -540,7 +717,7 @@ class ConfigGuiPluginLoaderTest {
 		);
 	}
 
-	private static List<String> categoryNames(List<ConfigScreenCategory> categories) {
+	private static List<String> categoryNames(List<? extends ConfigScreenCategory> categories) {
 		return categories.stream()
 			.map(ConfigScreenCategory::getName)
 			.toList();
@@ -559,6 +736,21 @@ class ConfigGuiPluginLoaderTest {
 			.filter(value -> value.getName().equals(name))
 			.findFirst()
 			.orElseThrow();
+	}
+
+	@SuppressWarnings("unchecked")
+	private static IConfigScreenValue<List<String>> getStringListValue(IConfigScreenValue<?> value) {
+		return (IConfigScreenValue<List<String>>) value;
+	}
+
+	@SuppressWarnings("unchecked")
+	private static IConfigListValueEditorSerializer<String> getStringListSerializer(IConfigScreenValue<?> value) {
+		return (IConfigListValueEditorSerializer<String>) value.getSerializer();
+	}
+
+	@SuppressWarnings("unchecked")
+	private static IConfigValueIconProvider<String> getStringIconProvider(IConfigListValueEditorSerializer<String> listSerializer) {
+		return (IConfigValueIconProvider<String>) listSerializer.getElementSerializer();
 	}
 
 	private static KeyMapping keyMapping(String name, int keyCode) {
@@ -598,6 +790,28 @@ class ConfigGuiPluginLoaderTest {
 		public Collection<? extends IConfigScreenValue<?>> getConfigValues() {
 			return values;
 		}
+	}
+
+	private record TestScreenConfig(
+		String modId,
+		Component title,
+		ConfigScreenSchema schema
+	) implements ConfigScreenConfig {
+		@Override
+		public String getModId() {
+			return modId;
+		}
+
+		@Override
+		public Component getTitle() {
+			return title;
+		}
+
+		@Override
+		public ConfigScreenSchema getSchema() {
+			return schema;
+		}
+
 	}
 
 	private record TestConfigValue(
@@ -656,6 +870,61 @@ class ConfigGuiPluginLoaderTest {
 		@Override
 		public boolean requiresRestart() {
 			return requiresRestart;
+		}
+	}
+
+	private static final class TestSortingConfig implements ISortingConfig<String> {
+		private final boolean allowsRemovingValues;
+		private final List<List<String>> savedValues = new ArrayList<>();
+		private List<String> sortedValues = List.of();
+		private boolean hasSortedValues;
+
+		private TestSortingConfig(boolean allowsRemovingValues) {
+			this.allowsRemovingValues = allowsRemovingValues;
+		}
+
+		@Override
+		public List<String> getSortedValues(Collection<String> allValues) {
+			if (hasSortedValues) {
+				return sortedValues;
+			}
+			return getDefaultSortedValues(allValues);
+		}
+
+		@Override
+		public List<String> getDefaultSortedValues(Collection<String> allValues) {
+			return allValues.stream()
+				.distinct()
+				.sorted()
+				.toList();
+		}
+
+		@Override
+		public boolean setSortedValues(List<String> sortedValues) {
+			this.sortedValues = List.copyOf(sortedValues);
+			this.savedValues.add(this.sortedValues);
+			this.hasSortedValues = true;
+			return true;
+		}
+
+		@Override
+		public Comparator<String> getComparator(Collection<String> allValues) {
+			return Comparator.comparingInt(value -> getSortedValues(allValues).indexOf(value));
+		}
+
+		@Override
+		public boolean isVisible(Collection<String> allValues, String value) {
+			return getSortedValues(allValues).contains(value);
+		}
+
+		@Override
+		public boolean allowsRemovingValues() {
+			return allowsRemovingValues;
+		}
+
+		@Override
+		public Runnable addChangeListener(Runnable listener) {
+			return () -> {};
 		}
 	}
 

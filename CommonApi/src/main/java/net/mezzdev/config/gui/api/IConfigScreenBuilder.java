@@ -18,15 +18,6 @@ public interface IConfigScreenBuilder {
 	void setTitle(Component title);
 
 	/**
-	 * Set the handler for saved changes that require the owner mod to restart or reload.
-	 *
-	 * @param restartHandler handles and reports saved changes that require the owner mod to restart or reload
-	 *
-	 * @since 0.1.0
-	 */
-	void setRestartHandler(IConfigRestartHandler restartHandler);
-
-	/**
 	 * Do not add automatically detected categories to this screen unless they are also configured here.
 	 * <p>
 	 * Configured categories still keep their automatically detected values unless

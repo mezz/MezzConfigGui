@@ -10,6 +10,13 @@ import java.util.Map;
 
 /**
  * Creates config values for sortable value lists that are discovered at runtime.
+ * <p>
+ * Prefer adding sorting configs directly with
+ * {@link IConfigScreenCategoryBuilder#addSortingConfig(String, String, ISortingConfig, Collection, IConfigValueSerializer)}
+ * or
+ * {@link IConfigScreenCategoryBuilder#addStringSortingConfig(String, String, ISortingConfig, Collection)}
+ * when customizing a screen category. This factory remains for callers that still need to create a screen value
+ * explicitly.
  *
  * @since 0.1.0
  */

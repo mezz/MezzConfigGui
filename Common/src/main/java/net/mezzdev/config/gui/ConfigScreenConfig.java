@@ -1,6 +1,5 @@
 package net.mezzdev.config.gui;
 
-import net.mezzdev.config.gui.api.ConfigRestartResult;
 import net.minecraft.network.chat.Component;
 
 /**
@@ -21,9 +20,4 @@ public interface ConfigScreenConfig {
 	 * The schema shown by this config screen.
 	 */
 	ConfigScreenSchema getSchema();
-
-	/**
-	 * Called when applying saved changes requires the owner mod to restart or reload.
-	 */
-	ConfigRestartResult onRestartRequired();
 }

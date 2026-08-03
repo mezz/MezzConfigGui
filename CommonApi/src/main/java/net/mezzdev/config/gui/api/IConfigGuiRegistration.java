@@ -25,19 +25,24 @@ public interface IConfigGuiRegistration {
 
 	/**
 	 * Get helper factories for config values backed by sortable runtime lists.
+	 * <p>
+	 * Prefer adding sorting configs directly with
+	 * {@link IConfigScreenCategoryBuilder#addSortingConfig(String, String, net.mezzdev.config.api.sorting.ISortingConfig, java.util.Collection, net.mezzdev.config.api.value.IConfigValueSerializer)}
+	 * or
+	 * {@link IConfigScreenCategoryBuilder#addStringSortingConfig(String, String, net.mezzdev.config.api.sorting.ISortingConfig, java.util.Collection)}
+	 * when customizing a screen category. This helper remains for callers that still need to create a screen value
+	 * explicitly.
 	 *
 	 * @return helper factories for sortable runtime list values
 	 *
 	 * @since 0.1.0
 	 */
-	default ISortableConfigValueFactory getSortableConfigValueFactory() {
-		throw new UnsupportedOperationException("Sortable config value helpers are not available.");
-	}
+	ISortableConfigValueFactory getSortableConfigValueFactory();
 
 	/**
 	 * Customize the config screen for this mod.
 	 * <p>
-	 * This can be used with a screen registered through {@link #registerScreen(Component, Supplier, IConfigRestartHandler)}
+	 * This can be used with a screen registered through {@link #registerScreen(Component, Supplier)}
 	 * or with a screen automatically detected by the config GUI from a platform-native config system. This method does
 	 * not create a screen on its own.
 	 *
@@ -50,18 +55,13 @@ public interface IConfigGuiRegistration {
 	/**
 	 * Register a config screen.
 	 *
-	 * The restart handler is called when applying saved changes requires the owner mod to restart or reload. Return
-	 * {@link ConfigRestartResult#NEXT_GAME_START} when the mod cannot apply the saved changes until the game starts again.
-	 *
 	 * @param title the title shown at the top of the config screen
 	 * @param schemaSupplier supplies the config schema each time the screen is opened
-	 * @param restartHandler handles and reports saved changes that require the owner mod to restart or reload
 	 *
 	 * @since 0.1.0
 	 */
 	void registerScreen(
 		Component title,
-		Supplier<? extends IConfigSchema> schemaSupplier,
-		IConfigRestartHandler restartHandler
+		Supplier<? extends IConfigSchema> schemaSupplier
 	);
 }

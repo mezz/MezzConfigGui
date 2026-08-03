@@ -5,7 +5,6 @@ import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.gui.api.ConfigGuiPlugin;
 import net.mezzdev.config.gui.api.ConfigInfo;
-import net.mezzdev.config.gui.api.ConfigRestartResult;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigGuiRegistration;
@@ -49,7 +48,6 @@ public final class NeoForgeNativeCustomTestGuiPlugin implements IConfigGuiPlugin
 		registration.registerValueEditor(ConfigValueEditorTypes.getSelection(), ignored -> new CyclingSelectionEditor<>());
 		registration.configureScreen(screenBuilder -> {
 			screenBuilder.setTitle(Component.translatable("%s.configuration.custom.title".formatted(NeoForgeNativeCustomTestMod.MOD_ID)));
-			screenBuilder.setRestartHandler(() -> ConfigRestartResult.HANDLED);
 			IConfigScreenCategoryBuilder quickCategory = screenBuilder.addCategory("quick")
 				.setTitle(Component.translatable("%s.configuration.category.quick".formatted(NeoForgeNativeCustomTestMod.MOD_ID)))
 				.setDescription(Component.translatable("%s.configuration.category.quick.tooltip".formatted(NeoForgeNativeCustomTestMod.MOD_ID)))
