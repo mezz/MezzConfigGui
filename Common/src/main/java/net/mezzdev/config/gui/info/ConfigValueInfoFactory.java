@@ -4,6 +4,8 @@ import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
+import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
+import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
@@ -64,12 +66,26 @@ public final class ConfigValueInfoFactory {
 
 	private static ConfigInfo appendUpdateInfo(IConfigScreenValue<?> configValue, ConfigInfo info, boolean hasPendingChange) {
 		Optional<Component> updateInfo = getUpdateInfo(configValue, hasPendingChange);
-		if (updateInfo.isEmpty()) {
+		if (updateInfo.isEmpty() && !ConfigGuiOptions.showAdvancedValueDetails()) {
 			return info;
 		}
 		List<Component> lines = new ArrayList<>(info.lines());
-		lines.add(updateInfo.get());
+		updateInfo.ifPresent(lines::add);
+		appendAdvancedInfo(configValue, lines);
 		return new ConfigInfo(info.title(), lines);
+	}
+
+	private static void appendAdvancedInfo(IConfigScreenValue<?> configValue, List<Component> lines) {
+		if (!ConfigGuiOptions.showAdvancedValueDetails()) {
+			return;
+		}
+		lines.add(Component.literal("Name: " + configValue.getName()));
+		lines.add(Component.literal("Apply mode: " + configValue.getApplyMode()));
+		lines.add(Component.literal("Requires restart: " + configValue.requiresRestart()));
+		lines.add(Component.literal("Serializer: " + configValue.getSerializer().getClass().getSimpleName()));
+		if (configValue.getSerializer() instanceof IConfigValueEditorSerializer<?> editorSerializer) {
+			lines.add(Component.literal("Editor: " + editorSerializer.getEditorType().getUid()));
+		}
 	}
 
 	private static Optional<Component> getUpdateInfo(IConfigScreenValue<?> configValue, boolean hasPendingChange) {

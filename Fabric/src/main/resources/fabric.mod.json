@@ -19,6 +19,12 @@
     "client": [
       "net.mezzdev.config.gui.fabric.ConfigGuiFabricClient"
     ],
+    "mezz_config_plugin": [
+      "net.mezzdev.config.gui.config.ConfigGuiOptionsPlugin"
+    ],
+    "mezz_config_gui_plugin": [
+      "net.mezzdev.config.gui.config.ConfigGuiOptionsPlugin"
+    ],
     "modmenu": [
       "net.mezzdev.config.gui.fabric.ConfigGuiModMenuPlugin"
     ],

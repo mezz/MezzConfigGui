@@ -9,6 +9,7 @@ import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigListValueEditorOptions;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
+import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.info.ConfigValueIcon;
 import net.mezzdev.config.gui.info.ConfigValueInfoFactory;
 import net.mezzdev.config.gui.input.UserInput;
@@ -36,7 +37,6 @@ import java.util.Optional;
  */
 final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 
-	private static final int ENTRY_ROW_HEIGHT = 20;
 	private static final int BUTTON_SIZE = 18;
 	private static final int BUTTON_GAP = 2;
 	private static final int ROW_BUTTON_COUNT = 3;
@@ -50,7 +50,6 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	private static final int UNUSED_VALUE_TOP_GAP = 1;
 	private static final int ADD_VALUE_TOP_GAP = 2;
 	private static final int VALUE_ROW_HORIZONTAL_PADDING = 4;
-	private static final int ORDERED_ROW_NUMBER_WIDTH = 18;
 	private static final int ADD_VALUE_TEXT_PADDING = 4;
 	private static final int MAX_ADD_VALUE_TEXT_LENGTH = 512;
 	private static final int ORDERED_ROW_DRAG_FLOAT_Z_OFFSET = 200;
@@ -133,12 +132,13 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	}
 
 	private int getValueGroupContentHeight() {
-		int height = valueRows.size() * ENTRY_ROW_HEIGHT;
+		int entryRowHeight = getEntryRowHeight();
+		int height = valueRows.size() * entryRowHeight;
 		height += getUnusedValueTopGap();
-		height += unusedValueRows.size() * ENTRY_ROW_HEIGHT;
+		height += unusedValueRows.size() * entryRowHeight;
 		if (allowsTypedInput) {
 			height += getAddValueTopGap();
-			height += ENTRY_ROW_HEIGHT;
+			height += entryRowHeight;
 		}
 		return height;
 	}
@@ -167,9 +167,9 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 				valueGroupArea.getX() + VALUE_GROUP_BORDER_SIZE,
 				y,
 				Math.max(0, valueGroupArea.getWidth() - VALUE_GROUP_BORDER_SIZE * 2),
-				ENTRY_ROW_HEIGHT
+				getEntryRowHeight()
 			));
-			y += ENTRY_ROW_HEIGHT;
+			y += getEntryRowHeight();
 		}
 		y += getUnusedValueTopGap();
 		for (ListValueRow row : unusedValueRows) {
@@ -177,12 +177,16 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 				valueGroupArea.getX() + VALUE_GROUP_BORDER_SIZE,
 				y,
 				Math.max(0, valueGroupArea.getWidth() - VALUE_GROUP_BORDER_SIZE * 2),
-				ENTRY_ROW_HEIGHT
+				getEntryRowHeight()
 			));
-			y += ENTRY_ROW_HEIGHT;
+			y += getEntryRowHeight();
 		}
 		y += getAddValueTopGap();
 		updateAddValueBounds(y);
+	}
+
+	private static int getEntryRowHeight() {
+		return ConfigGuiOptions.getRowDensity().getListRowHeight();
 	}
 
 	private int getUnusedValueTopGap() {
@@ -210,7 +214,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			valueGroupArea.getX() + VALUE_GROUP_BORDER_SIZE,
 			y,
 			Math.max(0, valueGroupArea.getWidth() - VALUE_GROUP_BORDER_SIZE * 2),
-			ENTRY_ROW_HEIGHT
+			getEntryRowHeight()
 		);
 		int cy = addValueRowArea.getY() + (addValueRowArea.getHeight() - BUTTON_SIZE) / 2;
 		addValueButtonArea = createButtonArea(addValueRowArea, cy, 0);
@@ -743,7 +747,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 				}
 			}
 			for (ListValueRow row : valueRows) {
-				if (row.canStartDrag(input.getMouseX(), input.getMouseY())) {
+				if (ConfigGuiOptions.enableDragReordering() && row.canStartDrag(input.getMouseX(), input.getMouseY())) {
 					DragSession session = new DragSession(row, input.getMouseY(), !input.isSimulate());
 					return Optional.of(session);
 				}
@@ -769,7 +773,6 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 
 	private class DragSession implements ConfigInputHandler {
 		private int index;
-		private final List<Integer> displayIndexes = new ArrayList<>();
 		private final double grabOffsetY;
 		private double mouseY;
 		private boolean active;
@@ -778,9 +781,6 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			this.index = row.index;
 			this.grabOffsetY = mouseY - row.area.getY();
 			this.mouseY = mouseY;
-			for (ListValueRow valueRow : valueRows) {
-				displayIndexes.add(valueRow.index);
-			}
 			if (active) {
 				start();
 			}
@@ -834,17 +834,8 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			this.mouseY = mouseY;
 			int targetIndex = getDragTargetIndex(mouseY);
 			if (moveValueToIndex(index, targetIndex)) {
-				moveDisplayIndex(index, targetIndex);
 				index = targetIndex;
 			}
-		}
-
-		private void moveDisplayIndex(int sourceIndex, int targetIndex) {
-			if (!isIndexValid(displayIndexes, sourceIndex) || !isIndexValid(displayIndexes, targetIndex)) {
-				return;
-			}
-			int displayIndex = displayIndexes.remove(sourceIndex);
-			displayIndexes.add(targetIndex, displayIndex);
 		}
 
 		private int getDragTargetIndex(double mouseY) {
@@ -862,13 +853,6 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 
 		public boolean isDragging(ListValueRow row) {
 			return active && row.selected && row.index == index;
-		}
-
-		public int getDisplayIndex(ListValueRow row) {
-			if (isIndexValid(displayIndexes, row.index)) {
-				return displayIndexes.get(row.index);
-			}
-			return row.index;
 		}
 
 		public void drawFloatingRow(GuiGraphics guiGraphics) {
@@ -1019,12 +1003,8 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			if (floating) {
 				drawFloatingHighlight(guiGraphics, rowArea);
 			}
-			if (selected) {
-				drawOrderNumber(guiGraphics, font, rowArea);
-			}
-
 			Component valueName = ConfigValueLocalization.getValueName(elementSerializer, configValue.getLocalizationKey(), value);
-			int textX = rowArea.getX() + VALUE_ROW_HORIZONTAL_PADDING + ORDERED_ROW_NUMBER_WIDTH;
+			int textX = rowArea.getX() + VALUE_ROW_HORIZONTAL_PADDING;
 			int iconY = rowArea.getY() + (rowArea.getHeight() - ConfigValueIcon.ICON_SIZE) / 2;
 			ConfigValueIcon.draw(guiGraphics, elementSerializer, value, textX, iconY);
 			textX += ConfigValueIcon.getTextOffset(elementSerializer, value);
@@ -1072,23 +1052,6 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			guiGraphics.fill(x, bottom - 1, right, bottom, ORDERED_ROW_DRAG_FLOAT_BORDER_COLOR);
 			guiGraphics.fill(x, y, x + 2, bottom, ORDERED_ROW_DRAG_FLOAT_ACCENT_COLOR);
 			guiGraphics.fill(right - 1, y, right, bottom, ORDERED_ROW_DRAG_FLOAT_BORDER_COLOR);
-		}
-
-		private void drawOrderNumber(GuiGraphics guiGraphics, Font font, ImmutableRect2i rowArea) {
-			String number = Integer.toString(getDisplayIndex() + 1);
-			int numberWidth = font.width(number);
-			int numberX = rowArea.getX() + VALUE_ROW_HORIZONTAL_PADDING + Math.max(0, (ORDERED_ROW_NUMBER_WIDTH - numberWidth) / 2);
-			int numberY = ConfigEntryWidget.getCenteredTextY(font, rowArea);
-			ConfigEntryWidget.drawText(guiGraphics, font, number, numberX, numberY, SECONDARY_TEXT_COLOR);
-		}
-
-		private int getDisplayIndex() {
-			@Nullable
-			DragSession dragSession = ListConfigEntry.this.dragSession;
-			if (dragSession != null) {
-				return dragSession.getDisplayIndex(this);
-			}
-			return index;
 		}
 
 		private void drawMoveButton(

@@ -3,12 +3,14 @@ package net.mezzdev.config.gui;
 import net.mezzdev.config.gui.api.ConfigValueEditorType;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueEditorFactory;
+import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.entries.ConfigEntryWidget;
 import net.mezzdev.config.gui.entries.ConfigEntryWidgetFactory;
 import net.mezzdev.config.gui.input.InputType;
 import net.mezzdev.config.gui.input.UserInput;
 import net.mezzdev.config.gui.model.ConfigCategoryWidget;
 import net.mezzdev.config.gui.model.ConfigNavItem;
+import net.mezzdev.config.gui.model.ConfigScreenHistory;
 import net.mezzdev.config.gui.model.ConfigScreenModel;
 import net.mezzdev.config.gui.popup.ConfigPopupSelector;
 import net.mezzdev.config.gui.popup.ConfigValueSelectorInputHandler;
@@ -41,6 +43,7 @@ public class ConfigScreen extends Screen {
 
 	static Screen create(
 		@Nullable Screen parent,
+		String modId,
 		Component title,
 		ConfigScreenSchema clientSchema,
 		ConfigChangesHandler changesHandler,
@@ -49,7 +52,7 @@ public class ConfigScreen extends Screen {
 		if (isConfigScreenOpen(parent)) {
 			return parent;
 		}
-		return new ConfigScreen(parent, title, clientSchema, changesHandler, valueEditorFactories);
+		return new ConfigScreen(parent, modId, title, clientSchema, changesHandler, valueEditorFactories);
 	}
 
 	public static boolean isConfigScreenOpen(@Nullable Screen screen) {
@@ -76,6 +79,7 @@ public class ConfigScreen extends Screen {
 
 	private ConfigScreen(
 		@Nullable Screen parent,
+		String modId,
 		Component title,
 		ConfigScreenSchema clientSchema,
 		ConfigChangesHandler changesHandler,
@@ -92,12 +96,14 @@ public class ConfigScreen extends Screen {
 		this.searchBox.setHint(Component.translatable("mezz_config.config.screen.search"));
 		updateSearchTextColor("");
 
-		this.model = new ConfigScreenModel(createCategories(clientSchema));
+		List<ConfigScreenCategory> categories = createCategories(clientSchema);
+		this.model = new ConfigScreenModel(categories);
+		this.model.setActiveCategoryIndex(ConfigScreenHistory.getInitialCategoryIndex(modId, categories));
 		this.controller = new ConfigScreenController(changesHandler, model, layout, () -> {
 			if (!searchBox.getValue().isEmpty()) {
 				searchBox.setValue("");
 			}
-		});
+		}, index -> ConfigScreenHistory.rememberCategory(modId, model.getCategories().get(index)));
 		this.view = new ConfigScreenView(title, searchBox, model, layout, controller, textures);
 		this.searchBox.setResponder(searchText -> {
 			updateSearchTextColor(searchText);
@@ -105,7 +111,6 @@ public class ConfigScreen extends Screen {
 		});
 
 		List<ConfigInputHandler> allInputHandlers = new ArrayList<>();
-		List<ConfigScreenCategory> categories = model.getCategories();
 		ConfigEntryWidgetFactory entryWidgetFactory = new ConfigEntryWidgetFactory(
 			this::openValueSelector,
 			controller::updateContentLayout,
@@ -309,6 +314,9 @@ public class ConfigScreen extends Screen {
 		} else {
 			controller.updateContentLayout();
 		}
+		if (ConfigGuiOptions.focusSearchOnOpen()) {
+			searchBox.setFocused(true);
+		}
 	}
 
 	@Override
@@ -319,7 +327,12 @@ public class ConfigScreen extends Screen {
 	private void requestClose() {
 		flushPendingInput();
 		if (controller.hasPendingChanges()) {
-			openPendingChangesConfirmation();
+			if (ConfigGuiOptions.confirmPendingChangesOnClose()) {
+				openPendingChangesConfirmation();
+				return;
+			}
+			applyPendingChanges();
+			closeWithoutPrompt();
 			return;
 		}
 		closeWithoutPrompt();
@@ -353,10 +366,19 @@ public class ConfigScreen extends Screen {
 
 	private void applyPendingChanges() {
 		controller.applyPendingChanges();
+		refreshLayout();
 	}
 
 	private void undoChanges() {
 		controller.undoChanges();
+		refreshLayout();
+	}
+
+	private void refreshLayout() {
+		layout.updateScreenBounds(width, height, searchBox);
+		controller.updateNavLayout();
+		controller.updateContentLayout();
+		updateValueSelectorBounds();
 	}
 
 	@Override

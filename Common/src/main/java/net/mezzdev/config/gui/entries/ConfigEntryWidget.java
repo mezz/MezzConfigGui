@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui.entries;
 
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
+import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.model.AppliedConfigValueChange;
 import net.mezzdev.config.gui.model.ConfigValueChange;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
@@ -42,8 +43,6 @@ public abstract class ConfigEntryWidget<T> {
 
 	protected static final int NAME_RIGHT_RESERVE = 95;
 	private static final int NAME_LEFT_PADDING = 5;
-	private static final int MIN_NAME_LINES = 2;
-	private static final int NAME_VERTICAL_PADDING = 8;
 	public static final float TEXT_SCALE = 1.0f;
 	private static final int RESET_BUTTON_SIZE = 18;
 	private static final int RESET_BUTTON_RIGHT_PADDING = 2;
@@ -112,7 +111,9 @@ public abstract class ConfigEntryWidget<T> {
 
 	public static int getMinimumHeight() {
 		Font font = Minecraft.getInstance().font;
-		return getScaledLineHeight(font) * MIN_NAME_LINES + NAME_VERTICAL_PADDING;
+		ConfigGuiOptions.RowDensity rowDensity = ConfigGuiOptions.getRowDensity();
+		int textHeight = getScaledLineHeight(font) * rowDensity.getMinimumNameLines();
+		return Math.max(RESET_BUTTON_SIZE + 2, textHeight + rowDensity.getNameVerticalPadding());
 	}
 
 	private static int getScaledLineHeight(Font font) {
@@ -155,7 +156,7 @@ public abstract class ConfigEntryWidget<T> {
 		}
 		Font font = Minecraft.getInstance().font;
 		int scaledLineHeight = getScaledLineHeight(font);
-		return Math.max(getMinimumHeight(), nameLines.size() * scaledLineHeight + NAME_VERTICAL_PADDING);
+		return Math.max(getMinimumHeight(), nameLines.size() * scaledLineHeight + ConfigGuiOptions.getRowDensity().getNameVerticalPadding());
 	}
 
 	public void updateBounds(ImmutableRect2i area) {

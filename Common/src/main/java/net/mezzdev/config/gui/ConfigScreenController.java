@@ -11,6 +11,7 @@ import net.mezzdev.config.gui.model.AppliedConfigValueChange;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.IntConsumer;
 
 /**
  * Coordinates search, category selection, scrolling, and applying or discarding config changes.
@@ -20,18 +21,21 @@ final class ConfigScreenController {
 	private final ConfigScreenModel model;
 	private final ConfigScreenLayout layout;
 	private final Runnable clearSearchInput;
+	private final IntConsumer activeCategoryListener;
 	private final AppliedConfigChangeTracker appliedChangeTracker = new AppliedConfigChangeTracker();
 
 	public ConfigScreenController(
 		ConfigChangesHandler changesHandler,
 		ConfigScreenModel model,
 		ConfigScreenLayout layout,
-		Runnable clearSearchInput
+		Runnable clearSearchInput,
+		IntConsumer activeCategoryListener
 	) {
 		this.changesHandler = changesHandler;
 		this.model = model;
 		this.layout = layout;
 		this.clearSearchInput = clearSearchInput;
+		this.activeCategoryListener = activeCategoryListener;
 	}
 
 	public void setSearchText(String searchText) {
@@ -46,6 +50,7 @@ final class ConfigScreenController {
 		}
 
 		model.setActiveCategoryIndex(index);
+		activeCategoryListener.accept(index);
 		model.setSearchText("");
 		layout.resetContentScroll();
 		clearSearchInput.run();

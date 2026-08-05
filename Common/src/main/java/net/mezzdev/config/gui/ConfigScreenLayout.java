@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui;
 
+import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.util.Mth;
@@ -14,9 +15,6 @@ public final class ConfigScreenLayout {
 	static final int SEARCH_HEIGHT = 18;
 	static final int INFO_AREA_HEIGHT = 57;
 
-	private static final int MIN_GUI_WIDTH = 320;
-	private static final int MAX_GUI_WIDTH = 380;
-	private static final int MIN_HEIGHT = 230;
 	private static final int NAV_WIDTH = 110;
 	private static final int SCROLLBAR_WIDTH = 12;
 	private static final int SCROLLBAR_GAP = 2;
@@ -29,8 +27,6 @@ public final class ConfigScreenLayout {
 	private static final int ACTION_BUTTON_GAP = 3;
 	private static final int MIN_SCROLL_MARKER_HEIGHT = 10;
 	private static final int SCROLL_MARKER_TRACK_INSET = 1;
-	private static final double SCROLL_SPEED = 10.0;
-	private static final double DRAG_SCROLL_SPEED = 6.0;
 	private static final int DRAG_SCROLL_EDGE_SIZE = 20;
 	private static final double SCROLL_LERP = 0.35;
 
@@ -62,8 +58,9 @@ public final class ConfigScreenLayout {
 	private boolean navScrollBarVisible = false;
 
 	public void updateScreenBounds(int screenWidth, int screenHeight, EditBox searchBox) {
-		int guiWidth = Math.clamp(screenWidth - 40, MIN_GUI_WIDTH, MAX_GUI_WIDTH);
-		int guiHeight = Math.clamp(screenHeight - 40, MIN_HEIGHT, 300);
+		ConfigGuiOptions.GuiSize guiSize = ConfigGuiOptions.getGuiSize();
+		int guiWidth = guiSize.getWidth(screenWidth);
+		int guiHeight = guiSize.getHeight(screenHeight);
 		int guiLeft = (screenWidth - guiWidth) / 2;
 		int guiTop = (screenHeight - guiHeight) / 2;
 		area = new ImmutableRect2i(guiLeft, guiTop, guiWidth, guiHeight);
@@ -211,12 +208,12 @@ public final class ConfigScreenLayout {
 	public boolean scroll(double mouseX, double mouseY, double scrollY) {
 		if (navArea.contains(mouseX, mouseY)) {
 			int maxNavScroll = getMaxNavScroll();
-			navTargetScrollY = Mth.clamp(navTargetScrollY - scrollY * SCROLL_SPEED, 0, maxNavScroll);
+			navTargetScrollY = Mth.clamp(navTargetScrollY - scrollY * ConfigGuiOptions.getScrollSpeed(), 0, maxNavScroll);
 			return true;
 		}
 		if (contentArea.contains(mouseX, mouseY)) {
 			int maxScroll = Math.max(0, totalContentHeight - contentArea.getHeight());
-			targetScrollY = Mth.clamp(targetScrollY - scrollY * SCROLL_SPEED, 0, maxScroll);
+			targetScrollY = Mth.clamp(targetScrollY - scrollY * ConfigGuiOptions.getScrollSpeed(), 0, maxScroll);
 			return true;
 		}
 		return false;
@@ -264,7 +261,7 @@ public final class ConfigScreenLayout {
 
 	private static double getDragScrollAmount(double edgeDistance) {
 		double factor = Math.clamp(edgeDistance / DRAG_SCROLL_EDGE_SIZE, 0.0, 1.0);
-		return factor * DRAG_SCROLL_SPEED;
+		return factor * ConfigGuiOptions.getDragAutoScrollSpeed();
 	}
 
 	private boolean scrollContentImmediately(double amount) {
@@ -330,6 +327,9 @@ public final class ConfigScreenLayout {
 	}
 
 	private static double stepScroll(double current, double target) {
+		if (!ConfigGuiOptions.smoothScrolling()) {
+			return target;
+		}
 		if (Math.abs(target - current) > 0.5) {
 			return current + (target - current) * SCROLL_LERP;
 		}

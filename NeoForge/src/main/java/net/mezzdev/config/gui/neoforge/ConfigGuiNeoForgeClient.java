@@ -3,6 +3,7 @@ package net.mezzdev.config.gui.neoforge;
 import net.mezzdev.config.gui.api.IConfigScreenFactory;
 import net.mezzdev.config.gui.ConfigGui;
 import net.mezzdev.config.gui.ConfigScreenConfig;
+import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.neoforge.config.NeoForgeConfigScreenConfigs;
 import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.neoforged.bus.api.IEventBus;
@@ -34,7 +35,10 @@ public final class ConfigGuiNeoForgeClient {
 	}
 
 	private static Map<String, IConfigScreenFactory> createScreenFactories() {
-		Collection<? extends ConfigScreenConfig> configScreens = NeoForgeConfigScreenConfigs.getConfigScreens(List.of());
+		Collection<? extends ConfigScreenConfig> configScreens = List.of();
+		if (ConfigGuiOptions.enableNativeConfigDiscovery()) {
+			configScreens = NeoForgeConfigScreenConfigs.getConfigScreens(List.of());
+		}
 		return ConfigGui.createScreenFactoriesFromInternalConfigs(configScreens, ConfigGuiNeoForgePluginFinder.getPlugins());
 	}
 

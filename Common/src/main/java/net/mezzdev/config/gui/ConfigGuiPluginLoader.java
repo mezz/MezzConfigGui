@@ -17,6 +17,7 @@ import net.mezzdev.config.gui.api.IConfigScreenValueBuilder;
 import net.mezzdev.config.gui.api.IConfigValueEditorFactory;
 import net.mezzdev.config.gui.api.ISortingConfigGuiBuilder;
 import net.mezzdev.config.gui.api.ISortableConfigValueFactory;
+import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.model.ConfigValueChange;
 import net.mezzdev.config.gui.keybindings.KeyMappingConfigValues;
 import net.mezzdev.config.gui.util.ErrorUtil;
@@ -44,7 +45,12 @@ import java.util.function.Supplier;
 final class ConfigGuiPluginLoader {
 	private static final Logger LOGGER = LogManager.getLogger();
 	private static final String KEY_MAPPINGS_CATEGORY_NAME = "keyMappings";
-	private static final ConfigScreenValueProvider DEFAULT_KEY_MAPPINGS_PROVIDER = lookup -> KeyMappingConfigValues.createForModId(lookup.modId());
+	private static final ConfigScreenValueProvider DEFAULT_KEY_MAPPINGS_PROVIDER = lookup -> {
+		if (!ConfigGuiOptions.showKeyMappings()) {
+			return List.of();
+		}
+		return KeyMappingConfigValues.createForModId(lookup.modId());
+	};
 
 	private ConfigGuiPluginLoader() {
 
@@ -72,7 +78,24 @@ final class ConfigGuiPluginLoader {
 		}
 		Map<String, IConfigScreenFactory> factories = new LinkedHashMap<>();
 		registrations.forEach((modId, registration) -> addFactory(factories, modId, registration));
+		logDiscoverySummary(configScreens, plugins, factories);
 		return Collections.unmodifiableMap(factories);
+	}
+
+	private static void logDiscoverySummary(
+		Collection<? extends ConfigScreenConfig> configScreens,
+		List<? extends IConfigGuiPlugin> plugins,
+		Map<String, IConfigScreenFactory> factories
+	) {
+		if (ConfigGuiOptions.getDiscoveryLogging() != ConfigGuiOptions.DiscoveryLogging.VERBOSE) {
+			return;
+		}
+		LOGGER.info(
+			"Created {} config screen factories from {} internal config screens and {} config GUI plugins.",
+			factories.size(),
+			configScreens.size(),
+			plugins.size()
+		);
 	}
 
 	private static Map<String, ConfigGuiRegistration> createConfigGuiRegistrations(
@@ -532,7 +555,12 @@ final class ConfigGuiPluginLoader {
 			Collection<? extends KeyMapping> checkedKeyMappings = ErrorUtil.checkNotNull(keyMappings, "keyMappings");
 			List<KeyMapping> keyMappingsCopy = List.copyOf(checkedKeyMappings);
 			containsKeyMappings = true;
-			return addValueProvider(lookup -> KeyMappingConfigValues.create(keyMappingsCopy));
+			return addValueProvider(lookup -> {
+				if (!ConfigGuiOptions.showKeyMappings()) {
+					return List.of();
+				}
+				return KeyMappingConfigValues.create(keyMappingsCopy);
+			});
 		}
 
 		private IConfigScreenCategoryBuilder addValueProvider(ConfigScreenValueProvider valueProvider) {
@@ -1467,7 +1495,7 @@ final class ConfigGuiPluginLoader {
 			ConfigScreenSchema schema = createCustomizedScreenSchema(modId, config.schemaSupplier(), screenBuilder);
 			Component title = screenBuilder.getTitle();
 			ConfigChangesHandler changesHandler = createChangesHandler(modId, title);
-			return ConfigScreen.create(parent, title, schema, changesHandler, valueEditorFactoriesCopy);
+			return ConfigScreen.create(parent, modId, title, schema, changesHandler, valueEditorFactoriesCopy);
 		};
 	}
 

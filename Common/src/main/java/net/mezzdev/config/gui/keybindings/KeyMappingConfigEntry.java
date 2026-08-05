@@ -2,6 +2,7 @@ package net.mezzdev.config.gui.keybindings;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
+import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.mezzdev.config.gui.entries.ConfigEntryWidget;
@@ -230,6 +231,9 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 	}
 
 	private List<ConfigKeyMappingConflict> getConflicts() {
+		if (!ConfigGuiOptions.showKeyConflictDetails()) {
+			return List.of();
+		}
 		ConfigKeyBinding value = getBindingValue();
 		if (value.isUnbound()) {
 			return List.of();

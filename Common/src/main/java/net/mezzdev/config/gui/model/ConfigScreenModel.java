@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui.model;
 
 import net.mezzdev.config.gui.ConfigScreenCategory;
+import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.entries.ConfigEntryWidget;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.util.ConfigLocale;
@@ -76,7 +77,10 @@ public final class ConfigScreenModel {
 		if (!isSearching()) {
 			return true;
 		}
-		return matches(entry.getFullName().getString()) ||
+		if (matches(entry.getFullName().getString())) {
+			return true;
+		}
+		return ConfigGuiOptions.searchDescriptions() &&
 			matches(ConfigValueLocalization.getDescription(entry.getConfigValue()).getString());
 	}
 
