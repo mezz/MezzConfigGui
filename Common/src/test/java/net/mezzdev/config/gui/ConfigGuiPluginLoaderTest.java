@@ -21,11 +21,13 @@ import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigValueIcon;
 import net.mezzdev.config.gui.api.IConfigValueIconProvider;
+import net.mezzdev.config.gui.config.ConfigGuiOptionsTestUtil;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 import org.lwjgl.glfw.GLFW;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -75,6 +77,36 @@ class ConfigGuiPluginLoaderTest {
 		);
 
 		assertEquals(List.of("general"), categoryNames(categories));
+	}
+
+	@Test
+	void defaultKeyMappingsProviderReturnsNoValuesWhenKeyMappingsAreHidden() {
+		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("showKeyMappings", false)) {
+			ConfigGuiPluginLoader.ConfigScreenValueProvider defaultProvider = getDefaultKeyMappingsProvider();
+			ConfigGuiPluginLoader.ConfigScreenValueLookup lookup = new ConfigGuiPluginLoader.ConfigScreenValueLookup(
+				MOD_ID,
+				"keyMappings",
+				List.of()
+			);
+
+			assertEquals(List.of(), defaultProvider.getValues(lookup));
+		}
+	}
+
+	@Test
+	void explicitKeyMappingsAreHiddenWhenKeyMappingsAreHidden() {
+		KeyMapping keyMapping = keyMapping("key.test_mod.open", GLFW.GLFW_KEY_K);
+
+		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("showKeyMappings", false)) {
+			List<ConfigScreenCategory> categories = createCategories(
+				List.of(),
+				screenBuilder -> screenBuilder.addCategory("keys")
+					.addKeyMapping(keyMapping),
+				lookup -> List.of(new TestConfigValue("key.test_mod.default"))
+			);
+
+			assertEquals(List.of(), categories);
+		}
 	}
 
 	@Test
@@ -715,6 +747,16 @@ class ConfigGuiPluginLoaderTest {
 			screenCustomizer,
 			defaultKeyMappingsProvider
 		);
+	}
+
+	private static ConfigGuiPluginLoader.ConfigScreenValueProvider getDefaultKeyMappingsProvider() {
+		try {
+			Field field = ConfigGuiPluginLoader.class.getDeclaredField("DEFAULT_KEY_MAPPINGS_PROVIDER");
+			field.setAccessible(true);
+			return (ConfigGuiPluginLoader.ConfigScreenValueProvider) field.get(null);
+		} catch (ReflectiveOperationException e) {
+			throw new AssertionError("Failed to get default key mappings provider.", e);
+		}
 	}
 
 	private static List<String> categoryNames(List<? extends ConfigScreenCategory> categories) {

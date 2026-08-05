@@ -18,9 +18,9 @@
 - [x] Show key mappings in config screens.
 - [x] Show advanced value details.
 - [x] Remove ordered list row numbers.
-- [ ] Add focused tests for remembered category state.
-- [ ] Add focused tests for configurable layout sizing and scroll speeds.
-- [ ] Add focused tests for key-mapping visibility and conflict-detail toggles.
+- [x] Add focused tests for remembered category state.
+- [x] Add focused tests for configurable layout sizing and scroll speeds.
+- [x] Add focused tests for key-mapping visibility and conflict-detail toggles.
 
 ## Not planned
 
