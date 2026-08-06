@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.api.schema.IConfigEditorCategory;
 import net.mezzdev.config.api.sorting.ISortingConfig;
 import net.mezzdev.config.api.value.ConfigValueEditMode;
+import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IDeserializeResult;
 import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.api.value.IConfigValueBatchChangeListener;
@@ -997,6 +998,11 @@ class ConfigGuiPluginLoaderTest {
 		@Override
 		public ConfigValueEditMode getEditMode() {
 			return ConfigValueEditMode.BATCH;
+		}
+
+		@Override
+		public ConfigValueRestartRequirement getRestartRequirement() {
+			return ConfigValueRestartRequirement.NONE;
 		}
 
 		@Override

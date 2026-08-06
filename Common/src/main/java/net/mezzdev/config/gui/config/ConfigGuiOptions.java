@@ -5,6 +5,7 @@ import net.mezzdev.config.api.schema.IConfigCategoryBuilder;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.schema.IConfigSchemaBuilder;
 import net.mezzdev.config.api.value.ConfigValueEditMode;
+import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IConfigValue;
 import org.jetbrains.annotations.Nullable;
 
@@ -112,7 +113,8 @@ public final class ConfigGuiOptions {
 
 		IConfigCategoryBuilder advanced = schemaBuilder.addCategory("advanced");
 		enableNativeConfigDiscovery = advanced.addBoolean("enableNativeConfigDiscovery", true)
-			.setEditMode(ConfigValueEditMode.RESTART)
+			.setEditMode(ConfigValueEditMode.BATCH)
+			.setRestartRequirement(ConfigValueRestartRequirement.GAME_RESTART)
 			.build();
 		discoveryLogging = advanced.addEnum("discoveryLogging", DiscoveryLogging.WARNINGS)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)

@@ -6,6 +6,7 @@ import net.mezzdev.config.api.schema.IConfigCategoryBuilder;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.schema.IConfigSchemaBuilder;
 import net.mezzdev.config.api.value.ConfigValueEditMode;
+import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigGuiRegistration;
 import net.minecraft.network.chat.Component;
@@ -33,7 +34,8 @@ public final class FabricMezzConfigDefaultsTestPlugin implements IConfigPlugin, 
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 		general.addBoolean("requiresRestart", false)
-			.setEditMode(ConfigValueEditMode.RESTART)
+			.setEditMode(ConfigValueEditMode.BATCH)
+			.setRestartRequirement(ConfigValueRestartRequirement.GAME_RESTART)
 			.build();
 		general.addBooleanList("enabledHistory", List.of(true, false, true)).build();
 

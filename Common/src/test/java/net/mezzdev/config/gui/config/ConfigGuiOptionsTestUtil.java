@@ -2,6 +2,7 @@ package net.mezzdev.config.gui.config;
 
 import net.mezzdev.config.api.schema.IConfigEditorCategory;
 import net.mezzdev.config.api.value.ConfigValueEditMode;
+import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IDeserializeResult;
 import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.api.value.IConfigValueBatchChangeListener;
@@ -90,6 +91,11 @@ public final class ConfigGuiOptionsTestUtil {
 		@Override
 		public ConfigValueEditMode getEditMode() {
 			return ConfigValueEditMode.BATCH;
+		}
+
+		@Override
+		public ConfigValueRestartRequirement getRestartRequirement() {
+			return ConfigValueRestartRequirement.NONE;
 		}
 
 		@Override

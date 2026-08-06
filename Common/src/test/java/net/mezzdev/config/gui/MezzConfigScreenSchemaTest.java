@@ -5,6 +5,7 @@ import net.mezzdev.config.api.schema.IConfigCategory;
 import net.mezzdev.config.api.schema.IConfigEditorCategory;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.value.ConfigValueEditMode;
+import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IAppliedConfigValueChange;
 import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.api.value.IConfigValueBatchChangeListener;
@@ -31,20 +32,34 @@ class MezzConfigScreenSchemaTest {
 	void configValueUsesMezzConfigEditMode() {
 		IConfigScreenValue<String> immediateValue = IConfigScreenValue.configValue(new TestConfigValue("immediate", ConfigValueEditMode.IMMEDIATE));
 		IConfigScreenValue<String> batchValue = IConfigScreenValue.configValue(new TestConfigValue("batch", ConfigValueEditMode.BATCH));
-		IConfigScreenValue<String> restartValue = IConfigScreenValue.configValue(new TestConfigValue("restart", ConfigValueEditMode.RESTART));
 
 		assertEquals(ConfigValueApplyMode.IMMEDIATE, immediateValue.getApplyMode());
-		assertFalse(immediateValue.requiresRestart());
 		assertEquals(ConfigValueApplyMode.ON_APPLY, batchValue.getApplyMode());
-		assertFalse(batchValue.requiresRestart());
-		assertEquals(ConfigValueApplyMode.ON_APPLY, restartValue.getApplyMode());
-		assertTrue(restartValue.requiresRestart());
+	}
+
+	@Test
+	void configValueUsesMezzConfigRestartRequirement() {
+		IConfigScreenValue<String> noRestartValue = IConfigScreenValue.configValue(new TestConfigValue("noRestart", ConfigValueEditMode.BATCH));
+		IConfigScreenValue<String> worldRestartValue = IConfigScreenValue.configValue(new TestConfigValue(
+			"worldRestart",
+			ConfigValueEditMode.BATCH,
+			ConfigValueRestartRequirement.WORLD_RESTART
+		));
+		IConfigScreenValue<String> gameRestartValue = IConfigScreenValue.configValue(new TestConfigValue(
+			"restart",
+			ConfigValueEditMode.BATCH,
+			ConfigValueRestartRequirement.GAME_RESTART
+		));
+
+		assertFalse(noRestartValue.requiresRestart());
+		assertTrue(worldRestartValue.requiresRestart());
+		assertTrue(gameRestartValue.requiresRestart());
 	}
 
 	@Test
 	void explicitApplyModeKeepsMezzConfigRestartRequirement() {
 		IConfigScreenValue<String> restartValue = IConfigScreenValue.configValue(
-			new TestConfigValue("restart", ConfigValueEditMode.RESTART),
+			new TestConfigValue("restart", ConfigValueEditMode.BATCH, ConfigValueRestartRequirement.GAME_RESTART),
 			ConfigValueApplyMode.IMMEDIATE
 		);
 
@@ -187,10 +202,19 @@ class MezzConfigScreenSchemaTest {
 	private record TestConfigValue(
 		String name,
 		ConfigValueEditMode editMode,
+		ConfigValueRestartRequirement restartRequirement,
 		List<IConfigEditorCategory> editorCategories
 	) implements IConfigValue<String> {
 		private TestConfigValue(String name, ConfigValueEditMode editMode) {
-			this(name, editMode, List.of());
+			this(name, editMode, ConfigValueRestartRequirement.NONE, List.of());
+		}
+
+		private TestConfigValue(String name, ConfigValueEditMode editMode, ConfigValueRestartRequirement restartRequirement) {
+			this(name, editMode, restartRequirement, List.of());
+		}
+
+		private TestConfigValue(String name, ConfigValueEditMode editMode, List<IConfigEditorCategory> editorCategories) {
+			this(name, editMode, ConfigValueRestartRequirement.NONE, editorCategories);
 		}
 
 		private TestConfigValue {
@@ -220,6 +244,11 @@ class MezzConfigScreenSchemaTest {
 		@Override
 		public ConfigValueEditMode getEditMode() {
 			return editMode;
+		}
+
+		@Override
+		public ConfigValueRestartRequirement getRestartRequirement() {
+			return restartRequirement;
 		}
 
 		@Override

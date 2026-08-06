@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui.api;
 
 import net.mezzdev.config.api.value.ConfigValueEditMode;
+import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 
@@ -29,7 +30,8 @@ public interface IConfigScreenValue<T> {
 	static <T> IConfigScreenValue<T> configValue(IConfigValue<T> configValue) {
 		IConfigValue<T> checkedConfigValue = Objects.requireNonNull(configValue, "configValue");
 		ConfigValueEditMode editMode = Objects.requireNonNull(checkedConfigValue.getEditMode(), "configValue editMode");
-		return configValue(checkedConfigValue, getApplyMode(editMode), requiresRestart(editMode));
+		ConfigValueRestartRequirement restartRequirement = Objects.requireNonNull(checkedConfigValue.getRestartRequirement(), "configValue restartRequirement");
+		return configValue(checkedConfigValue, getApplyMode(editMode), requiresRestart(restartRequirement));
 	}
 
 	/**
@@ -39,19 +41,22 @@ public interface IConfigScreenValue<T> {
 	 */
 	static <T> IConfigScreenValue<T> configValue(IConfigValue<T> configValue, ConfigValueApplyMode applyMode) {
 		IConfigValue<T> checkedConfigValue = Objects.requireNonNull(configValue, "configValue");
-		ConfigValueEditMode editMode = Objects.requireNonNull(checkedConfigValue.getEditMode(), "configValue editMode");
-		return configValue(checkedConfigValue, applyMode, requiresRestart(editMode));
+		ConfigValueRestartRequirement restartRequirement = Objects.requireNonNull(checkedConfigValue.getRestartRequirement(), "configValue restartRequirement");
+		return configValue(checkedConfigValue, applyMode, requiresRestart(restartRequirement));
 	}
 
 	private static ConfigValueApplyMode getApplyMode(ConfigValueEditMode editMode) {
 		return switch (editMode) {
 			case IMMEDIATE -> ConfigValueApplyMode.IMMEDIATE;
-			case BATCH, RESTART -> ConfigValueApplyMode.ON_APPLY;
+			case BATCH -> ConfigValueApplyMode.ON_APPLY;
 		};
 	}
 
-	private static boolean requiresRestart(ConfigValueEditMode editMode) {
-		return editMode == ConfigValueEditMode.RESTART;
+	private static boolean requiresRestart(ConfigValueRestartRequirement restartRequirement) {
+		return switch (restartRequirement) {
+			case NONE -> false;
+			case WORLD_RESTART, GAME_RESTART -> true;
+		};
 	}
 
 	/**
