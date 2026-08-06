@@ -40,6 +40,11 @@ final class ConfigScreenView {
 	private static final int CONTROL_DISABLED_ICON_COLOR = 0xFFA0A0A0;
 	private static final int ACTION_ICON_LINE_LENGTH = 8;
 	private static final int ACTION_ICON_STROKE_SIZE = 2;
+	private static final int RESIZE_GRIP_SIZE = 11;
+	private static final int RESIZE_GRIP_LINE_GAP = 3;
+	private static final int RESIZE_EDGE_HIGHLIGHT_SIZE = 2;
+	private static final int RESIZE_GRIP_COLOR = 0x45FFFFFF;
+	private static final int RESIZE_HANDLE_HOVER_COLOR = 0x80FFFFFF;
 	private static final int VALUE_AREA_BACKGROUND_COLOR = 0x82000000;
 	private static final int INSET_BORDER_DARK_COLOR = 0xB0000000;
 	private static final int INSET_BORDER_LIGHT_COLOR = 0x35FFFFFF;
@@ -82,6 +87,7 @@ final class ConfigScreenView {
 	) {
 		Font font = Minecraft.getInstance().font;
 		ImmutableRect2i area = layout.getArea();
+		ConfigScreenLayout.ResizeHandle resizeHandle = layout.getResizeHandle(mouseX, mouseY);
 		ImmutableRect2i titleArea = layout.getTitleTextArea();
 		ImmutableRect2i navArea = layout.getNavArea();
 		ImmutableRect2i contentArea = layout.getContentArea();
@@ -102,10 +108,18 @@ final class ConfigScreenView {
 			mouseY
 		);
 		@Nullable
-		ConfigInfo hoveredControlInfo = getControlInfo(searchBackgroundArea, applyPendingChangesButtonArea, undoChangesButtonArea, mouseX, mouseY);
+		ConfigInfo hoveredControlInfo = getControlInfo(
+			searchBackgroundArea,
+			applyPendingChangesButtonArea,
+			undoChangesButtonArea,
+			resizeHandle,
+			mouseX,
+			mouseY
+		);
 
 		guiGraphics.pose().pushPose();
 		background.draw(guiGraphics, area);
+		drawResizeHandles(guiGraphics, area, resizeHandle);
 		drawTitle(guiGraphics, font, titleArea, title);
 		drawActionButtons(guiGraphics, applyPendingChangesButtonArea, undoChangesButtonArea, mouseX, mouseY);
 		drawNavBackground(guiGraphics, navArea);
@@ -236,6 +250,65 @@ final class ConfigScreenView {
 		);
 	}
 
+	private static void drawResizeHandles(GuiGraphics guiGraphics, ImmutableRect2i area, ConfigScreenLayout.ResizeHandle resizeHandle) {
+		if (area.isEmpty()) {
+			return;
+		}
+		drawResizeGrip(guiGraphics, area, resizeHandle == ConfigScreenLayout.ResizeHandle.BOTTOM_RIGHT);
+		if (resizeHandle == ConfigScreenLayout.ResizeHandle.NONE) {
+			return;
+		}
+		drawResizeEdgeHighlight(guiGraphics, area, resizeHandle);
+	}
+
+	private static void drawResizeGrip(GuiGraphics guiGraphics, ImmutableRect2i area, boolean hovered) {
+		int color = getResizeGripColor(hovered);
+		int right = area.getX() + area.getWidth() - 4;
+		int bottom = area.getY() + area.getHeight() - 4;
+		for (int i = 0; i < 3; i++) {
+			int lineLength = RESIZE_GRIP_SIZE - i * RESIZE_GRIP_LINE_GAP;
+			int lineRight = right - i * RESIZE_GRIP_LINE_GAP;
+			drawResizeGripLine(guiGraphics, lineRight - lineLength, bottom, lineRight, bottom - lineLength, color);
+		}
+	}
+
+	private static int getResizeGripColor(boolean hovered) {
+		if (hovered) {
+			return RESIZE_HANDLE_HOVER_COLOR;
+		}
+		return RESIZE_GRIP_COLOR;
+	}
+
+	private static void drawResizeGripLine(GuiGraphics guiGraphics, int x1, int y1, int x2, int y2, int color) {
+		int length = Math.min(x2 - x1, y1 - y2);
+		for (int i = 0; i <= length; i++) {
+			guiGraphics.fill(x1 + i, y1 - i, x1 + i + 1, y1 - i + 1, color);
+		}
+	}
+
+	private static void drawResizeEdgeHighlight(
+		GuiGraphics guiGraphics,
+		ImmutableRect2i area,
+		ConfigScreenLayout.ResizeHandle resizeHandle
+	) {
+		int x = area.getX();
+		int y = area.getY();
+		int right = x + area.getWidth();
+		int bottom = y + area.getHeight();
+		if (resizeHandle.left()) {
+			guiGraphics.fill(x, y, x + RESIZE_EDGE_HIGHLIGHT_SIZE, bottom, RESIZE_HANDLE_HOVER_COLOR);
+		}
+		if (resizeHandle.right()) {
+			guiGraphics.fill(right - RESIZE_EDGE_HIGHLIGHT_SIZE, y, right, bottom, RESIZE_HANDLE_HOVER_COLOR);
+		}
+		if (resizeHandle.top()) {
+			guiGraphics.fill(x, y, right, y + RESIZE_EDGE_HIGHLIGHT_SIZE, RESIZE_HANDLE_HOVER_COLOR);
+		}
+		if (resizeHandle.bottom()) {
+			guiGraphics.fill(x, bottom - RESIZE_EDGE_HIGHLIGHT_SIZE, right, bottom, RESIZE_HANDLE_HOVER_COLOR);
+		}
+	}
+
 	private static void drawNavBackground(GuiGraphics guiGraphics, ImmutableRect2i navArea) {
 		guiGraphics.fill(
 			navArea.getX(),
@@ -334,11 +407,13 @@ final class ConfigScreenView {
 			contentArea.getX() + contentArea.getWidth(),
 			contentArea.getY() + contentArea.getHeight()
 		);
+		int rowIndex = 0;
 		for (ConfigEntryWidget<?> entryWidget : controller.getVisibleEntryWidgets()) {
 			if (entryWidget.getArea().equals(ImmutableRect2i.EMPTY)) {
 				continue;
 			}
-			entryWidget.draw(guiGraphics, mouseX, mouseY, allowEntryHover);
+			entryWidget.draw(guiGraphics, mouseX, mouseY, allowEntryHover, rowIndex);
+			rowIndex++;
 			if (allowEntryHover && contentArea.contains(mouseX, mouseY) && entryWidget.isMouseOver(mouseX, mouseY)) {
 				hoveredEntryInfo = entryWidget.getInfo(mouseX, mouseY);
 			}
@@ -446,9 +521,13 @@ final class ConfigScreenView {
 		ImmutableRect2i searchBackgroundArea,
 		ImmutableRect2i applyPendingChangesButtonArea,
 		ImmutableRect2i undoChangesButtonArea,
+		ConfigScreenLayout.ResizeHandle resizeHandle,
 		int mouseX,
 		int mouseY
 	) {
+		if (resizeHandle != ConfigScreenLayout.ResizeHandle.NONE) {
+			return getResizeInfo();
+		}
 		if (searchBackgroundArea.contains(mouseX, mouseY)) {
 			return getSearchInfo();
 		}
@@ -496,6 +575,13 @@ final class ConfigScreenView {
 			return "mezz_config.config.screen.applyPending.info";
 		}
 		return "mezz_config.config.screen.applyPending.disabled.info";
+	}
+
+	private static ConfigInfo getResizeInfo() {
+		return new ConfigInfo(
+			Component.translatable("mezz_config.config.screen.resize.title"),
+			Component.translatable("mezz_config.config.screen.resize.info")
+		);
 	}
 
 	private void drawInfoPanel(GuiGraphics guiGraphics, Font font, @Nullable ConfigInfo info) {

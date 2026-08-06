@@ -12,19 +12,61 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigScreenLayoutOptionsTest {
 	@Test
-	void guiSizeOptionControlsScreenBounds() {
+	void smallGuiSizeOptionControlsScreenBounds() {
 		ConfigScreenLayout layout = new ConfigScreenLayout();
 		EditBox searchBox = createSearchBox();
 
-		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("guiSize", ConfigGuiOptions.GuiSize.WIDE)) {
+		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("guiSize", ConfigGuiOptions.GuiSize.SMALL)) {
 			layout.updateScreenBounds(1000, 800, searchBox);
 		}
 
 		ImmutableRect2i area = layout.getArea();
-		assertEquals(560, area.getWidth());
-		assertEquals(420, area.getHeight());
-		assertEquals(220, area.getX());
-		assertEquals(190, area.getY());
+		assertEquals(340, area.getWidth());
+		assertEquals(260, area.getHeight());
+		assertEquals(330, area.getX());
+		assertEquals(270, area.getY());
+	}
+
+	@Test
+	void fullscreenGuiSizeOptionFillsScreenBounds() {
+		ConfigScreenLayout layout = new ConfigScreenLayout();
+		EditBox searchBox = createSearchBox();
+
+		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("guiSize", ConfigGuiOptions.GuiSize.FULLSCREEN)) {
+			layout.updateScreenBounds(1000, 800, searchBox);
+		}
+
+		ImmutableRect2i area = layout.getArea();
+		assertEquals(1000, area.getWidth());
+		assertEquals(800, area.getHeight());
+		assertEquals(0, area.getX());
+		assertEquals(0, area.getY());
+	}
+
+	@Test
+	void draggingResizeHandleUpdatesScreenBounds() {
+		ConfigScreenLayout layout = new ConfigScreenLayout();
+		EditBox searchBox = createSearchBox();
+
+		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("guiSize", ConfigGuiOptions.GuiSize.MEDIUM)) {
+			layout.updateScreenBounds(1000, 800, searchBox);
+		}
+
+		ImmutableRect2i area = layout.getArea();
+		double resizeX = area.getX() + area.getWidth() - 1;
+		double resizeY = area.getY() + area.getHeight() - 1;
+		assertEquals(ConfigScreenLayout.ResizeHandle.BOTTOM_RIGHT, layout.getResizeHandle(resizeX, resizeY));
+
+		assertTrue(layout.startResizeDrag(resizeX, resizeY));
+		assertTrue(layout.dragResize(area.getX() + area.getWidth() + 80, area.getY() + area.getHeight() + 60, 1000, 800));
+		layout.updateScreenBounds(1000, 800, searchBox);
+
+		ImmutableRect2i resizedArea = layout.getArea();
+		assertEquals(area.getX(), resizedArea.getX());
+		assertEquals(area.getY(), resizedArea.getY());
+		assertEquals(area.getWidth() + 80, resizedArea.getWidth());
+		assertEquals(area.getHeight() + 60, resizedArea.getHeight());
+		assertTrue(layout.stopResizeDrag());
 	}
 
 	@Test

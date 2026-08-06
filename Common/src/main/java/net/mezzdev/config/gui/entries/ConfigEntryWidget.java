@@ -47,6 +47,8 @@ public abstract class ConfigEntryWidget<T> {
 	private static final int RESET_BUTTON_SIZE = 18;
 	private static final int RESET_BUTTON_RIGHT_PADDING = 2;
 	protected static final int VALUE_CONTROL_RIGHT_RESERVE = RESET_BUTTON_SIZE + RESET_BUTTON_RIGHT_PADDING + 2;
+	private static final int ROW_STRIPE_LIGHT_COLOR = 0x08FFFFFF;
+	private static final int ROW_STRIPE_DARK_COLOR = 0x08000000;
 	private static final int ROW_HOVER_COLOR = 0x18FFFFFF;
 	private static final int PENDING_BACKGROUND_COLOR = 0x302F5F8E;
 	private static final int PENDING_ACCENT_COLOR = 0xFF5E9AD6;
@@ -238,6 +240,11 @@ public abstract class ConfigEntryWidget<T> {
 	}
 
 	public void draw(GuiGraphics guiGraphics, double mouseX, double mouseY, boolean allowHover) {
+		draw(guiGraphics, mouseX, mouseY, allowHover, -1);
+	}
+
+	public void draw(GuiGraphics guiGraphics, double mouseX, double mouseY, boolean allowHover, int rowIndex) {
+		drawRowStripe(guiGraphics, rowIndex);
 		if (allowHover && area.contains(mouseX, mouseY)) {
 			guiGraphics.fill(
 				area.getX() + 1,
@@ -271,6 +278,27 @@ public abstract class ConfigEntryWidget<T> {
 		}
 		drawContent(guiGraphics, drawMouseX, drawMouseY);
 		drawResetButton(guiGraphics, drawMouseX, drawMouseY);
+	}
+
+	private void drawRowStripe(GuiGraphics guiGraphics, int rowIndex) {
+		if (rowIndex < 0 || !ConfigGuiOptions.showRowStriping()) {
+			return;
+		}
+		int color = getRowStripeColor(rowIndex);
+		guiGraphics.fill(
+			area.getX() + 1,
+			area.getY(),
+			area.getX() + area.getWidth() - 1,
+			area.getY() + area.getHeight(),
+			color
+		);
+	}
+
+	private static int getRowStripeColor(int rowIndex) {
+		if (rowIndex % 2 == 0) {
+			return ROW_STRIPE_LIGHT_COLOR;
+		}
+		return ROW_STRIPE_DARK_COLOR;
 	}
 
 	private void drawResetButton(GuiGraphics guiGraphics, double mouseX, double mouseY) {

@@ -3,8 +3,9 @@
 ## Planned options
 
 - [x] Add MezzConfigGui's own MezzConfig file and config screen.
-- [x] GUI size: `AUTO`, `COMPACT`, `WIDE`.
+- [x] GUI size: `SMALL`, `MEDIUM`, `FULLSCREEN`.
 - [x] Row density: `COMFORTABLE`, `COMPACT`.
+- [x] Subtle horizontal row coloring.
 - [x] Remember last category per mod.
 - [x] Search descriptions.
 - [x] Focus search on open.

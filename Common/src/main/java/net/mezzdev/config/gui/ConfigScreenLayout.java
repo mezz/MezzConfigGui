@@ -4,6 +4,7 @@ import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.util.Mth;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Calculates and stores screen rectangles, scroll state, and scrollbar positions.
@@ -28,6 +29,9 @@ public final class ConfigScreenLayout {
 	private static final int MIN_SCROLL_MARKER_HEIGHT = 10;
 	private static final int SCROLL_MARKER_TRACK_INSET = 1;
 	private static final int DRAG_SCROLL_EDGE_SIZE = 20;
+	private static final int RESIZE_HANDLE_SIZE = 5;
+	private static final int MIN_RESIZABLE_WIDTH = 320;
+	private static final int MIN_RESIZABLE_HEIGHT = 230;
 	private static final double SCROLL_LERP = 0.35;
 
 	private ImmutableRect2i area = ImmutableRect2i.EMPTY;
@@ -42,6 +46,10 @@ public final class ConfigScreenLayout {
 	private ImmutableRect2i scrollBarArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i infoArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i contentWithScrollArea = ImmutableRect2i.EMPTY;
+	@Nullable
+	private ImmutableRect2i customArea;
+	@Nullable
+	private ResizeDragSession resizeDragSession;
 
 	private int totalContentHeight = 0;
 	private double targetScrollY = 0;
@@ -58,12 +66,7 @@ public final class ConfigScreenLayout {
 	private boolean navScrollBarVisible = false;
 
 	public void updateScreenBounds(int screenWidth, int screenHeight, EditBox searchBox) {
-		ConfigGuiOptions.GuiSize guiSize = ConfigGuiOptions.getGuiSize();
-		int guiWidth = guiSize.getWidth(screenWidth);
-		int guiHeight = guiSize.getHeight(screenHeight);
-		int guiLeft = (screenWidth - guiWidth) / 2;
-		int guiTop = (screenHeight - guiHeight) / 2;
-		area = new ImmutableRect2i(guiLeft, guiTop, guiWidth, guiHeight);
+		area = getScreenArea(screenWidth, screenHeight);
 
 		ImmutableRect2i innerArea = area.insetBy(BORDER_PADDING);
 		titleArea = innerArea.keepTop(TITLE_HEIGHT);
@@ -87,6 +90,21 @@ public final class ConfigScreenLayout {
 		searchBox.setHeight(SEARCH_HEIGHT);
 
 		updateContentAndScrollBarAreas();
+	}
+
+	private ImmutableRect2i getScreenArea(int screenWidth, int screenHeight) {
+		ImmutableRect2i customArea = this.customArea;
+		if (customArea != null) {
+			ImmutableRect2i clampedArea = clampResizableArea(customArea, screenWidth, screenHeight);
+			this.customArea = clampedArea;
+			return clampedArea;
+		}
+		ConfigGuiOptions.GuiSize guiSize = ConfigGuiOptions.getGuiSize();
+		int guiWidth = guiSize.getWidth(screenWidth);
+		int guiHeight = guiSize.getHeight(screenHeight);
+		int guiLeft = (screenWidth - guiWidth) / 2;
+		int guiTop = (screenHeight - guiHeight) / 2;
+		return new ImmutableRect2i(guiLeft, guiTop, guiWidth, guiHeight);
 	}
 
 	public ImmutableRect2i getArea() {
@@ -138,6 +156,56 @@ public final class ConfigScreenLayout {
 
 	public ImmutableRect2i getInfoArea() {
 		return infoArea;
+	}
+
+	public ResizeHandle getResizeHandle(double mouseX, double mouseY) {
+		if (area.isEmpty() || !isInResizeArea(mouseX, mouseY)) {
+			return ResizeHandle.NONE;
+		}
+		boolean left = mouseX < area.getX() + RESIZE_HANDLE_SIZE;
+		boolean right = mouseX >= area.getX() + area.getWidth() - RESIZE_HANDLE_SIZE;
+		boolean top = mouseY < area.getY() + RESIZE_HANDLE_SIZE;
+		boolean bottom = mouseY >= area.getY() + area.getHeight() - RESIZE_HANDLE_SIZE;
+		return ResizeHandle.get(left, right, top, bottom);
+	}
+
+	private boolean isInResizeArea(double mouseX, double mouseY) {
+		return mouseX >= area.getX() &&
+			mouseY >= area.getY() &&
+			mouseX < area.getX() + area.getWidth() &&
+			mouseY < area.getY() + area.getHeight();
+	}
+
+	public boolean startResizeDrag(double mouseX, double mouseY) {
+		ResizeHandle resizeHandle = getResizeHandle(mouseX, mouseY);
+		if (resizeHandle == ResizeHandle.NONE) {
+			return false;
+		}
+		resizeDragSession = new ResizeDragSession(resizeHandle, area);
+		return true;
+	}
+
+	public boolean dragResize(double mouseX, double mouseY, int screenWidth, int screenHeight) {
+		ResizeDragSession session = resizeDragSession;
+		if (session == null) {
+			return false;
+		}
+		ImmutableRect2i resizedArea = session.resize(mouseX, mouseY, screenWidth, screenHeight);
+		if (resizedArea.equals(customArea)) {
+			return false;
+		}
+		customArea = resizedArea;
+		return true;
+	}
+
+	public boolean isResizing() {
+		return resizeDragSession != null;
+	}
+
+	public boolean stopResizeDrag() {
+		boolean wasResizing = resizeDragSession != null;
+		resizeDragSession = null;
+		return wasResizing;
 	}
 
 	public ImmutableRect2i getScrollMarkerArea() {
@@ -493,5 +561,115 @@ public final class ConfigScreenLayout {
 		navTargetScrollY = Mth.clamp(navTargetScrollY, 0, maxNavScroll);
 		navCurrentScrollY = Mth.clamp(navCurrentScrollY, 0, maxNavScroll);
 		return oldTarget != navTargetScrollY || oldCurrent != navCurrentScrollY;
+	}
+
+	private static ImmutableRect2i clampResizableArea(ImmutableRect2i area, int screenWidth, int screenHeight) {
+		int maxWidth = Math.max(1, screenWidth);
+		int maxHeight = Math.max(1, screenHeight);
+		int minWidth = Math.min(MIN_RESIZABLE_WIDTH, maxWidth);
+		int minHeight = Math.min(MIN_RESIZABLE_HEIGHT, maxHeight);
+		int width = Math.clamp(area.getWidth(), minWidth, maxWidth);
+		int height = Math.clamp(area.getHeight(), minHeight, maxHeight);
+		int x = Math.clamp(area.getX(), 0, maxWidth - width);
+		int y = Math.clamp(area.getY(), 0, maxHeight - height);
+		return new ImmutableRect2i(x, y, width, height);
+	}
+
+	public enum ResizeHandle {
+		NONE(false, false, false, false),
+		LEFT(true, false, false, false),
+		RIGHT(false, true, false, false),
+		TOP(false, false, true, false),
+		BOTTOM(false, false, false, true),
+		TOP_LEFT(true, false, true, false),
+		TOP_RIGHT(false, true, true, false),
+		BOTTOM_LEFT(true, false, false, true),
+		BOTTOM_RIGHT(false, true, false, true);
+
+		private final boolean left;
+		private final boolean right;
+		private final boolean top;
+		private final boolean bottom;
+
+		ResizeHandle(boolean left, boolean right, boolean top, boolean bottom) {
+			this.left = left;
+			this.right = right;
+			this.top = top;
+			this.bottom = bottom;
+		}
+
+		static ResizeHandle get(boolean left, boolean right, boolean top, boolean bottom) {
+			if (left && top) {
+				return TOP_LEFT;
+			}
+			if (right && top) {
+				return TOP_RIGHT;
+			}
+			if (left && bottom) {
+				return BOTTOM_LEFT;
+			}
+			if (right && bottom) {
+				return BOTTOM_RIGHT;
+			}
+			if (left) {
+				return LEFT;
+			}
+			if (right) {
+				return RIGHT;
+			}
+			if (top) {
+				return TOP;
+			}
+			if (bottom) {
+				return BOTTOM;
+			}
+			return NONE;
+		}
+
+		boolean left() {
+			return left;
+		}
+
+		boolean right() {
+			return right;
+		}
+
+		boolean top() {
+			return top;
+		}
+
+		boolean bottom() {
+			return bottom;
+		}
+	}
+
+	private record ResizeDragSession(
+		ResizeHandle resizeHandle,
+		ImmutableRect2i startArea
+	) {
+		private ImmutableRect2i resize(double mouseX, double mouseY, int screenWidth, int screenHeight) {
+			int maxWidth = Math.max(1, screenWidth);
+			int maxHeight = Math.max(1, screenHeight);
+			int minWidth = Math.min(MIN_RESIZABLE_WIDTH, maxWidth);
+			int minHeight = Math.min(MIN_RESIZABLE_HEIGHT, maxHeight);
+			int left = startArea.getX();
+			int top = startArea.getY();
+			int right = startArea.getX() + startArea.getWidth();
+			int bottom = startArea.getY() + startArea.getHeight();
+
+			if (resizeHandle.left()) {
+				left = Math.clamp((int) Math.round(mouseX), 0, right - minWidth);
+			}
+			if (resizeHandle.right()) {
+				right = Math.clamp((int) Math.round(mouseX), left + minWidth, maxWidth);
+			}
+			if (resizeHandle.top()) {
+				top = Math.clamp((int) Math.round(mouseY), 0, bottom - minHeight);
+			}
+			if (resizeHandle.bottom()) {
+				bottom = Math.clamp((int) Math.round(mouseY), top + minHeight, maxHeight);
+			}
+			return clampResizableArea(new ImmutableRect2i(left, top, right - left, bottom - top), screenWidth, screenHeight);
+		}
 	}
 }

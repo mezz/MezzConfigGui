@@ -450,6 +450,10 @@ public class ConfigScreen extends Screen {
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		if (button == 0 && layout.startResizeDrag(mouseX, mouseY)) {
+			flushPendingInput();
+			return true;
+		}
 		if (button == 0 && isActionButton(mouseX, mouseY)) {
 			return true;
 		}
@@ -477,6 +481,9 @@ public class ConfigScreen extends Screen {
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		if (button == 0 && layout.stopResizeDrag()) {
+			return true;
+		}
 		if (button == 0 && (controller.stopContentScrollDrag() || controller.stopNavScrollDrag())) {
 			return true;
 		}
@@ -525,6 +532,12 @@ public class ConfigScreen extends Screen {
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+		if (button == 0 && layout.isResizing()) {
+			if (layout.dragResize(mouseX, mouseY, width, height)) {
+				refreshLayout();
+			}
+			return true;
+		}
 		if (button == 0 && controller.dragContentScroll(mouseY)) {
 			return true;
 		}

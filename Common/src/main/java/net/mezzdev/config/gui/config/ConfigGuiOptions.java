@@ -24,6 +24,8 @@ public final class ConfigGuiOptions {
 	@Nullable
 	private static IConfigValue<RowDensity> rowDensity;
 	@Nullable
+	private static IConfigValue<Boolean> showRowStriping;
+	@Nullable
 	private static IConfigValue<Boolean> rememberLastCategory;
 	@Nullable
 	private static IConfigValue<Boolean> searchDescriptions;
@@ -57,11 +59,14 @@ public final class ConfigGuiOptions {
 	public static void register(IConfigRegistration registration) {
 		IConfigSchemaBuilder schemaBuilder = registration.createSchemaBuilder(CONFIG_FILE_NAME, LOCALIZATION_PATH);
 		IConfigCategoryBuilder appearance = schemaBuilder.addCategory("appearance");
-		guiSize = appearance.addEnum("guiSize", GuiSize.AUTO)
+		guiSize = appearance.addEnum("guiSize", GuiSize.MEDIUM)
 			.setEditMode(ConfigValueEditMode.BATCH)
 			.build();
 		rowDensity = appearance.addEnum("rowDensity", RowDensity.COMFORTABLE)
 			.setEditMode(ConfigValueEditMode.BATCH)
+			.build();
+		showRowStriping = appearance.addBoolean("showRowStriping", true)
+			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 		showAdvancedValueDetails = appearance.addBoolean("showAdvancedValueDetails", false)
 			.setEditMode(ConfigValueEditMode.BATCH)
@@ -124,11 +129,15 @@ public final class ConfigGuiOptions {
 	}
 
 	public static GuiSize getGuiSize() {
-		return getValue(guiSize, GuiSize.AUTO);
+		return getValue(guiSize, GuiSize.MEDIUM);
 	}
 
 	public static RowDensity getRowDensity() {
 		return getValue(rowDensity, RowDensity.COMFORTABLE);
+	}
+
+	public static boolean showRowStriping() {
+		return getValue(showRowStriping, true);
 	}
 
 	public static boolean rememberLastCategory() {
@@ -191,9 +200,19 @@ public final class ConfigGuiOptions {
 	}
 
 	public enum GuiSize {
-		AUTO(320, 380, 230, 300),
-		COMPACT(320, 340, 230, 260),
-		WIDE(420, 560, 260, 420);
+		SMALL(320, 340, 230, 260),
+		MEDIUM(320, 380, 230, 300),
+		FULLSCREEN(0, 0, 0, 0) {
+			@Override
+			public int getWidth(int screenWidth) {
+				return screenWidth;
+			}
+
+			@Override
+			public int getHeight(int screenHeight) {
+				return screenHeight;
+			}
+		};
 
 		private final int minWidth;
 		private final int maxWidth;

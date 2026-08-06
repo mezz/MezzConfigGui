@@ -58,6 +58,9 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	private static final int ORDERED_GROUP_BORDER_LIGHT_COLOR = 0x24FFFFFF;
 	private static final int ORDERED_ROW_BACKGROUND_COLOR = 0x1E000000;
 	private static final int ORDERED_ROW_DRAG_GAP_COLOR = 0x28000000;
+	private static final int ORDERED_ROW_DROP_TARGET_COLOR = 0x52000000;
+	private static final int ORDERED_ROW_MOVED_BACKGROUND_COLOR = 0x285E9AD6;
+	private static final int ORDERED_ROW_MOVED_ACCENT_COLOR = 0xFF7DB6F2;
 	private static final int ORDERED_ROW_DRAG_FLOAT_BACKGROUND_COLOR = 0xFF404A59;
 	private static final int ORDERED_ROW_DRAG_FLOAT_SHADOW_COLOR = 0x70000000;
 	private static final int ORDERED_ROW_DRAG_FLOAT_BORDER_COLOR = 0xD0D7E6FF;
@@ -80,6 +83,9 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	private ImmutableRect2i addValueButtonArea = ImmutableRect2i.EMPTY;
 	@Nullable
 	private DragSession dragSession;
+	@Nullable
+	private T recentlyMovedValue;
+	private int recentlyMovedIndex = -1;
 	private boolean addingValue;
 	private String addValueText = "";
 
@@ -237,11 +243,12 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			if (dragSession != null && dragSession.isDragging(row)) {
 				row.drawDragGap(guiGraphics);
 			} else {
-				row.draw(guiGraphics, mouseX, mouseY);
+				boolean dropTarget = dragSession != null && dragSession.isDropTarget(row);
+				row.draw(guiGraphics, mouseX, mouseY, dropTarget, isRecentlyMoved(row));
 			}
 		}
 		for (ListValueRow row : unusedValueRows) {
-			row.draw(guiGraphics, mouseX, mouseY);
+			row.draw(guiGraphics, mouseX, mouseY, false, false);
 		}
 		drawAddValueRow(guiGraphics, mouseX, mouseY);
 		if (dragSession != null) {
@@ -515,6 +522,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	}
 
 	private void addValue(T value) {
+		clearRecentlyMovedValue();
 		List<T> current = new ArrayList<>(getValue());
 		current.add(value);
 		setValue(current);
@@ -582,8 +590,11 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		List<T> current = new ArrayList<>(getValue());
 		int newIndex = index + offset;
 		if (index >= 0 && index < current.size() && newIndex >= 0 && newIndex < current.size()) {
+			T movedValue = current.get(index);
 			Collections.swap(current, index, newIndex);
-			setValue(current);
+			if (setValue(current)) {
+				markRecentlyMovedValue(movedValue, newIndex);
+			}
 		}
 	}
 
@@ -594,7 +605,28 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		}
 		T value = current.remove(sourceIndex);
 		current.add(targetIndex, value);
-		return setValue(current);
+		boolean changed = setValue(current);
+		if (changed) {
+			markRecentlyMovedValue(value, targetIndex);
+		}
+		return changed;
+	}
+
+	private void markRecentlyMovedValue(T value, int index) {
+		recentlyMovedValue = value;
+		recentlyMovedIndex = index;
+	}
+
+	private void clearRecentlyMovedValue() {
+		recentlyMovedValue = null;
+		recentlyMovedIndex = -1;
+	}
+
+	private boolean isRecentlyMoved(ListValueRow row) {
+		return row.selected &&
+			row.index == recentlyMovedIndex &&
+			recentlyMovedValue != null &&
+			recentlyMovedValue.equals(row.value);
 	}
 
 	private static boolean isIndexValid(List<?> values, int index) {
@@ -696,6 +728,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	}
 
 	private void removeValue(int index) {
+		clearRecentlyMovedValue();
 		List<T> current = new ArrayList<>(getValue());
 		if (index >= 0 && index < current.size()) {
 			current.remove(index);
@@ -772,13 +805,15 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	}
 
 	private class DragSession implements ConfigInputHandler {
-		private int index;
+		private final int sourceIndex;
+		private int targetIndex;
 		private final double grabOffsetY;
 		private double mouseY;
 		private boolean active;
 
 		public DragSession(ListValueRow row, double mouseY, boolean active) {
-			this.index = row.index;
+			this.sourceIndex = row.index;
+			this.targetIndex = row.index;
 			this.grabOffsetY = mouseY - row.area.getY();
 			this.mouseY = mouseY;
 			if (active) {
@@ -790,6 +825,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		public Optional<ConfigInputHandler> handleUserInput(Screen screen, UserInput input) {
 			if (active && ConfigInputUtil.isLeftClick(input)) {
 				moveToMouseY(input.getMouseY());
+				commitMove();
 			}
 			stop();
 			return Optional.empty();
@@ -832,15 +868,16 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 
 		private void moveToMouseY(double mouseY) {
 			this.mouseY = mouseY;
-			int targetIndex = getDragTargetIndex(mouseY);
-			if (moveValueToIndex(index, targetIndex)) {
-				index = targetIndex;
-			}
+			targetIndex = getDragTargetIndex(mouseY);
+		}
+
+		private void commitMove() {
+			moveValueToIndex(sourceIndex, targetIndex);
 		}
 
 		private int getDragTargetIndex(double mouseY) {
 			if (valueRows.isEmpty()) {
-				return index;
+				return sourceIndex;
 			}
 			for (ListValueRow row : valueRows) {
 				int rowBottom = row.area.getY() + row.area.getHeight();
@@ -852,7 +889,11 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		}
 
 		public boolean isDragging(ListValueRow row) {
-			return active && row.selected && row.index == index;
+			return active && row.selected && row.index == sourceIndex;
+		}
+
+		public boolean isDropTarget(ListValueRow row) {
+			return active && row.selected && row.index == targetIndex && row.index != sourceIndex;
 		}
 
 		public void drawFloatingRow(GuiGraphics guiGraphics) {
@@ -875,8 +916,8 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 
 		@Nullable
 		private ListValueRow getDraggingRow() {
-			if (isIndexValid(valueRows, index)) {
-				return valueRows.get(index);
+			if (isIndexValid(valueRows, sourceIndex)) {
+				return valueRows.get(sourceIndex);
 			}
 			return null;
 		}
@@ -959,8 +1000,8 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			return BUTTON_SIZE;
 		}
 
-		void draw(GuiGraphics guiGraphics, double mouseX, double mouseY) {
-			draw(guiGraphics, area, mouseX, mouseY, true, false);
+		void draw(GuiGraphics guiGraphics, double mouseX, double mouseY, boolean dropTarget, boolean recentlyMoved) {
+			draw(guiGraphics, area, mouseX, mouseY, true, false, dropTarget, recentlyMoved);
 		}
 
 		void drawDragGap(GuiGraphics guiGraphics) {
@@ -979,7 +1020,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			int x = floatingArea.getX();
 			int bottom = floatingArea.getY() + floatingArea.getHeight();
 			guiGraphics.fill(x, bottom, x + floatingArea.getWidth(), bottom + 2, ORDERED_ROW_DRAG_FLOAT_SHADOW_COLOR);
-			draw(guiGraphics, floatingArea, 0, 0, false, true);
+			draw(guiGraphics, floatingArea, 0, 0, false, true, false, false);
 		}
 
 		private void draw(
@@ -988,12 +1029,14 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			double mouseX,
 			double mouseY,
 			boolean drawControls,
-			boolean floating
+			boolean floating,
+			boolean dropTarget,
+			boolean recentlyMoved
 		) {
 			Font font = Minecraft.getInstance().font;
 			ConfigTextures textures = getTextures();
 
-			int backgroundColor = getBackgroundColor(floating);
+			int backgroundColor = getBackgroundColor(floating, dropTarget, recentlyMoved);
 			guiGraphics.fill(rowArea.getX(), rowArea.getY(),
 				rowArea.getX() + rowArea.getWidth(), rowArea.getY() + rowArea.getHeight(),
 				backgroundColor);
@@ -1002,6 +1045,8 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			}
 			if (floating) {
 				drawFloatingHighlight(guiGraphics, rowArea);
+			} else if (recentlyMoved) {
+				drawMovedHighlight(guiGraphics, rowArea);
 			}
 			Component valueName = ConfigValueLocalization.getValueName(elementSerializer, configValue.getLocalizationKey(), value);
 			int textX = rowArea.getX() + VALUE_ROW_HORIZONTAL_PADDING;
@@ -1033,14 +1078,27 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			}
 		}
 
-		private int getBackgroundColor(boolean floating) {
+		private int getBackgroundColor(boolean floating, boolean dropTarget, boolean recentlyMoved) {
 			if (floating) {
 				return ORDERED_ROW_DRAG_FLOAT_BACKGROUND_COLOR;
+			}
+			if (dropTarget) {
+				return ORDERED_ROW_DROP_TARGET_COLOR;
+			}
+			if (recentlyMoved) {
+				return ORDERED_ROW_MOVED_BACKGROUND_COLOR;
 			}
 			if (selected) {
 				return ORDERED_ROW_BACKGROUND_COLOR;
 			}
 			return UNUSED_ROW_BACKGROUND_COLOR;
+		}
+
+		private void drawMovedHighlight(GuiGraphics guiGraphics, ImmutableRect2i rowArea) {
+			int x = rowArea.getX();
+			int y = rowArea.getY();
+			int bottom = y + rowArea.getHeight();
+			guiGraphics.fill(x, y, x + 2, bottom, ORDERED_ROW_MOVED_ACCENT_COLOR);
 		}
 
 		private void drawFloatingHighlight(GuiGraphics guiGraphics, ImmutableRect2i rowArea) {
