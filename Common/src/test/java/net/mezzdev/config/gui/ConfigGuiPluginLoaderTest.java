@@ -24,6 +24,7 @@ import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigValueIcon;
 import net.mezzdev.config.gui.api.IConfigValueIconProvider;
 import net.mezzdev.config.gui.config.ConfigGuiOptionsTestUtil;
+import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryRegistry;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
@@ -376,6 +377,20 @@ class ConfigGuiPluginLoaderTest {
 
 		assertTrue(factories.containsKey(MOD_ID));
 		assertEquals(0, factoryCreationCustomizerCalls.get());
+	}
+
+	@Test
+	void screenFactoryRegistryKeepsScreenListEntries() {
+		ConfigScreenFactoryRegistry registry = ConfigGuiPluginLoader.createScreenFactoryRegistryFromInternalConfigs(
+			List.of(new TestScreenConfig(MOD_ID, Component.literal("Test Title"), () -> List.of())),
+			List.of()
+		);
+
+		assertEquals(List.of(MOD_ID), List.copyOf(registry.getFactories().keySet()));
+		assertEquals(1, registry.getEntries().size());
+		assertEquals(MOD_ID, registry.getEntries().getFirst().modId());
+		assertEquals("Test Title", registry.getEntries().getFirst().title().getString());
+		assertSame(registry.getFactories().get(MOD_ID), registry.getEntries().getFirst().factory());
 	}
 
 	@Test

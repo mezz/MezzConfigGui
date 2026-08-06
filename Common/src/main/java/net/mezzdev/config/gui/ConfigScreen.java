@@ -47,12 +47,13 @@ public class ConfigScreen extends Screen {
 		Component title,
 		ConfigScreenSchema clientSchema,
 		ConfigChangesHandler changesHandler,
-		Map<ConfigValueEditorType<?>, IConfigValueEditorFactory<?>> valueEditorFactories
+		Map<ConfigValueEditorType<?>, IConfigValueEditorFactory<?>> valueEditorFactories,
+		ConfigScreenNavigation navigation
 	) {
 		if (isConfigScreenOpen(parent)) {
 			return parent;
 		}
-		return new ConfigScreen(parent, modId, title, clientSchema, changesHandler, valueEditorFactories);
+		return new ConfigScreen(parent, modId, title, clientSchema, changesHandler, valueEditorFactories, navigation);
 	}
 
 	public static boolean isConfigScreenOpen(@Nullable Screen screen) {
@@ -70,6 +71,7 @@ public class ConfigScreen extends Screen {
 	private final ConfigScreenModel model;
 	private final ConfigScreenController controller;
 	private final ConfigScreenView view;
+	private final ConfigScreenNavigation navigation;
 
 	@Nullable
 	private final Screen parent;
@@ -83,10 +85,12 @@ public class ConfigScreen extends Screen {
 		Component title,
 		ConfigScreenSchema clientSchema,
 		ConfigChangesHandler changesHandler,
-		Map<ConfigValueEditorType<?>, IConfigValueEditorFactory<?>> valueEditorFactories
+		Map<ConfigValueEditorType<?>, IConfigValueEditorFactory<?>> valueEditorFactories,
+		ConfigScreenNavigation navigation
 	) {
 		super(title);
 		this.parent = parent;
+		this.navigation = navigation;
 		ConfigTextures textures = ConfigTextures.get();
 
 		Font font = Minecraft.getInstance().font;
@@ -304,7 +308,7 @@ public class ConfigScreen extends Screen {
 	@Override
 	protected void init() {
 		super.init();
-		layout.updateScreenBounds(width, height, searchBox);
+		layout.updateScreenBounds(width, height, searchBox, canOpenScreenList());
 		addWidget(searchBox);
 
 		layout.resetNavScroll();
@@ -325,17 +329,25 @@ public class ConfigScreen extends Screen {
 	}
 
 	private void requestClose() {
+		requestLeave(this::closeWithoutPrompt);
+	}
+
+	private void requestOpenScreenList() {
+		requestLeave(this::openScreenListWithoutPrompt);
+	}
+
+	private void requestLeave(Runnable leaveAction) {
 		flushPendingInput();
 		if (controller.hasPendingChanges()) {
 			if (ConfigGuiOptions.confirmPendingChangesOnClose()) {
-				openPendingChangesConfirmation();
+				openPendingChangesConfirmation(leaveAction);
 				return;
 			}
 			applyPendingChanges();
-			closeWithoutPrompt();
+			leaveAction.run();
 			return;
 		}
-		closeWithoutPrompt();
+		leaveAction.run();
 	}
 
 	private void closeWithoutPrompt() {
@@ -344,7 +356,13 @@ public class ConfigScreen extends Screen {
 		}
 	}
 
-	private void openPendingChangesConfirmation() {
+	private void openScreenListWithoutPrompt() {
+		if (minecraft != null) {
+			minecraft.setScreen(navigation.createScreenList(parent));
+		}
+	}
+
+	private void openPendingChangesConfirmation(Runnable leaveAction) {
 		if (minecraft == null) {
 			return;
 		}
@@ -355,7 +373,7 @@ public class ConfigScreen extends Screen {
 				} else {
 					controller.discardPendingChanges();
 				}
-				closeWithoutPrompt();
+				leaveAction.run();
 			},
 			() -> minecraft.setScreen(this),
 			controller.pendingChangesRequireRestart(),
@@ -375,7 +393,7 @@ public class ConfigScreen extends Screen {
 	}
 
 	private void refreshLayout() {
-		layout.updateScreenBounds(width, height, searchBox);
+		layout.updateScreenBounds(width, height, searchBox, canOpenScreenList());
 		controller.updateNavLayout();
 		controller.updateContentLayout();
 		updateValueSelectorBounds();
@@ -506,11 +524,16 @@ public class ConfigScreen extends Screen {
 	}
 
 	private boolean isActionButton(double mouseX, double mouseY) {
-		return layout.getApplyPendingChangesButtonArea().contains(mouseX, mouseY) ||
+		return layout.getScreenListButtonArea().contains(mouseX, mouseY) ||
+			layout.getApplyPendingChangesButtonArea().contains(mouseX, mouseY) ||
 			layout.getUndoChangesButtonArea().contains(mouseX, mouseY);
 	}
 
 	private boolean handleActionButton(double mouseX, double mouseY) {
+		if (layout.getScreenListButtonArea().contains(mouseX, mouseY)) {
+			requestOpenScreenList();
+			return true;
+		}
 		if (layout.getApplyPendingChangesButtonArea().contains(mouseX, mouseY)) {
 			flushPendingInput();
 			if (controller.hasPendingChanges()) {
@@ -528,6 +551,10 @@ public class ConfigScreen extends Screen {
 			return false;
 		}
 		return false;
+	}
+
+	private boolean canOpenScreenList() {
+		return navigation.canOpenScreenList(parent);
 	}
 
 	@Override

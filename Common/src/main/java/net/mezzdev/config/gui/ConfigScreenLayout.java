@@ -37,6 +37,7 @@ public final class ConfigScreenLayout {
 	private ImmutableRect2i area = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i titleArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i titleTextArea = ImmutableRect2i.EMPTY;
+	private ImmutableRect2i screenListButtonArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i applyPendingChangesButtonArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i undoChangesButtonArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i navArea = ImmutableRect2i.EMPTY;
@@ -66,11 +67,15 @@ public final class ConfigScreenLayout {
 	private boolean navScrollBarVisible = false;
 
 	public void updateScreenBounds(int screenWidth, int screenHeight, EditBox searchBox) {
+		updateScreenBounds(screenWidth, screenHeight, searchBox, false);
+	}
+
+	public void updateScreenBounds(int screenWidth, int screenHeight, EditBox searchBox, boolean hasScreenListButton) {
 		area = getScreenArea(screenWidth, screenHeight);
 
 		ImmutableRect2i innerArea = area.insetBy(BORDER_PADDING);
 		titleArea = innerArea.keepTop(TITLE_HEIGHT);
-		updateTitleRowAreas();
+		updateTitleRowAreas(hasScreenListButton);
 		infoArea = innerArea.keepBottom(INFO_AREA_HEIGHT);
 
 		ImmutableRect2i mainArea = innerArea
@@ -95,7 +100,7 @@ public final class ConfigScreenLayout {
 	private ImmutableRect2i getScreenArea(int screenWidth, int screenHeight) {
 		ImmutableRect2i customArea = this.customArea;
 		if (customArea != null) {
-			ImmutableRect2i clampedArea = clampResizableArea(customArea, screenWidth, screenHeight);
+			ImmutableRect2i clampedArea = centerResizableArea(customArea.getWidth(), customArea.getHeight(), screenWidth, screenHeight);
 			this.customArea = clampedArea;
 			return clampedArea;
 		}
@@ -117,6 +122,10 @@ public final class ConfigScreenLayout {
 
 	public ImmutableRect2i getTitleTextArea() {
 		return titleTextArea;
+	}
+
+	public ImmutableRect2i getScreenListButtonArea() {
+		return screenListButtonArea;
 	}
 
 	public ImmutableRect2i getApplyPendingChangesButtonArea() {
@@ -167,6 +176,14 @@ public final class ConfigScreenLayout {
 		boolean top = mouseY < area.getY() + RESIZE_HANDLE_SIZE;
 		boolean bottom = mouseY >= area.getY() + area.getHeight() - RESIZE_HANDLE_SIZE;
 		return ResizeHandle.get(left, right, top, bottom);
+	}
+
+	public ResizeHandle getActiveResizeHandle(double mouseX, double mouseY) {
+		ResizeDragSession resizeDragSession = this.resizeDragSession;
+		if (resizeDragSession != null) {
+			return resizeDragSession.resizeHandle();
+		}
+		return getResizeHandle(mouseX, mouseY);
 	}
 
 	private boolean isInResizeArea(double mouseX, double mouseY) {
@@ -443,15 +460,26 @@ public final class ConfigScreenLayout {
 		}
 	}
 
-	private void updateTitleRowAreas() {
-		int actionButtonsWidth = ACTION_BUTTON_SIZE * 2 + ACTION_BUTTON_GAP;
+	private void updateTitleRowAreas(boolean hasScreenListButton) {
+		int actionButtonCount = 2;
+		if (hasScreenListButton) {
+			actionButtonCount = 3;
+		}
+		int actionButtonsWidth = ACTION_BUTTON_SIZE * actionButtonCount + ACTION_BUTTON_GAP * (actionButtonCount - 1);
 		ImmutableRect2i actionButtonsArea = titleArea.keepRight(actionButtonsWidth);
-		applyPendingChangesButtonArea = centerVertically(actionButtonsArea.keepRight(ACTION_BUTTON_SIZE), ACTION_BUTTON_SIZE);
-		undoChangesButtonArea = centerVertically(
-			actionButtonsArea.cropRight(ACTION_BUTTON_SIZE + ACTION_BUTTON_GAP).keepRight(ACTION_BUTTON_SIZE),
-			ACTION_BUTTON_SIZE
-		);
+		applyPendingChangesButtonArea = getActionButtonArea(actionButtonsArea, 0);
+		undoChangesButtonArea = getActionButtonArea(actionButtonsArea, 1);
+		if (hasScreenListButton) {
+			screenListButtonArea = getActionButtonArea(actionButtonsArea, 2);
+		} else {
+			screenListButtonArea = ImmutableRect2i.EMPTY;
+		}
 		titleTextArea = titleArea.cropRight(actionButtonsWidth + SECTION_GAP);
+	}
+
+	private static ImmutableRect2i getActionButtonArea(ImmutableRect2i actionButtonsArea, int buttonsFromRight) {
+		int rightOffset = (ACTION_BUTTON_SIZE + ACTION_BUTTON_GAP) * buttonsFromRight;
+		return centerVertically(actionButtonsArea.cropRight(rightOffset).keepRight(ACTION_BUTTON_SIZE), ACTION_BUTTON_SIZE);
 	}
 
 	private static ImmutableRect2i centerVertically(ImmutableRect2i area, int height) {
@@ -563,15 +591,15 @@ public final class ConfigScreenLayout {
 		return oldTarget != navTargetScrollY || oldCurrent != navCurrentScrollY;
 	}
 
-	private static ImmutableRect2i clampResizableArea(ImmutableRect2i area, int screenWidth, int screenHeight) {
+	private static ImmutableRect2i centerResizableArea(int areaWidth, int areaHeight, int screenWidth, int screenHeight) {
 		int maxWidth = Math.max(1, screenWidth);
 		int maxHeight = Math.max(1, screenHeight);
 		int minWidth = Math.min(MIN_RESIZABLE_WIDTH, maxWidth);
 		int minHeight = Math.min(MIN_RESIZABLE_HEIGHT, maxHeight);
-		int width = Math.clamp(area.getWidth(), minWidth, maxWidth);
-		int height = Math.clamp(area.getHeight(), minHeight, maxHeight);
-		int x = Math.clamp(area.getX(), 0, maxWidth - width);
-		int y = Math.clamp(area.getY(), 0, maxHeight - height);
+		int width = Math.clamp(areaWidth, minWidth, maxWidth);
+		int height = Math.clamp(areaHeight, minHeight, maxHeight);
+		int x = (maxWidth - width) / 2;
+		int y = (maxHeight - height) / 2;
 		return new ImmutableRect2i(x, y, width, height);
 	}
 
@@ -648,28 +676,31 @@ public final class ConfigScreenLayout {
 		ImmutableRect2i startArea
 	) {
 		private ImmutableRect2i resize(double mouseX, double mouseY, int screenWidth, int screenHeight) {
-			int maxWidth = Math.max(1, screenWidth);
-			int maxHeight = Math.max(1, screenHeight);
-			int minWidth = Math.min(MIN_RESIZABLE_WIDTH, maxWidth);
-			int minHeight = Math.min(MIN_RESIZABLE_HEIGHT, maxHeight);
-			int left = startArea.getX();
-			int top = startArea.getY();
-			int right = startArea.getX() + startArea.getWidth();
-			int bottom = startArea.getY() + startArea.getHeight();
+			int width = startArea.getWidth();
+			int height = startArea.getHeight();
+			if (resizeHandle.left() || resizeHandle.right()) {
+				width = getCenteredWidth(mouseX, screenWidth, resizeHandle);
+			}
+			if (resizeHandle.top() || resizeHandle.bottom()) {
+				height = getCenteredHeight(mouseY, screenHeight, resizeHandle);
+			}
+			return centerResizableArea(width, height, screenWidth, screenHeight);
+		}
 
+		private static int getCenteredWidth(double mouseX, int screenWidth, ResizeHandle resizeHandle) {
+			double centerX = screenWidth / 2.0;
 			if (resizeHandle.left()) {
-				left = Math.clamp((int) Math.round(mouseX), 0, right - minWidth);
+				return (int) Math.round((centerX - mouseX) * 2.0);
 			}
-			if (resizeHandle.right()) {
-				right = Math.clamp((int) Math.round(mouseX), left + minWidth, maxWidth);
-			}
+			return (int) Math.round((mouseX - centerX) * 2.0);
+		}
+
+		private static int getCenteredHeight(double mouseY, int screenHeight, ResizeHandle resizeHandle) {
+			double centerY = screenHeight / 2.0;
 			if (resizeHandle.top()) {
-				top = Math.clamp((int) Math.round(mouseY), 0, bottom - minHeight);
+				return (int) Math.round((centerY - mouseY) * 2.0);
 			}
-			if (resizeHandle.bottom()) {
-				bottom = Math.clamp((int) Math.round(mouseY), top + minHeight, maxHeight);
-			}
-			return clampResizableArea(new ImmutableRect2i(left, top, right - left, bottom - top), screenWidth, screenHeight);
+			return (int) Math.round((mouseY - centerY) * 2.0);
 		}
 	}
 }

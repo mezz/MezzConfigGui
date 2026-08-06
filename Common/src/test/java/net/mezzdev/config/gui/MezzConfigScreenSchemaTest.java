@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui;
 
+import net.mezzdev.config.api.files.IConfigManager;
 import net.mezzdev.config.api.schema.IConfigBatchUpdater;
 import net.mezzdev.config.api.schema.IConfigCategory;
 import net.mezzdev.config.api.schema.IConfigEditorCategory;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -106,6 +108,67 @@ class MezzConfigScreenSchemaTest {
 		assertEquals(List.of("enabled"), valueNames(categories.getFirst()));
 	}
 
+	@Test
+	void automaticConfigScreensGroupSchemasByModIdAndMergeCategories() {
+		TestConfigCategory firstCategory = new TestConfigCategory(
+			"general",
+			"test.config.general",
+			List.of(new TestConfigValue("first", ConfigValueEditMode.BATCH))
+		);
+		TestConfigCategory secondCategory = new TestConfigCategory(
+			"general",
+			"test.config.general",
+			List.of(new TestConfigValue("second", ConfigValueEditMode.IMMEDIATE))
+		);
+		TestConfigCategory otherCategory = new TestConfigCategory(
+			"client",
+			"test.config.client",
+			List.of(new TestConfigValue("other", ConfigValueEditMode.BATCH))
+		);
+		TestConfigManager manager = new TestConfigManager(List.of(
+			new TestConfigSchema("second_mod", Path.of("second.ini"), true, List.of(otherCategory), List.of(otherCategory)),
+			new TestConfigSchema("first_mod", Path.of("b.ini"), true, List.of(secondCategory), List.of(secondCategory)),
+			new TestConfigSchema("first_mod", Path.of("a.ini"), true, List.of(firstCategory), List.of(firstCategory))
+		));
+
+		List<ConfigScreenConfig> screens = MezzConfigScreenConfigs.getConfigScreens(manager);
+
+		assertEquals(List.of("first_mod", "second_mod"), screenModIds(screens));
+		List<? extends ConfigScreenCategory> categories = screens.getFirst().getSchema().getCategories();
+		assertEquals(List.of("general"), categoryNames(categories));
+		assertEquals(List.of("first", "second"), valueNames(categories.getFirst()));
+	}
+
+	@Test
+	void automaticConfigScreensSkipInactiveSchemasWhenBuildingCategories() {
+		TestConfigCategory activeCategory = new TestConfigCategory(
+			"general",
+			"test.config.general",
+			List.of(new TestConfigValue("active", ConfigValueEditMode.BATCH))
+		);
+		TestConfigCategory inactiveCategory = new TestConfigCategory(
+			"inactive",
+			"test.config.inactive",
+			List.of(new TestConfigValue("inactive", ConfigValueEditMode.BATCH))
+		);
+		TestConfigManager manager = new TestConfigManager(List.of(
+			new TestConfigSchema("first_mod", Path.of("active.ini"), true, List.of(activeCategory), List.of(activeCategory)),
+			new TestConfigSchema("first_mod", Path.of("inactive.ini"), false, List.of(inactiveCategory), List.of(inactiveCategory))
+		));
+
+		List<ConfigScreenConfig> screens = MezzConfigScreenConfigs.getConfigScreens(manager);
+		List<? extends ConfigScreenCategory> categories = screens.getFirst().getSchema().getCategories();
+
+		assertEquals(List.of("general"), categoryNames(categories));
+		assertEquals(List.of("active"), valueNames(categories.getFirst()));
+	}
+
+	private static List<String> screenModIds(List<? extends ConfigScreenConfig> screens) {
+		return screens.stream()
+			.map(ConfigScreenConfig::getModId)
+			.toList();
+	}
+
 	private static List<String> categoryNames(List<? extends ConfigScreenCategory> categories) {
 		return categories.stream()
 			.map(ConfigScreenCategory::getName)
@@ -120,17 +183,37 @@ class MezzConfigScreenSchemaTest {
 	}
 
 	private record TestConfigSchema(
+		String modId,
+		Path path,
+		boolean active,
 		List<TestConfigCategory> categories,
 		List<IConfigEditorCategory> editorCategories
 	) implements IConfigSchema {
+		private TestConfigSchema(
+			List<TestConfigCategory> categories,
+			List<IConfigEditorCategory> editorCategories
+		) {
+			this("test", Path.of("test.ini"), true, categories, editorCategories);
+		}
+
 		private TestConfigSchema {
+			modId = Objects.requireNonNull(modId, "modId");
+			path = Objects.requireNonNull(path, "path");
 			categories = List.copyOf(categories);
 			editorCategories = List.copyOf(editorCategories);
 		}
 
 		@Override
-		public Path getPath() {
-			return Path.of("test.ini");
+		public String getModId() {
+			return modId;
+		}
+
+		@Override
+		public Optional<Path> getPath() {
+			if (active) {
+				return Optional.of(path);
+			}
+			return Optional.empty();
 		}
 
 		@Override
@@ -156,6 +239,19 @@ class MezzConfigScreenSchemaTest {
 		@Override
 		public void clearListeners() {
 
+		}
+	}
+
+	private record TestConfigManager(
+		Collection<? extends IConfigSchema> schemas
+	) implements IConfigManager {
+		private TestConfigManager {
+			schemas = List.copyOf(schemas);
+		}
+
+		@Override
+		public Collection<? extends IConfigSchema> getSchemas() {
+			return schemas;
 		}
 	}
 

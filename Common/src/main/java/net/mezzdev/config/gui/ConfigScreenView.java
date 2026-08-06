@@ -25,6 +25,7 @@ import java.util.List;
  */
 final class ConfigScreenView {
 	private enum ActionButtonIcon {
+		SCREEN_LIST,
 		UNDO,
 		APPLY
 	}
@@ -40,6 +41,8 @@ final class ConfigScreenView {
 	private static final int CONTROL_DISABLED_ICON_COLOR = 0xFFA0A0A0;
 	private static final int ACTION_ICON_LINE_LENGTH = 8;
 	private static final int ACTION_ICON_STROKE_SIZE = 2;
+	private static final int SCREEN_LIST_ICON_CELL_SIZE = 3;
+	private static final int SCREEN_LIST_ICON_CELL_GAP = 2;
 	private static final int RESIZE_GRIP_SIZE = 11;
 	private static final int RESIZE_GRIP_LINE_GAP = 3;
 	private static final int RESIZE_EDGE_HIGHLIGHT_SIZE = 2;
@@ -87,12 +90,13 @@ final class ConfigScreenView {
 	) {
 		Font font = Minecraft.getInstance().font;
 		ImmutableRect2i area = layout.getArea();
-		ConfigScreenLayout.ResizeHandle resizeHandle = layout.getResizeHandle(mouseX, mouseY);
+		ConfigScreenLayout.ResizeHandle resizeHandle = layout.getActiveResizeHandle(mouseX, mouseY);
 		ImmutableRect2i titleArea = layout.getTitleTextArea();
 		ImmutableRect2i navArea = layout.getNavArea();
 		ImmutableRect2i contentArea = layout.getContentArea();
 		ImmutableRect2i valueSelectorClipArea = getValueSelectorClipArea(contentArea);
 		ImmutableRect2i searchBackgroundArea = layout.getSearchBackgroundArea();
+		ImmutableRect2i screenListButtonArea = layout.getScreenListButtonArea();
 		ImmutableRect2i applyPendingChangesButtonArea = layout.getApplyPendingChangesButtonArea();
 		ImmutableRect2i undoChangesButtonArea = layout.getUndoChangesButtonArea();
 		@Nullable
@@ -110,6 +114,7 @@ final class ConfigScreenView {
 		@Nullable
 		ConfigInfo hoveredControlInfo = getControlInfo(
 			searchBackgroundArea,
+			screenListButtonArea,
 			applyPendingChangesButtonArea,
 			undoChangesButtonArea,
 			resizeHandle,
@@ -121,7 +126,7 @@ final class ConfigScreenView {
 		background.draw(guiGraphics, area);
 		drawResizeHandles(guiGraphics, area, resizeHandle);
 		drawTitle(guiGraphics, font, titleArea, title);
-		drawActionButtons(guiGraphics, applyPendingChangesButtonArea, undoChangesButtonArea, mouseX, mouseY);
+		drawActionButtons(guiGraphics, screenListButtonArea, applyPendingChangesButtonArea, undoChangesButtonArea, mouseX, mouseY);
 		drawNavBackground(guiGraphics, navArea);
 		@Nullable
 		ConfigNavItem hoveredNavItem = drawNavItems(guiGraphics, navArea, mouseX, mouseY);
@@ -165,11 +170,19 @@ final class ConfigScreenView {
 
 	private void drawActionButtons(
 		GuiGraphics guiGraphics,
+		ImmutableRect2i screenListButtonArea,
 		ImmutableRect2i applyPendingChangesButtonArea,
 		ImmutableRect2i undoChangesButtonArea,
 		int mouseX,
 		int mouseY
 	) {
+		drawActionButton(
+			guiGraphics,
+			screenListButtonArea,
+			ActionButtonIcon.SCREEN_LIST,
+			!screenListButtonArea.isEmpty(),
+			screenListButtonArea.contains(mouseX, mouseY)
+		);
 		drawActionButton(
 			guiGraphics,
 			undoChangesButtonArea,
@@ -193,6 +206,9 @@ final class ConfigScreenView {
 		boolean active,
 		boolean hovered
 	) {
+		if (area.isEmpty()) {
+			return;
+		}
 		ConfigEntryWidget.drawButtonBackground(guiGraphics, textures, area, active, active && hovered);
 		int iconColor = getControlIconColor(active);
 		drawActionIcon(guiGraphics, area, icon, iconColor);
@@ -206,11 +222,36 @@ final class ConfigScreenView {
 	}
 
 	private static void drawActionIcon(GuiGraphics guiGraphics, ImmutableRect2i area, ActionButtonIcon icon, int color) {
-		if (icon == ActionButtonIcon.UNDO) {
-			drawUndoIcon(guiGraphics, area, color);
-			return;
+		switch (icon) {
+			case SCREEN_LIST -> drawScreenListIcon(guiGraphics, area, color);
+			case UNDO -> drawUndoIcon(guiGraphics, area, color);
+			case APPLY -> drawApplyIcon(guiGraphics, area, color);
 		}
-		drawApplyIcon(guiGraphics, area, color);
+	}
+
+	private static void drawScreenListIcon(GuiGraphics guiGraphics, ImmutableRect2i area, int color) {
+		int iconSize = SCREEN_LIST_ICON_CELL_SIZE * 2 + SCREEN_LIST_ICON_CELL_GAP;
+		int x = area.getX() + (area.getWidth() - iconSize) / 2;
+		int y = area.getY() + (area.getHeight() - iconSize) / 2;
+		drawScreenListIconCell(guiGraphics, x, y, color);
+		drawScreenListIconCell(guiGraphics, x + SCREEN_LIST_ICON_CELL_SIZE + SCREEN_LIST_ICON_CELL_GAP, y, color);
+		drawScreenListIconCell(guiGraphics, x, y + SCREEN_LIST_ICON_CELL_SIZE + SCREEN_LIST_ICON_CELL_GAP, color);
+		drawScreenListIconCell(
+			guiGraphics,
+			x + SCREEN_LIST_ICON_CELL_SIZE + SCREEN_LIST_ICON_CELL_GAP,
+			y + SCREEN_LIST_ICON_CELL_SIZE + SCREEN_LIST_ICON_CELL_GAP,
+			color
+		);
+	}
+
+	private static void drawScreenListIconCell(GuiGraphics guiGraphics, int x, int y, int color) {
+		guiGraphics.fill(
+			x,
+			y,
+			x + SCREEN_LIST_ICON_CELL_SIZE,
+			y + SCREEN_LIST_ICON_CELL_SIZE,
+			color
+		);
 	}
 
 	private static void drawUndoIcon(GuiGraphics guiGraphics, ImmutableRect2i area, int color) {
@@ -519,6 +560,7 @@ final class ConfigScreenView {
 	@Nullable
 	private ConfigInfo getControlInfo(
 		ImmutableRect2i searchBackgroundArea,
+		ImmutableRect2i screenListButtonArea,
 		ImmutableRect2i applyPendingChangesButtonArea,
 		ImmutableRect2i undoChangesButtonArea,
 		ConfigScreenLayout.ResizeHandle resizeHandle,
@@ -530,6 +572,9 @@ final class ConfigScreenView {
 		}
 		if (searchBackgroundArea.contains(mouseX, mouseY)) {
 			return getSearchInfo();
+		}
+		if (screenListButtonArea.contains(mouseX, mouseY)) {
+			return getScreenListInfo();
 		}
 		if (undoChangesButtonArea.contains(mouseX, mouseY)) {
 			return getUndoChangesInfo();
@@ -544,6 +589,13 @@ final class ConfigScreenView {
 		return new ConfigInfo(
 			Component.translatable("mezz_config.config.screen.search.info.title"),
 			Component.translatable("mezz_config.config.screen.search.info")
+		);
+	}
+
+	private static ConfigInfo getScreenListInfo() {
+		return new ConfigInfo(
+			Component.translatable("mezz_config.config.screen.allMods.title"),
+			Component.translatable("mezz_config.config.screen.allMods.info")
 		);
 	}
 

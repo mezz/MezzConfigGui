@@ -8,6 +8,7 @@ modId="${configGuiModId}"
 version="${version}"
 displayName="Mezz Config GUI"
 displayURL="${githubUrl}"
+logoFile="mezz_config_gui-icon.png"
 authors="${modAuthor}"
 description='''
 Shared config GUI support for Minecraft mods.

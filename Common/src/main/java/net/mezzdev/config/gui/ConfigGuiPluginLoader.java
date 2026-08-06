@@ -20,6 +20,8 @@ import net.mezzdev.config.gui.api.ISortableConfigValueFactory;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.model.ConfigValueChange;
 import net.mezzdev.config.gui.keybindings.KeyMappingConfigValues;
+import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryEntry;
+import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryRegistry;
 import net.mezzdev.config.gui.util.ErrorUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.KeyMapping;
@@ -30,7 +32,6 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -60,7 +61,14 @@ final class ConfigGuiPluginLoader {
 		Collection<? extends IConfigScreenConfig> configScreens,
 		List<? extends IConfigGuiPlugin> plugins
 	) {
-		return createScreenFactoriesFromInternalConfigs(
+		return createScreenFactoryRegistry(configScreens, plugins).getFactories();
+	}
+
+	public static ConfigScreenFactoryRegistry createScreenFactoryRegistry(
+		Collection<? extends IConfigScreenConfig> configScreens,
+		List<? extends IConfigGuiPlugin> plugins
+	) {
+		return createScreenFactoryRegistryFromInternalConfigs(
 			configScreens.stream()
 				.map(PublicConfigScreenConfig::new)
 				.toList(),
@@ -72,14 +80,47 @@ final class ConfigGuiPluginLoader {
 		Collection<? extends ConfigScreenConfig> configScreens,
 		List<? extends IConfigGuiPlugin> plugins
 	) {
-		Map<String, ConfigGuiRegistration> registrations = createConfigGuiRegistrations(configScreens);
+		return createScreenFactoryRegistryFromInternalConfigs(configScreens, plugins).getFactories();
+	}
+
+	static ConfigScreenFactoryRegistry createScreenFactoryRegistryFromInternalConfigs(
+		Collection<? extends ConfigScreenConfig> configScreens,
+		List<? extends IConfigGuiPlugin> plugins
+	) {
+		return createScreenFactoryRegistryFromInternalConfigs(configScreens, plugins, true);
+	}
+
+	static ConfigScreenFactoryRegistry createScreenFactoryRegistryFromInternalConfigs(
+		Collection<? extends ConfigScreenConfig> configScreens,
+		List<? extends IConfigGuiPlugin> plugins,
+		boolean includeAutomaticMezzConfigScreens
+	) {
+		List<ConfigScreenConfig> allConfigScreens = List.copyOf(configScreens);
+		if (includeAutomaticMezzConfigScreens) {
+			allConfigScreens = addAutomaticMezzConfigScreens(configScreens);
+		}
+		Map<String, ConfigGuiRegistration> registrations = createConfigGuiRegistrations(allConfigScreens);
 		for (IConfigGuiPlugin plugin : plugins) {
 			addPlugin(registrations, plugin);
 		}
+		ConfigScreenNavigation navigation = new ConfigScreenNavigation();
 		Map<String, IConfigScreenFactory> factories = new LinkedHashMap<>();
-		registrations.forEach((modId, registration) -> addFactory(factories, modId, registration));
-		logDiscoverySummary(configScreens, plugins, factories);
-		return Collections.unmodifiableMap(factories);
+		List<ConfigScreenFactoryEntry> entries = new ArrayList<>();
+		registrations.forEach((modId, registration) -> addFactory(factories, entries, modId, registration, navigation));
+		logDiscoverySummary(allConfigScreens, plugins, factories);
+		return new ConfigScreenFactoryRegistry(factories, entries, navigation);
+	}
+
+	private static List<ConfigScreenConfig> addAutomaticMezzConfigScreens(Collection<? extends ConfigScreenConfig> configScreens) {
+		Set<String> existingModIds = configScreens.stream()
+			.map(ConfigScreenConfig::getModId)
+			.collect(java.util.stream.Collectors.toSet());
+		List<ConfigScreenConfig> allConfigScreens = new ArrayList<>(configScreens);
+		MezzConfigScreenConfigs.getActiveConfigScreens()
+			.stream()
+			.filter(configScreen -> !existingModIds.contains(configScreen.getModId()))
+			.forEach(allConfigScreens::add);
+		return allConfigScreens;
 	}
 
 	private static void logDiscoverySummary(
@@ -124,18 +165,30 @@ final class ConfigGuiPluginLoader {
 		}
 	}
 
-	private static void addFactory(Map<String, IConfigScreenFactory> factories, String modId, IConfigScreenFactory factory) {
+	private static boolean addFactory(Map<String, IConfigScreenFactory> factories, String modId, IConfigScreenFactory factory) {
 		@Nullable
 		IConfigScreenFactory previous = factories.putIfAbsent(modId, factory);
 		if (previous != null) {
 			LOGGER.error("Duplicate config GUI plugin for mod id: {}", modId);
+			return false;
 		}
+		return true;
 	}
 
-	private static void addFactory(Map<String, IConfigScreenFactory> factories, String modId, ConfigGuiRegistration registration) {
+	private static void addFactory(
+		Map<String, IConfigScreenFactory> factories,
+		List<ConfigScreenFactoryEntry> entries,
+		String modId,
+		ConfigGuiRegistration registration,
+		ConfigScreenNavigation navigation
+	) {
 		try {
-			Optional<IConfigScreenFactory> factory = registration.createFactory();
-			factory.ifPresent(configScreenFactory -> addFactory(factories, modId, configScreenFactory));
+			Optional<ConfigScreenFactoryEntry> entry = registration.createFactoryEntry(navigation);
+			entry.ifPresent(configScreenFactoryEntry -> {
+				if (addFactory(factories, modId, configScreenFactoryEntry.factory())) {
+					entries.add(configScreenFactoryEntry);
+				}
+			});
 		} catch (RuntimeException | LinkageError e) {
 			LOGGER.error("Failed to create config screen factory for mod id: {}", modId, e);
 		}
@@ -201,16 +254,26 @@ final class ConfigGuiPluginLoader {
 		}
 
 		public Optional<IConfigScreenFactory> createFactory() {
+			return createFactoryEntry(new ConfigScreenNavigation())
+				.map(ConfigScreenFactoryEntry::factory);
+		}
+
+		public Optional<ConfigScreenFactoryEntry> createFactoryEntry(ConfigScreenNavigation navigation) {
 			ConfigScreenFactoryConfig config = getConfigScreenFactoryConfig();
 			if (config == null) {
 				return Optional.empty();
 			}
 			validateConfigScreenFactoryInputs(config.title(), config.schemaSupplier());
-			return Optional.of(createScreenFactory(
+			return Optional.of(new ConfigScreenFactoryEntry(
 				modId,
-				config,
-				screenCustomizers,
-				valueEditorFactories
+				config.title(),
+				createScreenFactory(
+					modId,
+					config,
+					screenCustomizers,
+					valueEditorFactories,
+					navigation
+				)
 			));
 		}
 
@@ -1485,7 +1548,8 @@ final class ConfigGuiPluginLoader {
 		String modId,
 		ConfigScreenFactoryConfig config,
 		List<Consumer<IConfigScreenBuilder>> screenCustomizers,
-		Map<ConfigValueEditorType<?>, IConfigValueEditorFactory<?>> valueEditorFactories
+		Map<ConfigValueEditorType<?>, IConfigValueEditorFactory<?>> valueEditorFactories,
+		ConfigScreenNavigation navigation
 	) {
 		validateConfigScreenFactoryInputs(config.title(), config.schemaSupplier());
 		List<Consumer<IConfigScreenBuilder>> screenCustomizersCopy = List.copyOf(screenCustomizers);
@@ -1495,7 +1559,7 @@ final class ConfigGuiPluginLoader {
 			ConfigScreenSchema schema = createCustomizedScreenSchema(modId, config.schemaSupplier(), screenBuilder);
 			Component title = screenBuilder.getTitle();
 			ConfigChangesHandler changesHandler = createChangesHandler(modId, title);
-			return ConfigScreen.create(parent, modId, title, schema, changesHandler, valueEditorFactoriesCopy);
+			return ConfigScreen.create(parent, modId, title, schema, changesHandler, valueEditorFactoriesCopy, navigation);
 		};
 	}
 

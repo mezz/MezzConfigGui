@@ -13,6 +13,7 @@
   },
 
   "license": "The MIT License (MIT)",
+  "icon": "mezz_config_gui-icon.png",
 
   "environment": "client",
   "entrypoints": {

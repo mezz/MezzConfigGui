@@ -204,6 +204,12 @@ public final class ConfigGuiOptions {
 	public enum GuiSize {
 		SMALL(320, 340, 230, 260),
 		MEDIUM(320, 380, 230, 300),
+		LARGE(320, 380, 0, 0) {
+			@Override
+			public int getHeight(int screenHeight) {
+				return screenHeight;
+			}
+		},
 		FULLSCREEN(0, 0, 0, 0) {
 			@Override
 			public int getWidth(int screenWidth) {

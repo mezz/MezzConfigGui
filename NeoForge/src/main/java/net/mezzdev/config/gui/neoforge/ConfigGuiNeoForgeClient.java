@@ -5,6 +5,7 @@ import net.mezzdev.config.gui.ConfigGui;
 import net.mezzdev.config.gui.ConfigScreenConfig;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.neoforge.config.NeoForgeConfigScreenConfigs;
+import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryRegistry;
 import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModList;
@@ -14,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -31,18 +33,23 @@ public final class ConfigGuiNeoForgeClient {
 	}
 
 	private static void onClientSetup(FMLClientSetupEvent event) {
-		event.enqueueWork(() -> registerConfigScreens(createScreenFactories()));
+		event.enqueueWork(() -> registerConfigScreens(createScreenFactoryRegistry()));
 	}
 
-	private static Map<String, IConfigScreenFactory> createScreenFactories() {
+	private static ConfigScreenFactoryRegistry createScreenFactoryRegistry() {
 		Collection<? extends ConfigScreenConfig> configScreens = List.of();
 		if (ConfigGuiOptions.enableNativeConfigDiscovery()) {
 			configScreens = NeoForgeConfigScreenConfigs.getConfigScreens(List.of());
 		}
-		return ConfigGui.createScreenFactoriesFromInternalConfigs(configScreens, ConfigGuiNeoForgePluginFinder.getPlugins());
+		return ConfigGui.createScreenFactoryRegistryFromInternalConfigs(configScreens, ConfigGuiNeoForgePluginFinder.getPlugins());
 	}
 
-	private static void registerConfigScreens(Map<String, IConfigScreenFactory> factories) {
+	private static void registerConfigScreens(ConfigScreenFactoryRegistry registry) {
+		Map<String, IConfigScreenFactory> factories = new LinkedHashMap<>(registry.getFactories());
+		factories.put(
+			ConfigGuiOptions.MOD_ID,
+			ConfigGui.createScreenListFactory(registry, NeoForgeConfigScreenOwnerMetadata::get)
+		);
 		factories.forEach(ConfigGuiNeoForgeClient::registerConfigScreen);
 	}
 

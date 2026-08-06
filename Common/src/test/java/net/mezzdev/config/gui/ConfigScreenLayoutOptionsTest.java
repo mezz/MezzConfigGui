@@ -8,6 +8,7 @@ import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigScreenLayoutOptionsTest {
@@ -28,6 +29,22 @@ class ConfigScreenLayoutOptionsTest {
 	}
 
 	@Test
+	void largeGuiSizeOptionUsesMediumWidthAndFullHeight() {
+		ConfigScreenLayout layout = new ConfigScreenLayout();
+		EditBox searchBox = createSearchBox();
+
+		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("guiSize", ConfigGuiOptions.GuiSize.LARGE)) {
+			layout.updateScreenBounds(1000, 800, searchBox);
+		}
+
+		ImmutableRect2i area = layout.getArea();
+		assertEquals(380, area.getWidth());
+		assertEquals(800, area.getHeight());
+		assertEquals(310, area.getX());
+		assertEquals(0, area.getY());
+	}
+
+	@Test
 	void fullscreenGuiSizeOptionFillsScreenBounds() {
 		ConfigScreenLayout layout = new ConfigScreenLayout();
 		EditBox searchBox = createSearchBox();
@@ -44,7 +61,7 @@ class ConfigScreenLayoutOptionsTest {
 	}
 
 	@Test
-	void draggingResizeHandleUpdatesScreenBounds() {
+	void draggingResizeHandleKeepsScreenCentered() {
 		ConfigScreenLayout layout = new ConfigScreenLayout();
 		EditBox searchBox = createSearchBox();
 
@@ -62,11 +79,51 @@ class ConfigScreenLayoutOptionsTest {
 		layout.updateScreenBounds(1000, 800, searchBox);
 
 		ImmutableRect2i resizedArea = layout.getArea();
-		assertEquals(area.getX(), resizedArea.getX());
-		assertEquals(area.getY(), resizedArea.getY());
-		assertEquals(area.getWidth() + 80, resizedArea.getWidth());
-		assertEquals(area.getHeight() + 60, resizedArea.getHeight());
+		assertEquals(area.getWidth() + 160, resizedArea.getWidth());
+		assertEquals(area.getHeight() + 120, resizedArea.getHeight());
+		assertCentered(resizedArea, 1000, 800);
 		assertTrue(layout.stopResizeDrag());
+	}
+
+	@Test
+	void draggingResizeEdgeKeepsScreenCentered() {
+		ConfigScreenLayout layout = new ConfigScreenLayout();
+		EditBox searchBox = createSearchBox();
+
+		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("guiSize", ConfigGuiOptions.GuiSize.MEDIUM)) {
+			layout.updateScreenBounds(1000, 800, searchBox);
+		}
+
+		ImmutableRect2i area = layout.getArea();
+		double resizeX = area.getX();
+		double resizeY = area.getY() + area.getHeight() / 2.0;
+		assertEquals(ConfigScreenLayout.ResizeHandle.LEFT, layout.getResizeHandle(resizeX, resizeY));
+
+		assertTrue(layout.startResizeDrag(resizeX, resizeY));
+		assertTrue(layout.dragResize(area.getX() - 60, resizeY, 1000, 800));
+		layout.updateScreenBounds(1000, 800, searchBox);
+
+		ImmutableRect2i resizedArea = layout.getArea();
+		assertEquals(area.getWidth() + 120, resizedArea.getWidth());
+		assertEquals(area.getHeight(), resizedArea.getHeight());
+		assertCentered(resizedArea, 1000, 800);
+		assertTrue(layout.stopResizeDrag());
+	}
+
+	@Test
+	void screenListButtonUsesTitleBarSpaceOnlyWhenEnabled() {
+		ConfigScreenLayout layout = new ConfigScreenLayout();
+		EditBox searchBox = createSearchBox();
+
+		layout.updateScreenBounds(1000, 800, searchBox);
+		assertTrue(layout.getScreenListButtonArea().isEmpty());
+		ImmutableRect2i titleTextAreaWithoutScreenListButton = layout.getTitleTextArea();
+
+		layout.updateScreenBounds(1000, 800, searchBox, true);
+		assertFalse(layout.getScreenListButtonArea().isEmpty());
+		assertTrue(layout.getTitleTextArea().getWidth() < titleTextAreaWithoutScreenListButton.getWidth());
+		assertTrue(layout.getScreenListButtonArea().getX() < layout.getUndoChangesButtonArea().getX());
+		assertTrue(layout.getUndoChangesButtonArea().getX() < layout.getApplyPendingChangesButtonArea().getX());
 	}
 
 	@Test
@@ -107,6 +164,11 @@ class ConfigScreenLayoutOptionsTest {
 		layout.setTotalContentHeight(layout.getContentArea().getHeight() + 100);
 		layout.setTotalNavHeight(layout.getNavArea().getHeight() + 100);
 		return layout;
+	}
+
+	private static void assertCentered(ImmutableRect2i area, int screenWidth, int screenHeight) {
+		assertEquals((screenWidth - area.getWidth()) / 2, area.getX());
+		assertEquals((screenHeight - area.getHeight()) / 2, area.getY());
 	}
 
 	@SuppressWarnings("DataFlowIssue")
