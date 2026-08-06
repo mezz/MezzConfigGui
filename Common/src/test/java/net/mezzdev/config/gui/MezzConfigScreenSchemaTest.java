@@ -53,10 +53,14 @@ class MezzConfigScreenSchemaTest {
 
 	@Test
 	void schemaUsesMezzConfigEditorCategories() {
-		TestConfigValue enabled = new TestConfigValue("enabled", ConfigValueEditMode.IMMEDIATE, List.of("quick", "advanced"));
+		TestConfigCategory quick = new TestConfigCategory("quick", "test.config.quick", List.of());
+		TestConfigCategory advanced = new TestConfigCategory("advanced", "test.config.advanced", List.of());
+		TestConfigValue enabled = new TestConfigValue("enabled", ConfigValueEditMode.IMMEDIATE, List.of(quick, advanced));
 		TestConfigValue label = new TestConfigValue("label", ConfigValueEditMode.BATCH);
 		TestConfigSchema schema = new TestConfigSchema(List.of(
-			new TestConfigCategory("general", "test.config.general", List.of(enabled, label))
+			new TestConfigCategory("general", "test.config.general", List.of(enabled, label)),
+			quick,
+			advanced
 		));
 
 		List<? extends ConfigScreenCategory> categories = ConfigScreenSchema.from(schema).getCategories();
@@ -74,9 +78,11 @@ class MezzConfigScreenSchemaTest {
 
 	@Test
 	void schemaOmitsStorageCategoryWhenAllValuesUseEditorCategories() {
-		TestConfigValue enabled = new TestConfigValue("enabled", ConfigValueEditMode.BATCH, List.of("quick"));
+		TestConfigCategory quick = new TestConfigCategory("quick", "test.config.quick", List.of());
+		TestConfigValue enabled = new TestConfigValue("enabled", ConfigValueEditMode.BATCH, List.of(quick));
 		TestConfigSchema schema = new TestConfigSchema(List.of(
-			new TestConfigCategory("general", "test.config.general", List.of(enabled))
+			new TestConfigCategory("general", "test.config.general", List.of(enabled)),
+			quick
 		));
 
 		List<? extends ConfigScreenCategory> categories = ConfigScreenSchema.from(schema).getCategories();
@@ -121,8 +127,8 @@ class MezzConfigScreenSchemaTest {
 		}
 
 		@Override
-		public void addListener(IConfigValueBatchChangeListener listener) {
-
+		public Runnable addListener(IConfigValueBatchChangeListener listener) {
+			return () -> {};
 		}
 
 		@Override
@@ -159,14 +165,14 @@ class MezzConfigScreenSchemaTest {
 	private record TestConfigValue(
 		String name,
 		ConfigValueEditMode editMode,
-		List<String> editorCategoryNames
+		List<IConfigCategory> editorCategories
 	) implements IConfigValue<String> {
 		private TestConfigValue(String name, ConfigValueEditMode editMode) {
 			this(name, editMode, List.of());
 		}
 
 		private TestConfigValue {
-			editorCategoryNames = List.copyOf(editorCategoryNames);
+			editorCategories = List.copyOf(editorCategories);
 		}
 
 		@Override
@@ -195,8 +201,8 @@ class MezzConfigScreenSchemaTest {
 		}
 
 		@Override
-		public List<String> getEditorCategoryNames() {
-			return editorCategoryNames;
+		public List<? extends IConfigCategory> getEditorCategories() {
+			return editorCategories;
 		}
 
 		@Override
@@ -205,18 +211,13 @@ class MezzConfigScreenSchemaTest {
 		}
 
 		@Override
-		public void addListener(Consumer<String> listener) {
-
+		public Runnable addListener(IConfigValueChangeListener<String> listener) {
+			return () -> {};
 		}
 
 		@Override
-		public void addListener(IConfigValueChangeListener<String> listener) {
-
-		}
-
-		@Override
-		public void addBatchListener(IConfigValueBatchChangeListener listener) {
-
+		public Runnable addBatchListener(IConfigValueBatchChangeListener listener) {
+			return () -> {};
 		}
 
 		@Override

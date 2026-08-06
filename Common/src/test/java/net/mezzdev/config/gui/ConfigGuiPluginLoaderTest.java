@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import net.mezzdev.config.api.schema.IConfigCategory;
 import net.mezzdev.config.api.sorting.ISortingConfig;
 import net.mezzdev.config.api.value.ConfigValueEditMode;
 import net.mezzdev.config.api.value.IDeserializeResult;
@@ -900,8 +901,8 @@ class ConfigGuiPluginLoaderTest {
 		}
 
 		@Override
-		public void addListener(Consumer<String> listener) {
-
+		public Runnable addListener(Consumer<String> listener) {
+			return () -> {};
 		}
 
 		@Override
@@ -999,7 +1000,7 @@ class ConfigGuiPluginLoaderTest {
 		}
 
 		@Override
-		public List<String> getEditorCategoryNames() {
+		public List<? extends IConfigCategory> getEditorCategories() {
 			return List.of();
 		}
 
@@ -1009,18 +1010,13 @@ class ConfigGuiPluginLoaderTest {
 		}
 
 		@Override
-		public void addListener(Consumer<String> listener) {
-
+		public Runnable addListener(IConfigValueChangeListener<String> listener) {
+			return () -> {};
 		}
 
 		@Override
-		public void addListener(IConfigValueChangeListener<String> listener) {
-
-		}
-
-		@Override
-		public void addBatchListener(IConfigValueBatchChangeListener listener) {
-
+		public Runnable addBatchListener(IConfigValueBatchChangeListener listener) {
+			return () -> {};
 		}
 
 		@Override

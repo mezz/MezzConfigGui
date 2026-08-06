@@ -1,9 +1,8 @@
 package net.mezzdev.config.gui.api;
 
-import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.api.value.IConfigValueChangeListener;
-import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.api.value.ConfigValueEditMode;
+import net.mezzdev.config.api.value.IConfigValue;
+import net.mezzdev.config.api.value.IConfigValueSerializer;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -94,8 +93,8 @@ public interface IConfigScreenValue<T> {
 			}
 
 			@Override
-			public void addListener(Consumer<T> listener) {
-				checkedConfigValue.addListener(listener);
+			public Runnable addListener(Consumer<T> listener) {
+				return checkedConfigValue.addListener(change -> listener.accept(change.newValue()));
 			}
 
 			@Override
@@ -208,18 +207,11 @@ public interface IConfigScreenValue<T> {
 	/**
 	 * Add a listener that is called with the new value when this config screen value changes.
 	 *
-	 * @since 0.1.0
-	 */
-	void addListener(Consumer<T> listener);
-
-	/**
-	 * Add a listener that is called with the old and new values when this config screen value changes.
+	 * @return a callback that removes this listener
 	 *
 	 * @since 0.1.0
 	 */
-	default void addListener(IConfigValueChangeListener<T> listener) {
-		addListener(newValue -> listener.onChange(newValue, newValue));
-	}
+	Runnable addListener(Consumer<T> listener);
 
 	/**
 	 * Get when the config GUI should save edits for this value.

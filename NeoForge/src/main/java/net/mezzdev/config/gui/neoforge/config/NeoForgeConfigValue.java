@@ -102,16 +102,22 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 	}
 
 	@Override
-	public void addListener(Consumer<T> listener) {
+	public Runnable addListener(Consumer<T> listener) {
 		if (listeners == null) {
 			listeners = new ArrayList<>();
 		}
-		listeners.add(listener);
+		Consumer<T> checkedListener = Objects.requireNonNull(listener, "listener");
+		listeners.add(checkedListener);
+		return () -> {
+			if (listeners != null) {
+				listeners.remove(checkedListener);
+			}
+		};
 	}
 
 	private void notifyListeners(T value) {
 		if (listeners != null) {
-			listeners.forEach(listener -> listener.accept(value));
+			List.copyOf(listeners).forEach(listener -> listener.accept(value));
 		}
 	}
 

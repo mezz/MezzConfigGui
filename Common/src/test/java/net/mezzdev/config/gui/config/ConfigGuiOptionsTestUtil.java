@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.config;
 
+import net.mezzdev.config.api.schema.IConfigCategory;
 import net.mezzdev.config.api.value.ConfigValueEditMode;
 import net.mezzdev.config.api.value.IDeserializeResult;
 import net.mezzdev.config.api.value.IConfigValue;
@@ -12,7 +13,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 public final class ConfigGuiOptionsTestUtil {
 	private ConfigGuiOptionsTestUtil() {
@@ -93,7 +93,7 @@ public final class ConfigGuiOptionsTestUtil {
 		}
 
 		@Override
-		public List<String> getEditorCategoryNames() {
+		public List<? extends IConfigCategory> getEditorCategories() {
 			return List.of();
 		}
 
@@ -105,18 +105,13 @@ public final class ConfigGuiOptionsTestUtil {
 		}
 
 		@Override
-		public void addListener(Consumer<T> listener) {
-
+		public Runnable addListener(IConfigValueChangeListener<T> listener) {
+			return () -> {};
 		}
 
 		@Override
-		public void addListener(IConfigValueChangeListener<T> listener) {
-
-		}
-
-		@Override
-		public void addBatchListener(IConfigValueBatchChangeListener listener) {
-
+		public Runnable addBatchListener(IConfigValueBatchChangeListener listener) {
+			return () -> {};
 		}
 
 		@Override

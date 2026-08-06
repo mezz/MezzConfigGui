@@ -464,9 +464,13 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 		}
 
 		@Override
-		public void addListener(Consumer<CombinedEnabled> listener) {
-			primary.addListener(ignored -> listener.accept(getValue()));
-			secondary.addListener(ignored -> listener.accept(getValue()));
+		public Runnable addListener(Consumer<CombinedEnabled> listener) {
+			Runnable unsubscribePrimary = primary.addListener(ignored -> listener.accept(getValue()));
+			Runnable unsubscribeSecondary = secondary.addListener(ignored -> listener.accept(getValue()));
+			return () -> {
+				unsubscribePrimary.run();
+				unsubscribeSecondary.run();
+			};
 		}
 
 		@Override

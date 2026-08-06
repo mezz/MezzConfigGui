@@ -43,8 +43,8 @@ class ConfigScreenValueWithRestartRequirement<T> implements IConfigScreenValue<T
 	}
 
 	@Override
-	public void addListener(Consumer<T> listener) {
-		configValue.addListener(listener);
+	public Runnable addListener(Consumer<T> listener) {
+		return configValue.addListener(listener);
 	}
 
 	@Override

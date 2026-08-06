@@ -105,8 +105,8 @@ class ListConfigEntryTest {
 		}
 
 		@Override
-		public void addListener(Consumer<List<String>> listener) {
-
+		public Runnable addListener(Consumer<List<String>> listener) {
+			return () -> {};
 		}
 
 		@Override

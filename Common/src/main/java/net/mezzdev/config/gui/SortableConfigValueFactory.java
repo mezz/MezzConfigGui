@@ -324,7 +324,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 				return false;
 			}
 			if (sortingConfig.setSortedValues(valueCopy)) {
-				for (Consumer<List<T>> listener : listeners) {
+				for (Consumer<List<T>> listener : List.copyOf(listeners)) {
 					listener.accept(valueCopy);
 				}
 				return true;
@@ -333,8 +333,10 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		}
 
 		@Override
-		public void addListener(Consumer<List<T>> listener) {
-			listeners.add(Objects.requireNonNull(listener, "listener"));
+		public Runnable addListener(Consumer<List<T>> listener) {
+			Consumer<List<T>> checkedListener = Objects.requireNonNull(listener, "listener");
+			listeners.add(checkedListener);
+			return () -> listeners.remove(checkedListener);
 		}
 
 		@Override

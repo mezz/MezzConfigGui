@@ -32,26 +32,22 @@ final class MezzConfigScreenSchema implements ConfigScreenSchema {
 	private static List<ConfigScreenCategory> createCategories(List<? extends IConfigCategory> categories) {
 		Map<String, MutableConfigScreenCategory> screenCategories = new LinkedHashMap<>();
 		for (IConfigCategory category : categories) {
-			MutableConfigScreenCategory storageCategory = screenCategories.computeIfAbsent(
-				category.getName(),
-				name -> new MutableConfigScreenCategory(
-					name,
-					category.getLocalizationKey(),
-					ConfigValueLocalization.getName(category),
-					ConfigValueLocalization.getDescription(category)
-				)
-			);
+			screenCategories.put(category.getName(), createCategory(category));
+		}
+
+		for (IConfigCategory category : categories) {
+			MutableConfigScreenCategory storageCategory = Objects.requireNonNull(screenCategories.get(category.getName()));
 			for (IConfigValue<?> value : category.getConfigValues()) {
 				IConfigScreenValue<?> screenValue = IConfigScreenValue.configValue(value);
-				List<String> editorCategoryNames = value.getEditorCategoryNames();
-				if (editorCategoryNames.isEmpty()) {
+				List<? extends IConfigCategory> editorCategories = value.getEditorCategories();
+				if (editorCategories.isEmpty()) {
 					storageCategory.addValue(screenValue);
 					continue;
 				}
-				for (String editorCategoryName : editorCategoryNames) {
-					MutableConfigScreenCategory editorCategory = screenCategories.computeIfAbsent(
-						editorCategoryName,
-						name -> createEditorCategory(category.getLocalizationKey(), category.getName(), name)
+				for (IConfigCategory editorCategoryValue : editorCategories) {
+					MutableConfigScreenCategory editorCategory = Objects.requireNonNull(
+						screenCategories.get(editorCategoryValue.getName()),
+						() -> "Editor category is not in this schema: " + editorCategoryValue.getName()
 					);
 					editorCategory.addValue(screenValue);
 				}
@@ -64,27 +60,13 @@ final class MezzConfigScreenSchema implements ConfigScreenSchema {
 			.toList();
 	}
 
-	private static MutableConfigScreenCategory createEditorCategory(
-		String storageCategoryLocalizationKey,
-		String storageCategoryName,
-		String editorCategoryName
-	) {
-		String localizationPrefix = getLocalizationPrefix(storageCategoryLocalizationKey, storageCategoryName);
-		String localizationKey = localizationPrefix + "." + editorCategoryName;
+	private static MutableConfigScreenCategory createCategory(IConfigCategory category) {
 		return new MutableConfigScreenCategory(
-			editorCategoryName,
-			localizationKey,
-			Component.translatable(localizationKey),
-			Component.translatable(localizationKey + ".description")
+			category.getName(),
+			category.getLocalizationKey(),
+			ConfigValueLocalization.getName(category),
+			ConfigValueLocalization.getDescription(category)
 		);
-	}
-
-	private static String getLocalizationPrefix(String categoryLocalizationKey, String categoryName) {
-		String suffix = "." + categoryName;
-		if (categoryLocalizationKey.endsWith(suffix) && categoryLocalizationKey.length() > suffix.length()) {
-			return categoryLocalizationKey.substring(0, categoryLocalizationKey.length() - suffix.length());
-		}
-		return categoryLocalizationKey;
 	}
 
 	private static final class MutableConfigScreenCategory {

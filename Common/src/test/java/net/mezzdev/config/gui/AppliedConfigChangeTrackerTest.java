@@ -87,8 +87,8 @@ class AppliedConfigChangeTrackerTest {
 		}
 
 		@Override
-		public void addListener(Consumer<String> listener) {
-
+		public Runnable addListener(Consumer<String> listener) {
+			return () -> {};
 		}
 
 		@Override

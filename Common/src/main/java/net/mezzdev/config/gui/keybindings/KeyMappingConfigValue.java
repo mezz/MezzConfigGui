@@ -66,8 +66,8 @@ public final class KeyMappingConfigValue implements IConfigScreenValue<KeyMappin
 	}
 
 	@Override
-	public void addListener(Consumer<KeyMappingValue> listener) {
-
+	public Runnable addListener(Consumer<KeyMappingValue> listener) {
+		return () -> {};
 	}
 
 	@Override
