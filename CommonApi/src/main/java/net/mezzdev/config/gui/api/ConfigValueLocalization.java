@@ -1,6 +1,6 @@
 package net.mezzdev.config.gui.api;
 
-import net.mezzdev.config.api.schema.IConfigCategory;
+import net.mezzdev.config.api.schema.IConfigEditorCategory;
 import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.minecraft.locale.Language;
@@ -26,7 +26,7 @@ public final class ConfigValueLocalization {
 	 *
 	 * @since 0.1.0
 	 */
-	public static Component getName(IConfigCategory category) {
+	public static Component getName(IConfigEditorCategory category) {
 		if (category instanceof IConfigLocalizedCategory localizedCategory) {
 			return localizedCategory.getLocalizedName();
 		}
@@ -38,7 +38,7 @@ public final class ConfigValueLocalization {
 	 *
 	 * @since 0.1.0
 	 */
-	public static Component getDescription(IConfigCategory category) {
+	public static Component getDescription(IConfigEditorCategory category) {
 		if (category instanceof IConfigLocalizedCategory localizedCategory) {
 			return localizedCategory.getLocalizedDescription();
 		}

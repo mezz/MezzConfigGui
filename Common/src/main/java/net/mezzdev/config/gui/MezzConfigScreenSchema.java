@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui;
 
 import net.mezzdev.config.api.schema.IConfigCategory;
+import net.mezzdev.config.api.schema.IConfigEditorCategory;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;
@@ -26,25 +27,31 @@ final class MezzConfigScreenSchema implements ConfigScreenSchema {
 
 	@Override
 	public List<? extends ConfigScreenCategory> getCategories() {
-		return createCategories(schema.getCategories());
+		return createCategories(schema.getCategories(), schema.getEditorCategories());
 	}
 
-	private static List<ConfigScreenCategory> createCategories(List<? extends IConfigCategory> categories) {
+	private static List<ConfigScreenCategory> createCategories(
+		List<? extends IConfigCategory> categories,
+		List<? extends IConfigEditorCategory> editorCategories
+	) {
 		Map<String, MutableConfigScreenCategory> screenCategories = new LinkedHashMap<>();
-		for (IConfigCategory category : categories) {
-			screenCategories.put(category.getName(), createCategory(category));
+		for (IConfigEditorCategory editorCategory : editorCategories) {
+			screenCategories.put(editorCategory.getName(), createCategory(editorCategory));
 		}
 
 		for (IConfigCategory category : categories) {
-			MutableConfigScreenCategory storageCategory = Objects.requireNonNull(screenCategories.get(category.getName()));
+			MutableConfigScreenCategory storageCategory = Objects.requireNonNull(
+				screenCategories.get(category.getName()),
+				() -> "Storage category is not in this schema's editor categories: " + category.getName()
+			);
 			for (IConfigValue<?> value : category.getConfigValues()) {
 				IConfigScreenValue<?> screenValue = IConfigScreenValue.configValue(value);
-				List<? extends IConfigCategory> editorCategories = value.getEditorCategories();
-				if (editorCategories.isEmpty()) {
+				List<? extends IConfigEditorCategory> valueEditorCategories = value.getEditorCategories();
+				if (valueEditorCategories.isEmpty()) {
 					storageCategory.addValue(screenValue);
 					continue;
 				}
-				for (IConfigCategory editorCategoryValue : editorCategories) {
+				for (IConfigEditorCategory editorCategoryValue : valueEditorCategories) {
 					MutableConfigScreenCategory editorCategory = Objects.requireNonNull(
 						screenCategories.get(editorCategoryValue.getName()),
 						() -> "Editor category is not in this schema: " + editorCategoryValue.getName()
@@ -60,7 +67,7 @@ final class MezzConfigScreenSchema implements ConfigScreenSchema {
 			.toList();
 	}
 
-	private static MutableConfigScreenCategory createCategory(IConfigCategory category) {
+	private static MutableConfigScreenCategory createCategory(IConfigEditorCategory category) {
 		return new MutableConfigScreenCategory(
 			category.getName(),
 			category.getLocalizationKey(),

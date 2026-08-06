@@ -2,6 +2,7 @@ package net.mezzdev.config.gui;
 
 import net.mezzdev.config.api.schema.IConfigBatchUpdater;
 import net.mezzdev.config.api.schema.IConfigCategory;
+import net.mezzdev.config.api.schema.IConfigEditorCategory;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.value.ConfigValueEditMode;
 import net.mezzdev.config.api.value.IAppliedConfigValueChange;
@@ -53,15 +54,14 @@ class MezzConfigScreenSchemaTest {
 
 	@Test
 	void schemaUsesMezzConfigEditorCategories() {
-		TestConfigCategory quick = new TestConfigCategory("quick", "test.config.quick", List.of());
-		TestConfigCategory advanced = new TestConfigCategory("advanced", "test.config.advanced", List.of());
+		TestEditorCategory quick = new TestEditorCategory("quick", "test.config.quick");
+		TestEditorCategory advanced = new TestEditorCategory("advanced", "test.config.advanced");
+		TestConfigCategory general = new TestConfigCategory("general", "test.config.general", List.of());
 		TestConfigValue enabled = new TestConfigValue("enabled", ConfigValueEditMode.IMMEDIATE, List.of(quick, advanced));
 		TestConfigValue label = new TestConfigValue("label", ConfigValueEditMode.BATCH);
 		TestConfigSchema schema = new TestConfigSchema(List.of(
-			new TestConfigCategory("general", "test.config.general", List.of(enabled, label)),
-			quick,
-			advanced
-		));
+			new TestConfigCategory(general.name(), general.localizationKey(), List.of(enabled, label))
+		), List.of(general, quick, advanced));
 
 		List<? extends ConfigScreenCategory> categories = ConfigScreenSchema.from(schema).getCategories();
 
@@ -78,12 +78,12 @@ class MezzConfigScreenSchemaTest {
 
 	@Test
 	void schemaOmitsStorageCategoryWhenAllValuesUseEditorCategories() {
-		TestConfigCategory quick = new TestConfigCategory("quick", "test.config.quick", List.of());
+		TestEditorCategory quick = new TestEditorCategory("quick", "test.config.quick");
+		TestConfigCategory general = new TestConfigCategory("general", "test.config.general", List.of());
 		TestConfigValue enabled = new TestConfigValue("enabled", ConfigValueEditMode.BATCH, List.of(quick));
 		TestConfigSchema schema = new TestConfigSchema(List.of(
-			new TestConfigCategory("general", "test.config.general", List.of(enabled)),
-			quick
-		));
+			new TestConfigCategory(general.name(), general.localizationKey(), List.of(enabled))
+		), List.of(general, quick));
 
 		List<? extends ConfigScreenCategory> categories = ConfigScreenSchema.from(schema).getCategories();
 
@@ -105,10 +105,12 @@ class MezzConfigScreenSchemaTest {
 	}
 
 	private record TestConfigSchema(
-		List<TestConfigCategory> categories
+		List<TestConfigCategory> categories,
+		List<IConfigEditorCategory> editorCategories
 	) implements IConfigSchema {
 		private TestConfigSchema {
 			categories = List.copyOf(categories);
+			editorCategories = List.copyOf(editorCategories);
 		}
 
 		@Override
@@ -119,6 +121,11 @@ class MezzConfigScreenSchemaTest {
 		@Override
 		public List<? extends IConfigCategory> getCategories() {
 			return categories;
+		}
+
+		@Override
+		public List<? extends IConfigEditorCategory> getEditorCategories() {
+			return editorCategories;
 		}
 
 		@Override
@@ -162,10 +169,25 @@ class MezzConfigScreenSchemaTest {
 		}
 	}
 
+	private record TestEditorCategory(
+		String name,
+		String localizationKey
+	) implements IConfigEditorCategory {
+		@Override
+		public String getName() {
+			return name;
+		}
+
+		@Override
+		public String getLocalizationKey() {
+			return localizationKey;
+		}
+	}
+
 	private record TestConfigValue(
 		String name,
 		ConfigValueEditMode editMode,
-		List<IConfigCategory> editorCategories
+		List<IConfigEditorCategory> editorCategories
 	) implements IConfigValue<String> {
 		private TestConfigValue(String name, ConfigValueEditMode editMode) {
 			this(name, editMode, List.of());
@@ -201,7 +223,7 @@ class MezzConfigScreenSchemaTest {
 		}
 
 		@Override
-		public List<? extends IConfigCategory> getEditorCategories() {
+		public List<? extends IConfigEditorCategory> getEditorCategories() {
 			return editorCategories;
 		}
 

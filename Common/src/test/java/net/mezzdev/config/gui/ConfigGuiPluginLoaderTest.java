@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import net.mezzdev.config.api.schema.IConfigCategory;
+import net.mezzdev.config.api.schema.IConfigEditorCategory;
 import net.mezzdev.config.api.sorting.ISortingConfig;
 import net.mezzdev.config.api.value.ConfigValueEditMode;
 import net.mezzdev.config.api.value.IDeserializeResult;
@@ -1000,7 +1000,7 @@ class ConfigGuiPluginLoaderTest {
 		}
 
 		@Override
-		public List<? extends IConfigCategory> getEditorCategories() {
+		public List<? extends IConfigEditorCategory> getEditorCategories() {
 			return List.of();
 		}
 

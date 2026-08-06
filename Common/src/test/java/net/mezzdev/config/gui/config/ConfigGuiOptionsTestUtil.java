@@ -1,6 +1,6 @@
 package net.mezzdev.config.gui.config;
 
-import net.mezzdev.config.api.schema.IConfigCategory;
+import net.mezzdev.config.api.schema.IConfigEditorCategory;
 import net.mezzdev.config.api.value.ConfigValueEditMode;
 import net.mezzdev.config.api.value.IDeserializeResult;
 import net.mezzdev.config.api.value.IConfigValue;
@@ -93,7 +93,7 @@ public final class ConfigGuiOptionsTestUtil {
 		}
 
 		@Override
-		public List<? extends IConfigCategory> getEditorCategories() {
+		public List<? extends IConfigEditorCategory> getEditorCategories() {
 			return List.of();
 		}
 
