@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui.api;
 
+import net.mezzdev.config.api.value.PackedColor;
+
 import java.util.List;
 
 /**
@@ -12,6 +14,7 @@ public final class ConfigValueEditorTypes {
 
 	public static final ConfigValueEditorType<Boolean> BOOLEAN = ConfigValueEditorType.create(CONFIG_ID, "boolean");
 	public static final ConfigValueEditorType<Integer> INTEGER = ConfigValueEditorType.create(CONFIG_ID, "integer");
+	public static final ConfigValueEditorType<PackedColor> COLOR = ConfigValueEditorType.create(CONFIG_ID, "color");
 
 	private static final ConfigValueEditorType<Object> TEXT = ConfigValueEditorType.create(CONFIG_ID, "text");
 	private static final ConfigValueEditorType<Object> SELECTION = ConfigValueEditorType.create(CONFIG_ID, "selection");

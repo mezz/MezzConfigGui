@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui.info;
 
 import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.api.value.PackedColor;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueIcon;
 import net.mezzdev.config.gui.api.IConfigValueIconProvider;
@@ -58,6 +59,9 @@ public final class ConfigValueIcon {
 		Optional<IConfigValueIcon> icon = getProvidedIcon(serializer, value);
 		if (icon.isPresent()) {
 			return icon;
+		}
+		if (value instanceof PackedColor color) {
+			return Optional.of((guiGraphics, area) -> ColorSwatch.draw(guiGraphics, area, color));
 		}
 		if (value instanceof Boolean booleanValue) {
 			return Optional.of(new SpriteConfigValueIcon(getBooleanIconLocation(booleanValue)));

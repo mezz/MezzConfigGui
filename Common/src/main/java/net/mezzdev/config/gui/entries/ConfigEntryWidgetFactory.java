@@ -2,6 +2,7 @@ package net.mezzdev.config.gui.entries;
 
 import net.mezzdev.config.api.value.ConfigValueRange;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.api.value.PackedColor;
 import net.mezzdev.config.gui.api.ConfigValueEditorType;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
@@ -42,6 +43,7 @@ public final class ConfigEntryWidgetFactory {
 		register(ConfigValueEditorTypes.<KeyMappingValue>getKeyMapping(), this::createKeyMappingEntry);
 		register(ConfigValueEditorTypes.BOOLEAN, value -> new CustomConfigEntry<>(value, new BooleanConfigValueEditor(), valueSelectorOpener, textures));
 		register(ConfigValueEditorTypes.INTEGER, this::createIntegerEntry);
+		register(ConfigValueEditorTypes.COLOR, this::createColorEntry);
 		register(ConfigValueEditorTypes.getText(), this::createTextEntry);
 		register(ConfigValueEditorTypes.getList(), this::createListEntry);
 		registerSelectionEditor();
@@ -80,6 +82,9 @@ public final class ConfigEntryWidgetFactory {
 		if (value.getValue() instanceof List<?> && ConfigListValueEditorSerializers.canAdapt(serializer)) {
 			return ConfigValueEditorTypes.getList();
 		}
+		if (value.getValue() instanceof PackedColor) {
+			return ConfigValueEditorTypes.COLOR;
+		}
 		if (value.getValue() instanceof Integer && serializer.getRange().isPresent()) {
 			return ConfigValueEditorTypes.INTEGER;
 		}
@@ -106,6 +111,10 @@ public final class ConfigEntryWidgetFactory {
 		ConfigValueRange<Integer> range = serializer.getRange()
 			.orElseThrow(() -> new UnsupportedOperationException("Integer editor requires a config value range."));
 		return new IntegerConfigEntry(value, serializer, range, textures);
+	}
+
+	private ConfigEntryWidget<PackedColor> createColorEntry(IConfigScreenValue<PackedColor> value) {
+		return new ColorConfigEntry(value, value.getSerializer(), valueSelectorOpener, textures);
 	}
 
 	private <T> ConfigEntryWidget<T> createTextEntry(IConfigScreenValue<T> value) {

@@ -78,4 +78,34 @@ public interface IConfigValuePopup<T> {
 		}
 		return getHoveredValue(area, mouseX, mouseY);
 	}
+
+	/**
+	 * Get the value selected while dragging the mouse, or {@link Optional#empty()} when this popup does not handle
+	 * dragging.
+	 *
+	 * @param area the popup bounds
+	 * @param mouseX the current mouse x-coordinate
+	 * @param mouseY the current mouse y-coordinate
+	 * @param button the held mouse button
+	 * @return the value selected by the drag
+	 *
+	 * @since 0.1.0
+	 */
+	default Optional<T> getDraggedValue(Rect2i area, double mouseX, double mouseY, int button) {
+		return Optional.empty();
+	}
+
+	/**
+	 * Whether the popup should close after it selects a value.
+	 * <p>
+	 * Return {@code false} for interactive controls such as color pickers that support several adjustments before the
+	 * user clicks outside the popup.
+	 *
+	 * @return true to close after selecting a value
+	 *
+	 * @since 0.1.0
+	 */
+	default boolean closesAfterValueSelected() {
+		return true;
+	}
 }

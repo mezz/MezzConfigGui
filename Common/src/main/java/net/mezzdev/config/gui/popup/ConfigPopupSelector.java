@@ -24,4 +24,12 @@ public interface ConfigPopupSelector {
 	void draw(GuiGraphics guiGraphics, double mouseX, double mouseY);
 
 	boolean onMouseClicked(UserInput input);
+
+	default boolean onMouseDragged(double mouseX, double mouseY, int button) {
+		return false;
+	}
+
+	default boolean closesAfterClick() {
+		return true;
+	}
 }

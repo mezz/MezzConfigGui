@@ -7,6 +7,7 @@ import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.schema.IConfigSchemaBuilder;
 import net.mezzdev.config.api.value.ConfigValueEditMode;
 import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.value.PackedColor;
 import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigGuiRegistration;
 import net.minecraft.network.chat.Component;
@@ -46,8 +47,12 @@ public final class FabricMezzConfigDefaultsTestPlugin implements IConfigPlugin, 
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 		numbers.addIntegerList("favoriteNumbers", List.of(1, 2, 3), 0, 16).build();
-		numbers.addColor("accentColor", 0xFF33AA55).build();
-		numbers.addColorList("palette", List.of(0xFF33AA55, 0xFF4477DD, 0xFFE0AA22)).build();
+		numbers.addColor("accentColor", PackedColor.argb(0xFF33AA55)).build();
+		numbers.addColorList("palette", List.of(
+			PackedColor.argb(0xFF33AA55),
+			PackedColor.rgb(0x4477DD),
+			PackedColor.argb(0x80E0AA22)
+		)).build();
 		numbers.addLong("maxEnergy", 10_000_000_000L).build();
 		numbers.addLong("boundedLong", 64L, 0L, 1024L).build();
 		numbers.addLongList("longBreakpoints", List.of(128L, 256L, 512L), 0L, 1024L).build();

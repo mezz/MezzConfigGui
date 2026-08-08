@@ -41,19 +41,40 @@ public final class ConfigValueSelectorInputHandler implements ConfigInputHandler
 
 		if (clipArea.contains(input.getMouseX(), input.getMouseY()) && valueSelector.isMouseOver(input.getMouseX(), input.getMouseY())) {
 			if (valueSelector.onMouseClicked(input)) {
-				if (!input.isSimulate()) {
+				if (!input.isSimulate() && valueSelector.closesAfterClick()) {
 					closeValueSelector();
 					layoutUpdater.run();
 				}
 				return Optional.of(this);
 			}
-			return Optional.empty();
+			return Optional.of(this);
 		}
 
 		if (!input.isSimulate()) {
 			closeValueSelector();
 		}
 		return Optional.of(this);
+	}
+
+	@Override
+	public Optional<ConfigInputHandler> handleMouseDragged(
+		Screen screen,
+		double mouseX,
+		double mouseY,
+		int button,
+		double dragX,
+		double dragY
+	) {
+		ConfigPopupSelector valueSelector = valueSelectorSupplier.get();
+		if (valueSelector == null) {
+			return Optional.empty();
+		}
+		ImmutableRect2i clipArea = valueSelectorClipAreaSupplier.get();
+		valueSelector.updateBounds(clipArea);
+		if (valueSelector.onMouseDragged(mouseX, mouseY, button)) {
+			return Optional.of(this);
+		}
+		return Optional.empty();
 	}
 
 	private void closeValueSelector() {

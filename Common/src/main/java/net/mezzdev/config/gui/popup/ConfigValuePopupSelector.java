@@ -91,6 +91,18 @@ public final class ConfigValuePopupSelector<T> implements ConfigPopupSelector {
 		return true;
 	}
 
+	@Override
+	public boolean onMouseDragged(double mouseX, double mouseY, int button) {
+		Optional<T> draggedValue = popup.getDraggedValue(toRect2i(area), mouseX, mouseY, button);
+		draggedValue.ifPresent(setter);
+		return draggedValue.isPresent();
+	}
+
+	@Override
+	public boolean closesAfterClick() {
+		return popup.closesAfterValueSelected();
+	}
+
 	private static int getMouseButton(UserInput input) {
 		InputConstants.Key key = input.getKey();
 		if (key.getType() != InputConstants.Type.MOUSE) {
