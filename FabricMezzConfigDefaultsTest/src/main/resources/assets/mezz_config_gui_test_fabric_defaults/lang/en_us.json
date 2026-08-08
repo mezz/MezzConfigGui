@@ -22,6 +22,8 @@
   "mezz_config_gui_test.fabric.defaults.numbers.accentColor.description": "An ARGB color using the core color serializer.",
   "mezz_config_gui_test.fabric.defaults.numbers.palette": "Palette",
   "mezz_config_gui_test.fabric.defaults.numbers.palette.description": "A list of ARGB colors using the core color list serializer.",
+  "mezz_config_gui_test.fabric.defaults.numbers.namedColors": "Named Colors",
+  "mezz_config_gui_test.fabric.defaults.numbers.namedColors.description": "An ordered key-value list with independently editable names and RGB colors.",
   "mezz_config_gui_test.fabric.defaults.numbers.maxEnergy": "Max Energy",
   "mezz_config_gui_test.fabric.defaults.numbers.maxEnergy.description": "A long value using the core long serializer.",
   "mezz_config_gui_test.fabric.defaults.numbers.boundedLong": "Bounded Long",

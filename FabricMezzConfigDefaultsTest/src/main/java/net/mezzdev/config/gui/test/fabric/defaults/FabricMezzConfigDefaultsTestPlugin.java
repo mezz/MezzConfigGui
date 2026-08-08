@@ -5,8 +5,12 @@ import net.mezzdev.config.api.plugin.IConfigRegistration;
 import net.mezzdev.config.api.schema.IConfigCategoryBuilder;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.schema.IConfigSchemaBuilder;
+import net.mezzdev.config.api.value.ConfigColorFormat;
 import net.mezzdev.config.api.value.ConfigValueEditMode;
 import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.api.value.IConfigKeyValueSerializer;
+import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.api.value.PackedColor;
 import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigGuiRegistration;
@@ -53,6 +57,11 @@ public final class FabricMezzConfigDefaultsTestPlugin implements IConfigPlugin, 
 			PackedColor.rgb(0x4477DD),
 			PackedColor.argb(0x80E0AA22)
 		)).build();
+		numbers.addKeyValueList("namedColors", List.of(
+			new NamedColor("Highlight", PackedColor.rgb(0xF2C94C)),
+			new NamedColor("Success", PackedColor.rgb(0x33AA55)),
+			new NamedColor("Warning", PackedColor.rgb(0xE07030))
+		), NamedColorSerializer.INSTANCE).build();
 		numbers.addLong("maxEnergy", 10_000_000_000L).build();
 		numbers.addLong("boundedLong", 64L, 0L, 1024L).build();
 		numbers.addLongList("longBreakpoints", List.of(128L, 256L, 512L), 0L, 1024L).build();
@@ -87,5 +96,131 @@ public final class FabricMezzConfigDefaultsTestPlugin implements IConfigPlugin, 
 		SLOW,
 		BALANCED,
 		FAST
+	}
+
+	private record NamedColor(String name, PackedColor color) {}
+
+	private static final class NamedColorSerializer implements IConfigKeyValueSerializer<NamedColor, String, PackedColor> {
+		private static final NamedColorSerializer INSTANCE = new NamedColorSerializer();
+
+		@Override
+		public IConfigValueSerializer<String> getKeySerializer() {
+			return NameSerializer.INSTANCE;
+		}
+
+		@Override
+		public IConfigValueSerializer<PackedColor> getValueSerializer() {
+			return RgbColorSerializer.INSTANCE;
+		}
+
+		@Override
+		public String getKey(NamedColor entry) {
+			return entry.name();
+		}
+
+		@Override
+		public PackedColor getValue(NamedColor entry) {
+			return entry.color();
+		}
+
+		@Override
+		public NamedColor createEntry(String key, PackedColor value) {
+			return new NamedColor(key, value);
+		}
+
+		@Override
+		public String serialize(NamedColor value) {
+			return value.name() + ":" + RgbColorSerializer.INSTANCE.serialize(value.color());
+		}
+
+		@Override
+		public IDeserializeResult<NamedColor> deserialize(String string) {
+			String[] parts = string.split(":", 2);
+			if (parts.length != 2 || !NameSerializer.INSTANCE.isValid(parts[0])) {
+				return IDeserializeResult.failure("Named colors must contain a name and RGB color separated by ':'");
+			}
+			IDeserializeResult<PackedColor> colorResult = RgbColorSerializer.INSTANCE.deserialize(parts[1]);
+			if (!colorResult.getErrors().isEmpty()) {
+				return IDeserializeResult.failure("Named colors must contain an RGB color");
+			}
+			return colorResult.getResult()
+				.map(color -> IDeserializeResult.success(new NamedColor(parts[0], color)))
+				.orElseGet(() -> IDeserializeResult.failure("Named colors must contain an RGB color"));
+		}
+
+		@Override
+		public boolean isValid(NamedColor value) {
+			return NameSerializer.INSTANCE.isValid(value.name()) && RgbColorSerializer.INSTANCE.isValid(value.color());
+		}
+
+		@Override
+		public String getValidValuesDescription() {
+			return "A name and RGB color separated by ':'";
+		}
+	}
+
+	private static final class NameSerializer implements IConfigValueSerializer<String> {
+		private static final NameSerializer INSTANCE = new NameSerializer();
+
+		@Override
+		public String serialize(String value) {
+			return value;
+		}
+
+		@Override
+		public IDeserializeResult<String> deserialize(String string) {
+			if (!isValid(string)) {
+				return IDeserializeResult.failure("Names must not be blank or contain ':'");
+			}
+			return IDeserializeResult.success(string);
+		}
+
+		@Override
+		public boolean isValid(String value) {
+			return !value.isBlank() && !value.contains(":");
+		}
+
+		@Override
+		public String getValidValuesDescription() {
+			return "A non-blank name without ':'";
+		}
+	}
+
+	private static final class RgbColorSerializer implements IConfigValueSerializer<PackedColor> {
+		private static final RgbColorSerializer INSTANCE = new RgbColorSerializer();
+
+		@Override
+		public String serialize(PackedColor value) {
+			return "0x%06X".formatted(value.packedValue());
+		}
+
+		@Override
+		public IDeserializeResult<PackedColor> deserialize(String string) {
+			String hex = string;
+			if (hex.startsWith("#")) {
+				hex = hex.substring(1);
+			}
+			if (hex.startsWith("0x") || hex.startsWith("0X")) {
+				hex = hex.substring(2);
+			}
+			if (hex.length() != 6) {
+				return IDeserializeResult.failure("RGB colors must contain exactly 6 hex digits");
+			}
+			try {
+				return IDeserializeResult.success(PackedColor.rgb(Integer.parseInt(hex, 16)));
+			} catch (NumberFormatException e) {
+				return IDeserializeResult.failure("RGB colors must contain exactly 6 hex digits");
+			}
+		}
+
+		@Override
+		public boolean isValid(PackedColor value) {
+			return value.format() == ConfigColorFormat.RGB;
+		}
+
+		@Override
+		public String getValidValuesDescription() {
+			return "An RGB color written as 0xRRGGBB";
+		}
 	}
 }

@@ -80,6 +80,7 @@ class ListConfigEntryTest {
 		return new ListConfigEntry<>(
 			new TestConfigValue(serializer),
 			serializer,
+			selector -> {},
 			() -> {},
 			null
 		);
