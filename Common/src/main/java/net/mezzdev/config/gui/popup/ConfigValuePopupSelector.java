@@ -99,6 +99,16 @@ public final class ConfigValuePopupSelector<T> implements ConfigPopupSelector {
 	}
 
 	@Override
+	public boolean charTyped(char codePoint, int modifiers) {
+		return popup.charTyped(codePoint, modifiers, setter);
+	}
+
+	@Override
+	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+		return popup.keyPressed(keyCode, scanCode, modifiers, setter);
+	}
+
+	@Override
 	public boolean closesAfterClick() {
 		return popup.closesAfterValueSelected();
 	}

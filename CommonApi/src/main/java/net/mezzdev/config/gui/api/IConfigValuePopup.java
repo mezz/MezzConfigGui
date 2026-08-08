@@ -4,6 +4,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * Popup content opened by a custom config value editor.
@@ -93,6 +94,35 @@ public interface IConfigValuePopup<T> {
 	 */
 	default Optional<T> getDraggedValue(Rect2i area, double mouseX, double mouseY, int button) {
 		return Optional.empty();
+	}
+
+	/**
+	 * Handle a typed character while this popup has an active text field.
+	 *
+	 * @param codePoint the typed character
+	 * @param modifiers the active keyboard modifiers
+	 * @param valueConsumer receives a new value when the edit becomes valid
+	 * @return true when the popup handled the character
+	 *
+	 * @since 0.1.0
+	 */
+	default boolean charTyped(char codePoint, int modifiers, Consumer<T> valueConsumer) {
+		return false;
+	}
+
+	/**
+	 * Handle a key press while this popup has an active text field.
+	 *
+	 * @param keyCode the key code
+	 * @param scanCode the platform scan code
+	 * @param modifiers the active keyboard modifiers
+	 * @param valueConsumer receives a new value when the edit becomes valid
+	 * @return true when the popup handled the key press
+	 *
+	 * @since 0.1.0
+	 */
+	default boolean keyPressed(int keyCode, int scanCode, int modifiers, Consumer<T> valueConsumer) {
+		return false;
 	}
 
 	/**

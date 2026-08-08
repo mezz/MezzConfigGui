@@ -5,8 +5,11 @@ import net.mezzdev.config.api.value.PackedColor;
 import net.minecraft.client.renderer.Rect2i;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ColorPickerModelTest {
 	@Test
@@ -46,6 +49,36 @@ class ColorPickerModelTest {
 	}
 
 	@Test
+	void convertsBetweenRgbAndCmyk() {
+		ColorPickerModel model = new ColorPickerModel(PackedColor.rgb(0xFF0000));
+
+		ColorPickerModel.Cmyk red = model.getCmyk();
+		assertEquals(0.0, red.cyan(), 0.0001);
+		assertEquals(1.0, red.magenta(), 0.0001);
+		assertEquals(1.0, red.yellow(), 0.0001);
+		assertEquals(0.0, red.black(), 0.0001);
+
+		model.setCmyk(1.0, 0.0, 0.0, 0.0);
+		assertEquals(PackedColor.rgb(0x00FFFF), model.getPackedColor());
+	}
+
+	@Test
+	void convertsBetweenRgbAndD65Lab() {
+		ColorPickerModel model = new ColorPickerModel(PackedColor.rgb(0xFF0000));
+
+		ColorPickerModel.Lab red = model.getLab();
+		assertEquals(53.24, red.lightness(), 0.02);
+		assertEquals(80.09, red.a(), 0.02);
+		assertEquals(67.20, red.b(), 0.02);
+
+		model.setLab(red.lightness(), red.a(), red.b());
+		ColorPickerModel.Rgb roundTrip = model.getRgb();
+		assertEquals(255, roundTrip.red(), 1);
+		assertEquals(0, roundTrip.green(), 1);
+		assertEquals(0, roundTrip.blue(), 1);
+	}
+
+	@Test
 	void popupKeepsInteractiveSelectionsOpen() {
 		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.argb(0xFFFF0000));
 		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
@@ -73,5 +106,20 @@ class ColorPickerModelTest {
 		ColorPickerPopup argb = new ColorPickerPopup(new PackedColor(0xFF336699, ConfigColorFormat.ARGB));
 
 		assertEquals(17, argb.getHeight() - rgb.getHeight());
+	}
+
+	@Test
+	void popupAcceptsArgbHexInput() {
+		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.argb(0xFFFF0000));
+		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
+		AtomicReference<PackedColor> editedColor = new AtomicReference<>();
+
+		popup.getClickedValue(area, 150, 120, 0);
+		popup.getClickedValue(area, 20, 140, 0);
+		for (char character : "#804477DD".toCharArray()) {
+			assertTrue(popup.charTyped(character, 0, editedColor::set));
+		}
+
+		assertEquals(PackedColor.argb(0x804477DD), editedColor.get());
 	}
 }

@@ -27,6 +27,7 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -401,6 +402,10 @@ public class ConfigScreen extends Screen {
 
 	@Override
 	public boolean charTyped(char codePoint, int modifiers) {
+		ConfigPopupSelector valueSelector = this.valueSelector;
+		if (valueSelector != null && valueSelector.charTyped(codePoint, modifiers)) {
+			return true;
+		}
 		if (searchBox.isFocused() && searchBox.charTyped(codePoint, modifiers)) {
 			return true;
 		}
@@ -412,6 +417,16 @@ public class ConfigScreen extends Screen {
 
 	@Override
 	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+		ConfigPopupSelector valueSelector = this.valueSelector;
+		if (valueSelector != null) {
+			if (valueSelector.keyPressed(keyCode, scanCode, modifiers)) {
+				return true;
+			}
+			if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+				closeValueSelector();
+				return true;
+			}
+		}
 		UserInput input = UserInput.fromVanilla(keyCode, scanCode, modifiers, InputType.IMMEDIATE);
 		if (searchBox.isFocused()) {
 			if (searchBox.keyPressed(keyCode, scanCode, modifiers)) {
