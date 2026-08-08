@@ -14,11 +14,9 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 public final class NeoForgeConfigScreenConfigs {
 	private static final Logger LOGGER = LogManager.getLogger();
@@ -33,19 +31,12 @@ public final class NeoForgeConfigScreenConfigs {
 
 	}
 
-	public static Collection<? extends ConfigScreenConfig> getConfigScreens(
-		Collection<? extends ConfigScreenConfig> existingConfigScreens
-	) {
-		Set<String> existingModIds = new LinkedHashSet<>();
-		for (ConfigScreenConfig configScreen : existingConfigScreens) {
-			existingModIds.add(configScreen.getModId());
-		}
-
+	public static Collection<? extends ConfigScreenConfig> getConfigScreens() {
 		Map<String, ModContainer> modContainers = new LinkedHashMap<>();
 		for (ModConfig.Type configType : CONFIG_TYPE_ORDER) {
 			for (ModConfig modConfig : ModConfigs.getConfigSet(configType)) {
 				String modId = modConfig.getModId();
-				if (existingModIds.contains(modId) || modContainers.containsKey(modId) || !hasSupportedValues(modConfig)) {
+				if (modContainers.containsKey(modId) || !hasSupportedValues(modConfig)) {
 					continue;
 				}
 				ModList.get()

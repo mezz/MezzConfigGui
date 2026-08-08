@@ -47,6 +47,10 @@
   "mezz_config_gui_test_neoforge_custom.configuration.common.aliases.tooltip": "Native common string list kept in the Common Native Values category.",
   "mezz_config_gui_test_neoforge_custom.configuration.common.cacheBudget": "Common Cache Budget",
   "mezz_config_gui_test_neoforge_custom.configuration.common.cacheBudget.tooltip": "Native common bounded long value kept in the Common Native Values category and marked restart-required by the plugin.",
+  "mezz_config_gui_test_neoforge_custom.config.mezzConfig": "MezzConfig Values",
+  "mezz_config_gui_test_neoforge_custom.config.mezzConfig.description": "MezzConfig values merged into the same screen as this mod's native NeoForge configs.",
+  "mezz_config_gui_test_neoforge_custom.config.mezzConfig.mixedSourceEnabled": "Mixed Source Enabled",
+  "mezz_config_gui_test_neoforge_custom.config.mezzConfig.mixedSourceEnabled.description": "Confirms that native discovery does not mask MezzConfig schemas for the same mod.",
   "key.categories.mezz_config_gui_test_neoforge_custom": "Config GUI Native Test",
   "key.mezz_config_gui_test_neoforge_custom.openNativeScreen": "Open Native Test Screen",
   "key.mezz_config_gui_test_neoforge_custom.toggleNativeOverlay": "Toggle Native Test Overlay"

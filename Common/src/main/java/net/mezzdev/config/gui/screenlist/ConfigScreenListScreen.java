@@ -9,7 +9,6 @@ import net.mezzdev.config.gui.textures.ConfigScalableDrawable;
 import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.mezzdev.config.gui.util.ConfigLocale;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -147,7 +146,6 @@ public final class ConfigScreenListScreen extends Screen {
 		ConfigScreenOwnerMetadata metadata = getMetadata(modId, metadataProvider);
 		return new Entry(
 			modId,
-			metadata.displayName(),
 			factoryEntry.title(),
 			factoryEntry.factory(),
 			new EntryIcon(modId, metadata.iconPath())
@@ -166,7 +164,7 @@ public final class ConfigScreenListScreen extends Screen {
 		} catch (RuntimeException | LinkageError e) {
 			LOGGER.warn("Failed to load config screen list metadata for mod id: {}", modId, e);
 		}
-		return new ConfigScreenOwnerMetadata(Component.literal(modId));
+		return new ConfigScreenOwnerMetadata();
 	}
 
 	private void updateSearchTextColor(String searchText) {
@@ -421,7 +419,6 @@ public final class ConfigScreenListScreen extends Screen {
 		drawSearch(guiGraphics, mouseX, mouseY, partialTick);
 		drawList(guiGraphics, font, mouseX, mouseY);
 		drawScrollBar(guiGraphics);
-		drawTooltip(guiGraphics, font, mouseX, mouseY);
 	}
 
 	private void drawTitle(GuiGraphics guiGraphics, Font font) {
@@ -489,31 +486,17 @@ public final class ConfigScreenListScreen extends Screen {
 			ICON_SIZE,
 			ICON_SIZE
 		);
-		entry.icon().draw(guiGraphics, font, iconArea, entry.modId(), entry.displayName());
+		entry.icon().draw(guiGraphics, font, iconArea, entry.modId(), entry.title());
 
 		int textX = iconArea.getX() + iconArea.getWidth() + ROW_PADDING;
-		ImmutableRect2i modNameArea = new ImmutableRect2i(
+		ImmutableRect2i titleTextArea = new ImmutableRect2i(
 			textX,
-			rowArea.getY() + 5,
+			rowArea.getY() + (rowArea.getHeight() - font.lineHeight) / 2,
 			Math.max(0, rowArea.getX() + rowArea.getWidth() - textX - ROW_PADDING),
 			font.lineHeight
 		);
-		ImmutableRect2i titleTextArea = new ImmutableRect2i(
-			textX,
-			rowArea.getY() + 17,
-			modNameArea.getWidth(),
-			font.lineHeight
-		);
-		ImmutableRect2i modIdArea = new ImmutableRect2i(
-			textX,
-			rowArea.getY() + 29,
-			modNameArea.getWidth(),
-			font.lineHeight
-		);
 
-		ConfigEntryWidget.drawFittedText(guiGraphics, font, entry.displayName(), modNameArea, ConfigEntryWidget.TEXT_COLOR, false);
-		ConfigEntryWidget.drawFittedText(guiGraphics, font, entry.title(), titleTextArea, ConfigEntryWidget.SECONDARY_TEXT_COLOR, false);
-		ConfigEntryWidget.drawFittedText(guiGraphics, font, Component.literal(entry.modId()), modIdArea, ConfigEntryWidget.DISABLED_TEXT_COLOR, false);
+		ConfigEntryWidget.drawFittedText(guiGraphics, font, entry.title(), titleTextArea, ConfigEntryWidget.TEXT_COLOR, false);
 	}
 
 	private static void drawInsetBorder(GuiGraphics guiGraphics, ImmutableRect2i area) {
@@ -562,28 +545,6 @@ public final class ConfigScreenListScreen extends Screen {
 		}
 		int markerHeight = Math.max(MIN_SCROLL_MARKER_HEIGHT, trackArea.getHeight() * listArea.getHeight() / totalListHeight);
 		return Math.min(trackArea.getHeight(), markerHeight);
-	}
-
-	private void drawTooltip(GuiGraphics guiGraphics, Font font, int mouseX, int mouseY) {
-		if (!listArea.contains(mouseX, mouseY)) {
-			return;
-		}
-		Optional<Entry> hoveredEntry = getEntryAt(mouseX, mouseY);
-		if (hoveredEntry.isEmpty()) {
-			return;
-		}
-		Entry entry = hoveredEntry.get();
-		guiGraphics.renderTooltip(
-			font,
-			List.of(
-				entry.displayName().copy().withStyle(ChatFormatting.WHITE),
-				Component.translatable("mezz_config.config.screen.list.tooltip.screen", entry.title()).withStyle(ChatFormatting.GRAY),
-				Component.translatable("mezz_config.config.screen.list.tooltip.modId", entry.modId()).withStyle(ChatFormatting.DARK_GRAY)
-			),
-			Optional.empty(),
-			mouseX,
-			mouseY
-		);
 	}
 
 	private static final class EntryIcon {
@@ -756,27 +717,23 @@ public final class ConfigScreenListScreen extends Screen {
 
 	private record Entry(
 		String modId,
-		Component displayName,
 		Component title,
 		net.mezzdev.config.gui.api.IConfigScreenFactory factory,
 		EntryIcon icon
 	) {
 		private Entry {
 			Objects.requireNonNull(modId, "modId");
-			Objects.requireNonNull(displayName, "displayName");
 			Objects.requireNonNull(title, "title");
 			Objects.requireNonNull(factory, "factory");
 			Objects.requireNonNull(icon, "icon");
 		}
 
 		private String sortName() {
-			return ConfigLocale.toLowercase(displayName.getString());
+			return ConfigLocale.toLowercase(title.getString());
 		}
 
 		private boolean matches(String searchText) {
-			return ConfigLocale.toLowercase(modId).contains(searchText) ||
-				ConfigLocale.toLowercase(displayName.getString()).contains(searchText) ||
-				ConfigLocale.toLowercase(title.getString()).contains(searchText);
+			return ConfigLocale.toLowercase(title.getString()).contains(searchText);
 		}
 	}
 }

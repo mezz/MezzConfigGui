@@ -1,7 +1,6 @@
 package net.mezzdev.config.gui.neoforge;
 
 import net.mezzdev.config.gui.screenlist.ConfigScreenOwnerMetadata;
-import net.minecraft.network.chat.Component;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforgespi.language.IModInfo;
@@ -19,15 +18,12 @@ final class NeoForgeConfigScreenOwnerMetadata {
 		return ModList.get()
 			.getModContainerById(modId)
 			.map(NeoForgeConfigScreenOwnerMetadata::get)
-			.orElseGet(() -> new ConfigScreenOwnerMetadata(Component.literal(modId)));
+			.orElseGet(ConfigScreenOwnerMetadata::new);
 	}
 
 	private static ConfigScreenOwnerMetadata get(ModContainer modContainer) {
 		IModInfo modInfo = modContainer.getModInfo();
-		return new ConfigScreenOwnerMetadata(
-			Component.literal(modInfo.getDisplayName()),
-			getIconPath(modInfo)
-		);
+		return new ConfigScreenOwnerMetadata(getIconPath(modInfo));
 	}
 
 	private static Optional<Path> getIconPath(IModInfo modInfo) {

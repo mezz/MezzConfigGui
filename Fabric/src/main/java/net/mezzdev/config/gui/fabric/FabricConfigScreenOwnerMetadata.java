@@ -4,7 +4,6 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.ModMetadata;
 import net.mezzdev.config.gui.screenlist.ConfigScreenOwnerMetadata;
-import net.minecraft.network.chat.Component;
 
 import java.nio.file.Path;
 import java.util.Optional;
@@ -20,16 +19,13 @@ final class FabricConfigScreenOwnerMetadata {
 		return FabricLoader.getInstance()
 			.getModContainer(modId)
 			.map(FabricConfigScreenOwnerMetadata::get)
-			.orElseGet(() -> new ConfigScreenOwnerMetadata(Component.literal(modId)));
+			.orElseGet(ConfigScreenOwnerMetadata::new);
 	}
 
 	private static ConfigScreenOwnerMetadata get(ModContainer modContainer) {
 		ModMetadata metadata = modContainer.getMetadata();
 		Optional<Path> iconPath = metadata.getIconPath(ICON_SIZE)
 			.flatMap(modContainer::findPath);
-		return new ConfigScreenOwnerMetadata(
-			Component.literal(metadata.getName()),
-			iconPath
-		);
+		return new ConfigScreenOwnerMetadata(iconPath);
 	}
 }

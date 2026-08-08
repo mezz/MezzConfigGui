@@ -394,6 +394,51 @@ class ConfigGuiPluginLoaderTest {
 	}
 
 	@Test
+	void configSourcesForTheSameModAreMergedWithoutInactiveSourcesMaskingActiveSources() {
+		AtomicBoolean nativeConfigActive = new AtomicBoolean(false);
+		TestConfigValue nativeValue = new TestConfigValue("native");
+		TestConfigValue mezzConfigValue = new TestConfigValue("mezzConfig");
+		ConfigScreenConfig nativeConfig = new TestScreenConfig(
+			MOD_ID,
+			Component.literal("Native Title"),
+			() -> {
+				if (nativeConfigActive.get()) {
+					return List.of(new TestCategory("general", List.of(nativeValue)));
+				}
+				return List.of();
+			}
+		);
+		ConfigScreenConfig mezzConfig = new TestScreenConfig(
+			MOD_ID,
+			Component.literal("MezzConfig Title"),
+			() -> List.of(new TestCategory("general", List.of(mezzConfigValue)))
+		);
+
+		List<ConfigScreenConfig> combined = ConfigGuiPluginLoader.combineConfigScreens(
+			List.of(nativeConfig),
+			List.of(mezzConfig)
+		);
+		ConfigScreenFactoryRegistry registry = ConfigGuiPluginLoader.createScreenFactoryRegistryFromInternalConfigs(
+			combined,
+			List.of(),
+			false
+		);
+		MergedConfigScreenConfig merged = new MergedConfigScreenConfig(MOD_ID, combined);
+
+		assertEquals(2, combined.size());
+		assertEquals(1, registry.getEntries().size());
+		assertEquals("Native Title", merged.getTitle().getString());
+		List<? extends ConfigScreenCategory> categoriesBeforeNativeLoad = merged.getSchema().getCategories();
+		assertEquals(List.of("general"), categoryNames(categoriesBeforeNativeLoad));
+		assertEquals(List.of("mezzConfig"), valueNames(categoriesBeforeNativeLoad.getFirst()));
+
+		nativeConfigActive.set(true);
+		List<? extends ConfigScreenCategory> categoriesAfterNativeLoad = merged.getSchema().getCategories();
+		assertEquals(List.of("general"), categoryNames(categoriesAfterNativeLoad));
+		assertEquals(List.of("native", "mezzConfig"), valueNames(categoriesAfterNativeLoad.getFirst()));
+	}
+
+	@Test
 	void deferredScreenCustomizersUseCurrentStateEachTime() {
 		AtomicInteger customizerCalls = new AtomicInteger();
 		AtomicInteger schemaVersion = new AtomicInteger(1);

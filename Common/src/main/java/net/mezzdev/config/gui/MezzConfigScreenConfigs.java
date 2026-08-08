@@ -3,15 +3,14 @@ package net.mezzdev.config.gui;
 import net.mezzdev.config.api.files.ConfigManagers;
 import net.mezzdev.config.api.files.IConfigManager;
 import net.mezzdev.config.api.schema.IConfigSchema;
-import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.minecraft.network.chat.Component;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -54,6 +53,31 @@ public final class MezzConfigScreenConfigs {
 			.orElse("");
 	}
 
+	private static String getDisplayNameFallback(String name) {
+		String[] words = name
+			.replace('-', '_')
+			.replace('.', '_')
+			.split("_+");
+		StringBuilder result = new StringBuilder();
+		for (String word : words) {
+			if (word.isBlank()) {
+				continue;
+			}
+			if (!result.isEmpty()) {
+				result.append(' ');
+			}
+			String lowercaseWord = word.toLowerCase(Locale.ROOT);
+			result.append(Character.toUpperCase(lowercaseWord.charAt(0)));
+			if (lowercaseWord.length() > 1) {
+				result.append(lowercaseWord.substring(1));
+			}
+		}
+		if (result.isEmpty()) {
+			return name;
+		}
+		return result.toString();
+	}
+
 	private record MezzConfigManagerScreenConfig(
 		String modId,
 		List<IConfigSchema> schemas
@@ -70,7 +94,9 @@ public final class MezzConfigScreenConfigs {
 
 		@Override
 		public Component getTitle() {
-			return Component.translatable("mezz_config.config.screen.title");
+			String localizationKey = modId + ".config.screen.title";
+			String fallback = "%s Configuration".formatted(getDisplayNameFallback(modId));
+			return Component.translatableWithFallback(localizationKey, fallback);
 		}
 
 		@Override
@@ -88,93 +114,12 @@ public final class MezzConfigScreenConfigs {
 
 		@Override
 		public List<? extends ConfigScreenCategory> getCategories() {
-			Map<String, MutableMergedConfigScreenCategory> categories = new LinkedHashMap<>();
-			for (IConfigSchema schema : schemas) {
-				if (schema.getPath().isEmpty()) {
-					continue;
-				}
-				for (ConfigScreenCategory category : ConfigScreenSchema.from(schema).getCategories()) {
-					categories.computeIfAbsent(
-							category.getName(),
-							ignored -> new MutableMergedConfigScreenCategory(category)
-						)
-						.addValues(category.getConfigValues());
-				}
-			}
-			return categories.values()
-				.stream()
-				.map(MutableMergedConfigScreenCategory::toConfigScreenCategory)
+			List<ConfigScreenSchema> activeSchemas = schemas.stream()
+				.filter(schema -> schema.getPath().isPresent())
+				.map(ConfigScreenSchema::from)
 				.toList();
-		}
-	}
-
-	private static final class MutableMergedConfigScreenCategory {
-		private final String name;
-		private final String localizationKey;
-		private final Component title;
-		private final Component description;
-		private final List<IConfigScreenValue<?>> values = new ArrayList<>();
-
-		private MutableMergedConfigScreenCategory(ConfigScreenCategory category) {
-			this.name = category.getName();
-			this.localizationKey = category.getLocalizationKey();
-			this.title = category.getLocalizedName();
-			this.description = category.getLocalizedDescription();
-		}
-
-		public void addValues(Collection<? extends IConfigScreenValue<?>> values) {
-			this.values.addAll(values);
-		}
-
-		public ConfigScreenCategory toConfigScreenCategory() {
-			return new MergedConfigScreenCategory(
-				name,
-				localizationKey,
-				title,
-				description,
-				values
-			);
-		}
-	}
-
-	private record MergedConfigScreenCategory(
-		String name,
-		String localizationKey,
-		Component title,
-		Component description,
-		List<IConfigScreenValue<?>> values
-	) implements ConfigScreenCategory {
-		private MergedConfigScreenCategory {
-			Objects.requireNonNull(name, "name");
-			Objects.requireNonNull(localizationKey, "localizationKey");
-			Objects.requireNonNull(title, "title");
-			Objects.requireNonNull(description, "description");
-			values = List.copyOf(values);
-		}
-
-		@Override
-		public String getName() {
-			return name;
-		}
-
-		@Override
-		public String getLocalizationKey() {
-			return localizationKey;
-		}
-
-		@Override
-		public Component getLocalizedName() {
-			return title;
-		}
-
-		@Override
-		public Component getLocalizedDescription() {
-			return description;
-		}
-
-		@Override
-		public Collection<? extends IConfigScreenValue<?>> getConfigValues() {
-			return values;
+			return new MergedConfigScreenSchema(activeSchemas)
+				.getCategories();
 		}
 	}
 }

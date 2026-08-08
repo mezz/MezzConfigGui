@@ -112,15 +112,16 @@ final class ConfigGuiPluginLoader {
 	}
 
 	private static List<ConfigScreenConfig> addAutomaticMezzConfigScreens(Collection<? extends ConfigScreenConfig> configScreens) {
-		Set<String> existingModIds = configScreens.stream()
-			.map(ConfigScreenConfig::getModId)
-			.collect(java.util.stream.Collectors.toSet());
+		return combineConfigScreens(configScreens, MezzConfigScreenConfigs.getActiveConfigScreens());
+	}
+
+	static List<ConfigScreenConfig> combineConfigScreens(
+		Collection<? extends ConfigScreenConfig> configScreens,
+		Collection<? extends ConfigScreenConfig> additionalConfigScreens
+	) {
 		List<ConfigScreenConfig> allConfigScreens = new ArrayList<>(configScreens);
-		MezzConfigScreenConfigs.getActiveConfigScreens()
-			.stream()
-			.filter(configScreen -> !existingModIds.contains(configScreen.getModId()))
-			.forEach(allConfigScreens::add);
-		return allConfigScreens;
+		allConfigScreens.addAll(additionalConfigScreens);
+		return List.copyOf(allConfigScreens);
 	}
 
 	private static void logDiscoverySummary(
@@ -142,16 +143,17 @@ final class ConfigGuiPluginLoader {
 	private static Map<String, ConfigGuiRegistration> createConfigGuiRegistrations(
 		Collection<? extends ConfigScreenConfig> configScreens
 	) {
-		Map<String, ConfigGuiRegistration> registrations = new LinkedHashMap<>();
+		Map<String, List<ConfigScreenConfig>> configScreensByModId = new LinkedHashMap<>();
 		for (ConfigScreenConfig configScreen : configScreens) {
 			String modId = configScreen.getModId();
-			ConfigGuiRegistration registration = new ConfigGuiRegistration(modId, configScreen);
-			@Nullable
-			ConfigGuiRegistration previous = registrations.putIfAbsent(modId, registration);
-			if (previous != null) {
-				LOGGER.error("Duplicate config screen for mod id: {}", modId);
-			}
+			configScreensByModId.computeIfAbsent(modId, ignored -> new ArrayList<>())
+				.add(configScreen);
 		}
+		Map<String, ConfigGuiRegistration> registrations = new LinkedHashMap<>();
+		configScreensByModId.forEach((modId, sources) -> registrations.put(
+			modId,
+			new ConfigGuiRegistration(modId, new MergedConfigScreenConfig(modId, sources))
+		));
 		return registrations;
 	}
 

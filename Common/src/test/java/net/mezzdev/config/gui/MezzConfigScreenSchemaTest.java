@@ -15,6 +15,7 @@ import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.api.value.IDeserializeResult;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
+import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
@@ -85,6 +86,8 @@ class MezzConfigScreenSchemaTest {
 		assertEquals(List.of("general", "quick", "advanced"), categoryNames(categories));
 		assertEquals("label", List.copyOf(categories.get(0).getConfigValues()).getFirst().getName());
 		assertEquals("test.config.quick", categories.get(1).getLocalizationKey());
+		assertEquals(Component.translatable("test.config.quick"), categories.get(1).getLocalizedName());
+		assertEquals(Component.translatable("test.config.quick.description"), categories.get(1).getLocalizedDescription());
 		assertEquals("test.config.advanced", categories.get(2).getLocalizationKey());
 		IConfigScreenValue<?> quickValue = List.copyOf(categories.get(1).getConfigValues()).getFirst();
 		IConfigScreenValue<?> advancedValue = List.copyOf(categories.get(2).getConfigValues()).getFirst();
@@ -134,6 +137,14 @@ class MezzConfigScreenSchemaTest {
 		List<ConfigScreenConfig> screens = MezzConfigScreenConfigs.getConfigScreens(manager);
 
 		assertEquals(List.of("first_mod", "second_mod"), screenModIds(screens));
+		assertEquals(
+			Component.translatableWithFallback("first_mod.config.screen.title", "First Mod Configuration"),
+			screens.getFirst().getTitle()
+		);
+		assertEquals(
+			Component.translatableWithFallback("second_mod.config.screen.title", "Second Mod Configuration"),
+			screens.get(1).getTitle()
+		);
 		List<? extends ConfigScreenCategory> categories = screens.getFirst().getSchema().getCategories();
 		assertEquals(List.of("general"), categoryNames(categories));
 		assertEquals(List.of("first", "second"), valueNames(categories.getFirst()));

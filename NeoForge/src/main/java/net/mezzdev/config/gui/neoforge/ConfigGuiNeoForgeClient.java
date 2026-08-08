@@ -39,7 +39,7 @@ public final class ConfigGuiNeoForgeClient {
 	private static ConfigScreenFactoryRegistry createScreenFactoryRegistry() {
 		Collection<? extends ConfigScreenConfig> configScreens = List.of();
 		if (ConfigGuiOptions.enableNativeConfigDiscovery()) {
-			configScreens = NeoForgeConfigScreenConfigs.getConfigScreens(List.of());
+			configScreens = NeoForgeConfigScreenConfigs.getConfigScreens();
 		}
 		return ConfigGui.createScreenFactoryRegistryFromInternalConfigs(configScreens, ConfigGuiNeoForgePluginFinder.getPlugins());
 	}

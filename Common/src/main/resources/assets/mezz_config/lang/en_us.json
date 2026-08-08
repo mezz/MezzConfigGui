@@ -1,5 +1,5 @@
 {
-  "mezz_config.config.screen.title": "Configuration",
+  "mezz_config.config.screen.title": "Mezz Config Options",
   "mezz_config.config.screen.search": "find configs by name",
   "mezz_config.config.screen.search.info.title": "Search",
   "mezz_config.config.screen.search.info": "Filter config options by name.",
@@ -18,10 +18,8 @@
   "mezz_config.config.screen.resize.title": "Resize",
   "mezz_config.config.screen.resize.info": "Drag a screen edge or corner to resize this config screen.",
   "mezz_config.config.screen.list.title": "Config Screens",
-  "mezz_config.config.screen.list.search": "find mods or config screens",
+  "mezz_config.config.screen.list.search": "find config screens",
   "mezz_config.config.screen.list.empty": "No config screens found.",
-  "mezz_config.config.screen.list.tooltip.screen": "Config screen: %s",
-  "mezz_config.config.screen.list.tooltip.modId": "Mod id: %s",
   "mezz_config.config.screen.apply": "Save Changes",
   "mezz_config.config.screen.apply.info": "Save pending changes and close the config screen.",
   "mezz_config.config.screen.apply.restart.info": "Save pending changes, close the config screen, and reload the owner mod.",
