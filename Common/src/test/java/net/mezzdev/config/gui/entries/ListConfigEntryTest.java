@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -47,6 +48,28 @@ class ListConfigEntryTest {
 		);
 
 		assertFalse(getAllowsTypedInput(entry));
+	}
+
+	@Test
+	void draggingDownShiftsRowsUpIntoTheSourceSpace() {
+		int rowHeight = 24;
+
+		assertEquals(0, ListConfigEntry.getDragRowOffset(0, 1, 3, rowHeight));
+		assertEquals(0, ListConfigEntry.getDragRowOffset(1, 1, 3, rowHeight));
+		assertEquals(-rowHeight, ListConfigEntry.getDragRowOffset(2, 1, 3, rowHeight));
+		assertEquals(-rowHeight, ListConfigEntry.getDragRowOffset(3, 1, 3, rowHeight));
+		assertEquals(0, ListConfigEntry.getDragRowOffset(4, 1, 3, rowHeight));
+	}
+
+	@Test
+	void draggingUpShiftsRowsDownIntoTheSourceSpace() {
+		int rowHeight = 24;
+
+		assertEquals(0, ListConfigEntry.getDragRowOffset(0, 3, 1, rowHeight));
+		assertEquals(rowHeight, ListConfigEntry.getDragRowOffset(1, 3, 1, rowHeight));
+		assertEquals(rowHeight, ListConfigEntry.getDragRowOffset(2, 3, 1, rowHeight));
+		assertEquals(0, ListConfigEntry.getDragRowOffset(3, 3, 1, rowHeight));
+		assertEquals(0, ListConfigEntry.getDragRowOffset(4, 3, 1, rowHeight));
 	}
 
 	private static ListConfigEntry<String> createEntry(

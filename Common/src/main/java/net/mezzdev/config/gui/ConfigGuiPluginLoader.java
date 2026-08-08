@@ -22,6 +22,7 @@ import net.mezzdev.config.gui.model.ConfigValueChange;
 import net.mezzdev.config.gui.keybindings.KeyMappingConfigValues;
 import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryEntry;
 import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryRegistry;
+import net.mezzdev.config.gui.util.ConfigNameUtil;
 import net.mezzdev.config.gui.util.ErrorUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.KeyMapping;
@@ -36,7 +37,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -1261,7 +1261,7 @@ final class ConfigGuiPluginLoader {
 			.map(ResolvedScreenCategory::title)
 			.orElseGet(() -> {
 				String localizationKey = getDefaultCategoryLocalizationKey(modId, categoryLocalizationPrefix, configuredCategory.name());
-				return Component.translatableWithFallback(localizationKey, getDisplayNameFallback(configuredCategory.name()));
+				return Component.translatableWithFallback(localizationKey, ConfigNameUtil.getDisplayNameFallback(configuredCategory.name()));
 			});
 	}
 
@@ -1321,32 +1321,6 @@ final class ConfigGuiPluginLoader {
 			return Optional.of(translatableContents.getKey());
 		}
 		return Optional.empty();
-	}
-
-	private static String getDisplayNameFallback(String name) {
-		String[] words = name
-			.replaceAll("([a-z0-9])([A-Z])", "$1_$2")
-			.replace('-', '_')
-			.replace('.', '_')
-			.split("_+");
-		StringBuilder result = new StringBuilder();
-		for (String word : words) {
-			if (word.isBlank()) {
-				continue;
-			}
-			if (!result.isEmpty()) {
-				result.append(' ');
-			}
-			String lowercaseWord = word.toLowerCase(Locale.ROOT);
-			result.append(Character.toUpperCase(lowercaseWord.charAt(0)));
-			if (lowercaseWord.length() > 1) {
-				result.append(lowercaseWord.substring(1));
-			}
-		}
-		if (result.isEmpty()) {
-			return name;
-		}
-		return result.toString();
 	}
 
 	private static void addConfiguredValue(

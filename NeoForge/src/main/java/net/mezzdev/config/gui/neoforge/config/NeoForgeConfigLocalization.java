@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.neoforge.config;
 
+import net.mezzdev.config.gui.util.ConfigNameUtil;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.neoforged.fml.ModContainer;
@@ -70,27 +71,6 @@ final class NeoForgeConfigLocalization {
 	}
 
 	public static String getDisplayNameFallback(String name) {
-		String[] words = name
-			.replace('-', '_')
-			.replace('.', '_')
-			.split("_+");
-		StringBuilder result = new StringBuilder();
-		for (String word : words) {
-			if (word.isBlank()) {
-				continue;
-			}
-			if (!result.isEmpty()) {
-				result.append(' ');
-			}
-			String lowercaseWord = word.toLowerCase(Locale.ROOT);
-			result.append(Character.toUpperCase(lowercaseWord.charAt(0)));
-			if (lowercaseWord.length() > 1) {
-				result.append(lowercaseWord.substring(1));
-			}
-		}
-		if (result.isEmpty()) {
-			return name;
-		}
-		return result.toString();
+		return ConfigNameUtil.getDisplayNameFallback(name);
 	}
 }

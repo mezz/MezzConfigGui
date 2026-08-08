@@ -3,6 +3,7 @@ package net.mezzdev.config.gui;
 import net.mezzdev.config.api.files.ConfigManagers;
 import net.mezzdev.config.api.files.IConfigManager;
 import net.mezzdev.config.api.schema.IConfigSchema;
+import net.mezzdev.config.gui.util.ConfigNameUtil;
 import net.minecraft.network.chat.Component;
 
 import java.nio.file.Path;
@@ -10,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -53,31 +53,6 @@ public final class MezzConfigScreenConfigs {
 			.orElse("");
 	}
 
-	private static String getDisplayNameFallback(String name) {
-		String[] words = name
-			.replace('-', '_')
-			.replace('.', '_')
-			.split("_+");
-		StringBuilder result = new StringBuilder();
-		for (String word : words) {
-			if (word.isBlank()) {
-				continue;
-			}
-			if (!result.isEmpty()) {
-				result.append(' ');
-			}
-			String lowercaseWord = word.toLowerCase(Locale.ROOT);
-			result.append(Character.toUpperCase(lowercaseWord.charAt(0)));
-			if (lowercaseWord.length() > 1) {
-				result.append(lowercaseWord.substring(1));
-			}
-		}
-		if (result.isEmpty()) {
-			return name;
-		}
-		return result.toString();
-	}
-
 	private record MezzConfigManagerScreenConfig(
 		String modId,
 		List<IConfigSchema> schemas
@@ -95,7 +70,7 @@ public final class MezzConfigScreenConfigs {
 		@Override
 		public Component getTitle() {
 			String localizationKey = modId + ".config.screen.title";
-			String fallback = "%s Configuration".formatted(getDisplayNameFallback(modId));
+			String fallback = "%s Configuration".formatted(ConfigNameUtil.getDisplayNameFallback(modId));
 			return Component.translatableWithFallback(localizationKey, fallback);
 		}
 

@@ -195,6 +195,16 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		return ConfigGuiOptions.getRowDensity().getListRowHeight();
 	}
 
+	static int getDragRowOffset(int rowIndex, int sourceIndex, int targetIndex, int rowHeight) {
+		if (sourceIndex < targetIndex && rowIndex > sourceIndex && rowIndex <= targetIndex) {
+			return -rowHeight;
+		}
+		if (sourceIndex > targetIndex && rowIndex >= targetIndex && rowIndex < sourceIndex) {
+			return rowHeight;
+		}
+		return 0;
+	}
+
 	private int getUnusedValueTopGap() {
 		if (!valueRows.isEmpty() && !unusedValueRows.isEmpty()) {
 			return UNUSED_VALUE_TOP_GAP;
@@ -239,13 +249,12 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		drawValueGroup(guiGraphics, valueGroupArea);
 		@Nullable
 		DragSession dragSession = this.dragSession;
-		for (ListValueRow row : valueRows) {
-			if (dragSession != null && dragSession.isDragging(row)) {
-				row.drawDragGap(guiGraphics);
-			} else {
-				boolean dropTarget = dragSession != null && dragSession.isDropTarget(row);
-				row.draw(guiGraphics, mouseX, mouseY, dropTarget, isRecentlyMoved(row));
+		if (dragSession == null) {
+			for (ListValueRow row : valueRows) {
+				row.draw(guiGraphics, mouseX, mouseY, false, isRecentlyMoved(row));
 			}
+		} else {
+			dragSession.drawReorderedRows(guiGraphics);
 		}
 		for (ListValueRow row : unusedValueRows) {
 			row.draw(guiGraphics, mouseX, mouseY, false, false);
@@ -868,7 +877,8 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 
 		private void moveToMouseY(double mouseY) {
 			this.mouseY = mouseY;
-			targetIndex = getDragTargetIndex(mouseY);
+			double draggedCenterY = mouseY - grabOffsetY + getEntryRowHeight() / 2.0;
+			targetIndex = getDragTargetIndex(draggedCenterY);
 		}
 
 		private void commitMove() {
@@ -892,8 +902,27 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			return active && row.selected && row.index == sourceIndex;
 		}
 
-		public boolean isDropTarget(ListValueRow row) {
-			return active && row.selected && row.index == targetIndex && row.index != sourceIndex;
+		public void drawReorderedRows(GuiGraphics guiGraphics) {
+			for (ListValueRow row : valueRows) {
+				if (!isDragging(row)) {
+					row.drawDuringDrag(guiGraphics, getVisualArea(row));
+				}
+			}
+			@Nullable
+			ListValueRow targetRow = getTargetRow();
+			if (targetRow != null) {
+				targetRow.drawDragGap(guiGraphics, targetIndex != sourceIndex);
+			}
+		}
+
+		private ImmutableRect2i getVisualArea(ListValueRow row) {
+			int yOffset = getDragRowOffset(row.index, sourceIndex, targetIndex, row.area.getHeight());
+			return new ImmutableRect2i(
+				row.area.getX(),
+				row.area.getY() + yOffset,
+				row.area.getWidth(),
+				row.area.getHeight()
+			);
 		}
 
 		public void drawFloatingRow(GuiGraphics guiGraphics) {
@@ -918,6 +947,14 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		private ListValueRow getDraggingRow() {
 			if (isIndexValid(valueRows, sourceIndex)) {
 				return valueRows.get(sourceIndex);
+			}
+			return null;
+		}
+
+		@Nullable
+		private ListValueRow getTargetRow() {
+			if (isIndexValid(valueRows, targetIndex)) {
+				return valueRows.get(targetIndex);
 			}
 			return null;
 		}
@@ -1004,12 +1041,20 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			draw(guiGraphics, area, mouseX, mouseY, true, false, dropTarget, recentlyMoved);
 		}
 
-		void drawDragGap(GuiGraphics guiGraphics) {
+		void drawDuringDrag(GuiGraphics guiGraphics, ImmutableRect2i rowArea) {
+			draw(guiGraphics, rowArea, 0, 0, false, false, false, false);
+		}
+
+		void drawDragGap(GuiGraphics guiGraphics, boolean dropTarget) {
 			int x = area.getX();
 			int y = area.getY();
 			int right = x + area.getWidth();
 			int bottom = y + area.getHeight();
-			guiGraphics.fill(x, y, right, bottom, ORDERED_ROW_DRAG_GAP_COLOR);
+			int color = ORDERED_ROW_DRAG_GAP_COLOR;
+			if (dropTarget) {
+				color = ORDERED_ROW_DROP_TARGET_COLOR;
+			}
+			guiGraphics.fill(x, y, right, bottom, color);
 			if (index > 0) {
 				guiGraphics.fill(x, y, right, y + 1, ORDERED_ROW_DIVIDER_COLOR);
 			}
