@@ -120,6 +120,11 @@ final class MezzConfigScreenSchema implements ConfigScreenSchema {
 		}
 
 		@Override
+		public ConfigScreenCategoryGroup getGroup() {
+			return ConfigScreenCategoryGroup.MOD_OWNED;
+		}
+
+		@Override
 		public String getName() {
 			return name;
 		}

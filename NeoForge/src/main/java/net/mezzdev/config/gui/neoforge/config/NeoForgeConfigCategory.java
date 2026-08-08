@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui.neoforge.config;
 
 import net.mezzdev.config.gui.ConfigScreenCategory;
+import net.mezzdev.config.gui.ConfigScreenCategoryGroup;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigLocalizedCategory;
 import net.minecraft.network.chat.Component;
@@ -21,6 +22,14 @@ record NeoForgeConfigCategory(
 ) implements ConfigScreenCategory, IConfigLocalizedCategory {
 	public NeoForgeConfigCategory {
 		configValues = List.copyOf(configValues);
+	}
+
+	@Override
+	public ConfigScreenCategoryGroup getGroup() {
+		if (modConfig.getType() == ModConfig.Type.SERVER) {
+			return ConfigScreenCategoryGroup.LOADER_NATIVE_SERVER;
+		}
+		return ConfigScreenCategoryGroup.LOADER_NATIVE;
 	}
 
 	@Override

@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui.model;
 
 import net.mezzdev.config.gui.ConfigScreenCategory;
+import net.mezzdev.config.gui.ConfigScreenCategoryGroup;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.config.ConfigGuiOptionsTestUtil;
 import net.minecraft.network.chat.Component;
@@ -61,6 +62,11 @@ class ConfigScreenHistoryTest {
 	}
 
 	private record TestCategory(String name) implements ConfigScreenCategory {
+		@Override
+		public ConfigScreenCategoryGroup getGroup() {
+			return ConfigScreenCategoryGroup.MOD_OWNED;
+		}
+
 		@Override
 		public String getName() {
 			return name;

@@ -403,7 +403,11 @@ class ConfigGuiPluginLoaderTest {
 			Component.literal("Native Title"),
 			() -> {
 				if (nativeConfigActive.get()) {
-					return List.of(new TestCategory("general", List.of(nativeValue)));
+					return List.of(new TestCategory(
+						"general",
+						List.of(nativeValue),
+						ConfigScreenCategoryGroup.LOADER_NATIVE
+					));
 				}
 				return List.of();
 			}
@@ -435,7 +439,34 @@ class ConfigGuiPluginLoaderTest {
 		nativeConfigActive.set(true);
 		List<? extends ConfigScreenCategory> categoriesAfterNativeLoad = merged.getSchema().getCategories();
 		assertEquals(List.of("general"), categoryNames(categoriesAfterNativeLoad));
-		assertEquals(List.of("native", "mezzConfig"), valueNames(categoriesAfterNativeLoad.getFirst()));
+		assertEquals(List.of("mezzConfig", "native"), valueNames(categoriesAfterNativeLoad.getFirst()));
+	}
+
+	@Test
+	void mergedCategoriesUseIntentionalSourceOrder() {
+		TestCategory nativeClient = new TestCategory(
+			"nativeClient",
+			List.of(new TestConfigValue("nativeClientValue")),
+			ConfigScreenCategoryGroup.LOADER_NATIVE
+		);
+		TestCategory nativeServer = new TestCategory(
+			"nativeServer",
+			List.of(new TestConfigValue("nativeServerValue")),
+			ConfigScreenCategoryGroup.LOADER_NATIVE_SERVER
+		);
+		TestCategory mezzConfig = new TestCategory("mezzConfig", List.of(new TestConfigValue("mezzConfigValue")));
+		MergedConfigScreenConfig merged = new MergedConfigScreenConfig(MOD_ID, List.of(
+			new TestScreenConfig(MOD_ID, Component.literal("Native"), () -> List.of(nativeClient, nativeServer)),
+			new TestScreenConfig(MOD_ID, Component.literal("MezzConfig"), () -> List.of(mezzConfig))
+		));
+
+		List<ConfigScreenCategory> categories = createCategories(
+			merged.getSchema().getCategories(),
+			screenBuilder -> {},
+			lookup -> List.of(new TestConfigValue("key.test_mod.open"))
+		);
+
+		assertEquals(List.of("mezzConfig", "nativeClient", "keyMappings", "nativeServer"), categoryNames(categories));
 	}
 
 	@Test
@@ -675,12 +706,12 @@ class ConfigGuiPluginLoaderTest {
 			cacheBudget,
 			cacheBreakpoints,
 			opacitySteps
-		));
+		), ConfigScreenCategoryGroup.LOADER_NATIVE);
 		TestCategory commonCategory = new TestCategory(commonCategoryName, List.of(
 			commonEnabled,
 			commonAliases,
 			commonCacheBudget
-		));
+		), ConfigScreenCategoryGroup.LOADER_NATIVE);
 		KeyMapping openKey = keyMapping("key.test_mod.openNativeScreen", GLFW.GLFW_KEY_J);
 		KeyMapping toggleKey = keyMapping("key.test_mod.toggleNativeOverlay", GLFW.GLFW_KEY_O);
 		AtomicBoolean defaultProviderCalled = new AtomicBoolean(false);
@@ -761,17 +792,17 @@ class ConfigGuiPluginLoaderTest {
 		);
 
 		assertFalse(defaultProviderCalled.get());
-		assertEquals(List.of("quick", "lists", "keyMappings", clientCategoryName, commonCategoryName), categoryNames(categories));
+		assertEquals(List.of("quick", "lists", clientCategoryName, commonCategoryName, "keyMappings"), categoryNames(categories));
 		assertEquals("Quick", categories.get(0).getLocalizedName().getString());
 		assertEquals("Frequently changed native values", categories.get(0).getLocalizedDescription().getString());
 		assertEquals("Native Lists", categories.get(1).getLocalizedName().getString());
 		assertEquals("Native list values", categories.get(1).getLocalizedDescription().getString());
-		assertEquals("Key Mappings", categories.get(2).getLocalizedName().getString());
-		assertEquals("Native screen key mappings", categories.get(2).getLocalizedDescription().getString());
-		assertEquals("Remaining Native Values", categories.get(3).getLocalizedName().getString());
-		assertEquals("Native values kept in their original category", categories.get(3).getLocalizedDescription().getString());
-		assertEquals("Common Native Values", categories.get(4).getLocalizedName().getString());
-		assertEquals("Common native values kept in their original category", categories.get(4).getLocalizedDescription().getString());
+		assertEquals("Remaining Native Values", categories.get(2).getLocalizedName().getString());
+		assertEquals("Native values kept in their original category", categories.get(2).getLocalizedDescription().getString());
+		assertEquals("Common Native Values", categories.get(3).getLocalizedName().getString());
+		assertEquals("Common native values kept in their original category", categories.get(3).getLocalizedDescription().getString());
+		assertEquals("Key Mappings", categories.get(4).getLocalizedName().getString());
+		assertEquals("Native screen key mappings", categories.get(4).getLocalizedDescription().getString());
 		assertEquals(List.of("client.enabled", "client.mode", "client.rowCount"), valueNames(categories.get(0)));
 		assertEquals(List.of(
 			"client.enabledHistory",
@@ -781,9 +812,9 @@ class ConfigGuiPluginLoaderTest {
 			"client.cacheBreakpoints",
 			"client.opacitySteps"
 		), valueNames(categories.get(1)));
-		assertEquals(List.of("key.test_mod.openNativeScreen", "key.test_mod.toggleNativeOverlay"), valueNames(categories.get(2)));
-		assertEquals(List.of("client.extraEffects", "client.label", "client.opacity", "client.cacheBudget"), valueNames(categories.get(3)));
-		assertEquals(List.of("common.enabled", "common.aliases", "common.cacheBudget"), valueNames(categories.get(4)));
+		assertEquals(List.of("client.extraEffects", "client.label", "client.opacity", "client.cacheBudget"), valueNames(categories.get(2)));
+		assertEquals(List.of("common.enabled", "common.aliases", "common.cacheBudget"), valueNames(categories.get(3)));
+		assertEquals(List.of("key.test_mod.openNativeScreen", "key.test_mod.toggleNativeOverlay"), valueNames(categories.get(4)));
 
 		assertEquals(ConfigValueApplyMode.IMMEDIATE, valueByName(categories.get(0), "client.enabled").getApplyMode());
 		assertEquals(ConfigValueApplyMode.ON_APPLY, valueByName(categories.get(0), "client.mode").getApplyMode());
@@ -791,11 +822,11 @@ class ConfigGuiPluginLoaderTest {
 		assertTrue(valueByName(categories.get(0), "client.mode").requiresRestart());
 		assertEquals(ConfigValueApplyMode.IMMEDIATE, valueByName(categories.get(1), "client.aliases").getApplyMode());
 		assertTrue(valueByName(categories.get(1), "client.opacitySteps").requiresRestart());
-		assertEquals(ConfigValueApplyMode.IMMEDIATE, valueByName(categories.get(3), "client.extraEffects").getApplyMode());
-		assertTrue(valueByName(categories.get(3), "client.label").requiresRestart());
-		assertTrue(valueByName(categories.get(3), "client.opacity").requiresRestart());
-		assertEquals(ConfigValueApplyMode.IMMEDIATE, valueByName(categories.get(4), "common.enabled").getApplyMode());
-		assertTrue(valueByName(categories.get(4), "common.cacheBudget").requiresRestart());
+		assertEquals(ConfigValueApplyMode.IMMEDIATE, valueByName(categories.get(2), "client.extraEffects").getApplyMode());
+		assertTrue(valueByName(categories.get(2), "client.label").requiresRestart());
+		assertTrue(valueByName(categories.get(2), "client.opacity").requiresRestart());
+		assertEquals(ConfigValueApplyMode.IMMEDIATE, valueByName(categories.get(3), "common.enabled").getApplyMode());
+		assertTrue(valueByName(categories.get(3), "common.cacheBudget").requiresRestart());
 	}
 
 	private static List<ConfigScreenCategory> createCategories(
@@ -868,8 +899,18 @@ class ConfigGuiPluginLoaderTest {
 
 	private record TestCategory(
 		String name,
-		List<IConfigScreenValue<?>> values
+		List<IConfigScreenValue<?>> values,
+		ConfigScreenCategoryGroup group
 	) implements ConfigScreenCategory {
+		private TestCategory(String name, List<IConfigScreenValue<?>> values) {
+			this(name, values, ConfigScreenCategoryGroup.MOD_OWNED);
+		}
+
+		@Override
+		public ConfigScreenCategoryGroup getGroup() {
+			return group;
+		}
+
 		@Override
 		public String getName() {
 			return name;

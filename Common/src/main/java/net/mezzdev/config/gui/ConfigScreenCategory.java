@@ -20,6 +20,11 @@ public interface ConfigScreenCategory {
 		IConfigCategory checkedCategory = Objects.requireNonNull(category, "category");
 		return new ConfigScreenCategory() {
 			@Override
+			public ConfigScreenCategoryGroup getGroup() {
+				return ConfigScreenCategoryGroup.MOD_OWNED;
+			}
+
+			@Override
 			public String getName() {
 				return checkedCategory.getName();
 			}
@@ -48,6 +53,11 @@ public interface ConfigScreenCategory {
 			}
 		};
 	}
+
+	/**
+	 * Get the broad group that controls this category's position in a merged config screen.
+	 */
+	ConfigScreenCategoryGroup getGroup();
 
 	/**
 	 * The name of the category.

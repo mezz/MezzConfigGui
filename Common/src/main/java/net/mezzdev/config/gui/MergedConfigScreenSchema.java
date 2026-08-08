@@ -5,6 +5,7 @@ import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,14 +24,16 @@ final class MergedConfigScreenSchema implements ConfigScreenSchema {
 	@Override
 	public List<? extends ConfigScreenCategory> getCategories() {
 		Map<String, MutableMergedConfigScreenCategory> categories = new LinkedHashMap<>();
-		for (ConfigScreenSchema schema : schemas) {
-			for (ConfigScreenCategory category : schema.getCategories()) {
-				categories.computeIfAbsent(
-						category.getName(),
-						ignored -> new MutableMergedConfigScreenCategory(category)
-					)
-					.addValues(category.getConfigValues());
-			}
+		List<? extends ConfigScreenCategory> sourceCategories = schemas.stream()
+			.flatMap(schema -> schema.getCategories().stream())
+			.sorted(Comparator.comparing(ConfigScreenCategory::getGroup))
+			.toList();
+		for (ConfigScreenCategory category : sourceCategories) {
+			categories.computeIfAbsent(
+					category.getName(),
+					ignored -> new MutableMergedConfigScreenCategory(category)
+				)
+				.add(category);
 		}
 		return categories.values()
 			.stream()
@@ -43,6 +46,7 @@ final class MergedConfigScreenSchema implements ConfigScreenSchema {
 		private final String localizationKey;
 		private final Component title;
 		private final Component description;
+		private ConfigScreenCategoryGroup group;
 		private final List<IConfigScreenValue<?>> values = new ArrayList<>();
 
 		private MutableMergedConfigScreenCategory(ConfigScreenCategory category) {
@@ -50,10 +54,14 @@ final class MergedConfigScreenSchema implements ConfigScreenSchema {
 			this.localizationKey = category.getLocalizationKey();
 			this.title = category.getLocalizedName();
 			this.description = category.getLocalizedDescription();
+			this.group = category.getGroup();
 		}
 
-		public void addValues(Collection<? extends IConfigScreenValue<?>> values) {
-			this.values.addAll(values);
+		public void add(ConfigScreenCategory category) {
+			if (category.getGroup().compareTo(group) < 0) {
+				group = category.getGroup();
+			}
+			this.values.addAll(category.getConfigValues());
 		}
 
 		public ConfigScreenCategory toConfigScreenCategory() {
@@ -62,6 +70,7 @@ final class MergedConfigScreenSchema implements ConfigScreenSchema {
 				localizationKey,
 				title,
 				description,
+				group,
 				values
 			);
 		}
@@ -72,6 +81,7 @@ final class MergedConfigScreenSchema implements ConfigScreenSchema {
 		String localizationKey,
 		Component title,
 		Component description,
+		ConfigScreenCategoryGroup group,
 		List<IConfigScreenValue<?>> values
 	) implements ConfigScreenCategory {
 		private MergedConfigScreenCategory {
@@ -79,7 +89,13 @@ final class MergedConfigScreenSchema implements ConfigScreenSchema {
 			Objects.requireNonNull(localizationKey, "localizationKey");
 			Objects.requireNonNull(title, "title");
 			Objects.requireNonNull(description, "description");
+			Objects.requireNonNull(group, "group");
 			values = List.copyOf(values);
+		}
+
+		@Override
+		public ConfigScreenCategoryGroup getGroup() {
+			return group;
 		}
 
 		@Override

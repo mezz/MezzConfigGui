@@ -34,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -1029,6 +1030,7 @@ final class ConfigGuiPluginLoader {
 					originalCategory.name(),
 					originalCategory.title(),
 					originalCategory.description(),
+					originalCategory.group(),
 					originalCategory.values()
 				));
 			}
@@ -1044,7 +1046,9 @@ final class ConfigGuiPluginLoader {
 				);
 			}
 		}
-		return List.copyOf(screenCategories);
+		return screenCategories.stream()
+			.sorted(Comparator.comparing(ConfigScreenCategory::getGroup))
+			.toList();
 	}
 
 	private static List<ConfiguredScreenCategory> addDefaultKeyMappingsCategory(
@@ -1112,9 +1116,22 @@ final class ConfigGuiPluginLoader {
 				configuredCategory.name(),
 				getCategoryTitle(modId, categoryLocalizationPrefix, resolvedCategories, configuredCategory),
 				getCategoryDescription(modId, categoryLocalizationPrefix, resolvedCategories, configuredCategory),
+				getCategoryGroup(resolvedCategories, configuredCategory),
 				values
 			));
 		}
+	}
+
+	private static ConfigScreenCategoryGroup getCategoryGroup(
+		List<ResolvedScreenCategory> resolvedCategories,
+		ConfiguredScreenCategory configuredCategory
+	) {
+		if (configuredCategory.containsKeyMappings() || configuredCategory.name().equals(KEY_MAPPINGS_CATEGORY_NAME)) {
+			return ConfigScreenCategoryGroup.KEY_MAPPINGS;
+		}
+		return findResolvedCategory(resolvedCategories, configuredCategory.name())
+			.map(ResolvedScreenCategory::group)
+			.orElse(ConfigScreenCategoryGroup.MOD_OWNED);
 	}
 
 	private static List<IConfigScreenValue<?>> applyConfiguredValueSettings(
@@ -1446,6 +1463,7 @@ final class ConfigGuiPluginLoader {
 			category.getName(),
 			category.getLocalizedName(),
 			category.getLocalizedDescription(),
+			category.getGroup(),
 			List.copyOf(category.getConfigValues())
 		);
 	}
@@ -1454,6 +1472,7 @@ final class ConfigGuiPluginLoader {
 		String name,
 		Component title,
 		Component description,
+		ConfigScreenCategoryGroup group,
 		List<IConfigScreenValue<?>> values
 	) {
 		ResolvedScreenCategory {
@@ -1479,10 +1498,16 @@ final class ConfigGuiPluginLoader {
 		String name,
 		Component title,
 		Component description,
+		ConfigScreenCategoryGroup group,
 		List<IConfigScreenValue<?>> values
 	) implements ConfigScreenCategory {
 		private ConfiguredScreenConfigCategory {
 			values = List.copyOf(values);
+		}
+
+		@Override
+		public ConfigScreenCategoryGroup getGroup() {
+			return group;
 		}
 
 		@Override
