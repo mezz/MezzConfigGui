@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.api;
 
+import net.mezzdev.config.api.value.IConfigListValueSerializer;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 
 import java.util.List;
@@ -11,7 +12,7 @@ import java.util.List;
  *
  * @since 0.1.0
  */
-public interface IConfigListValueEditorSerializer<T> extends IConfigValueEditorSerializer<List<T>> {
+public interface IConfigListValueEditorSerializer<T> extends IConfigValueEditorSerializer<List<T>>, IConfigListValueSerializer<T> {
 	/**
 	 * Get the serializer for each list element.
 	 *

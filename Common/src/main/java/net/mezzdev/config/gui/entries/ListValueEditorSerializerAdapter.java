@@ -1,6 +1,8 @@
 package net.mezzdev.config.gui.entries;
 
 import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.api.value.ConfigListOrdering;
+import net.mezzdev.config.api.value.IConfigListValueSerializer;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigValueLocalizationProvider;
@@ -25,6 +27,14 @@ final class ListValueEditorSerializerAdapter<T> implements IConfigListValueEdito
 	@Override
 	public IConfigValueSerializer<T> getElementSerializer() {
 		return elementSerializer;
+	}
+
+	@Override
+	public ConfigListOrdering getOrdering() {
+		if (listSerializer instanceof IConfigListValueSerializer<?> typedListSerializer) {
+			return typedListSerializer.getOrdering();
+		}
+		return ConfigListOrdering.ORDERED;
 	}
 
 	@Override

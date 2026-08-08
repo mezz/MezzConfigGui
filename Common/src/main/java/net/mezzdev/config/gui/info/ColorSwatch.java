@@ -6,7 +6,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
 
 /**
- * Draws packed RGB and ARGB colors over a transparency checkerboard.
+ * Draws and formats packed RGB and ARGB colors.
  */
 public final class ColorSwatch {
 	private static final int BORDER_COLOR = 0xFF08090C;
@@ -20,6 +20,13 @@ public final class ColorSwatch {
 
 	public static void draw(GuiGraphics guiGraphics, Rect2i area, PackedColor color) {
 		draw(guiGraphics, area, color.packedValue(), color.format());
+	}
+
+	public static String formatHex(PackedColor color) {
+		return switch (color.format()) {
+			case RGB -> "#%06X".formatted(color.packedValue() & 0xFFFFFF);
+			case ARGB -> "#%08X".formatted(color.packedValue());
+		};
 	}
 
 	public static void draw(GuiGraphics guiGraphics, Rect2i area, int color, ConfigColorFormat format) {

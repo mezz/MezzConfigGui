@@ -449,18 +449,23 @@ final class ConfigScreenView {
 			contentArea.getY() + contentArea.getHeight()
 		);
 		int rowIndex = 0;
+		boolean allowHoverAtMouse = isEntryHoverAllowed(contentArea, mouseX, mouseY, allowEntryHover);
 		for (ConfigEntryWidget<?> entryWidget : controller.getVisibleEntryWidgets()) {
 			if (entryWidget.getArea().equals(ImmutableRect2i.EMPTY)) {
 				continue;
 			}
-			entryWidget.draw(guiGraphics, mouseX, mouseY, allowEntryHover, rowIndex);
+			entryWidget.draw(guiGraphics, mouseX, mouseY, allowHoverAtMouse, rowIndex);
 			rowIndex++;
-			if (allowEntryHover && contentArea.contains(mouseX, mouseY) && entryWidget.isMouseOver(mouseX, mouseY)) {
+			if (allowHoverAtMouse && entryWidget.isMouseOver(mouseX, mouseY)) {
 				hoveredEntryInfo = entryWidget.getInfo(mouseX, mouseY);
 			}
 		}
 		guiGraphics.disableScissor();
 		return hoveredEntryInfo;
+	}
+
+	static boolean isEntryHoverAllowed(ImmutableRect2i contentArea, int mouseX, int mouseY, boolean allowEntryHover) {
+		return allowEntryHover && contentArea.contains(mouseX, mouseY);
 	}
 
 	@Nullable

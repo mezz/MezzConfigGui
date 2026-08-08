@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui.entries;
 
 import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.api.value.ConfigListOrdering;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.IConfigListValueEditorOptions;
 import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
@@ -72,11 +73,40 @@ class ListConfigEntryTest {
 		assertEquals(0, ListConfigEntry.getDragRowOffset(4, 3, 1, rowHeight));
 	}
 
+	@Test
+	void draggedRowCanMoveHorizontallyWithinALimitedRange() {
+		assertEquals(88, ListConfigEntry.getDragRowX(100, 93.0, 5.0));
+		assertEquals(124, ListConfigEntry.getDragRowX(100, 200.0, 5.0));
+		assertEquals(76, ListConfigEntry.getDragRowX(100, 0.0, 5.0));
+	}
+
+	@Test
+	void honorsUnorderedListMetadata() {
+		TestListSerializer serializer = new TestListSerializer(
+			true,
+			Optional.empty(),
+			ConfigListOrdering.UNORDERED
+		);
+		ListConfigEntry<String> entry = new ListConfigEntry<>(
+			new TestConfigValue(serializer),
+			serializer,
+			selector -> {},
+			() -> {},
+			null
+		);
+
+		assertFalse(getBooleanField(entry, "ordered"));
+	}
+
 	private static ListConfigEntry<String> createEntry(
 		boolean allowsRemovingValues,
 		Optional<Collection<String>> allValidValues
 	) {
-		TestListSerializer serializer = new TestListSerializer(allowsRemovingValues, allValidValues);
+		TestListSerializer serializer = new TestListSerializer(
+			allowsRemovingValues,
+			allValidValues,
+			ConfigListOrdering.ORDERED
+		);
 		return new ListConfigEntry<>(
 			new TestConfigValue(serializer),
 			serializer,
@@ -87,8 +117,12 @@ class ListConfigEntryTest {
 	}
 
 	private static boolean getAllowsTypedInput(ListConfigEntry<String> entry) {
+		return getBooleanField(entry, "allowsTypedInput");
+	}
+
+	private static boolean getBooleanField(ListConfigEntry<?> entry, String fieldName) {
 		try {
-			Field field = ListConfigEntry.class.getDeclaredField("allowsTypedInput");
+			Field field = ListConfigEntry.class.getDeclaredField(fieldName);
 			field.setAccessible(true);
 			return field.getBoolean(entry);
 		} catch (ReflectiveOperationException e) {
@@ -142,13 +176,16 @@ class ListConfigEntryTest {
 	private static final class TestListSerializer implements IConfigListValueEditorSerializer<String>, IConfigListValueEditorOptions {
 		private final boolean allowsRemovingValues;
 		private final TestElementSerializer elementSerializer;
+		private final ConfigListOrdering ordering;
 
 		private TestListSerializer(
 			boolean allowsRemovingValues,
-			Optional<Collection<String>> allValidValues
+			Optional<Collection<String>> allValidValues,
+			ConfigListOrdering ordering
 		) {
 			this.allowsRemovingValues = allowsRemovingValues;
 			this.elementSerializer = new TestElementSerializer(allValidValues);
+			this.ordering = ordering;
 		}
 
 		@Override
@@ -179,6 +216,11 @@ class ListConfigEntryTest {
 		@Override
 		public IConfigValueSerializer<String> getElementSerializer() {
 			return elementSerializer;
+		}
+
+		@Override
+		public ConfigListOrdering getOrdering() {
+			return ordering;
 		}
 
 		@Override

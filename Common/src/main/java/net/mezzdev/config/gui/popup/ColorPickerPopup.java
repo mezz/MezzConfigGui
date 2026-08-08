@@ -11,40 +11,41 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.Rect2i;
-import net.minecraft.network.chat.Component;
 import net.minecraft.util.StringUtil;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
- * Standard visual color picker with editable HSV, RGB, CMYK, Lab, and hexadecimal representations.
+ * Standard visual color picker with an HSV chart, HSV and RGB sliders, and hexadecimal input.
  */
 public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
-	private static final int WIDTH = 176;
+	private static final int WIDTH = 256;
 	private static final int PADDING = 7;
-	private static final int CONTROL_GAP = 6;
-	private static final int SATURATION_VALUE_HEIGHT = 88;
-	private static final int SLIDER_SIZE = 12;
+	private static final int CONTROL_GAP = 5;
+	private static final int COLOR_PREVIEW_HEIGHT = 40;
+	private static final int COLOR_PLANE_HEIGHT = 86;
+	private static final int PLANE_VERTICAL_LABEL_WIDTH = 18;
+	private static final int PLANE_HORIZONTAL_LABEL_HEIGHT = 10;
+	private static final int CHANNEL_SLIDER_COUNT = 6;
+	private static final int CHANNEL_SLIDER_ROW_HEIGHT = 14;
+	private static final int CHANNEL_SLIDER_HEIGHT = 10;
+	private static final int CHANNEL_SLIDER_LABEL_WIDTH = 14;
+	private static final int CHANNEL_SLIDER_VALUE_WIDTH = 30;
 	private static final int ALPHA_HEIGHT = 11;
-	private static final int MODE_HEIGHT = 16;
-	private static final int FIELD_TOP_GAP = 3;
 	private static final int FIELD_HEIGHT = 18;
 	private static final int FIELD_TEXT_PADDING = 2;
 	private static final int MAX_EDIT_TEXT_LENGTH = 12;
+	private static final float PRECISE_SLIDER_SCALE = 0.1f;
 	private static final int BACKGROUND_COLOR = 0xF0101218;
 	private static final int BORDER_DARK_COLOR = 0xFF050609;
 	private static final int BORDER_LIGHT_COLOR = 0x667F8A9A;
 	private static final int MARKER_DARK_COLOR = 0xFF000000;
 	private static final int MARKER_LIGHT_COLOR = 0xFFFFFFFF;
-	private static final int MODE_BACKGROUND_COLOR = 0xAA1A1D24;
-	private static final int MODE_SELECTED_COLOR = 0xFF3A536E;
-	private static final int MODE_HOVER_COLOR = 0xFF313A46;
 	private static final int FIELD_BACKGROUND_COLOR = 0xFF171A20;
 	private static final int FIELD_FOCUSED_COLOR = 0xFF1F2C3A;
 	private static final int FIELD_BORDER_COLOR = 0x555E6877;
@@ -53,16 +54,25 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 
 	private final ConfigColorFormat format;
 	private final ColorPickerModel model;
-	private Control activeControl = Control.NONE;
-	private ColorSpace colorSpace = ColorSpace.HSV;
+	private ColorControl activeControl = ColorControl.NONE;
+	private ColorControl precisionControl = ColorControl.NONE;
+	private float precisionPointerAnchor;
+	private float precisionValueAnchor;
 	@Nullable
 	private ColorField focusedField;
 	private String editText = "";
 	private boolean selectAll;
 
 	public ColorPickerPopup(PackedColor color) {
+		this(color, false);
+	}
+
+	public ColorPickerPopup(PackedColor color, boolean focusHexInput) {
 		this.format = color.format();
 		this.model = new ColorPickerModel(color);
+		if (focusHexInput) {
+			focusField(ColorField.HEX);
+		}
 	}
 
 	@Override
@@ -72,23 +82,18 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 
 	@Override
 	public int getHeight() {
-		int height = PADDING + SATURATION_VALUE_HEIGHT + CONTROL_GAP;
+		int height = PADDING + COLOR_PREVIEW_HEIGHT + CONTROL_GAP;
+		height += COLOR_PLANE_HEIGHT + PLANE_HORIZONTAL_LABEL_HEIGHT + CONTROL_GAP;
+		height += CHANNEL_SLIDER_COUNT * CHANNEL_SLIDER_ROW_HEIGHT + CONTROL_GAP;
 		if (hasAlpha()) {
 			height += ALPHA_HEIGHT + CONTROL_GAP;
 		}
-		return height + MODE_HEIGHT + FIELD_TOP_GAP + FIELD_HEIGHT + PADDING;
+		return height + FIELD_HEIGHT + PADDING;
 	}
 
 	@Override
 	public Optional<PackedColor> getHoveredValue(Rect2i area, double mouseX, double mouseY) {
-		PickerLayout layout = createLayout(area);
-		Control control = layout.getControl(mouseX, mouseY);
-		if (control == Control.NONE) {
-			return Optional.empty();
-		}
-		ColorPickerModel candidate = new ColorPickerModel(model.getPackedColor());
-		updateModel(candidate, control, layout, mouseX, mouseY);
-		return Optional.of(candidate.getPackedColor());
+		return Optional.empty();
 	}
 
 	@Override
@@ -98,29 +103,25 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		}
 		PickerLayout layout = createLayout(area);
 		@Nullable
-		ColorSpace clickedColorSpace = layout.getColorSpace(mouseX, mouseY);
-		if (clickedColorSpace != null) {
-			colorSpace = clickedColorSpace;
-			activeControl = Control.NONE;
-			clearFocus();
-			return Optional.empty();
-		}
-		@Nullable
 		ColorField clickedField = layout.getField(mouseX, mouseY);
 		if (clickedField != null) {
-			activeControl = Control.NONE;
+			activeControl = ColorControl.NONE;
+			clearPrecisionControl();
 			focusField(clickedField);
 			return Optional.empty();
 		}
 
 		clearFocus();
-		if (activeControl == Control.NONE) {
+		if (activeControl == ColorControl.NONE) {
 			activeControl = layout.getControl(mouseX, mouseY);
+			clearPrecisionControl();
 			return updateValue(activeControl, layout, mouseX, mouseY);
 		}
-		Control releasedControl = activeControl;
-		activeControl = Control.NONE;
-		return updateValue(releasedControl, layout, mouseX, mouseY);
+		ColorControl releasedControl = activeControl;
+		Optional<PackedColor> value = updateValue(releasedControl, layout, mouseX, mouseY);
+		activeControl = ColorControl.NONE;
+		clearPrecisionControl();
+		return value;
 	}
 
 	@Override
@@ -129,9 +130,11 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 			return Optional.empty();
 		}
 		PickerLayout layout = createLayout(area);
-		Control control = activeControl;
-		if (control == Control.NONE) {
+		ColorControl control = activeControl;
+		if (control == ColorControl.NONE) {
 			control = layout.getControl(mouseX, mouseY);
+			activeControl = control;
+			clearPrecisionControl();
 		}
 		return updateValue(control, layout, mouseX, mouseY);
 	}
@@ -161,11 +164,7 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 			return true;
 		}
 		if (keyCode == GLFW.GLFW_KEY_TAB) {
-			int direction = 1;
-			if ((modifiers & GLFW.GLFW_MOD_SHIFT) != 0) {
-				direction = -1;
-			}
-			focusNextField(direction);
+			focusField(ColorField.HEX);
 			return true;
 		}
 		if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
@@ -199,50 +198,120 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 	public void draw(GuiGraphics guiGraphics, Rect2i area, double mouseX, double mouseY) {
 		PickerLayout layout = createLayout(area);
 		drawBackground(guiGraphics, area);
-		drawSaturationValue(guiGraphics, layout.saturationValueArea());
-		drawHue(guiGraphics, layout.hueArea());
+		ColorSwatch.draw(guiGraphics, layout.colorPreviewArea(), model.getPackedColor());
+		drawColorControls(guiGraphics, layout);
 		if (hasAlpha()) {
 			drawAlpha(guiGraphics, layout.alphaArea());
 		}
-		drawColorSpaceModes(guiGraphics, layout, mouseX, mouseY);
 		drawFields(guiGraphics, layout);
 	}
 
-	private Optional<PackedColor> updateValue(Control control, PickerLayout layout, double mouseX, double mouseY) {
-		if (control == Control.NONE) {
+	private Optional<PackedColor> updateValue(ColorControl control, PickerLayout layout, double mouseX, double mouseY) {
+		if (control == ColorControl.NONE) {
 			return Optional.empty();
 		}
 		updateModel(model, control, layout, mouseX, mouseY);
 		return Optional.of(model.getPackedColor());
 	}
 
-	private static void updateModel(
+	private void updateModel(
 		ColorPickerModel model,
-		Control control,
+		ColorControl control,
 		PickerLayout layout,
 		double mouseX,
 		double mouseY
 	) {
-		switch (control) {
-			case SATURATION_VALUE -> {
-				Rect2i area = layout.saturationValueArea();
-				float saturation = getPosition(mouseX, area.getX(), area.getWidth());
-				float value = 1.0f - getPosition(mouseY, area.getY(), area.getHeight());
-				model.setSaturationAndValue(saturation, value);
-			}
-			case HUE -> {
-				Rect2i area = layout.hueArea();
-				model.setHue(getPosition(mouseY, area.getY(), area.getHeight()));
-			}
+		switch (control.type()) {
+			case PLANE -> updatePlane(model, layout.colorPlaneArea(), mouseX, mouseY);
+			case SLIDER -> updateSlider(model, control.field(), layout, mouseX, mouseY);
 			case ALPHA -> {
 				Rect2i area = layout.alphaArea();
-				model.setAlpha(getPosition(mouseX, area.getX(), area.getWidth()));
+				float pointerPosition = getPosition(mouseX, area.getX(), area.getWidth());
+				model.setAlpha(getAdjustedSliderPosition(ColorControl.ALPHA, pointerPosition));
 			}
 			case NONE -> {}
 		}
 	}
 
-	private void drawSaturationValue(GuiGraphics guiGraphics, Rect2i area) {
+	private void updatePlane(ColorPickerModel model, Rect2i area, double mouseX, double mouseY) {
+		float x = getPosition(mouseX, area.getX(), area.getWidth());
+		float y = 1.0f - getPosition(mouseY, area.getY(), area.getHeight());
+		model.setSaturationAndValue(x, y);
+	}
+
+	private void updateSlider(
+		ColorPickerModel model,
+		@Nullable ColorField field,
+		PickerLayout layout,
+		double mouseX,
+		double mouseY
+	) {
+		if (field == null) {
+			return;
+		}
+		@Nullable
+		SliderArea slider = layout.getSlider(field);
+		if (slider == null) {
+			return;
+		}
+		float pointerPosition = slider.getPosition(mouseX, mouseY);
+		float position = getAdjustedSliderPosition(ColorControl.slider(field), pointerPosition);
+		setSliderValue(model, field, position);
+	}
+
+	private void setSliderValue(ColorPickerModel model, ColorField field, float position) {
+		switch (field) {
+			case HUE -> model.setHue(position);
+			case SATURATION -> model.setSaturationAndValue(position, model.getValue());
+			case VALUE -> model.setSaturationAndValue(model.getSaturation(), position);
+			case RED, GREEN, BLUE -> applyRgbEdit(model, field, Math.round(position * 255.0f));
+			default -> throw new IllegalArgumentException("Unsupported color slider field: " + field);
+		}
+	}
+
+	private float getAdjustedSliderPosition(ColorControl control, float pointerPosition) {
+		if (!isShiftDown()) {
+			clearPrecisionControl();
+			return pointerPosition;
+		}
+		if (!control.equals(precisionControl)) {
+			precisionControl = control;
+			precisionPointerAnchor = pointerPosition;
+			precisionValueAnchor = getControlPosition(control);
+		}
+		return getPreciseSliderPosition(precisionValueAnchor, precisionPointerAnchor, pointerPosition);
+	}
+
+	static float getPreciseSliderPosition(float valueAnchor, float pointerAnchor, float pointerPosition) {
+		return Math.clamp(valueAnchor + (pointerPosition - pointerAnchor) * PRECISE_SLIDER_SCALE, 0.0f, 1.0f);
+	}
+
+	private static boolean isShiftDown() {
+		return Minecraft.getInstance() != null && Screen.hasShiftDown();
+	}
+
+	private float getControlPosition(ColorControl control) {
+		if (control.type() == ControlType.ALPHA) {
+			return model.getAlpha();
+		}
+		ColorField field = control.field();
+		if (field == null) {
+			return 0.0f;
+		}
+		return getSliderPosition(field);
+	}
+
+	private void clearPrecisionControl() {
+		precisionControl = ColorControl.NONE;
+	}
+
+	private void drawColorControls(GuiGraphics guiGraphics, PickerLayout layout) {
+		drawHsvPlane(guiGraphics, layout.colorPlaneArea());
+		drawPlaneAxisLabels(guiGraphics, layout);
+		drawSliders(guiGraphics, layout.sliderAreas());
+	}
+
+	private void drawHsvPlane(GuiGraphics guiGraphics, Rect2i area) {
 		for (int xOffset = 0; xOffset < area.getWidth(); xOffset++) {
 			float saturation = getPosition(xOffset, 0, area.getWidth());
 			int topColor = ColorPickerModel.hsvToArgb(model.getHue(), saturation, 1.0f);
@@ -255,19 +324,82 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 				0xFF000000
 			);
 		}
+		drawBorder(guiGraphics, area, FIELD_BORDER_COLOR);
 		int markerX = area.getX() + Math.round(model.getSaturation() * (area.getWidth() - 1));
 		int markerY = area.getY() + Math.round((1.0f - model.getValue()) * (area.getHeight() - 1));
 		drawPointMarker(guiGraphics, markerX, markerY);
 	}
 
-	private void drawHue(GuiGraphics guiGraphics, Rect2i area) {
-		for (int yOffset = 0; yOffset < area.getHeight(); yOffset++) {
-			float hue = getPosition(yOffset, 0, area.getHeight());
-			int color = ColorPickerModel.hsvToArgb(hue, 1.0f, 1.0f);
-			guiGraphics.fill(area.getX(), area.getY() + yOffset, area.getX() + area.getWidth(), area.getY() + yOffset + 1, color);
+	private void drawSliders(GuiGraphics guiGraphics, List<SliderArea> sliders) {
+		for (SliderArea slider : sliders) {
+			drawSlider(guiGraphics, slider);
 		}
-		int markerY = area.getY() + Math.round(model.getHue() * (area.getHeight() - 1));
-		drawHorizontalMarker(guiGraphics, area, markerY);
+	}
+
+	private void drawSlider(GuiGraphics guiGraphics, SliderArea slider) {
+		Rect2i area = slider.area();
+		int length = area.getWidth();
+		for (int offset = 0; offset < length; offset++) {
+			float position = getPosition(offset, 0, length);
+			int color = getSliderColor(slider.field(), position);
+			guiGraphics.fill(area.getX() + offset, area.getY(), area.getX() + offset + 1, area.getY() + area.getHeight(), color);
+		}
+		drawBorder(guiGraphics, area, FIELD_BORDER_COLOR);
+		float markerPosition = getSliderPosition(slider.field());
+		int markerX = area.getX() + Math.round(markerPosition * (area.getWidth() - 1));
+		drawVerticalMarker(guiGraphics, area, markerX);
+		drawSliderLabel(guiGraphics, slider);
+	}
+
+	private int getSliderColor(ColorField field, float position) {
+		return switch (field) {
+			case HUE -> ColorPickerModel.hsvToArgb(position, 1.0f, 1.0f);
+			case SATURATION -> ColorPickerModel.hsvToArgb(model.getHue(), position, 1.0f);
+			case VALUE -> ColorPickerModel.hsvToArgb(0.0f, 0.0f, position);
+			case RED -> 0xFF000000 | Math.round(position * 255.0f) << 16;
+			case GREEN -> 0xFF000000 | Math.round(position * 255.0f) << 8;
+			case BLUE -> 0xFF000000 | Math.round(position * 255.0f);
+			default -> throw new IllegalArgumentException("Unsupported color slider field: " + field);
+		};
+	}
+
+	private float getSliderPosition(ColorField field) {
+		return switch (field) {
+			case HUE -> model.getHue();
+			case SATURATION -> model.getSaturation();
+			case VALUE -> model.getValue();
+			case RED -> model.getRgb().red() / 255.0f;
+			case GREEN -> model.getRgb().green() / 255.0f;
+			case BLUE -> model.getRgb().blue() / 255.0f;
+			default -> throw new IllegalArgumentException("Unsupported color slider field: " + field);
+		};
+	}
+
+	private void drawSliderLabel(GuiGraphics guiGraphics, SliderArea slider) {
+		Font font = Minecraft.getInstance().font;
+		Rect2i area = slider.area();
+		int textY = area.getY() + (area.getHeight() - font.lineHeight) / 2;
+		String label = slider.field().label;
+		int labelX = area.getX() - CHANNEL_SLIDER_LABEL_WIDTH +
+			(CHANNEL_SLIDER_LABEL_WIDTH - font.width(label)) / 2;
+		guiGraphics.drawString(font, label, labelX, textY, MARKER_LIGHT_COLOR, false);
+		String value = getFieldText(slider.field());
+		int valueX = area.getX() + area.getWidth() + 3;
+		guiGraphics.drawString(font, value, valueX, textY, MARKER_LIGHT_COLOR, false);
+	}
+
+	private void drawPlaneAxisLabels(GuiGraphics guiGraphics, PickerLayout layout) {
+		Font font = Minecraft.getInstance().font;
+		String vertical = "V ↑";
+		Rect2i verticalArea = layout.verticalAxisLabelArea();
+		int verticalX = verticalArea.getX() + (verticalArea.getWidth() - font.width(vertical)) / 2;
+		int verticalY = verticalArea.getY() + (verticalArea.getHeight() - font.lineHeight) / 2;
+		guiGraphics.drawString(font, vertical, verticalX, verticalY, MARKER_LIGHT_COLOR, false);
+		String horizontal = "S →";
+		Rect2i horizontalArea = layout.horizontalAxisLabelArea();
+		int horizontalX = horizontalArea.getX() + (horizontalArea.getWidth() - font.width(horizontal)) / 2;
+		int horizontalY = horizontalArea.getY() + (horizontalArea.getHeight() - font.lineHeight) / 2;
+		guiGraphics.drawString(font, horizontal, horizontalX, horizontalY, MARKER_LIGHT_COLOR, false);
 	}
 
 	private void drawAlpha(GuiGraphics guiGraphics, Rect2i area) {
@@ -286,89 +418,68 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		}
 		int markerX = area.getX() + Math.round(model.getAlpha() * (area.getWidth() - 1));
 		drawVerticalMarker(guiGraphics, area, markerX);
-	}
-
-	private void drawColorSpaceModes(GuiGraphics guiGraphics, PickerLayout layout, double mouseX, double mouseY) {
+		drawBorder(guiGraphics, area, FIELD_BORDER_COLOR);
 		Font font = Minecraft.getInstance().font;
-		for (ModeArea modeArea : layout.modeAreas()) {
-			boolean selected = modeArea.colorSpace() == colorSpace;
-			boolean hovered = contains(modeArea.area(), mouseX, mouseY);
-			int color = MODE_BACKGROUND_COLOR;
-			if (selected) {
-				color = MODE_SELECTED_COLOR;
-			} else if (hovered) {
-				color = MODE_HOVER_COLOR;
-			}
-			fillWithBorder(guiGraphics, modeArea.area(), color, FIELD_BORDER_COLOR);
-			ConfigEntryWidget.drawCenteredButtonText(
-				guiGraphics,
-				font,
-				modeArea.colorSpace().label,
-				toImmutableRect2i(modeArea.area()),
-				ConfigEntryWidget.TEXT_COLOR
-			);
-		}
+		int textY = area.getY() + (area.getHeight() - font.lineHeight) / 2;
+		int labelX = area.getX() - CHANNEL_SLIDER_LABEL_WIDTH +
+			(CHANNEL_SLIDER_LABEL_WIDTH - font.width(ColorField.ALPHA.label)) / 2;
+		guiGraphics.drawString(font, ColorField.ALPHA.label, labelX, textY, MARKER_LIGHT_COLOR, false);
+		guiGraphics.drawString(
+			font,
+			getFieldText(ColorField.ALPHA),
+			area.getX() + area.getWidth() + 3,
+			textY,
+			MARKER_LIGHT_COLOR,
+			false
+		);
 	}
 
 	private void drawFields(GuiGraphics guiGraphics, PickerLayout layout) {
 		Font font = Minecraft.getInstance().font;
-		for (FieldArea fieldArea : layout.fieldAreas()) {
-			ColorField field = fieldArea.field();
-			boolean focused = field == focusedField;
-			boolean valid = !focused || isEditTextValid();
-			int backgroundColor = FIELD_BACKGROUND_COLOR;
-			if (focused) {
-				backgroundColor = FIELD_FOCUSED_COLOR;
-			}
-			int borderColor = FIELD_BORDER_COLOR;
-			if (focused) {
-				borderColor = FIELD_INVALID_BORDER_COLOR;
-				if (valid) {
-					borderColor = FIELD_FOCUSED_BORDER_COLOR;
-				}
-			}
-			fillWithBorder(guiGraphics, fieldArea.area(), backgroundColor, borderColor);
+		drawField(guiGraphics, font, layout.hexFieldArea());
+	}
 
-			String valueText = getFieldText(field);
-			if (focused) {
-				valueText = editText + "_";
-			}
-			String text = field.label + valueText;
-			ImmutableRect2i textArea = toImmutableRect2i(fieldArea.area())
-				.cropLeft(FIELD_TEXT_PADDING)
-				.cropRight(FIELD_TEXT_PADDING);
-			String visibleText = text;
-			if (font.width(visibleText) > textArea.getWidth()) {
-				visibleText = font.plainSubstrByWidth(visibleText, textArea.getWidth(), true);
-			}
-			int textY = ConfigEntryWidget.getCenteredTextY(font, textArea);
-			int textColor = FIELD_INVALID_BORDER_COLOR;
-			if (valid) {
-				textColor = ConfigEntryWidget.TEXT_COLOR;
-			}
-			ConfigEntryWidget.drawText(guiGraphics, font, visibleText, textArea.getX(), textY, textColor);
+	private void drawField(GuiGraphics guiGraphics, Font font, FieldArea fieldArea) {
+		ColorField field = fieldArea.field();
+		boolean focused = field == focusedField;
+		boolean valid = !focused || isEditTextValid();
+		int backgroundColor = FIELD_BACKGROUND_COLOR;
+		if (focused) {
+			backgroundColor = FIELD_FOCUSED_COLOR;
 		}
+		int borderColor = FIELD_BORDER_COLOR;
+		if (focused) {
+			borderColor = FIELD_INVALID_BORDER_COLOR;
+			if (valid) {
+				borderColor = FIELD_FOCUSED_BORDER_COLOR;
+			}
+		}
+		fillWithBorder(guiGraphics, fieldArea.area(), backgroundColor, borderColor);
+
+		String valueText = getFieldText(field);
+		if (focused) {
+			valueText = editText + "_";
+		}
+		String text = field.label + valueText;
+		ImmutableRect2i textArea = toImmutableRect2i(fieldArea.area())
+			.cropLeft(FIELD_TEXT_PADDING)
+			.cropRight(FIELD_TEXT_PADDING);
+		String visibleText = text;
+		if (font.width(visibleText) > textArea.getWidth()) {
+			visibleText = font.plainSubstrByWidth(visibleText, textArea.getWidth(), true);
+		}
+		int textY = ConfigEntryWidget.getCenteredTextY(font, textArea);
+		int textColor = FIELD_INVALID_BORDER_COLOR;
+		if (valid) {
+			textColor = ConfigEntryWidget.TEXT_COLOR;
+		}
+		ConfigEntryWidget.drawText(guiGraphics, font, visibleText, textArea.getX(), textY, textColor);
 	}
 
 	private void focusField(ColorField field) {
 		focusedField = field;
 		editText = getFieldText(field);
 		selectAll = true;
-	}
-
-	private void focusNextField(int direction) {
-		List<ColorField> fields = getVisibleFields();
-		if (fields.isEmpty()) {
-			clearFocus();
-			return;
-		}
-		int index = fields.indexOf(focusedField);
-		if (index < 0) {
-			index = 0;
-		} else {
-			index = Math.floorMod(index + direction, fields.size());
-		}
-		focusField(fields.get(index));
 	}
 
 	private void clearFocus() {
@@ -423,22 +534,10 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 	}
 
 	private Optional<ParsedEdit> getParsedEdit() {
-		ColorField field = focusedField;
-		if (field == null) {
+		if (focusedField != ColorField.HEX) {
 			return Optional.empty();
 		}
-		if (field == ColorField.HEX) {
-			return parseHexEdit(editText);
-		}
-		try {
-			int value = Integer.parseInt(editText.trim());
-			if (value < field.min || value > field.max) {
-				return Optional.empty();
-			}
-			return Optional.of(new ParsedEdit(field, value, -1));
-		} catch (NumberFormatException ignored) {
-			return Optional.empty();
-		}
+		return parseHexEdit(editText);
 	}
 
 	private Optional<ParsedEdit> parseHexEdit(String text) {
@@ -459,7 +558,7 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 			if (hasHexAlpha) {
 				alpha = (int) (value >>> 24) & 0xFF;
 			}
-			return Optional.of(new ParsedEdit(ColorField.HEX, rgb, alpha));
+			return Optional.of(new ParsedEdit(rgb, alpha));
 		} catch (NumberFormatException ignored) {
 			return Optional.empty();
 		}
@@ -467,24 +566,13 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 
 	private void applyParsedEdit(ParsedEdit edit) {
 		int value = edit.value();
-		switch (edit.field()) {
-			case HUE -> model.setHue(value / 360.0f);
-			case SATURATION -> model.setSaturationAndValue(value / 100.0f, model.getValue());
-			case VALUE -> model.setSaturationAndValue(model.getSaturation(), value / 100.0f);
-			case RED, GREEN, BLUE -> applyRgbEdit(edit.field(), value);
-			case CYAN, MAGENTA, YELLOW, BLACK -> applyCmykEdit(edit.field(), value);
-			case LAB_LIGHTNESS, LAB_A, LAB_B -> applyLabEdit(edit.field(), value);
-			case ALPHA -> model.setAlphaChannel(value);
-			case HEX -> {
-				model.setRgb((value >>> 16) & 0xFF, (value >>> 8) & 0xFF, value & 0xFF);
-				if (edit.alpha() >= 0) {
-					model.setAlphaChannel(edit.alpha());
-				}
-			}
+		model.setRgb((value >>> 16) & 0xFF, (value >>> 8) & 0xFF, value & 0xFF);
+		if (edit.alpha() >= 0) {
+			model.setAlphaChannel(edit.alpha());
 		}
 	}
 
-	private void applyRgbEdit(ColorField field, int value) {
+	private static void applyRgbEdit(ColorPickerModel model, ColorField field, int value) {
 		ColorPickerModel.Rgb rgb = model.getRgb();
 		int red = rgb.red();
 		int green = rgb.green();
@@ -498,37 +586,6 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		model.setRgb(red, green, blue);
 	}
 
-	private void applyCmykEdit(ColorField field, int value) {
-		ColorPickerModel.Cmyk cmyk = model.getCmyk();
-		double cyan = cmyk.cyan();
-		double magenta = cmyk.magenta();
-		double yellow = cmyk.yellow();
-		double black = cmyk.black();
-		double normalizedValue = value / 100.0;
-		switch (field) {
-			case CYAN -> cyan = normalizedValue;
-			case MAGENTA -> magenta = normalizedValue;
-			case YELLOW -> yellow = normalizedValue;
-			case BLACK -> black = normalizedValue;
-			default -> throw new IllegalArgumentException("Not a CMYK field: " + field);
-		}
-		model.setCmyk(cyan, magenta, yellow, black);
-	}
-
-	private void applyLabEdit(ColorField field, int value) {
-		ColorPickerModel.Lab lab = model.getLab();
-		double lightness = lab.lightness();
-		double a = lab.a();
-		double b = lab.b();
-		switch (field) {
-			case LAB_LIGHTNESS -> lightness = value;
-			case LAB_A -> a = value;
-			case LAB_B -> b = value;
-			default -> throw new IllegalArgumentException("Not a Lab field: " + field);
-		}
-		model.setLab(lightness, a, b);
-	}
-
 	private String getFieldText(ColorField field) {
 		return switch (field) {
 			case HUE -> Integer.toString(Math.round(model.getHue() * 360.0f));
@@ -537,27 +594,9 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 			case RED -> Integer.toString(model.getRgb().red());
 			case GREEN -> Integer.toString(model.getRgb().green());
 			case BLUE -> Integer.toString(model.getRgb().blue());
-			case CYAN -> formatPercent(model.getCmyk().cyan());
-			case MAGENTA -> formatPercent(model.getCmyk().magenta());
-			case YELLOW -> formatPercent(model.getCmyk().yellow());
-			case BLACK -> formatPercent(model.getCmyk().black());
-			case LAB_LIGHTNESS -> Long.toString(Math.round(model.getLab().lightness()));
-			case LAB_A -> Long.toString(Math.round(model.getLab().a()));
-			case LAB_B -> Long.toString(Math.round(model.getLab().b()));
 			case ALPHA -> Integer.toString(model.getAlphaChannel());
-			case HEX -> formatHex(model.getPackedColor());
+			case HEX -> ColorSwatch.formatHex(model.getPackedColor());
 		};
-	}
-
-	private static String formatPercent(double value) {
-		return Long.toString(Math.round(value * 100.0));
-	}
-
-	private static String formatHex(PackedColor color) {
-		if (color.format() == ConfigColorFormat.RGB) {
-			return "#%06X".formatted(color.packedValue() & 0xFFFFFF);
-		}
-		return "#%08X".formatted(color.packedValue()).toUpperCase(Locale.ROOT);
 	}
 
 	private static void drawBackground(GuiGraphics guiGraphics, Rect2i area) {
@@ -577,15 +616,19 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		guiGraphics.fill(area.getX() + 1, area.getY() + 1, right - 1, bottom - 1, fillColor);
 	}
 
+	private static void drawBorder(GuiGraphics guiGraphics, Rect2i area, int color) {
+		int right = area.getX() + area.getWidth();
+		int bottom = area.getY() + area.getHeight();
+		guiGraphics.fill(area.getX(), area.getY(), right, area.getY() + 1, color);
+		guiGraphics.fill(area.getX(), area.getY(), area.getX() + 1, bottom, color);
+		guiGraphics.fill(right - 1, area.getY(), right, bottom, color);
+		guiGraphics.fill(area.getX(), bottom - 1, right, bottom, color);
+	}
+
 	private static void drawPointMarker(GuiGraphics guiGraphics, int x, int y) {
 		guiGraphics.fill(x - 3, y - 3, x + 4, y + 4, MARKER_DARK_COLOR);
 		guiGraphics.fill(x - 2, y - 2, x + 3, y + 3, MARKER_LIGHT_COLOR);
 		guiGraphics.fill(x - 1, y - 1, x + 2, y + 2, MARKER_DARK_COLOR);
-	}
-
-	private static void drawHorizontalMarker(GuiGraphics guiGraphics, Rect2i area, int y) {
-		guiGraphics.fill(area.getX() - 1, y - 1, area.getX() + area.getWidth() + 1, y + 2, MARKER_DARK_COLOR);
-		guiGraphics.fill(area.getX(), y, area.getX() + area.getWidth(), y + 1, MARKER_LIGHT_COLOR);
 	}
 
 	private static void drawVerticalMarker(GuiGraphics guiGraphics, Rect2i area, int x) {
@@ -595,54 +638,64 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 
 	private PickerLayout createLayout(Rect2i area) {
 		int contentWidth = Math.max(1, area.getWidth() - PADDING * 2);
-		int saturationValueWidth = Math.max(1, contentWidth - SLIDER_SIZE - CONTROL_GAP);
-		Rect2i saturationValueArea = new Rect2i(area.getX() + PADDING, area.getY() + PADDING, saturationValueWidth, SATURATION_VALUE_HEIGHT);
-		Rect2i hueArea = new Rect2i(
-			saturationValueArea.getX() + saturationValueArea.getWidth() + CONTROL_GAP,
-			saturationValueArea.getY(),
-			SLIDER_SIZE,
-			SATURATION_VALUE_HEIGHT
+		int visualX = area.getX() + PADDING;
+		int visualY = area.getY() + PADDING;
+		Rect2i colorPreviewArea = new Rect2i(visualX, visualY, contentWidth, COLOR_PREVIEW_HEIGHT);
+		visualY += COLOR_PREVIEW_HEIGHT + CONTROL_GAP;
+		int planeX = visualX + PLANE_VERTICAL_LABEL_WIDTH;
+		int planeWidth = Math.max(1, contentWidth - PLANE_VERTICAL_LABEL_WIDTH);
+		Rect2i colorPlaneArea = new Rect2i(planeX, visualY, planeWidth, COLOR_PLANE_HEIGHT);
+		Rect2i verticalAxisLabelArea = new Rect2i(visualX, visualY, PLANE_VERTICAL_LABEL_WIDTH, COLOR_PLANE_HEIGHT);
+		Rect2i horizontalAxisLabelArea = new Rect2i(
+			planeX,
+			visualY + COLOR_PLANE_HEIGHT,
+			planeWidth,
+			PLANE_HORIZONTAL_LABEL_HEIGHT
 		);
-		int y = saturationValueArea.getY() + saturationValueArea.getHeight() + CONTROL_GAP;
-		Rect2i alphaArea = new Rect2i(area.getX() + PADDING, y, contentWidth, 0);
+		int sliderY = visualY + COLOR_PLANE_HEIGHT + PLANE_HORIZONTAL_LABEL_HEIGHT + CONTROL_GAP;
+		List<ColorField> sliderFields = List.of(
+			ColorField.HUE,
+			ColorField.SATURATION,
+			ColorField.VALUE,
+			ColorField.RED,
+			ColorField.GREEN,
+			ColorField.BLUE
+		);
+		List<SliderArea> sliderAreas = createChannelSliders(visualX, sliderY, contentWidth, sliderFields);
+		int y = sliderY + CHANNEL_SLIDER_COUNT * CHANNEL_SLIDER_ROW_HEIGHT + CONTROL_GAP;
+		int sliderX = area.getX() + PADDING + CHANNEL_SLIDER_LABEL_WIDTH;
+		int sliderWidth = Math.max(1, contentWidth - CHANNEL_SLIDER_LABEL_WIDTH - CHANNEL_SLIDER_VALUE_WIDTH);
+		Rect2i alphaArea = new Rect2i(sliderX, y, sliderWidth, 0);
 		if (hasAlpha()) {
-			alphaArea = new Rect2i(area.getX() + PADDING, y, contentWidth, ALPHA_HEIGHT);
+			alphaArea = new Rect2i(sliderX, y, sliderWidth, ALPHA_HEIGHT);
 			y += ALPHA_HEIGHT + CONTROL_GAP;
 		}
-		List<ModeArea> modeAreas = createModeAreas(area.getX() + PADDING, y, contentWidth);
-		y += MODE_HEIGHT + FIELD_TOP_GAP;
-		List<FieldArea> fieldAreas = createFieldAreas(area.getX() + PADDING, y, contentWidth);
-		return new PickerLayout(saturationValueArea, hueArea, alphaArea, modeAreas, fieldAreas);
+		FieldArea hexFieldArea = new FieldArea(
+			ColorField.HEX,
+			new Rect2i(area.getX() + PADDING, y, contentWidth, FIELD_HEIGHT)
+		);
+		return new PickerLayout(
+			colorPreviewArea,
+			colorPlaneArea,
+			verticalAxisLabelArea,
+			horizontalAxisLabelArea,
+			sliderAreas,
+			alphaArea,
+			hexFieldArea
+		);
 	}
 
-	private static List<ModeArea> createModeAreas(int x, int y, int width) {
-		ColorSpace[] colorSpaces = ColorSpace.values();
-		List<ModeArea> areas = new ArrayList<>(colorSpaces.length);
-		for (int i = 0; i < colorSpaces.length; i++) {
-			int left = x + width * i / colorSpaces.length;
-			int right = x + width * (i + 1) / colorSpaces.length;
-			areas.add(new ModeArea(colorSpaces[i], new Rect2i(left, y, right - left, MODE_HEIGHT)));
-		}
-		return areas;
-	}
-
-	private List<FieldArea> createFieldAreas(int x, int y, int width) {
-		List<ColorField> fields = getVisibleFields();
-		List<FieldArea> areas = new ArrayList<>(fields.size());
+	private static List<SliderArea> createChannelSliders(int x, int y, int width, List<ColorField> fields) {
+		List<SliderArea> sliders = new ArrayList<>(fields.size());
 		for (int i = 0; i < fields.size(); i++) {
-			int left = x + width * i / fields.size();
-			int right = x + width * (i + 1) / fields.size();
-			areas.add(new FieldArea(fields.get(i), new Rect2i(left, y, right - left, FIELD_HEIGHT)));
+			int rowY = y + i * CHANNEL_SLIDER_ROW_HEIGHT;
+			int sliderY = rowY + (CHANNEL_SLIDER_ROW_HEIGHT - CHANNEL_SLIDER_HEIGHT) / 2;
+			int sliderX = x + CHANNEL_SLIDER_LABEL_WIDTH;
+			int sliderWidth = Math.max(1, width - CHANNEL_SLIDER_LABEL_WIDTH - CHANNEL_SLIDER_VALUE_WIDTH);
+			Rect2i sliderArea = new Rect2i(sliderX, sliderY, sliderWidth, CHANNEL_SLIDER_HEIGHT);
+			sliders.add(new SliderArea(fields.get(i), sliderArea));
 		}
-		return areas;
-	}
-
-	private List<ColorField> getVisibleFields() {
-		List<ColorField> fields = new ArrayList<>(colorSpace.fields);
-		if (hasAlpha() && colorSpace != ColorSpace.HEX) {
-			fields.add(ColorField.ALPHA);
-		}
-		return fields;
+		return List.copyOf(sliders);
 	}
 
 	private boolean hasAlpha() {
@@ -667,82 +720,59 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		return new ImmutableRect2i(area.getX(), area.getY(), area.getWidth(), area.getHeight());
 	}
 
-	private enum Control {
-		SATURATION_VALUE,
-		HUE,
+	private enum ControlType {
+		PLANE,
+		SLIDER,
 		ALPHA,
 		NONE
 	}
 
-	private enum ColorSpace {
-		HSV("HSV", List.of(ColorField.HUE, ColorField.SATURATION, ColorField.VALUE)),
-		RGB("RGB", List.of(ColorField.RED, ColorField.GREEN, ColorField.BLUE)),
-		CMYK("CMYK", List.of(ColorField.CYAN, ColorField.MAGENTA, ColorField.YELLOW, ColorField.BLACK)),
-		LAB("Lab", List.of(ColorField.LAB_LIGHTNESS, ColorField.LAB_A, ColorField.LAB_B)),
-		HEX("Hex", List.of(ColorField.HEX));
-
-		private final Component label;
-		private final List<ColorField> fields;
-
-		ColorSpace(String label, List<ColorField> fields) {
-			this.label = Component.literal(label);
-			this.fields = fields;
-		}
-	}
-
 	private enum ColorField {
-		HUE("H", 0, 360),
-		SATURATION("S", 0, 100),
-		VALUE("V", 0, 100),
-		RED("R", 0, 255),
-		GREEN("G", 0, 255),
-		BLUE("B", 0, 255),
-		CYAN("C", 0, 100),
-		MAGENTA("M", 0, 100),
-		YELLOW("Y", 0, 100),
-		BLACK("K", 0, 100),
-		LAB_LIGHTNESS("L", 0, 100),
-		LAB_A("a", -128, 127),
-		LAB_B("b", -128, 127),
-		ALPHA("A", 0, 255),
-		HEX("", 0, 0);
+		HUE("H"),
+		SATURATION("S"),
+		VALUE("V"),
+		RED("R"),
+		GREEN("G"),
+		BLUE("B"),
+		ALPHA("A"),
+		HEX("");
 
 		private final String label;
-		private final int min;
-		private final int max;
 
-		ColorField(String label, int min, int max) {
+		ColorField(String label) {
 			this.label = label;
-			this.min = min;
-			this.max = max;
 		}
 	}
 
 	private record PickerLayout(
-		Rect2i saturationValueArea,
-		Rect2i hueArea,
+		Rect2i colorPreviewArea,
+		Rect2i colorPlaneArea,
+		Rect2i verticalAxisLabelArea,
+		Rect2i horizontalAxisLabelArea,
+		List<SliderArea> sliderAreas,
 		Rect2i alphaArea,
-		List<ModeArea> modeAreas,
-		List<FieldArea> fieldAreas
+		FieldArea hexFieldArea
 	) {
-		Control getControl(double mouseX, double mouseY) {
-			if (contains(saturationValueArea, mouseX, mouseY)) {
-				return Control.SATURATION_VALUE;
+		ColorControl getControl(double mouseX, double mouseY) {
+			if (colorPlaneArea.getWidth() > 0 && contains(colorPlaneArea, mouseX, mouseY)) {
+				return ColorControl.PLANE;
 			}
-			if (contains(hueArea, mouseX, mouseY)) {
-				return Control.HUE;
+			for (SliderArea sliderArea : sliderAreas) {
+				if (contains(sliderArea.area(), mouseX, mouseY)) {
+					return ColorControl.slider(sliderArea.field());
+				}
 			}
 			if (alphaArea.getHeight() > 0 && contains(alphaArea, mouseX, mouseY)) {
-				return Control.ALPHA;
+				return ColorControl.ALPHA;
 			}
-			return Control.NONE;
+			return ColorControl.NONE;
 		}
 
 		@Nullable
-		ColorSpace getColorSpace(double mouseX, double mouseY) {
-			for (ModeArea modeArea : modeAreas) {
-				if (contains(modeArea.area(), mouseX, mouseY)) {
-					return modeArea.colorSpace();
+		SliderArea getSlider(ColorField field) {
+			for (SliderArea sliderArea : sliderAreas) {
+				if (sliderArea.field() == field) {
+					return sliderArea;
 				}
 			}
 			return null;
@@ -750,21 +780,32 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 
 		@Nullable
 		ColorField getField(double mouseX, double mouseY) {
-			for (FieldArea fieldArea : fieldAreas) {
-				if (contains(fieldArea.area(), mouseX, mouseY)) {
-					return fieldArea.field();
-				}
+			if (contains(hexFieldArea.area(), mouseX, mouseY)) {
+				return hexFieldArea.field();
 			}
 			return null;
 		}
 	}
 
-	private record ModeArea(ColorSpace colorSpace, Rect2i area) {
-	}
-
 	private record FieldArea(ColorField field, Rect2i area) {
 	}
 
-	private record ParsedEdit(ColorField field, int value, int alpha) {
+	private record SliderArea(ColorField field, Rect2i area) {
+		float getPosition(double mouseX, double mouseY) {
+			return ColorPickerPopup.getPosition(mouseX, area.getX(), area.getWidth());
+		}
+	}
+
+	private record ColorControl(ControlType type, @Nullable ColorField field) {
+		private static final ColorControl PLANE = new ColorControl(ControlType.PLANE, null);
+		private static final ColorControl ALPHA = new ColorControl(ControlType.ALPHA, null);
+		private static final ColorControl NONE = new ColorControl(ControlType.NONE, null);
+
+		private static ColorControl slider(ColorField field) {
+			return new ColorControl(ControlType.SLIDER, field);
+		}
+	}
+
+	private record ParsedEdit(int value, int alpha) {
 	}
 }

@@ -27,13 +27,11 @@ class KeyValueElementSerializerAdapterTest {
 	}
 
 	@Test
-	void rebuildsEntryAfterEditingEitherComponent() {
+	void rebuildsEntryAfterEditingTheValueWithoutChangingTheKey() {
 		NamedNumber entry = new NamedNumber("one", 1);
 		KeyValueElementSerializerAdapter<NamedNumber> adapter = KeyValueElementSerializerAdapter.create(SERIALIZER).orElseThrow();
 
-		assertEquals(new NamedNumber("first", 1), adapter.withSerializedKey(entry, "first").orElseThrow());
 		assertEquals(new NamedNumber("one", 2), adapter.withSerializedValue(entry, "2").orElseThrow());
-		assertEquals(new NamedNumber("direct", 1), adapter.withKey(entry, "direct").orElseThrow());
 		assertEquals(new NamedNumber("one", 3), adapter.withValue(entry, 3).orElseThrow());
 	}
 
@@ -42,10 +40,8 @@ class KeyValueElementSerializerAdapterTest {
 		NamedNumber entry = new NamedNumber("one", 1);
 		KeyValueElementSerializerAdapter<NamedNumber> adapter = KeyValueElementSerializerAdapter.create(SERIALIZER).orElseThrow();
 
-		assertTrue(adapter.withSerializedKey(entry, "").isEmpty());
 		assertTrue(adapter.withSerializedValue(entry, "not a number").isEmpty());
 		assertTrue(adapter.withSerializedValue(entry, "-1").isEmpty());
-		assertTrue(adapter.withKey(entry, "").isEmpty());
 	}
 
 	@Test

@@ -2,6 +2,7 @@ package net.mezzdev.config.gui.popup;
 
 import net.mezzdev.config.api.value.ConfigColorFormat;
 import net.mezzdev.config.api.value.PackedColor;
+import net.mezzdev.config.gui.info.ColorSwatch;
 import net.minecraft.client.renderer.Rect2i;
 import org.junit.jupiter.api.Test;
 
@@ -49,33 +50,35 @@ class ColorPickerModelTest {
 	}
 
 	@Test
-	void convertsBetweenRgbAndCmyk() {
-		ColorPickerModel model = new ColorPickerModel(PackedColor.rgb(0xFF0000));
-
-		ColorPickerModel.Cmyk red = model.getCmyk();
-		assertEquals(0.0, red.cyan(), 0.0001);
-		assertEquals(1.0, red.magenta(), 0.0001);
-		assertEquals(1.0, red.yellow(), 0.0001);
-		assertEquals(0.0, red.black(), 0.0001);
-
-		model.setCmyk(1.0, 0.0, 0.0, 0.0);
-		assertEquals(PackedColor.rgb(0x00FFFF), model.getPackedColor());
+	void formatsCompactRgbAndArgbHexValues() {
+		assertEquals("#336699", ColorSwatch.formatHex(PackedColor.rgb(0x336699)));
+		assertEquals("#80336699", ColorSwatch.formatHex(PackedColor.argb(0x80336699)));
 	}
 
 	@Test
-	void convertsBetweenRgbAndD65Lab() {
-		ColorPickerModel model = new ColorPickerModel(PackedColor.rgb(0xFF0000));
+	void hsvPlaneUsesSaturationOnXAndValueOnY() {
+		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.rgb(0xFF0000));
+		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
 
-		ColorPickerModel.Lab red = model.getLab();
-		assertEquals(53.24, red.lightness(), 0.02);
-		assertEquals(80.09, red.a(), 0.02);
-		assertEquals(67.20, red.b(), 0.02);
+		PackedColor white = clickControl(popup, area, 25, 52);
+		PackedColor black = clickControl(popup, area, 248, 137);
 
-		model.setLab(red.lightness(), red.a(), red.b());
-		ColorPickerModel.Rgb roundTrip = model.getRgb();
-		assertEquals(255, roundTrip.red(), 1);
-		assertEquals(0, roundTrip.green(), 1);
-		assertEquals(0, roundTrip.blue(), 1);
+		assertEquals(PackedColor.rgb(0xFFFFFF), white);
+		assertEquals(PackedColor.rgb(0x000000), black);
+	}
+
+	@Test
+	void rgbSlidersEditChannelsBelowHsvSliders() {
+		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.rgb(0x336699));
+		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
+
+		PackedColor noRed = clickControl(popup, area, 21, 197);
+		PackedColor fullGreen = clickControl(popup, area, 218, 211);
+		PackedColor noBlue = clickControl(popup, area, 21, 225);
+
+		assertEquals(PackedColor.rgb(0x006699), noRed);
+		assertEquals(PackedColor.rgb(0x00FF99), fullGreen);
+		assertEquals(PackedColor.rgb(0x00FF00), noBlue);
 	}
 
 	@Test
@@ -83,7 +86,7 @@ class ColorPickerModelTest {
 		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.argb(0xFFFF0000));
 		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
 
-		PackedColor transparentRed = popup.getClickedValue(area, 7, 101, 0).orElseThrow();
+		PackedColor transparentRed = popup.getClickedValue(area, 21, 247, 0).orElseThrow();
 
 		assertEquals(PackedColor.argb(0x00FF0000), transparentRed);
 		assertFalse(popup.closesAfterValueSelected());
@@ -94,8 +97,8 @@ class ColorPickerModelTest {
 		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.rgb(0xFF0000));
 		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
 
-		popup.getClickedValue(area, 160, 7, 0).orElseThrow();
-		PackedColor cyan = popup.getDraggedValue(area, -20, 50.5, 0).orElseThrow();
+		popup.getClickedValue(area, 218, 155, 0).orElseThrow();
+		PackedColor cyan = popup.getDraggedValue(area, 119.5, -20, 0).orElseThrow();
 
 		assertEquals(PackedColor.rgb(0x00FFFF), cyan);
 	}
@@ -105,7 +108,7 @@ class ColorPickerModelTest {
 		ColorPickerPopup rgb = new ColorPickerPopup(new PackedColor(0x336699, ConfigColorFormat.RGB));
 		ColorPickerPopup argb = new ColorPickerPopup(new PackedColor(0xFF336699, ConfigColorFormat.ARGB));
 
-		assertEquals(17, argb.getHeight() - rgb.getHeight());
+		assertEquals(16, argb.getHeight() - rgb.getHeight());
 	}
 
 	@Test
@@ -114,12 +117,59 @@ class ColorPickerModelTest {
 		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
 		AtomicReference<PackedColor> editedColor = new AtomicReference<>();
 
-		popup.getClickedValue(area, 150, 120, 0);
-		popup.getClickedValue(area, 20, 140, 0);
+		popup.getClickedValue(area, 180, 265, 0);
 		for (char character : "#804477DD".toCharArray()) {
 			assertTrue(popup.charTyped(character, 0, editedColor::set));
 		}
 
 		assertEquals(PackedColor.argb(0x804477DD), editedColor.get());
+	}
+
+	@Test
+	void hexInputIsAlwaysAvailable() {
+		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.rgb(0xFF0000));
+		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
+		AtomicReference<PackedColor> editedColor = new AtomicReference<>();
+
+		popup.getClickedValue(area, 180, 247, 0);
+		for (char character : "#336699".toCharArray()) {
+			assertTrue(popup.charTyped(character, 0, editedColor::set));
+		}
+
+		assertEquals(PackedColor.rgb(0x336699), editedColor.get());
+	}
+
+	@Test
+	void focusedHexInputAcceptsTypingAsSoonAsPickerOpens() {
+		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.rgb(0xFF0000), true);
+		AtomicReference<PackedColor> editedColor = new AtomicReference<>();
+
+		for (char character : "#123456".toCharArray()) {
+			assertTrue(popup.charTyped(character, 0, editedColor::set));
+		}
+
+		assertEquals(PackedColor.rgb(0x123456), editedColor.get());
+	}
+
+	@Test
+	void chartAndSlidersDoNotExposeHoveredValues() {
+		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.rgb(0x336699));
+		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
+
+		assertTrue(popup.getHoveredValue(area, 100, 90).isEmpty());
+		assertTrue(popup.getHoveredValue(area, 100, 155).isEmpty());
+	}
+
+	@Test
+	void shiftPrecisionScalesSliderMovementFromItsAnchor() {
+		assertEquals(0.51f, ColorPickerPopup.getPreciseSliderPosition(0.5f, 0.4f, 0.5f), 0.0001f);
+		assertEquals(0.0f, ColorPickerPopup.getPreciseSliderPosition(0.02f, 0.8f, -0.8f), 0.0001f);
+		assertEquals(1.0f, ColorPickerPopup.getPreciseSliderPosition(0.98f, 0.2f, 0.8f), 0.0001f);
+	}
+
+	private static PackedColor clickControl(ColorPickerPopup popup, Rect2i area, double mouseX, double mouseY) {
+		PackedColor value = popup.getClickedValue(area, mouseX, mouseY, 0).orElseThrow();
+		popup.getClickedValue(area, mouseX, mouseY, 0).orElseThrow();
+		return value;
 	}
 }

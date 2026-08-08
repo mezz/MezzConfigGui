@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui.entries;
 
 import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.api.value.ConfigListOrdering;
 import net.mezzdev.config.api.value.IConfigListValueSerializer;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
@@ -25,6 +26,7 @@ class ConfigListValueEditorSerializersTest {
 
 		IConfigListValueEditorSerializer<String> adapter = ConfigListValueEditorSerializers.adapt(listSerializer);
 		assertSame(elementSerializer, adapter.getElementSerializer());
+		assertEquals(ConfigListOrdering.UNORDERED, adapter.getOrdering());
 		assertEquals("alpha, beta", adapter.serialize(List.of("alpha", "beta")));
 		assertEquals(List.of("alpha", "beta"), adapter.deserialize("alpha, beta").getResult().orElseThrow());
 	}
@@ -45,6 +47,11 @@ class ConfigListValueEditorSerializersTest {
 
 		public IConfigValueSerializer<String> getElementSerializer() {
 			return elementSerializer;
+		}
+
+		@Override
+		public ConfigListOrdering getOrdering() {
+			return ConfigListOrdering.UNORDERED;
 		}
 
 		@Override
