@@ -3,7 +3,7 @@
 ## Planned options
 
 - [x] Add MezzConfigGui's own MezzConfig file and config screen.
-- [x] GUI size: `SMALL`, `MEDIUM`, `FULLSCREEN`.
+- [x] GUI mode: `WINDOW` with a persisted resizable width and height, or `FULLSCREEN`.
 - [x] Row density: `COMFORTABLE`, `COMPACT`.
 - [x] Subtle horizontal row coloring.
 - [x] Remember last category per mod.

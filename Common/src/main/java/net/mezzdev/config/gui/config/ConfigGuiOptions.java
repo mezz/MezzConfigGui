@@ -17,11 +17,20 @@ public final class ConfigGuiOptions {
 
 	private static final String CONFIG_FILE_NAME = "mezz_config_gui.ini";
 	private static final String LOCALIZATION_PATH = "mezz_config_gui.config";
+	private static final int MIN_WINDOW_WIDTH = 320;
+	private static final int MIN_WINDOW_HEIGHT = 230;
+	private static final int MAX_WINDOW_SIZE = 8192;
+	private static final int DEFAULT_WINDOW_WIDTH = 380;
+	private static final int DEFAULT_WINDOW_HEIGHT = 300;
 
 	@Nullable
 	private static IConfigSchema schema;
 	@Nullable
-	private static IConfigValue<GuiSize> guiSize;
+	private static IConfigValue<GuiMode> guiMode;
+	@Nullable
+	private static IConfigValue<Integer> windowWidth;
+	@Nullable
+	private static IConfigValue<Integer> windowHeight;
 	@Nullable
 	private static IConfigValue<RowDensity> rowDensity;
 	@Nullable
@@ -60,7 +69,16 @@ public final class ConfigGuiOptions {
 	public static void register(IConfigRegistration registration) {
 		IConfigSchemaBuilder schemaBuilder = registration.createSchemaBuilder(CONFIG_FILE_NAME, LOCALIZATION_PATH);
 		IConfigCategoryBuilder appearance = schemaBuilder.addCategory("appearance");
-		guiSize = appearance.addEnum("guiSize", GuiSize.MEDIUM)
+		guiMode = appearance.addEnum("guiMode", GuiMode.WINDOW)
+			.addLegacyValueMigration("appearance", "guiSize", ConfigGuiOptions::migrateGuiMode)
+			.setEditMode(ConfigValueEditMode.BATCH)
+			.build();
+		windowWidth = appearance.addInteger("windowWidth", DEFAULT_WINDOW_WIDTH, MIN_WINDOW_WIDTH, MAX_WINDOW_SIZE)
+			.addLegacyValueMigration("appearance", "guiSize", ConfigGuiOptions::migrateWindowWidth)
+			.setEditMode(ConfigValueEditMode.BATCH)
+			.build();
+		windowHeight = appearance.addInteger("windowHeight", DEFAULT_WINDOW_HEIGHT, MIN_WINDOW_HEIGHT, MAX_WINDOW_SIZE)
+			.addLegacyValueMigration("appearance", "guiSize", ConfigGuiOptions::migrateWindowHeight)
 			.setEditMode(ConfigValueEditMode.BATCH)
 			.build();
 		rowDensity = appearance.addEnum("rowDensity", RowDensity.COMFORTABLE)
@@ -130,8 +148,53 @@ public final class ConfigGuiOptions {
 		return schema;
 	}
 
-	public static GuiSize getGuiSize() {
-		return getValue(guiSize, GuiSize.MEDIUM);
+	public static GuiMode getGuiMode() {
+		return getValue(guiMode, GuiMode.WINDOW);
+	}
+
+	public static int getWindowWidth() {
+		return getValue(windowWidth, DEFAULT_WINDOW_WIDTH);
+	}
+
+	public static int getWindowHeight() {
+		return getValue(windowHeight, DEFAULT_WINDOW_HEIGHT);
+	}
+
+	public static int getGuiWidth(int screenWidth) {
+		int maxWidth = Math.max(1, screenWidth);
+		if (getGuiMode() == GuiMode.FULLSCREEN) {
+			return maxWidth;
+		}
+		int minWidth = Math.min(MIN_WINDOW_WIDTH, maxWidth);
+		return Math.clamp(getWindowWidth(), minWidth, maxWidth);
+	}
+
+	public static int getGuiHeight(int screenHeight) {
+		int maxHeight = Math.max(1, screenHeight);
+		if (getGuiMode() == GuiMode.FULLSCREEN) {
+			return maxHeight;
+		}
+		int minHeight = Math.min(MIN_WINDOW_HEIGHT, maxHeight);
+		return Math.clamp(getWindowHeight(), minHeight, maxHeight);
+	}
+
+	public static void setWindowSize(int width, int height) {
+		int clampedWidth = Math.clamp(width, MIN_WINDOW_WIDTH, MAX_WINDOW_SIZE);
+		int clampedHeight = Math.clamp(height, MIN_WINDOW_HEIGHT, MAX_WINDOW_SIZE);
+		IConfigSchema schema = ConfigGuiOptions.schema;
+		IConfigValue<Integer> windowWidth = ConfigGuiOptions.windowWidth;
+		IConfigValue<Integer> windowHeight = ConfigGuiOptions.windowHeight;
+		IConfigValue<GuiMode> guiMode = ConfigGuiOptions.guiMode;
+		if (schema != null && windowWidth != null && windowHeight != null && guiMode != null) {
+			schema.batchUpdate(updater -> updater
+				.set(windowWidth, clampedWidth)
+				.set(windowHeight, clampedHeight)
+				.set(guiMode, GuiMode.WINDOW));
+			return;
+		}
+		setValue(windowWidth, clampedWidth);
+		setValue(windowHeight, clampedHeight);
+		setValue(guiMode, GuiMode.WINDOW);
 	}
 
 	public static RowDensity getRowDensity() {
@@ -201,46 +264,45 @@ public final class ConfigGuiOptions {
 		return configValue.getValue();
 	}
 
-	public enum GuiSize {
-		SMALL(320, 340, 230, 260),
-		MEDIUM(320, 380, 230, 300),
-		LARGE(320, 380, 0, 0) {
-			@Override
-			public int getHeight(int screenHeight) {
-				return screenHeight;
-			}
-		},
-		FULLSCREEN(0, 0, 0, 0) {
-			@Override
-			public int getWidth(int screenWidth) {
-				return screenWidth;
-			}
-
-			@Override
-			public int getHeight(int screenHeight) {
-				return screenHeight;
-			}
-		};
-
-		private final int minWidth;
-		private final int maxWidth;
-		private final int minHeight;
-		private final int maxHeight;
-
-		GuiSize(int minWidth, int maxWidth, int minHeight, int maxHeight) {
-			this.minWidth = minWidth;
-			this.maxWidth = maxWidth;
-			this.minHeight = minHeight;
-			this.maxHeight = maxHeight;
+	private static <T> void setValue(@Nullable IConfigValue<T> configValue, T value) {
+		if (configValue != null) {
+			configValue.set(value);
 		}
+	}
 
-		public int getWidth(int screenWidth) {
-			return Math.clamp(screenWidth - 40, minWidth, maxWidth);
+	private static GuiMode migrateGuiMode(String legacyGuiSize) {
+		if (normalizeLegacyGuiSize(legacyGuiSize).equals("FULLSCREEN")) {
+			return GuiMode.FULLSCREEN;
 		}
+		return GuiMode.WINDOW;
+	}
 
-		public int getHeight(int screenHeight) {
-			return Math.clamp(screenHeight - 40, minHeight, maxHeight);
+	private static int migrateWindowWidth(String legacyGuiSize) {
+		if (normalizeLegacyGuiSize(legacyGuiSize).equals("SMALL")) {
+			return 340;
 		}
+		return DEFAULT_WINDOW_WIDTH;
+	}
+
+	private static int migrateWindowHeight(String legacyGuiSize) {
+		String normalized = normalizeLegacyGuiSize(legacyGuiSize);
+		if (normalized.equals("SMALL")) {
+			return 260;
+		}
+		return DEFAULT_WINDOW_HEIGHT;
+	}
+
+	private static String normalizeLegacyGuiSize(String legacyGuiSize) {
+		String normalized = legacyGuiSize.trim();
+		if (normalized.startsWith("\"") && normalized.endsWith("\"") && normalized.length() >= 2) {
+			normalized = normalized.substring(1, normalized.length() - 1);
+		}
+		return normalized;
+	}
+
+	public enum GuiMode {
+		WINDOW,
+		FULLSCREEN
 	}
 
 	public enum RowDensity {

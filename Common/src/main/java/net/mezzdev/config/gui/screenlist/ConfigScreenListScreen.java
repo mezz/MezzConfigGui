@@ -223,9 +223,8 @@ public final class ConfigScreenListScreen extends Screen {
 	}
 
 	private static ImmutableRect2i getScreenArea(int screenWidth, int screenHeight) {
-		ConfigGuiOptions.GuiSize guiSize = ConfigGuiOptions.getGuiSize();
-		int guiWidth = guiSize.getWidth(screenWidth);
-		int guiHeight = guiSize.getHeight(screenHeight);
+		int guiWidth = ConfigGuiOptions.getGuiWidth(screenWidth);
+		int guiHeight = ConfigGuiOptions.getGuiHeight(screenHeight);
 		return new ImmutableRect2i(
 			(screenWidth - guiWidth) / 2,
 			(screenHeight - guiHeight) / 2,

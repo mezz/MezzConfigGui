@@ -6,6 +6,8 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Optional;
+
 /**
  * Calculates and stores screen rectangles, scroll state, and scrollbar positions.
  */
@@ -51,6 +53,7 @@ public final class ConfigScreenLayout {
 	private ImmutableRect2i customArea;
 	@Nullable
 	private ResizeDragSession resizeDragSession;
+	private boolean resizeDragChanged;
 
 	private int totalContentHeight = 0;
 	private double targetScrollY = 0;
@@ -104,9 +107,8 @@ public final class ConfigScreenLayout {
 			this.customArea = clampedArea;
 			return clampedArea;
 		}
-		ConfigGuiOptions.GuiSize guiSize = ConfigGuiOptions.getGuiSize();
-		int guiWidth = guiSize.getWidth(screenWidth);
-		int guiHeight = guiSize.getHeight(screenHeight);
+		int guiWidth = ConfigGuiOptions.getGuiWidth(screenWidth);
+		int guiHeight = ConfigGuiOptions.getGuiHeight(screenHeight);
 		int guiLeft = (screenWidth - guiWidth) / 2;
 		int guiTop = (screenHeight - guiHeight) / 2;
 		return new ImmutableRect2i(guiLeft, guiTop, guiWidth, guiHeight);
@@ -199,6 +201,7 @@ public final class ConfigScreenLayout {
 			return false;
 		}
 		resizeDragSession = new ResizeDragSession(resizeHandle, area);
+		resizeDragChanged = false;
 		return true;
 	}
 
@@ -208,10 +211,11 @@ public final class ConfigScreenLayout {
 			return false;
 		}
 		ImmutableRect2i resizedArea = session.resize(mouseX, mouseY, screenWidth, screenHeight);
-		if (resizedArea.equals(customArea)) {
+		if (resizedArea.equals(area)) {
 			return false;
 		}
 		customArea = resizedArea;
+		resizeDragChanged = true;
 		return true;
 	}
 
@@ -219,10 +223,19 @@ public final class ConfigScreenLayout {
 		return resizeDragSession != null;
 	}
 
-	public boolean stopResizeDrag() {
-		boolean wasResizing = resizeDragSession != null;
+	public Optional<ImmutableRect2i> finishResizeDrag() {
+		if (resizeDragSession == null) {
+			return Optional.empty();
+		}
 		resizeDragSession = null;
-		return wasResizing;
+		if (!resizeDragChanged || customArea == null) {
+			resizeDragChanged = false;
+			return Optional.empty();
+		}
+		ImmutableRect2i resizedArea = customArea;
+		customArea = null;
+		resizeDragChanged = false;
+		return Optional.of(resizedArea);
 	}
 
 	public ImmutableRect2i getScrollMarkerArea() {

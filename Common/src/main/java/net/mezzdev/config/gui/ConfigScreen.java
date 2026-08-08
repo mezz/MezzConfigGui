@@ -499,7 +499,9 @@ public class ConfigScreen extends Screen {
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
-		if (button == 0 && layout.stopResizeDrag()) {
+		if (button == 0 && layout.isResizing()) {
+			layout.finishResizeDrag()
+				.ifPresent(resizedArea -> ConfigGuiOptions.setWindowSize(resizedArea.getWidth(), resizedArea.getHeight()));
 			return true;
 		}
 		if (button == 0 && (controller.stopContentScrollDrag() || controller.stopNavScrollDrag())) {
