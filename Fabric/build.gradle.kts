@@ -1,3 +1,6 @@
+import net.fabricmc.loom.task.RemapJarTask
+import net.fabricmc.loom.task.RemapSourcesJarTask
+
 plugins {
     java
     idea
@@ -94,8 +97,6 @@ val testModSourceSets = testModProjects.map {
 extra["configLanguageDependencyProjects"] = dependencyProjects
 apply(from = rootProject.file("buildtools/ConfigLanguageResources.gradle.kts"))
 
-@Suppress("UNCHECKED_CAST")
-val configLanguageResourceProjects = extra["configLanguageResourceProjects"] as List<Project>
 val mergedConfigLanguageResources = tasks.named("mergeConfigLanguageResources")
 
 java {
@@ -185,27 +186,6 @@ loom {
     accessWidenerPath.set(file("src/main/resources/mezz_config.accesswidener"))
 }
 
-sourceSets {
-    named("main") {
-        resources {
-            for (p in dependencyProjects.filterNot(configLanguageResourceProjects::contains)) {
-                srcDir(p.sourceSets.main.get().resources)
-            }
-        }
-    }
-}
-
-tasks.named<ProcessResources>(sourceSets.main.get().processResourcesTaskName) {
-    dependsOn(mergedConfigLanguageResources)
-    for (p in configLanguageResourceProjects) {
-        from(p.sourceSets.main.get().resources) {
-            exclude("fabric.mod.json")
-            exclude("assets/mezz_config/lang/*.json")
-        }
-    }
-    from(mergedConfigLanguageResources)
-}
-
 tasks.jar {
     dependsOn(mergedConfigLanguageResources)
     from(sourceSets.main.get().output)
@@ -226,6 +206,34 @@ tasks.named<Jar>("sourcesJar") {
     }
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     archiveClassifier.set("sources")
+}
+
+val mavenJarTask = tasks.register<Jar>("mavenJar") {
+    from(sourceSets.main.get().output)
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    destinationDirectory.set(layout.buildDirectory.dir("maven-intermediates"))
+}
+
+val remapMavenJarTask = tasks.register<RemapJarTask>("remapMavenJar") {
+    inputFile.set(mavenJarTask.flatMap { it.archiveFile })
+    addNestedDependencies.set(false)
+    archiveBaseName.set(baseArchivesName)
+    archiveClassifier.set("")
+    destinationDirectory.set(layout.buildDirectory.dir("maven-libs"))
+}
+
+val mavenSourcesJarTask = tasks.register<Jar>("mavenSourcesJar") {
+    from(sourceSets.main.get().allJava)
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    archiveClassifier.set("sources")
+    destinationDirectory.set(layout.buildDirectory.dir("maven-intermediates"))
+}
+
+val remapMavenSourcesJarTask = tasks.register<RemapSourcesJarTask>("remapMavenSourcesJar") {
+    inputFile.set(mavenSourcesJarTask.flatMap { it.archiveFile })
+    archiveBaseName.set(baseArchivesName)
+    archiveClassifier.set("sources")
+    destinationDirectory.set(layout.buildDirectory.dir("maven-libs"))
 }
 
 tasks.assemble {
@@ -257,8 +265,8 @@ publishing {
             @Suppress("UnstableApiUsage")
             loom.disableDeprecatedPomGeneration(this)
             artifactId = baseArchivesName
-            artifact(tasks.remapJar)
-            artifact(tasks.remapSourcesJar)
+            artifact(remapMavenJarTask)
+            artifact(remapMavenSourcesJarTask)
 
             val dependencyInfos = listOf(dependencyInfo(mezzConfigFabricDependency)) + dependencyProjects.map {
                 mapOf(

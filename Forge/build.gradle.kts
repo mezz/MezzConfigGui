@@ -46,8 +46,6 @@ val dependencyProjects: List<Project> = listOf(
 extra["configLanguageDependencyProjects"] = dependencyProjects
 apply(from = rootProject.file("buildtools/ConfigLanguageResources.gradle.kts"))
 
-@Suppress("UNCHECKED_CAST")
-val configLanguageResourceProjects = extra["configLanguageResourceProjects"] as List<Project>
 val mergedConfigLanguageResources = tasks.named("mergeConfigLanguageResources")
 
 sourceSets {
@@ -70,12 +68,6 @@ tasks.withType<JavaCompile>().configureEach {
 		compilerFor {
 			languageVersion.set(JavaLanguageVersion.of(modJavaVersion))
 		}
-	}
-}
-
-tasks.named<JavaCompile>(sourceSets.main.get().compileJavaTaskName) {
-	dependencyProjects.forEach {
-		source(it.sourceSets.main.get().allSource)
 	}
 }
 
@@ -144,6 +136,9 @@ minecraft {
 			mods {
 				create(configGuiModId) {
 					source(sourceSets.main.get())
+					for (dependencyProject in dependencyProjects) {
+						source(dependencyProject.sourceSets.main.get())
+					}
 				}
 			}
 		}
@@ -154,25 +149,23 @@ minecraft {
 			mods {
 				create(configGuiModId) {
 					source(sourceSets.main.get())
+					for (dependencyProject in dependencyProjects) {
+						source(dependencyProject.sourceSets.main.get())
+					}
 				}
 			}
 		}
 	}
 }
 
-tasks.named<ProcessResources>(sourceSets.main.get().processResourcesTaskName) {
-	dependsOn(mergedConfigLanguageResources)
-	for (p in configLanguageResourceProjects) {
-		from(p.sourceSets.main.get().resources) {
-			exclude("assets/mezz_config/lang/*.json")
-		}
-	}
-	from(mergedConfigLanguageResources)
-}
-
 tasks.jar {
 	dependsOn(mergedConfigLanguageResources)
 	from(sourceSets.main.get().output)
+	for (p in dependencyProjects) {
+		from(p.sourceSets.main.get().output) {
+			exclude("assets/mezz_config/lang/*.json")
+		}
+	}
 	from(mergedConfigLanguageResources)
 	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
@@ -186,6 +179,19 @@ val sourcesJarTask = tasks.named<Jar>("sourcesJar") {
 	archiveClassifier.set("sources")
 }
 
+val mavenJarTask = tasks.register<Jar>("mavenJar") {
+	from(sourceSets.main.get().output)
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	destinationDirectory.set(layout.buildDirectory.dir("maven-libs"))
+}
+
+val mavenSourcesJarTask = tasks.register<Jar>("mavenSourcesJar") {
+	from(sourceSets.main.get().allJava)
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	archiveClassifier.set("sources")
+	destinationDirectory.set(layout.buildDirectory.dir("maven-libs"))
+}
+
 tasks.assemble {
 	dependsOn(sourcesJarTask)
 }
@@ -194,8 +200,8 @@ publishing {
 	publications {
 		register<MavenPublication>("configGuiForgeJar") {
 			artifactId = baseArchivesName
-			artifact(tasks.jar.get())
-			artifact(sourcesJarTask.get())
+			artifact(mavenJarTask.get())
+			artifact(mavenSourcesJarTask.get())
 
 			val dependencyInfos = listOf(dependencyInfo(mezzConfigForgeDependency)) + dependencyProjects.map {
 				mapOf(

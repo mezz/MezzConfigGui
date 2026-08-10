@@ -70,8 +70,6 @@ val testModSourceSets = testModProjects.map {
 extra["configLanguageDependencyProjects"] = dependencyProjects
 apply(from = rootProject.file("buildtools/ConfigLanguageResources.gradle.kts"))
 
-@Suppress("UNCHECKED_CAST")
-val configLanguageResourceProjects = extra["configLanguageResourceProjects"] as List<Project>
 val mergedConfigLanguageResources = tasks.named("mergeConfigLanguageResources")
 val configGuiAccessTransformer = configGuiProject.layout.projectDirectory.file("src/main/accesstransformer.cfg")
 
@@ -169,13 +167,6 @@ tasks.withType<JavaCompile> {
 }
 
 tasks.named<ProcessResources>(sourceSets.main.get().processResourcesTaskName) {
-    dependsOn(mergedConfigLanguageResources)
-    for (p in configLanguageResourceProjects) {
-        from(p.sourceSets.main.get().resources) {
-            exclude("assets/mezz_config/lang/*.json")
-        }
-    }
-    from(mergedConfigLanguageResources)
     from(configGuiAccessTransformer) {
         into("META-INF")
         rename { "accesstransformer.cfg" }
@@ -207,6 +198,19 @@ val sourcesJarTask = tasks.named<Jar>("sourcesJar") {
     archiveClassifier.set("sources")
 }
 
+val mavenJarTask = tasks.register<Jar>("mavenJar") {
+    from(sourceSets.main.get().output)
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    destinationDirectory.set(layout.buildDirectory.dir("maven-libs"))
+}
+
+val mavenSourcesJarTask = tasks.register<Jar>("mavenSourcesJar") {
+    from(sourceSets.main.get().allJava)
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    archiveClassifier.set("sources")
+    destinationDirectory.set(layout.buildDirectory.dir("maven-libs"))
+}
+
 tasks.assemble {
     dependsOn(sourcesJarTask)
 }
@@ -215,8 +219,8 @@ publishing {
     publications {
         register<MavenPublication>("configGuiNeoForgeJar") {
             artifactId = baseArchivesName
-            artifact(tasks.jar.get())
-            artifact(sourcesJarTask.get())
+            artifact(mavenJarTask.get())
+            artifact(mavenSourcesJarTask.get())
 
             val dependencyInfos = listOf(dependencyInfo(mezzConfigNeoForgeDependency)) + dependencyProjects.map {
                 mapOf(
