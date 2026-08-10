@@ -46,7 +46,7 @@ final class KeyMappingSerializer implements IConfigValueEditorSerializer<KeyMapp
 
 	@Override
 	public boolean isValid(KeyMappingValue value) {
-		return value != null;
+		return value != null && value.binding() != null && value.configKeyMapping() != null;
 	}
 
 	@Override

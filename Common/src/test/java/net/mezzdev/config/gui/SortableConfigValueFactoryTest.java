@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SortableConfigValueFactoryTest {
@@ -84,8 +85,8 @@ class SortableConfigValueFactoryTest {
 			Map.of()
 		);
 
-		assertFalse(configValue.set(List.of("first", "first")));
-		assertFalse(configValue.set(List.of("first", " ")));
+		assertThrows(IllegalArgumentException.class, () -> configValue.set(List.of("first", "first")));
+		assertThrows(IllegalArgumentException.class, () -> configValue.set(List.of("first", " ")));
 		assertEquals(List.of(), sortingConfig.savedValues);
 	}
 
@@ -130,6 +131,7 @@ class SortableConfigValueFactoryTest {
 		configValue.addListener((Consumer<List<String>>) listenerValues::add);
 
 		assertTrue(configValue.set(List.of("second", "first")));
+		assertFalse(configValue.set(List.of("second", "first")));
 
 		assertEquals(List.of(List.of("second", "first")), sortingConfig.savedValues);
 		assertEquals(List.of(List.of("second", "first")), listenerValues);

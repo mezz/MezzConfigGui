@@ -16,6 +16,10 @@ import java.util.function.Consumer;
  * this interface directly without implementing MezzConfig's non-extendable {@link IConfigValue}. Platform-native
  * config adapters, such as the native NeoForge config adapter, should also implement this interface directly and use
  * the {@code ByName} methods on {@link IConfigScreenCategoryBuilder} for GUI customization.
+ * <p>
+ * Values returned by this interface, passed to listeners, and accepted by {@link #set(Object)} must be effectively
+ * immutable snapshots with stable equality. Mutable native config collections must never be exposed directly because
+ * the GUI keeps values while edits are staged and while applied changes remain undoable.
  *
  * @param <T> the value type
  *
@@ -175,6 +179,9 @@ public interface IConfigScreenValue<T> {
 
 	/**
 	 * Get the current value.
+	 * <p>
+	 * Returned values must be effectively immutable. In particular, collection-backed implementations must return a
+	 * snapshot instead of exposing mutable native config storage.
 	 *
 	 * @since 0.1.0
 	 */
@@ -182,6 +189,8 @@ public interface IConfigScreenValue<T> {
 
 	/**
 	 * Get the default value.
+	 * <p>
+	 * Returned values must be effectively immutable and have stable {@link Object#equals(Object)} behavior.
 	 *
 	 * @since 0.1.0
 	 */
@@ -189,6 +198,10 @@ public interface IConfigScreenValue<T> {
 
 	/**
 	 * Set the value.
+	 *
+	 * @param value the new value
+	 * @return {@code true} when the stored value changed, or {@code false} when the value was valid but unchanged
+	 * @throws IllegalArgumentException when the value is invalid
 	 *
 	 * @since 0.1.0
 	 */

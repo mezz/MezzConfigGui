@@ -1821,7 +1821,22 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 
 		@Override
 		public boolean set(Object value) {
-			return replaceComponent(rowIndex, value);
+			IConfigValueSerializer<Object> componentSerializer = getComponentSerializer();
+			if (!componentSerializer.isValid(value)) {
+				throw new IllegalArgumentException(
+					"Invalid list component value '%s'. %s".formatted(value, componentSerializer.getValidValuesDescription())
+				);
+			}
+			if (!isIndexValid(ListConfigEntry.this.getValue(), rowIndex)) {
+				throw new IllegalStateException("Key-value list row is no longer available");
+			}
+			if (Objects.equals(getValue(), value)) {
+				return false;
+			}
+			if (!replaceComponent(rowIndex, value)) {
+				throw new IllegalArgumentException("The list does not accept this component value: " + value);
+			}
+			return true;
 		}
 
 		@Override

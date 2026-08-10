@@ -19,6 +19,8 @@ import net.mezzdev.config.gui.api.ISortingConfigGuiBuilder;
 import net.mezzdev.config.gui.api.ISortableConfigValueFactory;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,6 +35,7 @@ import java.util.stream.Collectors;
 
 final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 	static final SortableConfigValueFactory INSTANCE = new SortableConfigValueFactory();
+	private static final Logger LOGGER = LogManager.getLogger();
 	private static final ConfigValueApplyMode DEFAULT_APPLY_MODE = ConfigValueApplyMode.ON_APPLY;
 
 	private SortableConfigValueFactory() {
@@ -310,7 +313,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 
 		@Override
 		public List<T> getValue() {
-			return sortingConfig.getSortedValues(values);
+			return List.copyOf(sortingConfig.getSortedValues(values));
 		}
 
 		@Override
@@ -320,13 +323,22 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 
 		@Override
 		public boolean set(List<T> value) {
+			if (value == null || !serializer.isValid(value)) {
+				throw new IllegalArgumentException(
+					"Invalid sortable config value '%s'. %s".formatted(value, serializer.getValidValuesDescription())
+				);
+			}
 			List<T> valueCopy = List.copyOf(value);
-			if (!serializer.isValid(valueCopy)) {
+			if (getValue().equals(valueCopy)) {
 				return false;
 			}
 			if (sortingConfig.setSortedValues(valueCopy)) {
 				for (Consumer<List<T>> listener : List.copyOf(listeners)) {
-					listener.accept(valueCopy);
+					try {
+						listener.accept(valueCopy);
+					} catch (RuntimeException exception) {
+						LOGGER.error("Sortable config value listener failed for {}.", name, exception);
+					}
 				}
 				return true;
 			}

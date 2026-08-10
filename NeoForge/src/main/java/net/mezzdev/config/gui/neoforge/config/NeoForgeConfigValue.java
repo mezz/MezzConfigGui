@@ -47,7 +47,7 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 		this.localizedDescription = NeoForgeConfigLocalization.getValueDescription(localizationKey, valueSpec.getComment());
 		this.modConfigSpec = modConfigSpec;
 		this.configValue = configValue;
-		this.defaultValue = configValue.getDefault();
+		this.defaultValue = snapshot(configValue.getDefault());
 		this.serializer = serializer;
 		this.restartRequirement = getRestartRequirement(modConfig, valueSpec);
 	}
@@ -88,7 +88,7 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 
 	@Override
 	public T getValue() {
-		return configValue.getRaw();
+		return snapshot(configValue.getRaw());
 	}
 
 	@Override
@@ -99,16 +99,26 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 	@Override
 	public boolean set(T value) {
 		if (!serializer.isValid(value)) {
-			LOGGER.error("Tried to set invalid NeoForge config value: {}\n{}", value, serializer.getValidValuesDescription());
+			throw new IllegalArgumentException(
+				"Invalid NeoForge config value '%s'. %s".formatted(value, serializer.getValidValuesDescription())
+			);
+		}
+		T valueSnapshot = snapshot(value);
+		if (Objects.equals(getValue(), valueSnapshot)) {
 			return false;
 		}
-		if (Objects.equals(getValue(), value)) {
-			return false;
-		}
-		configValue.set(value);
+		configValue.set(valueSnapshot);
 		modConfigSpec.save();
-		notifyListeners(value);
+		notifyListeners(valueSnapshot);
 		return true;
+	}
+
+	@SuppressWarnings("unchecked")
+	private static <T> T snapshot(T value) {
+		if (value instanceof List<?> list) {
+			return (T) List.copyOf(list);
+		}
+		return value;
 	}
 
 	@Override
@@ -127,7 +137,13 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 
 	private void notifyListeners(T value) {
 		if (listeners != null) {
-			List.copyOf(listeners).forEach(listener -> listener.accept(value));
+			for (Consumer<T> listener : List.copyOf(listeners)) {
+				try {
+					listener.accept(value);
+				} catch (RuntimeException exception) {
+					LOGGER.error("NeoForge config value listener failed for {}.", name, exception);
+				}
+			}
 		}
 	}
 

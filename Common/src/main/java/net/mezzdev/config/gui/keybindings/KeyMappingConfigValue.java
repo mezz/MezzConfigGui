@@ -54,6 +54,9 @@ public final class KeyMappingConfigValue implements IConfigScreenValue<KeyMappin
 
 	@Override
 	public boolean set(KeyMappingValue value) {
+		if (!serializer.isValid(value)) {
+			throw new IllegalArgumentException("Invalid key mapping value: " + value);
+		}
 		ConfigKeyBinding binding = configKeyMapping.normalize(value.binding());
 		if (getValue().binding().equals(binding)) {
 			return false;

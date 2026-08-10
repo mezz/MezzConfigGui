@@ -459,6 +459,9 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 
 		@Override
 		public boolean set(CombinedEnabled value) {
+			if (!CombinedEnabledSerializer.INSTANCE.isValid(value)) {
+				throw new IllegalArgumentException("Invalid combined enabled value: " + value);
+			}
 			boolean primaryChanged = primary.set(value.primary);
 			boolean secondaryChanged = secondary.set(value.secondary);
 			return primaryChanged || secondaryChanged;

@@ -16,8 +16,20 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class KeyMappingConfigEntryTest {
+	@Test
+	void screenValueRejectsInvalidInputWithAnException() {
+		KeyMappingConfigValue configValue = new KeyMappingConfigValue(new TestConfigKeyMapping());
+
+		assertThrows(IllegalArgumentException.class, () -> configValue.set(null));
+		assertThrows(
+			IllegalArgumentException.class,
+			() -> configValue.set(new KeyMappingValue(null, new TestConfigKeyMapping()))
+		);
+	}
+
 	@Test
 	void conflictDetailsOptionControlsConflictLookup() {
 		TestConfigKeyMapping keyMapping = new TestConfigKeyMapping();
