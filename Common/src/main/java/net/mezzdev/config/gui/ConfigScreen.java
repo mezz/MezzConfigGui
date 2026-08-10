@@ -345,8 +345,9 @@ public class ConfigScreen extends Screen {
 				openPendingChangesConfirmation(leaveAction);
 				return;
 			}
-			applyPendingChanges();
-			leaveAction.run();
+			if (applyPendingChanges()) {
+				leaveAction.run();
+			}
 			return;
 		}
 		leaveAction.run();
@@ -371,7 +372,10 @@ public class ConfigScreen extends Screen {
 		PendingChangesScreen pendingChangesScreen = new PendingChangesScreen(
 			applyChanges -> {
 				if (applyChanges) {
-					applyPendingChanges();
+					if (!applyPendingChanges()) {
+						minecraft.setScreen(this);
+						return;
+					}
 				} else {
 					controller.discardPendingChanges();
 				}
@@ -384,9 +388,10 @@ public class ConfigScreen extends Screen {
 		minecraft.setScreen(pendingChangesScreen);
 	}
 
-	private void applyPendingChanges() {
-		controller.applyPendingChanges();
+	private boolean applyPendingChanges() {
+		ConfigChangesResult result = controller.applyPendingChanges();
 		refreshLayout();
+		return result.succeeded();
 	}
 
 	private void undoChanges() {

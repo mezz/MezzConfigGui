@@ -32,6 +32,7 @@
   "mezz_config.config.screen.update.gameRestart.pending": "This change takes effect after restarting the game.",
   "mezz_config.config.screen.restart.nextWorldLoad": "%s changes were saved and will be applied the next time a world is opened.",
   "mezz_config.config.screen.restart.nextGameStart": "%s changes were saved and will be applied the next time the game is started.",
+  "mezz_config.config.screen.saveFailed": "Could not save %s: %s",
   "mezz_config.config.screen.add": "Add",
   "mezz_config.config.screen.remove": "Remove",
   "mezz_config.config.screen.moveUp": "Move Up",

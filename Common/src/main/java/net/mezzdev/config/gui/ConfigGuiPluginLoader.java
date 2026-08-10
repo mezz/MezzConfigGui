@@ -7,6 +7,8 @@ import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.ConfigValueEditorType;
+import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
+import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigGuiRegistration;
 import net.mezzdev.config.gui.api.IConfigScreenBuilder;
@@ -19,7 +21,6 @@ import net.mezzdev.config.gui.api.IConfigValueEditorFactory;
 import net.mezzdev.config.gui.api.ISortingConfigGuiBuilder;
 import net.mezzdev.config.gui.api.ISortableConfigValueFactory;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
-import net.mezzdev.config.gui.model.ConfigValueChange;
 import net.mezzdev.config.gui.keybindings.KeyMappingConfigValues;
 import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryEntry;
 import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryRegistry;
@@ -1597,29 +1598,28 @@ final class ConfigGuiPluginLoader {
 		Component title
 	) {
 		return changes -> {
-			ConfigValueRestartRequirement restartRequirement = applyChanges(changes);
+			ConfigChangesResult result = ConfigChangesHandler.applySequentially(changes);
+			ConfigValueRestartRequirement restartRequirement = result.restartRequirement();
 			if (restartRequirement != ConfigValueRestartRequirement.NONE) {
 				notifyRestartDeferred(modId, title, restartRequirement);
 			}
-			return restartRequirement != ConfigValueRestartRequirement.NONE;
+			result.failure().ifPresent(failure -> notifyChangeFailure(modId, failure));
+			return result;
 		};
 	}
 
-	private static ConfigValueRestartRequirement applyChanges(List<ConfigValueChange<?>> changes) {
-		ConfigValueRestartRequirement restartRequirement = ConfigValueRestartRequirement.NONE;
-		for (ConfigValueChange<?> change : changes) {
-			if (!change.apply()) {
-				continue;
-			}
-			ConfigValueRestartRequirement changeRequirement = change.configValue().getRestartRequirement();
-			if (changeRequirement == ConfigValueRestartRequirement.GAME_RESTART) {
-				restartRequirement = changeRequirement;
-			} else if (changeRequirement == ConfigValueRestartRequirement.WORLD_RESTART &&
-				restartRequirement == ConfigValueRestartRequirement.NONE) {
-				restartRequirement = changeRequirement;
-			}
+	private static void notifyChangeFailure(String modId, ConfigChangeFailure failure) {
+		RuntimeException exception = failure.exception();
+		String reason = Optional.ofNullable(exception.getMessage())
+			.filter(message -> !message.isBlank())
+			.orElseGet(() -> exception.getClass().getSimpleName());
+		Component valueName = ConfigValueLocalization.getName(failure.change().configValue());
+		Component message = Component.translatable("mezz_config.config.screen.saveFailed", valueName, reason);
+		Minecraft minecraft = Minecraft.getInstance();
+		if (minecraft.player != null) {
+			minecraft.player.displayClientMessage(message, false);
 		}
-		return restartRequirement;
+		LOGGER.error("Failed to save config value {} for {}.", failure.change().configValue().getName(), modId, exception);
 	}
 
 	private static void notifyRestartDeferred(

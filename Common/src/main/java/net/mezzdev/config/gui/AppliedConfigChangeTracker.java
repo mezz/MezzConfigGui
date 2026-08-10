@@ -46,7 +46,4 @@ final class AppliedConfigChangeTracker {
 			.toList();
 	}
 
-	public void clear() {
-		changesByValue.clear();
-	}
 }

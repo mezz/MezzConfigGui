@@ -83,26 +83,18 @@ final class ConfigScreenController {
 		return ConfigValueChange.getRestartRequirement(getPendingChanges());
 	}
 
-	public boolean applyPendingChanges() {
+	public ConfigChangesResult applyPendingChanges() {
 		List<ConfigValueChange<?>> changes = getPendingChanges();
-		recordAppliedChanges(changes);
-		boolean requiresRestart = changesHandler.applyChanges(changes);
+		ConfigChangesResult result = changesHandler.applyChanges(changes);
+		recordAppliedChanges(result.appliedChanges());
 		updateContentLayout();
-		return requiresRestart;
+		return result;
 	}
 
-	private void recordAppliedChanges(List<ConfigValueChange<?>> changes) {
-		for (ConfigValueChange<?> change : changes) {
+	private void recordAppliedChanges(List<AppliedConfigValueChange<?>> changes) {
+		for (AppliedConfigValueChange<?> change : changes) {
 			recordAppliedChange(change);
 		}
-	}
-
-	private <T> void recordAppliedChange(ConfigValueChange<T> change) {
-		recordAppliedChange(new AppliedConfigValueChange<>(
-			change.configValue(),
-			change.configValue().getValue(),
-			change.value()
-		));
 	}
 
 	private List<ConfigValueChange<?>> getPendingChanges() {
@@ -132,15 +124,15 @@ final class ConfigScreenController {
 			.forEach(ConfigEntryWidget::discardPendingChange);
 	}
 
-	public boolean undoChanges() {
+	public ConfigChangesResult undoChanges() {
 		discardPendingChangesInternal();
 		List<ConfigValueChange<?>> undoChanges = appliedChangeTracker.getUndoChanges();
-		appliedChangeTracker.clear();
-		boolean requiresRestart = changesHandler.applyChanges(undoChanges);
+		ConfigChangesResult result = changesHandler.applyChanges(undoChanges);
+		recordAppliedChanges(result.appliedChanges());
 		model.getAllEntryWidgets()
 			.forEach(ConfigEntryWidget::discardPendingChange);
 		updateContentLayout();
-		return requiresRestart;
+		return result;
 	}
 
 	public List<ConfigEntryWidget<?>> getVisibleEntryWidgets() {
