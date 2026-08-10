@@ -18,7 +18,7 @@ public final class ConfigPopupPlacement {
 		int width,
 		int height
 	) {
-		int popupWidth = Math.max(width, anchorArea.getWidth());
+		int popupWidth = Math.min(Math.max(width, anchorArea.getWidth()), clipArea.getWidth());
 		int preferredX = getPreferredX(anchorArea, popupWidth);
 		return placeNearAnchor(anchorArea, clipArea, preferredX, popupWidth, height);
 	}
@@ -34,6 +34,8 @@ public final class ConfigPopupPlacement {
 			return ImmutableRect2i.EMPTY;
 		}
 
+		width = Math.min(width, clipArea.getWidth());
+		height = Math.min(height, clipArea.getHeight());
 		int clipRight = clipArea.getX() + clipArea.getWidth();
 		int clipBottom = clipArea.getY() + clipArea.getHeight();
 		int x = clamp(preferredX, clipArea.getX(), clipRight - width);

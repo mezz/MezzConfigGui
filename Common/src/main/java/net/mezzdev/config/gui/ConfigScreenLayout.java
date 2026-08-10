@@ -91,7 +91,7 @@ public final class ConfigScreenLayout {
 		contentScrollBarVisible = shouldShowContentScrollBar(totalContentHeight, contentWithScrollArea);
 		ImmutableRect2i topBarArea = contentWithScrollArea.keepTop(SEARCH_HEIGHT);
 
-		searchBackgroundArea = topBarArea;
+		updateSearchRowAreas(topBarArea);
 		searchBox.setX(searchBackgroundArea.getX() + SEARCH_TEXT_LEFT_PADDING);
 		searchBox.setY(searchBackgroundArea.getY() + (searchBackgroundArea.getHeight() - SEARCH_TEXT_HEIGHT) / 2);
 		searchBox.setWidth(searchBackgroundArea.getWidth() - SEARCH_TEXT_LEFT_PADDING - SEARCH_TEXT_RIGHT_PADDING);
@@ -474,20 +474,22 @@ public final class ConfigScreenLayout {
 	}
 
 	private void updateTitleRowAreas(boolean hasScreenListButton) {
-		int actionButtonCount = 2;
 		if (hasScreenListButton) {
-			actionButtonCount = 3;
-		}
-		int actionButtonsWidth = ACTION_BUTTON_SIZE * actionButtonCount + ACTION_BUTTON_GAP * (actionButtonCount - 1);
-		ImmutableRect2i actionButtonsArea = titleArea.keepRight(actionButtonsWidth);
-		applyPendingChangesButtonArea = getActionButtonArea(actionButtonsArea, 0);
-		undoChangesButtonArea = getActionButtonArea(actionButtonsArea, 1);
-		if (hasScreenListButton) {
-			screenListButtonArea = getActionButtonArea(actionButtonsArea, 2);
+			screenListButtonArea = centerVertically(titleArea.keepLeft(ACTION_BUTTON_SIZE), ACTION_BUTTON_SIZE);
+			int titleSideInset = ACTION_BUTTON_SIZE + SECTION_GAP;
+			titleTextArea = titleArea.cropLeft(titleSideInset).cropRight(titleSideInset);
 		} else {
 			screenListButtonArea = ImmutableRect2i.EMPTY;
+			titleTextArea = titleArea;
 		}
-		titleTextArea = titleArea.cropRight(actionButtonsWidth + SECTION_GAP);
+	}
+
+	private void updateSearchRowAreas(ImmutableRect2i topBarArea) {
+		int actionButtonsWidth = ACTION_BUTTON_SIZE * 2 + ACTION_BUTTON_GAP;
+		ImmutableRect2i actionButtonsArea = topBarArea.keepRight(actionButtonsWidth);
+		applyPendingChangesButtonArea = getActionButtonArea(actionButtonsArea, 0);
+		undoChangesButtonArea = getActionButtonArea(actionButtonsArea, 1);
+		searchBackgroundArea = topBarArea.cropRight(actionButtonsWidth + SECTION_GAP);
 	}
 
 	private static ImmutableRect2i getActionButtonArea(ImmutableRect2i actionButtonsArea, int buttonsFromRight) {

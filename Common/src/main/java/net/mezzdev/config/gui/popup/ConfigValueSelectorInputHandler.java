@@ -17,6 +17,7 @@ public final class ConfigValueSelectorInputHandler implements ConfigInputHandler
 	private final Supplier<ImmutableRect2i> valueSelectorClipAreaSupplier;
 	private final Runnable valueSelectorCloser;
 	private final Runnable layoutUpdater;
+	private boolean valueSelectorWasDragged;
 
 	public ConfigValueSelectorInputHandler(
 		Supplier<ConfigPopupSelector> valueSelectorSupplier,
@@ -32,12 +33,21 @@ public final class ConfigValueSelectorInputHandler implements ConfigInputHandler
 
 	@Override
 	public Optional<ConfigInputHandler> handleUserInput(Screen screen, UserInput input) {
+		if (input.isSimulate()) {
+			valueSelectorWasDragged = false;
+		}
 		ConfigPopupSelector valueSelector = valueSelectorSupplier.get();
 		if (valueSelector == null || !ConfigInputUtil.isLeftClick(input)) {
 			return Optional.empty();
 		}
 		ImmutableRect2i clipArea = valueSelectorClipAreaSupplier.get();
 		valueSelector.updateBounds(clipArea);
+
+		if (valueSelectorWasDragged) {
+			valueSelector.onMouseClicked(input);
+			valueSelectorWasDragged = false;
+			return Optional.of(this);
+		}
 
 		if (clipArea.contains(input.getMouseX(), input.getMouseY()) && valueSelector.isMouseOver(input.getMouseX(), input.getMouseY())) {
 			if (valueSelector.onMouseClicked(input)) {
@@ -72,12 +82,19 @@ public final class ConfigValueSelectorInputHandler implements ConfigInputHandler
 		ImmutableRect2i clipArea = valueSelectorClipAreaSupplier.get();
 		valueSelector.updateBounds(clipArea);
 		if (valueSelector.onMouseDragged(mouseX, mouseY, button)) {
+			valueSelectorWasDragged = true;
 			return Optional.of(this);
 		}
 		return Optional.empty();
 	}
 
+	@Override
+	public void unfocus() {
+		valueSelectorWasDragged = false;
+	}
+
 	private void closeValueSelector() {
+		valueSelectorWasDragged = false;
 		valueSelectorCloser.run();
 	}
 }

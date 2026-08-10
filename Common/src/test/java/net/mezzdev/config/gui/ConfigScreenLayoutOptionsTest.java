@@ -171,7 +171,7 @@ class ConfigScreenLayoutOptionsTest {
 	}
 
 	@Test
-	void screenListButtonUsesTitleBarSpaceOnlyWhenEnabled() {
+	void headerControlsUseRequestedRowsAndKeepTitleCentered() {
 		ConfigScreenLayout layout = new ConfigScreenLayout();
 		EditBox searchBox = createSearchBox();
 
@@ -182,6 +182,16 @@ class ConfigScreenLayoutOptionsTest {
 		layout.updateScreenBounds(1000, 800, searchBox, true);
 		assertFalse(layout.getScreenListButtonArea().isEmpty());
 		assertTrue(layout.getTitleTextArea().getWidth() < titleTextAreaWithoutScreenListButton.getWidth());
+		assertEquals(layout.getTitleArea().getX(), layout.getScreenListButtonArea().getX());
+		assertEquals(
+			layout.getArea().getX() + layout.getArea().getWidth() / 2,
+			layout.getTitleTextArea().getX() + layout.getTitleTextArea().getWidth() / 2
+		);
+		assertEquals(layout.getSearchBackgroundArea().getY(), layout.getUndoChangesButtonArea().getY());
+		assertEquals(layout.getSearchBackgroundArea().getY(), layout.getApplyPendingChangesButtonArea().getY());
+		assertTrue(
+			layout.getSearchBackgroundArea().getX() + layout.getSearchBackgroundArea().getWidth() < layout.getUndoChangesButtonArea().getX()
+		);
 		assertTrue(layout.getScreenListButtonArea().getX() < layout.getUndoChangesButtonArea().getX());
 		assertTrue(layout.getUndoChangesButtonArea().getX() < layout.getApplyPendingChangesButtonArea().getX());
 	}

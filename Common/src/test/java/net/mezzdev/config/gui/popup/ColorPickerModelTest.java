@@ -56,25 +56,62 @@ class ColorPickerModelTest {
 	}
 
 	@Test
-	void hsvPlaneUsesSaturationOnXAndValueOnY() {
+	void hueSaturationPlaneUsesHueOnXAndSaturationOnY() {
 		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.rgb(0xFF0000));
 		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
 
-		PackedColor white = clickControl(popup, area, 25, 52);
-		PackedColor black = clickControl(popup, area, 248, 137);
+		double greenHueX = 21.0 + 189.0 / 3.0;
+		PackedColor green = clickControl(popup, area, greenHueX, 40);
+		PackedColor white = clickControl(popup, area, greenHueX, 125);
+
+		assertEquals(PackedColor.rgb(0x00FF00), green);
+		assertEquals(PackedColor.rgb(0xFFFFFF), white);
+	}
+
+	@Test
+	void verticalSliderCanControlHue() {
+		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.rgb(0xFF0000));
+		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
+
+		assertTrue(popup.getClickedValue(area, 240, 63, 0).isEmpty());
+		double greenHueY = 40.0 + 85.0 / 3.0;
+		PackedColor green = clickControl(popup, area, 221, greenHueY);
+
+		assertEquals(PackedColor.rgb(0x00FF00), green);
+	}
+
+	@Test
+	void verticalSliderCanControlSaturation() {
+		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.rgb(0xFF0000));
+		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
+
+		assertTrue(popup.getClickedValue(area, 240, 83, 0).isEmpty());
+		PackedColor white = clickControl(popup, area, 221, 125);
 
 		assertEquals(PackedColor.rgb(0xFFFFFF), white);
+	}
+
+	@Test
+	void hueSelectionChangesThePlaneToSaturationAndValue() {
+		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.rgb(0xFF0000));
+		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
+
+		popup.getClickedValue(area, 240, 63, 0);
+		PackedColor red = clickControl(popup, area, 210, 40);
+		PackedColor black = clickControl(popup, area, 210, 125);
+
+		assertEquals(PackedColor.rgb(0xFF0000), red);
 		assertEquals(PackedColor.rgb(0x000000), black);
 	}
 
 	@Test
-	void rgbSlidersEditChannelsBelowHsvSliders() {
+	void rgbSlidersEditChannelsBelowHueSaturationControls() {
 		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.rgb(0x336699));
 		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
 
-		PackedColor noRed = clickControl(popup, area, 21, 197);
-		PackedColor fullGreen = clickControl(popup, area, 218, 211);
-		PackedColor noBlue = clickControl(popup, area, 21, 225);
+		PackedColor noRed = clickControl(popup, area, 21, 133);
+		PackedColor fullGreen = clickControl(popup, area, 210, 147);
+		PackedColor noBlue = clickControl(popup, area, 21, 161);
 
 		assertEquals(PackedColor.rgb(0x006699), noRed);
 		assertEquals(PackedColor.rgb(0x00FF99), fullGreen);
@@ -82,11 +119,57 @@ class ColorPickerModelTest {
 	}
 
 	@Test
+	void compactPickerKeepsRgbSlidersAndHexInputInsideTheAvailableArea() {
+		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.rgb(0x336699));
+		ResponsiveConfigValuePopup.Size size = popup.getPreferredSize(180, 300);
+		Rect2i area = new Rect2i(0, 0, size.width(), size.height());
+		AtomicReference<PackedColor> editedColor = new AtomicReference<>();
+
+		PackedColor noRed = clickControl(popup, area, 14, 90);
+		popup.getClickedValue(area, 90, 135, 0);
+		for (char character : "#112233".toCharArray()) {
+			assertTrue(popup.charTyped(character, 0, editedColor::set));
+		}
+
+		assertEquals(PackedColor.rgb(0x006699), noRed);
+		assertEquals(PackedColor.rgb(0x112233), editedColor.get());
+	}
+
+	@Test
+	void pickerRequestsCompactBoundsInsteadOfLeavingUnusedPopupSpace() {
+		ColorPickerPopup rgb = new ColorPickerPopup(PackedColor.rgb(0x336699));
+		ColorPickerPopup argb = new ColorPickerPopup(PackedColor.argb(0xFF336699));
+
+		ResponsiveConfigValuePopup.Size rgbSize = rgb.getPreferredSize(180, 300);
+		ResponsiveConfigValuePopup.Size argbSize = argb.getPreferredSize(180, 300);
+
+		assertEquals(new ResponsiveConfigValuePopup.Size(180, 147), rgbSize);
+		assertEquals(new ResponsiveConfigValuePopup.Size(180, 159), argbSize);
+	}
+
+	@Test
+	void compactArgbPickerKeepsAlphaAndHexInputInsideTheAvailableArea() {
+		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.argb(0xFF336699));
+		ResponsiveConfigValuePopup.Size size = popup.getPreferredSize(180, 300);
+		Rect2i area = new Rect2i(0, 0, size.width(), size.height());
+		AtomicReference<PackedColor> editedColor = new AtomicReference<>();
+
+		PackedColor transparent = popup.getClickedValue(area, 14, 130, 0).orElseThrow();
+		popup.getClickedValue(area, 90, 147, 0);
+		for (char character : "#80112233".toCharArray()) {
+			assertTrue(popup.charTyped(character, 0, editedColor::set));
+		}
+
+		assertEquals(PackedColor.argb(0x00336699), transparent);
+		assertEquals(PackedColor.argb(0x80112233), editedColor.get());
+	}
+
+	@Test
 	void popupKeepsInteractiveSelectionsOpen() {
 		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.argb(0xFFFF0000));
 		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
 
-		PackedColor transparentRed = popup.getClickedValue(area, 21, 247, 0).orElseThrow();
+		PackedColor transparentRed = popup.getClickedValue(area, 21, 180, 0).orElseThrow();
 
 		assertEquals(PackedColor.argb(0x00FF0000), transparentRed);
 		assertFalse(popup.closesAfterValueSelected());
@@ -97,10 +180,10 @@ class ColorPickerModelTest {
 		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.rgb(0xFF0000));
 		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
 
-		popup.getClickedValue(area, 218, 155, 0).orElseThrow();
-		PackedColor cyan = popup.getDraggedValue(area, 119.5, -20, 0).orElseThrow();
+		popup.getClickedValue(area, 221, 40, 0).orElseThrow();
+		PackedColor halfValueRed = popup.getDraggedValue(area, -20, 82.5, 0).orElseThrow();
 
-		assertEquals(PackedColor.rgb(0x00FFFF), cyan);
+		assertEquals(PackedColor.rgb(0x800000), halfValueRed);
 	}
 
 	@Test
@@ -117,7 +200,7 @@ class ColorPickerModelTest {
 		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
 		AtomicReference<PackedColor> editedColor = new AtomicReference<>();
 
-		popup.getClickedValue(area, 180, 265, 0);
+		popup.getClickedValue(area, 180, 200, 0);
 		for (char character : "#804477DD".toCharArray()) {
 			assertTrue(popup.charTyped(character, 0, editedColor::set));
 		}
@@ -131,7 +214,7 @@ class ColorPickerModelTest {
 		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
 		AtomicReference<PackedColor> editedColor = new AtomicReference<>();
 
-		popup.getClickedValue(area, 180, 247, 0);
+		popup.getClickedValue(area, 180, 185, 0);
 		for (char character : "#336699".toCharArray()) {
 			assertTrue(popup.charTyped(character, 0, editedColor::set));
 		}

@@ -21,23 +21,47 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
- * Standard visual color picker with an HSV chart, HSV and RGB sliders, and hexadecimal input.
+ * Standard visual color picker with a hue-saturation chart, value and RGB sliders, and hexadecimal input.
  */
-public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
+public final class ColorPickerPopup implements IConfigValuePopup<PackedColor>, ResponsiveConfigValuePopup {
 	private static final int WIDTH = 256;
-	private static final int PADDING = 7;
-	private static final int CONTROL_GAP = 5;
-	private static final int COLOR_PREVIEW_HEIGHT = 40;
-	private static final int COLOR_PLANE_HEIGHT = 86;
-	private static final int PLANE_VERTICAL_LABEL_WIDTH = 18;
-	private static final int PLANE_HORIZONTAL_LABEL_HEIGHT = 10;
-	private static final int CHANNEL_SLIDER_COUNT = 6;
-	private static final int CHANNEL_SLIDER_ROW_HEIGHT = 14;
-	private static final int CHANNEL_SLIDER_HEIGHT = 10;
-	private static final int CHANNEL_SLIDER_LABEL_WIDTH = 14;
-	private static final int CHANNEL_SLIDER_VALUE_WIDTH = 30;
-	private static final int ALPHA_HEIGHT = 11;
-	private static final int FIELD_HEIGHT = 18;
+	private static final int CHANNEL_SLIDER_COUNT = 3;
+	private static final int MIN_COMPACT_PREVIEW_HEIGHT = 8;
+	private static final int MIN_COMPACT_PLANE_HEIGHT = 44;
+	private static final LayoutMetrics STANDARD_LAYOUT = new LayoutMetrics(
+		7,
+		5,
+		28,
+		86,
+		12,
+		3,
+		18,
+		18,
+		2,
+		14,
+		10,
+		14,
+		30,
+		11,
+		18
+	);
+	private static final LayoutMetrics COMPACT_LAYOUT = new LayoutMetrics(
+		4,
+		3,
+		14,
+		64,
+		10,
+		2,
+		14,
+		14,
+		1,
+		12,
+		8,
+		10,
+		24,
+		9,
+		16
+	);
 	private static final int FIELD_TEXT_PADDING = 2;
 	private static final int MAX_EDIT_TEXT_LENGTH = 12;
 	private static final float PRECISE_SLIDER_SCALE = 0.1f;
@@ -54,6 +78,7 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 
 	private final ConfigColorFormat format;
 	private final ColorPickerModel model;
+	private ColorAxis verticalAxis = ColorAxis.VALUE;
 	private ColorControl activeControl = ColorControl.NONE;
 	private ColorControl precisionControl = ColorControl.NONE;
 	private float precisionPointerAnchor;
@@ -82,13 +107,18 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 
 	@Override
 	public int getHeight() {
-		int height = PADDING + COLOR_PREVIEW_HEIGHT + CONTROL_GAP;
-		height += COLOR_PLANE_HEIGHT + PLANE_HORIZONTAL_LABEL_HEIGHT + CONTROL_GAP;
-		height += CHANNEL_SLIDER_COUNT * CHANNEL_SLIDER_ROW_HEIGHT + CONTROL_GAP;
-		if (hasAlpha()) {
-			height += ALPHA_HEIGHT + CONTROL_GAP;
+		return getLayoutHeight(STANDARD_LAYOUT, hasAlpha());
+	}
+
+	@Override
+	public Size getPreferredSize(int availableWidth, int availableHeight) {
+		LayoutMetrics metrics = STANDARD_LAYOUT;
+		if (availableWidth < WIDTH || availableHeight < getHeight()) {
+			metrics = COMPACT_LAYOUT;
 		}
-		return height + FIELD_HEIGHT + PADDING;
+		int width = Math.min(WIDTH, availableWidth);
+		int height = Math.min(getLayoutHeight(metrics, hasAlpha()), availableHeight);
+		return new Size(width, height);
 	}
 
 	@Override
@@ -102,6 +132,15 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 			return Optional.empty();
 		}
 		PickerLayout layout = createLayout(area);
+		@Nullable
+		ColorAxis clickedAxis = layout.getAxisSelector(mouseX, mouseY);
+		if (clickedAxis != null) {
+			verticalAxis = clickedAxis;
+			activeControl = ColorControl.NONE;
+			clearPrecisionControl();
+			clearFocus();
+			return Optional.empty();
+		}
 		@Nullable
 		ColorField clickedField = layout.getField(mouseX, mouseY);
 		if (clickedField != null) {
@@ -199,9 +238,9 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		PickerLayout layout = createLayout(area);
 		drawBackground(guiGraphics, area);
 		ColorSwatch.draw(guiGraphics, layout.colorPreviewArea(), model.getPackedColor());
-		drawColorControls(guiGraphics, layout);
+		drawColorControls(guiGraphics, layout, mouseX, mouseY);
 		if (hasAlpha()) {
-			drawAlpha(guiGraphics, layout.alphaArea());
+			drawAlpha(guiGraphics, layout.alphaArea(), layout.channelSliderLabelWidth());
 		}
 		drawFields(guiGraphics, layout);
 	}
@@ -223,6 +262,7 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 	) {
 		switch (control.type()) {
 			case PLANE -> updatePlane(model, layout.colorPlaneArea(), mouseX, mouseY);
+			case VERTICAL_AXIS -> updateVerticalAxisSlider(model, layout.verticalSliderArea(), mouseY);
 			case SLIDER -> updateSlider(model, control.field(), layout, mouseX, mouseY);
 			case ALPHA -> {
 				Rect2i area = layout.alphaArea();
@@ -236,7 +276,35 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 	private void updatePlane(ColorPickerModel model, Rect2i area, double mouseX, double mouseY) {
 		float x = getPosition(mouseX, area.getX(), area.getWidth());
 		float y = 1.0f - getPosition(mouseY, area.getY(), area.getHeight());
-		model.setSaturationAndValue(x, y);
+		switch (verticalAxis) {
+			case HUE -> model.setSaturationAndValue(x, y);
+			case SATURATION -> {
+				model.setHue(x);
+				model.setSaturationAndValue(model.getSaturation(), y);
+			}
+			case VALUE -> {
+				model.setHue(x);
+				model.setSaturationAndValue(y, model.getValue());
+			}
+		}
+	}
+
+	private void updateVerticalAxisSlider(ColorPickerModel model, Rect2i area, double mouseY) {
+		float pointerPosition = getVerticalAxisPosition(mouseY, area);
+		float value = getAdjustedSliderPosition(ColorControl.VERTICAL_AXIS, pointerPosition);
+		switch (verticalAxis) {
+			case HUE -> model.setHue(value);
+			case SATURATION -> model.setSaturationAndValue(value, model.getValue());
+			case VALUE -> model.setSaturationAndValue(model.getSaturation(), value);
+		}
+	}
+
+	private float getVerticalAxisPosition(double mouseY, Rect2i area) {
+		float position = getPosition(mouseY, area.getY(), area.getHeight());
+		if (verticalAxis == ColorAxis.HUE) {
+			return position;
+		}
+		return 1.0f - position;
 	}
 
 	private void updateSlider(
@@ -261,9 +329,6 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 
 	private void setSliderValue(ColorPickerModel model, ColorField field, float position) {
 		switch (field) {
-			case HUE -> model.setHue(position);
-			case SATURATION -> model.setSaturationAndValue(position, model.getValue());
-			case VALUE -> model.setSaturationAndValue(model.getSaturation(), position);
 			case RED, GREEN, BLUE -> applyRgbEdit(model, field, Math.round(position * 255.0f));
 			default -> throw new IllegalArgumentException("Unsupported color slider field: " + field);
 		}
@@ -291,6 +356,13 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 	}
 
 	private float getControlPosition(ColorControl control) {
+		if (control.type() == ControlType.VERTICAL_AXIS) {
+			return switch (verticalAxis) {
+				case HUE -> model.getHue();
+				case SATURATION -> model.getSaturation();
+				case VALUE -> model.getValue();
+			};
+		}
 		if (control.type() == ControlType.ALPHA) {
 			return model.getAlpha();
 		}
@@ -305,38 +377,107 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		precisionControl = ColorControl.NONE;
 	}
 
-	private void drawColorControls(GuiGraphics guiGraphics, PickerLayout layout) {
-		drawHsvPlane(guiGraphics, layout.colorPlaneArea());
-		drawPlaneAxisLabels(guiGraphics, layout);
-		drawSliders(guiGraphics, layout.sliderAreas());
+	private void drawColorControls(GuiGraphics guiGraphics, PickerLayout layout, double mouseX, double mouseY) {
+		drawColorPlane(guiGraphics, layout.colorPlaneArea());
+		drawVerticalAxisSlider(guiGraphics, layout.verticalSliderArea());
+		drawAxisSelectors(guiGraphics, layout.axisSelectorAreas(), mouseX, mouseY);
+		drawSliders(guiGraphics, layout.sliderAreas(), layout.channelSliderLabelWidth());
 	}
 
-	private void drawHsvPlane(GuiGraphics guiGraphics, Rect2i area) {
+	private void drawColorPlane(GuiGraphics guiGraphics, Rect2i area) {
 		for (int xOffset = 0; xOffset < area.getWidth(); xOffset++) {
-			float saturation = getPosition(xOffset, 0, area.getWidth());
-			int topColor = ColorPickerModel.hsvToArgb(model.getHue(), saturation, 1.0f);
+			float x = getPosition(xOffset, 0, area.getWidth());
+			int topColor = getPlaneColor(x, 1.0f);
+			int bottomColor = getPlaneColor(x, 0.0f);
 			guiGraphics.fillGradient(
 				area.getX() + xOffset,
 				area.getY(),
 				area.getX() + xOffset + 1,
 				area.getY() + area.getHeight(),
 				topColor,
-				0xFF000000
+				bottomColor
 			);
 		}
 		drawBorder(guiGraphics, area, FIELD_BORDER_COLOR);
-		int markerX = area.getX() + Math.round(model.getSaturation() * (area.getWidth() - 1));
-		int markerY = area.getY() + Math.round((1.0f - model.getValue()) * (area.getHeight() - 1));
+		float markerXPosition = switch (verticalAxis) {
+			case HUE -> model.getSaturation();
+			case SATURATION, VALUE -> model.getHue();
+		};
+		float markerYPosition = switch (verticalAxis) {
+			case HUE, SATURATION -> 1.0f - model.getValue();
+			case VALUE -> 1.0f - model.getSaturation();
+		};
+		int markerX = area.getX() + Math.round(markerXPosition * (area.getWidth() - 1));
+		int markerY = area.getY() + Math.round(markerYPosition * (area.getHeight() - 1));
 		drawPointMarker(guiGraphics, markerX, markerY);
 	}
 
-	private void drawSliders(GuiGraphics guiGraphics, List<SliderArea> sliders) {
-		for (SliderArea slider : sliders) {
-			drawSlider(guiGraphics, slider);
+	private int getPlaneColor(float x, float y) {
+		return switch (verticalAxis) {
+			case HUE -> ColorPickerModel.hsvToArgb(model.getHue(), x, y);
+			case SATURATION -> ColorPickerModel.hsvToArgb(x, model.getSaturation(), y);
+			case VALUE -> ColorPickerModel.hsvToArgb(x, y, model.getValue());
+		};
+	}
+
+	private void drawVerticalAxisSlider(GuiGraphics guiGraphics, Rect2i area) {
+		for (int yOffset = 0; yOffset < area.getHeight(); yOffset++) {
+			float position = getVerticalAxisPosition(area.getY() + yOffset, area);
+			int color = getVerticalAxisColor(position);
+			guiGraphics.fill(area.getX(), area.getY() + yOffset, area.getX() + area.getWidth(), area.getY() + yOffset + 1, color);
+		}
+		drawBorder(guiGraphics, area, FIELD_BORDER_COLOR);
+		float markerPosition = switch (verticalAxis) {
+			case HUE -> model.getHue();
+			case SATURATION -> 1.0f - model.getSaturation();
+			case VALUE -> 1.0f - model.getValue();
+		};
+		int markerY = area.getY() + Math.round(markerPosition * (area.getHeight() - 1));
+		drawHorizontalMarker(guiGraphics, area, markerY);
+	}
+
+	private int getVerticalAxisColor(float position) {
+		return switch (verticalAxis) {
+			case HUE -> ColorPickerModel.hsvToArgb(position, 1.0f, 1.0f);
+			case SATURATION -> ColorPickerModel.hsvToArgb(model.getHue(), position, 1.0f);
+			case VALUE -> ColorPickerModel.hsvToArgb(model.getHue(), model.getSaturation(), position);
+		};
+	}
+
+	private void drawAxisSelectors(
+		GuiGraphics guiGraphics,
+		List<AxisSelectorArea> selectorAreas,
+		double mouseX,
+		double mouseY
+	) {
+		Font font = Minecraft.getInstance().font;
+		for (AxisSelectorArea selectorArea : selectorAreas) {
+			Rect2i area = selectorArea.area();
+			boolean selected = selectorArea.axis() == verticalAxis;
+			boolean hovered = contains(area, mouseX, mouseY);
+			int backgroundColor = FIELD_BACKGROUND_COLOR;
+			if (selected) {
+				backgroundColor = FIELD_FOCUSED_COLOR;
+			}
+			int borderColor = FIELD_BORDER_COLOR;
+			if (selected || hovered) {
+				borderColor = FIELD_FOCUSED_BORDER_COLOR;
+			}
+			fillWithBorder(guiGraphics, area, backgroundColor, borderColor);
+			String label = selectorArea.axis().label;
+			int x = area.getX() + (area.getWidth() - font.width(label)) / 2 + 1;
+			int y = area.getY() + (area.getHeight() - font.lineHeight) / 2 + 1;
+			guiGraphics.drawString(font, label, x, y, MARKER_LIGHT_COLOR, false);
 		}
 	}
 
-	private void drawSlider(GuiGraphics guiGraphics, SliderArea slider) {
+	private void drawSliders(GuiGraphics guiGraphics, List<SliderArea> sliders, int labelWidth) {
+		for (SliderArea slider : sliders) {
+			drawSlider(guiGraphics, slider, labelWidth);
+		}
+	}
+
+	private void drawSlider(GuiGraphics guiGraphics, SliderArea slider, int labelWidth) {
 		Rect2i area = slider.area();
 		int length = area.getWidth();
 		for (int offset = 0; offset < length; offset++) {
@@ -348,14 +489,11 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		float markerPosition = getSliderPosition(slider.field());
 		int markerX = area.getX() + Math.round(markerPosition * (area.getWidth() - 1));
 		drawVerticalMarker(guiGraphics, area, markerX);
-		drawSliderLabel(guiGraphics, slider);
+		drawSliderLabel(guiGraphics, slider, labelWidth);
 	}
 
 	private int getSliderColor(ColorField field, float position) {
 		return switch (field) {
-			case HUE -> ColorPickerModel.hsvToArgb(position, 1.0f, 1.0f);
-			case SATURATION -> ColorPickerModel.hsvToArgb(model.getHue(), position, 1.0f);
-			case VALUE -> ColorPickerModel.hsvToArgb(0.0f, 0.0f, position);
 			case RED -> 0xFF000000 | Math.round(position * 255.0f) << 16;
 			case GREEN -> 0xFF000000 | Math.round(position * 255.0f) << 8;
 			case BLUE -> 0xFF000000 | Math.round(position * 255.0f);
@@ -365,9 +503,6 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 
 	private float getSliderPosition(ColorField field) {
 		return switch (field) {
-			case HUE -> model.getHue();
-			case SATURATION -> model.getSaturation();
-			case VALUE -> model.getValue();
 			case RED -> model.getRgb().red() / 255.0f;
 			case GREEN -> model.getRgb().green() / 255.0f;
 			case BLUE -> model.getRgb().blue() / 255.0f;
@@ -375,34 +510,19 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		};
 	}
 
-	private void drawSliderLabel(GuiGraphics guiGraphics, SliderArea slider) {
+	private void drawSliderLabel(GuiGraphics guiGraphics, SliderArea slider, int labelWidth) {
 		Font font = Minecraft.getInstance().font;
 		Rect2i area = slider.area();
 		int textY = area.getY() + (area.getHeight() - font.lineHeight) / 2;
 		String label = slider.field().label;
-		int labelX = area.getX() - CHANNEL_SLIDER_LABEL_WIDTH +
-			(CHANNEL_SLIDER_LABEL_WIDTH - font.width(label)) / 2;
+		int labelX = area.getX() - labelWidth + (labelWidth - font.width(label)) / 2;
 		guiGraphics.drawString(font, label, labelX, textY, MARKER_LIGHT_COLOR, false);
 		String value = getFieldText(slider.field());
 		int valueX = area.getX() + area.getWidth() + 3;
 		guiGraphics.drawString(font, value, valueX, textY, MARKER_LIGHT_COLOR, false);
 	}
 
-	private void drawPlaneAxisLabels(GuiGraphics guiGraphics, PickerLayout layout) {
-		Font font = Minecraft.getInstance().font;
-		String vertical = "V ↑";
-		Rect2i verticalArea = layout.verticalAxisLabelArea();
-		int verticalX = verticalArea.getX() + (verticalArea.getWidth() - font.width(vertical)) / 2;
-		int verticalY = verticalArea.getY() + (verticalArea.getHeight() - font.lineHeight) / 2;
-		guiGraphics.drawString(font, vertical, verticalX, verticalY, MARKER_LIGHT_COLOR, false);
-		String horizontal = "S →";
-		Rect2i horizontalArea = layout.horizontalAxisLabelArea();
-		int horizontalX = horizontalArea.getX() + (horizontalArea.getWidth() - font.width(horizontal)) / 2;
-		int horizontalY = horizontalArea.getY() + (horizontalArea.getHeight() - font.lineHeight) / 2;
-		guiGraphics.drawString(font, horizontal, horizontalX, horizontalY, MARKER_LIGHT_COLOR, false);
-	}
-
-	private void drawAlpha(GuiGraphics guiGraphics, Rect2i area) {
+	private void drawAlpha(GuiGraphics guiGraphics, Rect2i area, int labelWidth) {
 		ColorSwatch.drawCheckerboard(
 			guiGraphics,
 			area.getX(),
@@ -421,8 +541,7 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		drawBorder(guiGraphics, area, FIELD_BORDER_COLOR);
 		Font font = Minecraft.getInstance().font;
 		int textY = area.getY() + (area.getHeight() - font.lineHeight) / 2;
-		int labelX = area.getX() - CHANNEL_SLIDER_LABEL_WIDTH +
-			(CHANNEL_SLIDER_LABEL_WIDTH - font.width(ColorField.ALPHA.label)) / 2;
+		int labelX = area.getX() - labelWidth + (labelWidth - font.width(ColorField.ALPHA.label)) / 2;
 		guiGraphics.drawString(font, ColorField.ALPHA.label, labelX, textY, MARKER_LIGHT_COLOR, false);
 		guiGraphics.drawString(
 			font,
@@ -588,9 +707,6 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 
 	private String getFieldText(ColorField field) {
 		return switch (field) {
-			case HUE -> Integer.toString(Math.round(model.getHue() * 360.0f));
-			case SATURATION -> Integer.toString(Math.round(model.getSaturation() * 100.0f));
-			case VALUE -> Integer.toString(Math.round(model.getValue() * 100.0f));
 			case RED -> Integer.toString(model.getRgb().red());
 			case GREEN -> Integer.toString(model.getRgb().green());
 			case BLUE -> Integer.toString(model.getRgb().blue());
@@ -631,68 +747,130 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		guiGraphics.fill(x - 1, y - 1, x + 2, y + 2, MARKER_DARK_COLOR);
 	}
 
+	private static void drawHorizontalMarker(GuiGraphics guiGraphics, Rect2i area, int y) {
+		guiGraphics.fill(area.getX() - 1, y - 1, area.getX() + area.getWidth() + 1, y + 2, MARKER_DARK_COLOR);
+		guiGraphics.fill(area.getX(), y, area.getX() + area.getWidth(), y + 1, MARKER_LIGHT_COLOR);
+	}
+
 	private static void drawVerticalMarker(GuiGraphics guiGraphics, Rect2i area, int x) {
 		guiGraphics.fill(x - 1, area.getY() - 1, x + 2, area.getY() + area.getHeight() + 1, MARKER_DARK_COLOR);
 		guiGraphics.fill(x, area.getY(), x + 1, area.getY() + area.getHeight(), MARKER_LIGHT_COLOR);
 	}
 
 	private PickerLayout createLayout(Rect2i area) {
-		int contentWidth = Math.max(1, area.getWidth() - PADDING * 2);
-		int visualX = area.getX() + PADDING;
-		int visualY = area.getY() + PADDING;
-		Rect2i colorPreviewArea = new Rect2i(visualX, visualY, contentWidth, COLOR_PREVIEW_HEIGHT);
-		visualY += COLOR_PREVIEW_HEIGHT + CONTROL_GAP;
-		int planeX = visualX + PLANE_VERTICAL_LABEL_WIDTH;
-		int planeWidth = Math.max(1, contentWidth - PLANE_VERTICAL_LABEL_WIDTH);
-		Rect2i colorPlaneArea = new Rect2i(planeX, visualY, planeWidth, COLOR_PLANE_HEIGHT);
-		Rect2i verticalAxisLabelArea = new Rect2i(visualX, visualY, PLANE_VERTICAL_LABEL_WIDTH, COLOR_PLANE_HEIGHT);
-		Rect2i horizontalAxisLabelArea = new Rect2i(
-			planeX,
-			visualY + COLOR_PLANE_HEIGHT,
-			planeWidth,
-			PLANE_HORIZONTAL_LABEL_HEIGHT
+		LayoutMetrics metrics = getLayoutMetrics(area);
+		int contentWidth = Math.max(1, area.getWidth() - metrics.padding() * 2);
+		int visualX = area.getX() + metrics.padding();
+		int visualY = area.getY() + metrics.padding();
+		int leftGutterWidth = metrics.channelSliderLabelWidth();
+		int sideControlsWidth = metrics.controlGap() + metrics.valueSliderWidth() + metrics.axisSelectorGap() +
+			metrics.axisSelectorWidth();
+		int rightGutterWidth = Math.max(metrics.channelSliderValueWidth(), sideControlsWidth);
+		int controlX = visualX + leftGutterWidth;
+		int controlWidth = Math.max(
+			1,
+			contentWidth - leftGutterWidth - rightGutterWidth
 		);
-		int sliderY = visualY + COLOR_PLANE_HEIGHT + PLANE_HORIZONTAL_LABEL_HEIGHT + CONTROL_GAP;
+		Rect2i colorPreviewArea = new Rect2i(controlX, visualY, controlWidth, metrics.colorPreviewHeight());
+		visualY += metrics.colorPreviewHeight() + metrics.controlGap();
+		Rect2i colorPlaneArea = new Rect2i(controlX, visualY, controlWidth, metrics.colorPlaneHeight());
+		Rect2i verticalSliderArea = new Rect2i(
+			controlX + controlWidth + metrics.controlGap(),
+			visualY,
+			metrics.valueSliderWidth(),
+			metrics.colorPlaneHeight()
+		);
+		List<AxisSelectorArea> axisSelectorAreas = createAxisSelectorAreas(
+			verticalSliderArea.getX() + verticalSliderArea.getWidth() + metrics.axisSelectorGap(),
+			visualY,
+			metrics
+		);
+		int sliderY = visualY + metrics.colorPlaneHeight() + metrics.controlGap();
 		List<ColorField> sliderFields = List.of(
-			ColorField.HUE,
-			ColorField.SATURATION,
-			ColorField.VALUE,
 			ColorField.RED,
 			ColorField.GREEN,
 			ColorField.BLUE
 		);
-		List<SliderArea> sliderAreas = createChannelSliders(visualX, sliderY, contentWidth, sliderFields);
-		int y = sliderY + CHANNEL_SLIDER_COUNT * CHANNEL_SLIDER_ROW_HEIGHT + CONTROL_GAP;
-		int sliderX = area.getX() + PADDING + CHANNEL_SLIDER_LABEL_WIDTH;
-		int sliderWidth = Math.max(1, contentWidth - CHANNEL_SLIDER_LABEL_WIDTH - CHANNEL_SLIDER_VALUE_WIDTH);
-		Rect2i alphaArea = new Rect2i(sliderX, y, sliderWidth, 0);
+		List<SliderArea> sliderAreas = createChannelSliders(controlX, sliderY, controlWidth, sliderFields, metrics);
+		int y = sliderY + CHANNEL_SLIDER_COUNT * metrics.channelSliderRowHeight() + metrics.controlGap();
+		Rect2i alphaArea = new Rect2i(controlX, y, controlWidth, 0);
 		if (hasAlpha()) {
-			alphaArea = new Rect2i(sliderX, y, sliderWidth, ALPHA_HEIGHT);
-			y += ALPHA_HEIGHT + CONTROL_GAP;
+			alphaArea = new Rect2i(controlX, y, controlWidth, metrics.alphaHeight());
+			y += metrics.alphaHeight() + metrics.controlGap();
 		}
 		FieldArea hexFieldArea = new FieldArea(
 			ColorField.HEX,
-			new Rect2i(area.getX() + PADDING, y, contentWidth, FIELD_HEIGHT)
+			new Rect2i(visualX, y, contentWidth, metrics.fieldHeight())
 		);
 		return new PickerLayout(
 			colorPreviewArea,
 			colorPlaneArea,
-			verticalAxisLabelArea,
-			horizontalAxisLabelArea,
+			verticalSliderArea,
+			axisSelectorAreas,
 			sliderAreas,
+			metrics.channelSliderLabelWidth(),
 			alphaArea,
 			hexFieldArea
 		);
 	}
 
-	private static List<SliderArea> createChannelSliders(int x, int y, int width, List<ColorField> fields) {
+	private LayoutMetrics getLayoutMetrics(Rect2i area) {
+		if (area.getWidth() >= WIDTH && area.getHeight() >= getHeight()) {
+			return STANDARD_LAYOUT;
+		}
+
+		LayoutMetrics metrics = COMPACT_LAYOUT;
+		int previewHeight = metrics.colorPreviewHeight();
+		int heightWithoutPlane = getLayoutHeight(metrics, hasAlpha()) - metrics.colorPlaneHeight();
+		int availablePlaneHeight = area.getHeight() - heightWithoutPlane;
+		if (availablePlaneHeight < MIN_COMPACT_PLANE_HEIGHT) {
+			int previewReduction = Math.min(
+				previewHeight - MIN_COMPACT_PREVIEW_HEIGHT,
+				MIN_COMPACT_PLANE_HEIGHT - availablePlaneHeight
+			);
+			previewHeight -= previewReduction;
+			availablePlaneHeight += previewReduction;
+		}
+		int planeHeight = Math.max(1, Math.min(metrics.colorPlaneHeight(), availablePlaneHeight));
+		return metrics.withDynamicHeights(previewHeight, planeHeight);
+	}
+
+	private static int getLayoutHeight(LayoutMetrics metrics, boolean hasAlpha) {
+		int height = metrics.padding() + metrics.colorPreviewHeight() + metrics.controlGap();
+		height += metrics.colorPlaneHeight() + metrics.controlGap();
+		height += CHANNEL_SLIDER_COUNT * metrics.channelSliderRowHeight() + metrics.controlGap();
+		if (hasAlpha) {
+			height += metrics.alphaHeight() + metrics.controlGap();
+		}
+		return height + metrics.fieldHeight() + metrics.padding();
+	}
+
+	private static List<AxisSelectorArea> createAxisSelectorAreas(int x, int chartY, LayoutMetrics metrics) {
+		ColorAxis[] axes = ColorAxis.values();
+		int totalHeight = axes.length * metrics.axisSelectorHeight() +
+			(axes.length - 1) * metrics.axisSelectorRowGap();
+		int y = chartY + (metrics.colorPlaneHeight() - totalHeight) / 2;
+		List<AxisSelectorArea> areas = new ArrayList<>(axes.length);
+		for (int i = 0; i < axes.length; i++) {
+			int buttonY = y + i * (metrics.axisSelectorHeight() + metrics.axisSelectorRowGap());
+			Rect2i area = new Rect2i(x, buttonY, metrics.axisSelectorWidth(), metrics.axisSelectorHeight());
+			areas.add(new AxisSelectorArea(axes[i], area));
+		}
+		return List.copyOf(areas);
+	}
+
+	private static List<SliderArea> createChannelSliders(
+		int sliderX,
+		int y,
+		int sliderWidth,
+		List<ColorField> fields,
+		LayoutMetrics metrics
+	) {
 		List<SliderArea> sliders = new ArrayList<>(fields.size());
 		for (int i = 0; i < fields.size(); i++) {
-			int rowY = y + i * CHANNEL_SLIDER_ROW_HEIGHT;
-			int sliderY = rowY + (CHANNEL_SLIDER_ROW_HEIGHT - CHANNEL_SLIDER_HEIGHT) / 2;
-			int sliderX = x + CHANNEL_SLIDER_LABEL_WIDTH;
-			int sliderWidth = Math.max(1, width - CHANNEL_SLIDER_LABEL_WIDTH - CHANNEL_SLIDER_VALUE_WIDTH);
-			Rect2i sliderArea = new Rect2i(sliderX, sliderY, sliderWidth, CHANNEL_SLIDER_HEIGHT);
+			int rowY = y + i * metrics.channelSliderRowHeight();
+			int sliderY = rowY + (metrics.channelSliderRowHeight() - metrics.channelSliderHeight()) / 2;
+			Rect2i sliderArea = new Rect2i(sliderX, sliderY, sliderWidth, metrics.channelSliderHeight());
 			sliders.add(new SliderArea(fields.get(i), sliderArea));
 		}
 		return List.copyOf(sliders);
@@ -722,15 +900,25 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 
 	private enum ControlType {
 		PLANE,
+		VERTICAL_AXIS,
 		SLIDER,
 		ALPHA,
 		NONE
 	}
 
-	private enum ColorField {
+	private enum ColorAxis {
 		HUE("H"),
 		SATURATION("S"),
-		VALUE("V"),
+		VALUE("V");
+
+		private final String label;
+
+		ColorAxis(String label) {
+			this.label = label;
+		}
+	}
+
+	private enum ColorField {
 		RED("R"),
 		GREEN("G"),
 		BLUE("B"),
@@ -744,18 +932,60 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		}
 	}
 
+	private record LayoutMetrics(
+		int padding,
+		int controlGap,
+		int colorPreviewHeight,
+		int colorPlaneHeight,
+		int valueSliderWidth,
+		int axisSelectorGap,
+		int axisSelectorWidth,
+		int axisSelectorHeight,
+		int axisSelectorRowGap,
+		int channelSliderRowHeight,
+		int channelSliderHeight,
+		int channelSliderLabelWidth,
+		int channelSliderValueWidth,
+		int alphaHeight,
+		int fieldHeight
+	) {
+		LayoutMetrics withDynamicHeights(int previewHeight, int planeHeight) {
+			return new LayoutMetrics(
+				padding,
+				controlGap,
+				previewHeight,
+				planeHeight,
+				valueSliderWidth,
+				axisSelectorGap,
+				axisSelectorWidth,
+				axisSelectorHeight,
+				axisSelectorRowGap,
+				channelSliderRowHeight,
+				channelSliderHeight,
+				channelSliderLabelWidth,
+				channelSliderValueWidth,
+				alphaHeight,
+				fieldHeight
+			);
+		}
+	}
+
 	private record PickerLayout(
 		Rect2i colorPreviewArea,
 		Rect2i colorPlaneArea,
-		Rect2i verticalAxisLabelArea,
-		Rect2i horizontalAxisLabelArea,
+		Rect2i verticalSliderArea,
+		List<AxisSelectorArea> axisSelectorAreas,
 		List<SliderArea> sliderAreas,
+		int channelSliderLabelWidth,
 		Rect2i alphaArea,
 		FieldArea hexFieldArea
 	) {
 		ColorControl getControl(double mouseX, double mouseY) {
 			if (colorPlaneArea.getWidth() > 0 && contains(colorPlaneArea, mouseX, mouseY)) {
 				return ColorControl.PLANE;
+			}
+			if (contains(verticalSliderArea, mouseX, mouseY)) {
+				return ColorControl.VERTICAL_AXIS;
 			}
 			for (SliderArea sliderArea : sliderAreas) {
 				if (contains(sliderArea.area(), mouseX, mouseY)) {
@@ -785,6 +1015,19 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 			}
 			return null;
 		}
+
+		@Nullable
+		ColorAxis getAxisSelector(double mouseX, double mouseY) {
+			for (AxisSelectorArea selectorArea : axisSelectorAreas) {
+				if (contains(selectorArea.area(), mouseX, mouseY)) {
+					return selectorArea.axis();
+				}
+			}
+			return null;
+		}
+	}
+
+	private record AxisSelectorArea(ColorAxis axis, Rect2i area) {
 	}
 
 	private record FieldArea(ColorField field, Rect2i area) {
@@ -798,6 +1041,7 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 
 	private record ColorControl(ControlType type, @Nullable ColorField field) {
 		private static final ColorControl PLANE = new ColorControl(ControlType.PLANE, null);
+		private static final ColorControl VERTICAL_AXIS = new ColorControl(ControlType.VERTICAL_AXIS, null);
 		private static final ColorControl ALPHA = new ColorControl(ControlType.ALPHA, null);
 		private static final ColorControl NONE = new ColorControl(ControlType.NONE, null);
 
