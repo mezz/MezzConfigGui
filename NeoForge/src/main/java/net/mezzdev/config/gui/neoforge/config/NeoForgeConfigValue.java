@@ -98,7 +98,7 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 
 	@Override
 	public boolean set(T value) {
-		if (!serializer.isValid(value)) {
+		if (value == null || !serializer.isValid(value)) {
 			throw new IllegalArgumentException(
 				"Invalid NeoForge config value '%s'. %s".formatted(value, serializer.getValidValuesDescription())
 			);
