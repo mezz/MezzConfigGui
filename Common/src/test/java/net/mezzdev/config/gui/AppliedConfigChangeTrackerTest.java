@@ -71,6 +71,34 @@ class AppliedConfigChangeTrackerTest {
 		assertEquals("first", undoChanges.getFirst().value());
 	}
 
+	@Test
+	void undoesChangesInReverseApplicationOrder() {
+		AppliedConfigChangeTracker tracker = new AppliedConfigChangeTracker();
+		TestConfigValue firstValue = new TestConfigValue("first");
+		TestConfigValue secondValue = new TestConfigValue("second");
+
+		tracker.add(new AppliedConfigValueChange<>(firstValue, "first", "first changed"));
+		tracker.add(new AppliedConfigValueChange<>(secondValue, "second", "second changed"));
+
+		List<ConfigValueChange<?>> undoChanges = tracker.getUndoChanges();
+		assertEquals(List.of(secondValue, firstValue), undoChanges.stream().map(ConfigValueChange::configValue).toList());
+	}
+
+	@Test
+	void ordersCoalescedChangeByItsMostRecentApplication() {
+		AppliedConfigChangeTracker tracker = new AppliedConfigChangeTracker();
+		TestConfigValue firstValue = new TestConfigValue("first");
+		TestConfigValue secondValue = new TestConfigValue("second");
+
+		tracker.add(new AppliedConfigValueChange<>(firstValue, "first", "first changed"));
+		tracker.add(new AppliedConfigValueChange<>(secondValue, "second", "second changed"));
+		tracker.add(new AppliedConfigValueChange<>(firstValue, "first changed", "first changed again"));
+
+		List<ConfigValueChange<?>> undoChanges = tracker.getUndoChanges();
+		assertEquals(List.of(firstValue, secondValue), undoChanges.stream().map(ConfigValueChange::configValue).toList());
+		assertEquals("first", undoChanges.getFirst().value());
+	}
+
 	private static final class TestConfigValue implements IConfigScreenValue<String> {
 		private final String defaultValue;
 

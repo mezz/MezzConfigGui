@@ -4,6 +4,7 @@ import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.model.AppliedConfigValueChange;
 import net.mezzdev.config.gui.model.ConfigValueChange;
 
+import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,7 @@ import java.util.Objects;
  */
 final class AppliedConfigChangeTracker {
 	private final Map<Object, AppliedConfigValueChange<?>> changesByValueKey = new IdentityHashMap<>();
+	private final List<Object> valueKeysInApplicationOrder = new ArrayList<>();
 
 	public void add(AppliedConfigValueChange<?> change) {
 		addTyped(change);
@@ -28,11 +30,22 @@ final class AppliedConfigChangeTracker {
 		if (existing != null) {
 			oldValue = existing.oldValue();
 		}
+		removeFromApplicationOrder(identityKey);
 		if (Objects.equals(oldValue, change.newValue())) {
 			changesByValueKey.remove(identityKey);
 			return;
 		}
 		changesByValueKey.put(identityKey, new AppliedConfigValueChange<>(configValue, oldValue, change.newValue()));
+		valueKeysInApplicationOrder.add(identityKey);
+	}
+
+	private void removeFromApplicationOrder(Object identityKey) {
+		for (int i = 0; i < valueKeysInApplicationOrder.size(); i++) {
+			if (valueKeysInApplicationOrder.get(i) == identityKey) {
+				valueKeysInApplicationOrder.remove(i);
+				return;
+			}
+		}
 	}
 
 	public boolean hasChanges() {
@@ -40,10 +53,13 @@ final class AppliedConfigChangeTracker {
 	}
 
 	public List<ConfigValueChange<?>> getUndoChanges() {
-		return changesByValueKey.values()
-			.stream()
-			.<ConfigValueChange<?>>map(AppliedConfigValueChange::toUndoChange)
-			.toList();
+		List<ConfigValueChange<?>> undoChanges = new ArrayList<>(valueKeysInApplicationOrder.size());
+		for (int i = valueKeysInApplicationOrder.size() - 1; i >= 0; i--) {
+			Object identityKey = valueKeysInApplicationOrder.get(i);
+			AppliedConfigValueChange<?> change = changesByValueKey.get(identityKey);
+			undoChanges.add(change.toUndoChange());
+		}
+		return List.copyOf(undoChanges);
 	}
 
 }
