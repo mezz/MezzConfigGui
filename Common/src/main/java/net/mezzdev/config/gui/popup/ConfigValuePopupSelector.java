@@ -82,7 +82,12 @@ public final class ConfigValuePopupSelector<T> implements ConfigPopupSelector {
 
 	@Override
 	public boolean onMouseClicked(UserInput input) {
-		Optional<T> clickedValue = popup.getClickedValue(toRect2i(area), input.getMouseX(), input.getMouseY(), getMouseButton(input));
+		int mouseButton = getMouseButton(input);
+		Rect2i popupArea = toRect2i(area);
+		Optional<T> clickedValue = popup.getClickedValue(popupArea, input.getMouseX(), input.getMouseY(), mouseButton);
+		if (!input.isSimulate()) {
+			popup.mouseReleased(popupArea, input.getMouseX(), input.getMouseY(), mouseButton);
+		}
 		if (clickedValue.isEmpty()) {
 			return false;
 		}
@@ -90,6 +95,11 @@ public final class ConfigValuePopupSelector<T> implements ConfigPopupSelector {
 			setter.accept(clickedValue.get());
 		}
 		return true;
+	}
+
+	@Override
+	public boolean onMouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+		return popup.mouseScrolled(toRect2i(area), mouseX, mouseY, scrollX, scrollY);
 	}
 
 	@Override
@@ -112,6 +122,16 @@ public final class ConfigValuePopupSelector<T> implements ConfigPopupSelector {
 	@Override
 	public boolean closesAfterClick() {
 		return popup.closesAfterValueSelected();
+	}
+
+	@Override
+	public void onOpened() {
+		popup.onOpened();
+	}
+
+	@Override
+	public void onClosed() {
+		popup.onClosed();
 	}
 
 	private static int getMouseButton(UserInput input) {

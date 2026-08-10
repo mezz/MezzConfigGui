@@ -1,9 +1,9 @@
 package net.mezzdev.config.gui.popup;
 
-import net.mezzdev.config.gui.util.ImmutableRect2i;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.gui.ConfigInputHandler;
-import net.mezzdev.config.gui.ConfigInputUtil;
 import net.mezzdev.config.gui.input.UserInput;
+import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.gui.screens.Screen;
 
 import java.util.Optional;
@@ -37,7 +37,7 @@ public final class ConfigValueSelectorInputHandler implements ConfigInputHandler
 			valueSelectorWasDragged = false;
 		}
 		ConfigPopupSelector valueSelector = valueSelectorSupplier.get();
-		if (valueSelector == null || !ConfigInputUtil.isLeftClick(input)) {
+		if (valueSelector == null || input.getKey().getType() != InputConstants.Type.MOUSE) {
 			return Optional.empty();
 		}
 		ImmutableRect2i clipArea = valueSelectorClipAreaSupplier.get();
@@ -64,6 +64,28 @@ public final class ConfigValueSelectorInputHandler implements ConfigInputHandler
 			closeValueSelector();
 		}
 		return Optional.of(this);
+	}
+
+	@Override
+	public Optional<ConfigInputHandler> handleMouseScrolled(
+		double mouseX,
+		double mouseY,
+		double scrollDeltaX,
+		double scrollDeltaY
+	) {
+		ConfigPopupSelector valueSelector = valueSelectorSupplier.get();
+		if (valueSelector == null) {
+			return Optional.empty();
+		}
+		ImmutableRect2i clipArea = valueSelectorClipAreaSupplier.get();
+		valueSelector.updateBounds(clipArea);
+		if (!clipArea.contains(mouseX, mouseY) || !valueSelector.isMouseOver(mouseX, mouseY)) {
+			return Optional.empty();
+		}
+		if (valueSelector.onMouseScrolled(mouseX, mouseY, scrollDeltaX, scrollDeltaY)) {
+			return Optional.of(this);
+		}
+		return Optional.empty();
 	}
 
 	@Override

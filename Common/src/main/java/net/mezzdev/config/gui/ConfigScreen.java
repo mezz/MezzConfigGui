@@ -241,12 +241,18 @@ public class ConfigScreen extends Screen {
 	}
 
 	private void openValueSelector(ConfigPopupSelector selector) {
+		closeValueSelector();
 		selector.updateBounds(ConfigScreenView.getValueSelectorClipArea(layout.getContentArea()));
 		this.valueSelector = selector;
+		selector.onOpened();
 	}
 
 	private void closeValueSelector() {
+		ConfigPopupSelector valueSelector = this.valueSelector;
 		this.valueSelector = null;
+		if (valueSelector != null) {
+			valueSelector.onClosed();
+		}
 	}
 
 	private boolean isCapturingKeyBinding() {

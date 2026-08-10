@@ -25,6 +25,10 @@ public interface ConfigPopupSelector {
 
 	boolean onMouseClicked(UserInput input);
 
+	default boolean onMouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+		return false;
+	}
+
 	default boolean onMouseDragged(double mouseX, double mouseY, int button) {
 		return false;
 	}
@@ -39,5 +43,13 @@ public interface ConfigPopupSelector {
 
 	default boolean closesAfterClick() {
 		return true;
+	}
+
+	default void onOpened() {
+
+	}
+
+	default void onClosed() {
+
 	}
 }

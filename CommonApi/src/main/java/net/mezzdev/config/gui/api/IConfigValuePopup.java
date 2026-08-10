@@ -125,6 +125,54 @@ public interface IConfigValuePopup<T> {
 	}
 
 	/**
+	 * Handle mouse-wheel input over this popup.
+	 *
+	 * @param area the popup bounds
+	 * @param mouseX the current mouse x-coordinate
+	 * @param mouseY the current mouse y-coordinate
+	 * @param scrollX horizontal scroll amount
+	 * @param scrollY vertical scroll amount
+	 * @return true when the popup handled the scroll
+	 *
+	 * @since 0.1.0
+	 */
+	default boolean mouseScrolled(Rect2i area, double mouseX, double mouseY, double scrollX, double scrollY) {
+		return false;
+	}
+
+	/**
+	 * Called after a mouse button is released over an active popup, including after a drag.
+	 *
+	 * @param area the popup bounds
+	 * @param mouseX the release x-coordinate
+	 * @param mouseY the release y-coordinate
+	 * @param button the released mouse button
+	 *
+	 * @since 0.1.0
+	 */
+	default void mouseReleased(Rect2i area, double mouseX, double mouseY, int button) {
+
+	}
+
+	/**
+	 * Called after this popup becomes active.
+	 *
+	 * @since 0.1.0
+	 */
+	default void onOpened() {
+
+	}
+
+	/**
+	 * Called when this popup is closed or replaced.
+	 *
+	 * @since 0.1.0
+	 */
+	default void onClosed() {
+
+	}
+
+	/**
 	 * Handle a typed character while this popup has an active text field.
 	 *
 	 * @param codePoint the typed character

@@ -32,9 +32,12 @@ public final class ConfigValueSelector<T> implements IConfigValuePopup<T> {
 	private static final int BORDER_DARK_COLOR = 0xE0000000;
 	private static final int BORDER_LIGHT_COLOR = 0x45FFFFFF;
 	private static final int DIVIDER_COLOR = 0x22FFFFFF;
+	private static final int SCROLLBAR_WIDTH = 3;
+	private static final int SCROLLBAR_COLOR = 0xAA9AA4B2;
 
 	private final IConfigScreenValue<T> configValue;
 	private final List<ValueEntry> valueEntries;
+	private int scrollOffset;
 
 	public ConfigValueSelector(IConfigScreenValue<T> configValue, List<T> allValues, @Nullable T currentValue) {
 		this.configValue = configValue;
@@ -65,7 +68,20 @@ public final class ConfigValueSelector<T> implements IConfigValuePopup<T> {
 	}
 
 	@Override
+	public Size getPreferredSize(int availableWidth, int availableHeight) {
+		return new Size(
+			Math.min(getWidth(), Math.max(0, availableWidth)),
+			Math.min(getHeight(), Math.max(0, availableHeight))
+		);
+	}
+
+	@Override
 	public Optional<T> getHoveredValue(Rect2i area, double mouseX, double mouseY) {
+		ImmutableRect2i contentArea = getContentArea(area);
+		if (!contentArea.contains(mouseX, mouseY)) {
+			return Optional.empty();
+		}
+		clampScrollOffset(contentArea);
 		for (int i = 0; i < valueEntries.size(); i++) {
 			ValueEntry entry = valueEntries.get(i);
 			if (getValueArea(area, i).contains(mouseX, mouseY)) {
@@ -83,6 +99,14 @@ public final class ConfigValueSelector<T> implements IConfigValuePopup<T> {
 
 		Font font = Minecraft.getInstance().font;
 		drawBackground(guiGraphics, area);
+		ImmutableRect2i contentArea = getContentArea(area);
+		clampScrollOffset(contentArea);
+		guiGraphics.enableScissor(
+			contentArea.getX(),
+			contentArea.getY(),
+			contentArea.getX() + contentArea.getWidth(),
+			contentArea.getY() + contentArea.getHeight()
+		);
 		for (int i = 0; i < valueEntries.size(); i++) {
 			ValueEntry entry = valueEntries.get(i);
 			ImmutableRect2i valueArea = getValueArea(area, i);
@@ -100,6 +124,24 @@ public final class ConfigValueSelector<T> implements IConfigValuePopup<T> {
 			);
 			ConfigEntryWidget.drawFittedText(guiGraphics, font, entry.label, textArea, getTextColor(hovered), false);
 		}
+		guiGraphics.disableScissor();
+		drawScrollbar(guiGraphics, contentArea);
+	}
+
+	@Override
+	public boolean mouseScrolled(Rect2i area, double mouseX, double mouseY, double scrollX, double scrollY) {
+		ImmutableRect2i contentArea = getContentArea(area);
+		int maxScroll = getMaxScroll(contentArea);
+		if (!contentArea.contains(mouseX, mouseY) || maxScroll <= 0 || scrollY == 0.0) {
+			return false;
+		}
+		int scrollAmount = Math.max(1, (int) Math.round(Math.abs(scrollY))) * ENTRY_HEIGHT;
+		if (scrollY > 0.0) {
+			scrollOffset = Math.max(0, scrollOffset - scrollAmount);
+		} else {
+			scrollOffset = Math.min(maxScroll, scrollOffset + scrollAmount);
+		}
+		return true;
 	}
 
 	public boolean isEmpty() {
@@ -145,12 +187,47 @@ public final class ConfigValueSelector<T> implements IConfigValuePopup<T> {
 		return ROW_BACKGROUND_COLOR;
 	}
 
-	private static ImmutableRect2i getValueArea(Rect2i area, int index) {
+	private ImmutableRect2i getValueArea(Rect2i area, int index) {
 		return new ImmutableRect2i(
 			area.getX() + BORDER_SIZE,
-			area.getY() + BORDER_SIZE + index * ENTRY_HEIGHT,
+			area.getY() + BORDER_SIZE + index * ENTRY_HEIGHT - scrollOffset,
 			Math.max(0, area.getWidth() - BORDER_SIZE * 2),
 			ENTRY_HEIGHT
+		);
+	}
+
+	private static ImmutableRect2i getContentArea(Rect2i area) {
+		return new ImmutableRect2i(
+			area.getX() + BORDER_SIZE,
+			area.getY() + BORDER_SIZE,
+			Math.max(0, area.getWidth() - BORDER_SIZE * 2),
+			Math.max(0, area.getHeight() - BORDER_SIZE * 2)
+		);
+	}
+
+	private int getMaxScroll(ImmutableRect2i contentArea) {
+		return Math.max(0, valueEntries.size() * ENTRY_HEIGHT - contentArea.getHeight());
+	}
+
+	private void clampScrollOffset(ImmutableRect2i contentArea) {
+		scrollOffset = Math.clamp(scrollOffset, 0, getMaxScroll(contentArea));
+	}
+
+	private void drawScrollbar(GuiGraphics guiGraphics, ImmutableRect2i contentArea) {
+		int contentHeight = valueEntries.size() * ENTRY_HEIGHT;
+		if (contentArea.isEmpty() || contentHeight <= contentArea.getHeight()) {
+			return;
+		}
+		int scrollbarHeight = Math.max(ENTRY_HEIGHT / 2, contentArea.getHeight() * contentArea.getHeight() / contentHeight);
+		int scrollbarTravel = contentArea.getHeight() - scrollbarHeight;
+		int scrollbarY = contentArea.getY() + scrollbarTravel * scrollOffset / getMaxScroll(contentArea);
+		int scrollbarX = contentArea.getX() + contentArea.getWidth() - SCROLLBAR_WIDTH;
+		guiGraphics.fill(
+			scrollbarX,
+			scrollbarY,
+			scrollbarX + SCROLLBAR_WIDTH,
+			scrollbarY + scrollbarHeight,
+			SCROLLBAR_COLOR
 		);
 	}
 
