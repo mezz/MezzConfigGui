@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 /**
  * Standard visual color picker with a hue-saturation chart, value and RGB sliders, and hexadecimal input.
  */
-public final class ColorPickerPopup implements IConfigValuePopup<PackedColor>, ResponsiveConfigValuePopup {
+public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 	private static final int WIDTH = 256;
 	private static final int CHANNEL_SLIDER_COUNT = 3;
 	private static final int MIN_COMPACT_PREVIEW_HEIGHT = 8;

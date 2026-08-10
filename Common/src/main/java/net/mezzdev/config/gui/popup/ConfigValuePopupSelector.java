@@ -44,14 +44,8 @@ public final class ConfigValuePopupSelector<T> implements ConfigPopupSelector {
 
 	@Override
 	public void updateBounds(ImmutableRect2i clipArea) {
-		int width = popup.getWidth();
-		int height = popup.getHeight();
-		if (popup instanceof ResponsiveConfigValuePopup responsivePopup) {
-			ResponsiveConfigValuePopup.Size size = responsivePopup.getPreferredSize(clipArea.getWidth(), clipArea.getHeight());
-			width = size.width();
-			height = size.height();
-		}
-		area = ConfigPopupPlacement.placeNearAnchor(anchorAreaSupplier.get(), clipArea, width, height);
+		IConfigValuePopup.Size size = popup.getPreferredSize(clipArea.getWidth(), clipArea.getHeight());
+		area = ConfigPopupPlacement.placeNearAnchor(anchorAreaSupplier.get(), clipArea, size.width(), size.height());
 	}
 
 	@Override

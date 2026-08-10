@@ -19,6 +19,18 @@ import java.util.function.Consumer;
  */
 public interface IConfigValuePopup<T> {
 	/**
+	 * A preferred popup size.
+	 *
+	 * @param width preferred width
+	 * @param height preferred height
+	 *
+	 * @since 0.1.0
+	 */
+	record Size(int width, int height) {
+
+	}
+
+	/**
 	 * The preferred popup width.
 	 *
 	 * @return the preferred popup width
@@ -35,6 +47,22 @@ public interface IConfigValuePopup<T> {
 	 * @since 0.1.0
 	 */
 	int getHeight();
+
+	/**
+	 * Negotiate the preferred popup size for the currently available area.
+	 * <p>
+	 * The default preserves fixed-size popup behavior. Responsive implementations can return a smaller layout when
+	 * the preferred fixed size does not fit.
+	 *
+	 * @param availableWidth available width inside the visible config area
+	 * @param availableHeight available height inside the visible config area
+	 * @return the preferred popup size for the available area
+	 *
+	 * @since 0.1.0
+	 */
+	default Size getPreferredSize(int availableWidth, int availableHeight) {
+		return new Size(getWidth(), getHeight());
+	}
 
 	/**
 	 * Get the value currently under the mouse, or {@link Optional#empty()} when hovering no value.

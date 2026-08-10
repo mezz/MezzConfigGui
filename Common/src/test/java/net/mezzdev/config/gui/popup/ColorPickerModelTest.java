@@ -2,6 +2,7 @@ package net.mezzdev.config.gui.popup;
 
 import net.mezzdev.config.api.value.ConfigColorFormat;
 import net.mezzdev.config.api.value.PackedColor;
+import net.mezzdev.config.gui.api.IConfigValuePopup;
 import net.mezzdev.config.gui.info.ColorSwatch;
 import net.minecraft.client.renderer.Rect2i;
 import org.junit.jupiter.api.Test;
@@ -121,7 +122,7 @@ class ColorPickerModelTest {
 	@Test
 	void compactPickerKeepsRgbSlidersAndHexInputInsideTheAvailableArea() {
 		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.rgb(0x336699));
-		ResponsiveConfigValuePopup.Size size = popup.getPreferredSize(180, 300);
+		IConfigValuePopup.Size size = popup.getPreferredSize(180, 300);
 		Rect2i area = new Rect2i(0, 0, size.width(), size.height());
 		AtomicReference<PackedColor> editedColor = new AtomicReference<>();
 
@@ -140,17 +141,17 @@ class ColorPickerModelTest {
 		ColorPickerPopup rgb = new ColorPickerPopup(PackedColor.rgb(0x336699));
 		ColorPickerPopup argb = new ColorPickerPopup(PackedColor.argb(0xFF336699));
 
-		ResponsiveConfigValuePopup.Size rgbSize = rgb.getPreferredSize(180, 300);
-		ResponsiveConfigValuePopup.Size argbSize = argb.getPreferredSize(180, 300);
+		IConfigValuePopup.Size rgbSize = rgb.getPreferredSize(180, 300);
+		IConfigValuePopup.Size argbSize = argb.getPreferredSize(180, 300);
 
-		assertEquals(new ResponsiveConfigValuePopup.Size(180, 147), rgbSize);
-		assertEquals(new ResponsiveConfigValuePopup.Size(180, 159), argbSize);
+		assertEquals(new IConfigValuePopup.Size(180, 147), rgbSize);
+		assertEquals(new IConfigValuePopup.Size(180, 159), argbSize);
 	}
 
 	@Test
 	void compactArgbPickerKeepsAlphaAndHexInputInsideTheAvailableArea() {
 		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.argb(0xFF336699));
-		ResponsiveConfigValuePopup.Size size = popup.getPreferredSize(180, 300);
+		IConfigValuePopup.Size size = popup.getPreferredSize(180, 300);
 		Rect2i area = new Rect2i(0, 0, size.width(), size.height());
 		AtomicReference<PackedColor> editedColor = new AtomicReference<>();
 
