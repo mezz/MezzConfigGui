@@ -2,6 +2,7 @@ package net.mezzdev.config.gui.api;
 
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.minecraft.network.chat.Component;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -11,6 +12,7 @@ import java.util.function.Supplier;
  *
  * @since 0.1.0
  */
+@ApiStatus.NonExtendable
 public interface IConfigGuiRegistration {
 	/**
 	 * Register a custom value editor for config values that return the matching editor type.

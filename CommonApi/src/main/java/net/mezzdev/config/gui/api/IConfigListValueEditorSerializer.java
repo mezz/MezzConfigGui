@@ -20,15 +20,6 @@ public interface IConfigListValueEditorSerializer<T> extends IConfigValueEditorS
 	 */
 	IConfigValueSerializer<T> getElementSerializer();
 
-	/**
-	 * Get the serializer for each list element.
-	 *
-	 * @since 0.1.0
-	 */
-	default IConfigValueSerializer<T> getListValueSerializer() {
-		return getElementSerializer();
-	}
-
 	@Override
 	default ConfigValueEditorType<List<T>> getEditorType() {
 		return ConfigValueEditorTypes.getList();

@@ -6,6 +6,7 @@ import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.network.chat.Component;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Collection;
 
@@ -14,6 +15,7 @@ import java.util.Collection;
  *
  * @since 0.1.0
  */
+@ApiStatus.NonExtendable
 public interface IConfigScreenCategoryBuilder {
 	/**
 	 * Override the title shown for this category.

@@ -2,6 +2,7 @@ package net.mezzdev.config.gui.api;
 
 import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.minecraft.network.chat.Component;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Map;
 import java.util.Optional;
@@ -14,6 +15,7 @@ import java.util.function.Function;
  *
  * @since 0.1.0
  */
+@ApiStatus.NonExtendable
 public interface ISortingConfigGuiBuilder<T> {
 	/**
 	 * Set when edited sort-order values are saved.

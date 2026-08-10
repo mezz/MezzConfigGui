@@ -14,7 +14,6 @@ import net.mezzdev.config.gui.api.IConfigGuiRegistration;
 import net.mezzdev.config.gui.api.IConfigScreenBuilder;
 import net.mezzdev.config.gui.api.IConfigScreenCategoryBuilder;
 import net.mezzdev.config.gui.api.IConfigScreenFactory;
-import net.mezzdev.config.gui.api.IConfigScreenConfig;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigScreenValueBuilder;
 import net.mezzdev.config.gui.api.IConfigValueEditorFactory;
@@ -61,25 +60,6 @@ final class ConfigGuiPluginLoader {
 
 	private ConfigGuiPluginLoader() {
 
-	}
-
-	public static Map<String, IConfigScreenFactory> createScreenFactories(
-		Collection<? extends IConfigScreenConfig> configScreens,
-		List<? extends IConfigGuiPlugin> plugins
-	) {
-		return createScreenFactoryRegistry(configScreens, plugins).getFactories();
-	}
-
-	public static ConfigScreenFactoryRegistry createScreenFactoryRegistry(
-		Collection<? extends IConfigScreenConfig> configScreens,
-		List<? extends IConfigGuiPlugin> plugins
-	) {
-		return createScreenFactoryRegistryFromInternalConfigs(
-			configScreens.stream()
-				.map(PublicConfigScreenConfig::new)
-				.toList(),
-			plugins
-		);
 	}
 
 	static Map<String, IConfigScreenFactory> createScreenFactoriesFromInternalConfigs(
@@ -342,8 +322,9 @@ final class ConfigGuiPluginLoader {
 		}
 
 		@Override
-		public void setTitle(Component title) {
+		public IConfigScreenBuilder setTitle(Component title) {
 			this.title = ErrorUtil.checkNotNull(title, "title");
+			return this;
 		}
 
 		@Override
@@ -1696,23 +1677,6 @@ final class ConfigGuiPluginLoader {
 			}
 			return ConfigScreenSchema.from(schema);
 		};
-	}
-
-	private record PublicConfigScreenConfig(IConfigScreenConfig configScreen) implements ConfigScreenConfig {
-		@Override
-		public String getModId() {
-			return configScreen.getModId();
-		}
-
-		@Override
-		public Component getTitle() {
-			return configScreen.getTitle();
-		}
-
-		@Override
-		public ConfigScreenSchema getSchema() {
-			return ConfigScreenSchema.from(configScreen.getSchema());
-		}
 	}
 
 	private record ConfigScreenFactoryConfig(

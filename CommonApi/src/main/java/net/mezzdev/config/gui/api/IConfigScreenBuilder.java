@@ -1,21 +1,24 @@
 package net.mezzdev.config.gui.api;
 
 import net.minecraft.network.chat.Component;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Customizes a config screen provided by the config GUI.
  *
  * @since 0.1.0
  */
+@ApiStatus.NonExtendable
 public interface IConfigScreenBuilder {
 	/**
 	 * Set the title shown at the top of the config screen.
 	 *
 	 * @param title the screen title
+	 * @return this builder
 	 *
 	 * @since 0.1.0
 	 */
-	void setTitle(Component title);
+	IConfigScreenBuilder setTitle(Component title);
 
 	/**
 	 * Do not add automatically detected categories to this screen unless they are also configured here.
@@ -27,9 +30,7 @@ public interface IConfigScreenBuilder {
 	 *
 	 * @since 0.1.0
 	 */
-	default IConfigScreenBuilder clearDefaultCategories() {
-		return this;
-	}
+	IConfigScreenBuilder clearDefaultCategories();
 
 	/**
 	 * Add a category in the order it should appear on the screen.

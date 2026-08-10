@@ -3,7 +3,6 @@ package net.mezzdev.config.gui;
 import net.mezzdev.config.api.files.IConfigManager;
 import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigScreenFactory;
-import net.mezzdev.config.gui.api.IConfigScreenConfig;
 import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryRegistry;
 import net.mezzdev.config.gui.screenlist.ConfigScreenListScreen;
 import net.mezzdev.config.gui.screenlist.ConfigScreenOwnerMetadataProvider;
@@ -24,14 +23,14 @@ public final class ConfigGui {
 	 * Create config screen factories from discovered config GUI plugins.
 	 */
 	public static Map<String, IConfigScreenFactory> createScreenFactories(List<? extends IConfigGuiPlugin> plugins) {
-		return createScreenFactories(List.of(), plugins);
+		return createScreenFactoriesFromInternalConfigs(List.of(), plugins);
 	}
 
 	/**
 	 * Create a config screen factory registry from discovered config GUI plugins.
 	 */
 	public static ConfigScreenFactoryRegistry createScreenFactoryRegistry(List<? extends IConfigGuiPlugin> plugins) {
-		return createScreenFactoryRegistry(List.of(), plugins);
+		return createScreenFactoryRegistryFromInternalConfigs(List.of(), plugins);
 	}
 
 	/**
@@ -56,26 +55,6 @@ public final class ConfigGui {
 			plugins,
 			false
 		);
-	}
-
-	/**
-	 * Create config screen factories from config screen metadata and discovered config GUI plugins.
-	 */
-	public static Map<String, IConfigScreenFactory> createScreenFactories(
-		Collection<? extends IConfigScreenConfig> configScreens,
-		List<? extends IConfigGuiPlugin> plugins
-	) {
-		return createScreenFactoryRegistry(configScreens, plugins).getFactories();
-	}
-
-	/**
-	 * Create a config screen factory registry from config screen metadata and discovered config GUI plugins.
-	 */
-	public static ConfigScreenFactoryRegistry createScreenFactoryRegistry(
-		Collection<? extends IConfigScreenConfig> configScreens,
-		List<? extends IConfigGuiPlugin> plugins
-	) {
-		return ConfigGuiPluginLoader.createScreenFactoryRegistry(configScreens, plugins);
 	}
 
 	/**

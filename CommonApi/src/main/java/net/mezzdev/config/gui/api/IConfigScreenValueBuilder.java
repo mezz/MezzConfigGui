@@ -2,12 +2,14 @@ package net.mezzdev.config.gui.api;
 
 import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IConfigValue;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Customizes one value in one config screen category.
  *
  * @since 0.1.0
  */
+@ApiStatus.NonExtendable
 public interface IConfigScreenValueBuilder {
 	/**
 	 * Set when this value's edits are saved.

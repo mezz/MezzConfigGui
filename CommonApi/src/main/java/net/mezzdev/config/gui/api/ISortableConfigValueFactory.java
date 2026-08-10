@@ -3,6 +3,7 @@ package net.mezzdev.config.gui.api;
 import net.mezzdev.config.api.sorting.ISortingConfig;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.minecraft.network.chat.Component;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Collection;
 import java.util.List;
@@ -20,6 +21,7 @@ import java.util.Map;
  *
  * @since 0.1.0
  */
+@ApiStatus.NonExtendable
 public interface ISortableConfigValueFactory {
 	/**
 	 * Create a config value for editing a runtime value list backed by a sorting config.
