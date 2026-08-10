@@ -6,6 +6,10 @@ import java.util.Objects;
 
 /**
  * Identifies the kind of editor a config screen should use for a config value.
+ * <p>
+ * Editor types are reference-identity tokens. Create one token for each UID and share that exact instance between the
+ * serializer and editor registration. Registering a different token with the same UID is rejected, preventing callers
+ * from associating incompatible generic value types with one logical editor type.
  *
  * @since 0.1.0
  */
@@ -47,23 +51,6 @@ public final class ConfigValueEditorType<T> {
 	 */
 	public ResourceLocation getUid() {
 		return uid;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (obj == this) {
-			return true;
-		}
-		if (obj == null || obj.getClass() != ConfigValueEditorType.class) {
-			return false;
-		}
-		ConfigValueEditorType<?> other = (ConfigValueEditorType<?>) obj;
-		return uid.equals(other.uid);
-	}
-
-	@Override
-	public int hashCode() {
-		return uid.hashCode();
 	}
 
 	@Override

@@ -30,6 +30,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.resources.ResourceLocation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -212,6 +213,7 @@ final class ConfigGuiPluginLoader {
 	private static final class ConfigGuiRegistration implements IConfigGuiRegistration {
 		private final String modId;
 		private final Map<ConfigValueEditorType<?>, IConfigValueEditorFactory<?>> valueEditorFactories = new LinkedHashMap<>();
+		private final Map<ResourceLocation, ConfigValueEditorType<?>> valueEditorTypesByUid = new LinkedHashMap<>();
 		private final List<Consumer<IConfigScreenBuilder>> screenCustomizers = new ArrayList<>();
 		@Nullable
 		private final ConfigScreenConfig configScreen;
@@ -226,12 +228,37 @@ final class ConfigGuiPluginLoader {
 		private ConfigGuiRegistration(String modId, @Nullable ConfigScreenConfig configScreen) {
 			this.modId = modId;
 			this.configScreen = configScreen;
+			registerBuiltInEditorTypes();
+		}
+
+		private void registerBuiltInEditorTypes() {
+			List.of(
+				ConfigValueEditorTypes.BOOLEAN,
+				ConfigValueEditorTypes.INTEGER,
+				ConfigValueEditorTypes.COLOR,
+				ConfigValueEditorTypes.getText(),
+				ConfigValueEditorTypes.getSelection(),
+				ConfigValueEditorTypes.getList(),
+				ConfigValueEditorTypes.getKeyMapping()
+			).forEach(editorType -> valueEditorTypesByUid.put(editorType.getUid(), editorType));
 		}
 
 		@Override
 		public <T> void registerValueEditor(ConfigValueEditorType<T> editorType, IConfigValueEditorFactory<T> editorFactory) {
 			ConfigValueEditorType<T> checkedEditorType = ErrorUtil.checkNotNull(editorType, "editorType");
 			IConfigValueEditorFactory<T> checkedEditorFactory = ErrorUtil.checkNotNull(editorFactory, "editorFactory");
+			ConfigValueEditorType<?> existingType = valueEditorTypesByUid.putIfAbsent(
+				checkedEditorType.getUid(),
+				checkedEditorType
+			);
+			if (existingType != null && existingType != checkedEditorType) {
+				LOGGER.error(
+					"Duplicate config value editor uid for mod id: {}, uid: {}. Reuse the same ConfigValueEditorType instance.",
+					modId,
+					checkedEditorType.getUid()
+				);
+				return;
+			}
 			IConfigValueEditorFactory<?> previous = valueEditorFactories.putIfAbsent(checkedEditorType, checkedEditorFactory);
 			if (previous != null) {
 				LOGGER.error("Duplicate config value editor for mod id: {}, editor type: {}", modId, checkedEditorType);

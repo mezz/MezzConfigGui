@@ -16,6 +16,7 @@ import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigGuiPlugin;
+import net.mezzdev.config.gui.api.IConfigGuiRegistration;
 import net.mezzdev.config.gui.api.IConfigScreenBuilder;
 import net.mezzdev.config.gui.api.IConfigScreenCategoryBuilder;
 import net.mezzdev.config.gui.api.IConfigScreenFactory;
@@ -44,11 +45,31 @@ import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigGuiPluginLoaderTest {
 	private static final String MOD_ID = "test_mod";
+
+	@Test
+	void editorTypesUseReferenceIdentityAndRejectDuplicateUids() throws ReflectiveOperationException {
+		ConfigValueEditorType<String> stringType = ConfigValueEditorType.create(MOD_ID, "shared");
+		ConfigValueEditorType<Integer> integerType = ConfigValueEditorType.create(MOD_ID, "shared");
+		assertNotEquals(stringType, integerType);
+
+		Class<?> registrationClass = Class.forName("net.mezzdev.config.gui.ConfigGuiPluginLoader$ConfigGuiRegistration");
+		var constructor = registrationClass.getDeclaredConstructor(String.class);
+		constructor.setAccessible(true);
+		IConfigGuiRegistration registration = (IConfigGuiRegistration) constructor.newInstance(MOD_ID);
+		registration.registerValueEditor(stringType, ignored -> null);
+		registration.registerValueEditor(integerType, ignored -> null);
+
+		Field factoriesField = registrationClass.getDeclaredField("valueEditorFactories");
+		factoriesField.setAccessible(true);
+		Map<?, ?> factories = (Map<?, ?>) factoriesField.get(registration);
+		assertEquals(1, factories.size());
+	}
 
 	@Test
 	void addsDefaultKeyMappingsCategoryAfterOriginalCategories() {
