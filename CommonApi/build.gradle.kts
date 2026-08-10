@@ -68,6 +68,7 @@ java {
         languageVersion.set(JavaLanguageVersion.of(modJavaVersion))
     }
     withSourcesJar()
+    withJavadocJar()
 }
 
 tasks.withType<JavaCompile> {
@@ -85,6 +86,7 @@ publishing {
             artifactId = base.archivesName.get()
             artifact(tasks.jar)
             artifact(tasks.named("sourcesJar"))
+            artifact(tasks.named("javadocJar"))
 
             val dependencyInfos = listOf(
                 mapOf(
