@@ -33,6 +33,10 @@ public interface ConfigPopupSelector {
 		return false;
 	}
 
+	default void onMouseReleased(double mouseX, double mouseY, int button) {
+
+	}
+
 	default boolean charTyped(char codePoint, int modifiers) {
 		return false;
 	}

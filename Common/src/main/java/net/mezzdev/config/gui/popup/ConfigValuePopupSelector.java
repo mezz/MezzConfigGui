@@ -85,9 +85,6 @@ public final class ConfigValuePopupSelector<T> implements ConfigPopupSelector {
 		int mouseButton = getMouseButton(input);
 		Rect2i popupArea = toRect2i(area);
 		Optional<T> clickedValue = popup.getClickedValue(popupArea, input.getMouseX(), input.getMouseY(), mouseButton);
-		if (!input.isSimulate()) {
-			popup.mouseReleased(popupArea, input.getMouseX(), input.getMouseY(), mouseButton);
-		}
 		if (clickedValue.isEmpty()) {
 			return false;
 		}
@@ -107,6 +104,11 @@ public final class ConfigValuePopupSelector<T> implements ConfigPopupSelector {
 		Optional<T> draggedValue = popup.getDraggedValue(toRect2i(area), mouseX, mouseY, button);
 		draggedValue.ifPresent(setter);
 		return draggedValue.isPresent();
+	}
+
+	@Override
+	public void onMouseReleased(double mouseX, double mouseY, int button) {
+		popup.mouseReleased(toRect2i(area), mouseX, mouseY, button);
 	}
 
 	@Override

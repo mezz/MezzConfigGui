@@ -35,8 +35,9 @@ class ConfigValueSelectorInputHandlerTest {
 		assertTrue(handler.handleMouseDragged(screen, 150, 50, 0, 100, 0).isPresent());
 		assertTrue(handler.handleUserInput(screen, mouseInput(150, 50, InputType.EXECUTE)).isPresent());
 
-		assertEquals(2, popup.clickCount);
+		assertEquals(1, popup.clickCount);
 		assertEquals(1, popup.dragCount);
+		assertEquals(1, popup.releaseCount);
 		assertEquals(0, closeCount.get());
 
 		assertTrue(handler.handleUserInput(screen, mouseInput(150, 50, InputType.SIMULATE)).isPresent());
@@ -51,6 +52,7 @@ class ConfigValueSelectorInputHandlerTest {
 	private static final class DraggingPopupSelector implements ConfigPopupSelector {
 		private int clickCount;
 		private int dragCount;
+		private int releaseCount;
 
 		@Override
 		public void updateBounds(ImmutableRect2i clipArea) {
@@ -93,6 +95,11 @@ class ConfigValueSelectorInputHandlerTest {
 		public boolean onMouseDragged(double mouseX, double mouseY, int button) {
 			dragCount++;
 			return true;
+		}
+
+		@Override
+		public void onMouseReleased(double mouseX, double mouseY, int button) {
+			releaseCount++;
 		}
 	}
 }

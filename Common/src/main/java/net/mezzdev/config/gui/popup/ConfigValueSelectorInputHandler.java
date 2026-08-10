@@ -44,13 +44,17 @@ public final class ConfigValueSelectorInputHandler implements ConfigInputHandler
 		valueSelector.updateBounds(clipArea);
 
 		if (valueSelectorWasDragged) {
-			valueSelector.onMouseClicked(input);
+			valueSelector.onMouseReleased(input.getMouseX(), input.getMouseY(), input.getKey().getValue());
 			valueSelectorWasDragged = false;
 			return Optional.of(this);
 		}
 
 		if (clipArea.contains(input.getMouseX(), input.getMouseY()) && valueSelector.isMouseOver(input.getMouseX(), input.getMouseY())) {
-			if (valueSelector.onMouseClicked(input)) {
+			boolean handled = valueSelector.onMouseClicked(input);
+			if (!input.isSimulate()) {
+				valueSelector.onMouseReleased(input.getMouseX(), input.getMouseY(), input.getKey().getValue());
+			}
+			if (handled) {
 				if (!input.isSimulate() && valueSelector.closesAfterClick()) {
 					closeValueSelector();
 					layoutUpdater.run();

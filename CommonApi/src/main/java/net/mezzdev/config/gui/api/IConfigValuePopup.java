@@ -141,7 +141,10 @@ public interface IConfigValuePopup<T> {
 	}
 
 	/**
-	 * Called after a mouse button is released over an active popup, including after a drag.
+	 * Called after a mouse button is released over an active popup, including after a handled drag.
+	 * <p>
+	 * Click selection is routed through {@link #getClickedValue(Rect2i, double, double, int)} separately. Releasing a
+	 * handled drag does not invoke {@code getClickedValue} again.
 	 *
 	 * @param area the popup bounds
 	 * @param mouseX the release x-coordinate

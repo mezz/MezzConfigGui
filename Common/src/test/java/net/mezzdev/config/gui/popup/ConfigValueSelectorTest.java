@@ -11,6 +11,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -63,6 +64,36 @@ class ConfigValueSelectorTest {
 		assertEquals("selected", selectedValue.get());
 	}
 
+	@Test
+	void dragReleaseDoesNotPerformASecondClickSelection() {
+		DragPopup popup = new DragPopup();
+		List<String> selectedValues = new ArrayList<>();
+		ConfigValuePopupSelector<String> selector = new ConfigValuePopupSelector<>(
+			new TestConfigValue(),
+			popup,
+			() -> new ImmutableRect2i(10, 10, 20, 20),
+			() -> false,
+			selectedValues::add
+		);
+		ImmutableRect2i clipArea = new ImmutableRect2i(0, 0, 100, 100);
+		ConfigValueSelectorInputHandler inputHandler = new ConfigValueSelectorInputHandler(
+			() -> selector,
+			() -> clipArea,
+			() -> {},
+			() -> {}
+		);
+
+		UserInput simulate = UserInput.fromVanilla(15.0, 35.0, 0, InputType.SIMULATE).orElseThrow();
+		UserInput execute = UserInput.fromVanilla(18.0, 38.0, 0, InputType.EXECUTE).orElseThrow();
+		assertTrue(inputHandler.handleUserInput(null, simulate).isPresent());
+		assertTrue(inputHandler.handleMouseDragged(null, 18.0, 38.0, 0, 3.0, 3.0).isPresent());
+		assertTrue(inputHandler.handleUserInput(null, execute).isPresent());
+
+		assertEquals(List.of("dragged"), selectedValues);
+		assertEquals(1, popup.clickedCount);
+		assertEquals(1, popup.releasedCount);
+	}
+
 	private static final class TestPopup implements IConfigValuePopup<String> {
 		private final AtomicInteger clickedButton;
 
@@ -94,6 +125,47 @@ class ConfigValueSelectorTest {
 		public Optional<String> getClickedValue(Rect2i area, double mouseX, double mouseY, int button) {
 			clickedButton.set(button);
 			return Optional.of("selected");
+		}
+	}
+
+	private static final class DragPopup implements IConfigValuePopup<String> {
+		private int clickedCount;
+		private int releasedCount;
+
+		@Override
+		public int getWidth() {
+			return 20;
+		}
+
+		@Override
+		public int getHeight() {
+			return 20;
+		}
+
+		@Override
+		public Optional<String> getHoveredValue(Rect2i area, double mouseX, double mouseY) {
+			return Optional.empty();
+		}
+
+		@Override
+		public void draw(GuiGraphics guiGraphics, Rect2i area, double mouseX, double mouseY) {
+
+		}
+
+		@Override
+		public Optional<String> getClickedValue(Rect2i area, double mouseX, double mouseY, int button) {
+			clickedCount++;
+			return Optional.of("clicked");
+		}
+
+		@Override
+		public Optional<String> getDraggedValue(Rect2i area, double mouseX, double mouseY, int button) {
+			return Optional.of("dragged");
+		}
+
+		@Override
+		public void mouseReleased(Rect2i area, double mouseX, double mouseY, int button) {
+			releasedCount++;
 		}
 	}
 
