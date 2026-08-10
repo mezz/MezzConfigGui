@@ -137,7 +137,13 @@ public abstract class ConfigEntryWidget<T> {
 	protected final IConfigScreenValue<T> configValue;
 	private final ConfigTextures textures;
 	private final Component fullName;
+	private final Consumer<Runnable> clientThreadDispatcher;
 	private T value;
+	private T lastKnownConfigValue;
+	private boolean subscribedToConfigValue;
+	private long configValueListenerGeneration;
+	@Nullable
+	private Runnable removeConfigValueListener;
 	private Consumer<AppliedConfigValueChange<?>> appliedChangeListener = change -> {};
 
 	protected List<FormattedCharSequence> nameLines = List.of();
@@ -147,10 +153,80 @@ public abstract class ConfigEntryWidget<T> {
 	private ImmutableRect2i resetArea = ImmutableRect2i.EMPTY;
 
 	protected ConfigEntryWidget(IConfigScreenValue<T> configValue, ConfigTextures textures) {
+		this(configValue, textures, ConfigEntryWidget::runOnClientThread);
+	}
+
+	protected ConfigEntryWidget(
+		IConfigScreenValue<T> configValue,
+		ConfigTextures textures,
+		Consumer<Runnable> clientThreadDispatcher
+	) {
 		this.configValue = configValue;
 		this.textures = textures;
+		this.clientThreadDispatcher = Objects.requireNonNull(clientThreadDispatcher, "clientThreadDispatcher");
 		this.fullName = StringUtil.stripStyling(ConfigValueLocalization.getName(configValue));
 		this.value = configValue.getValue();
+		this.lastKnownConfigValue = this.value;
+	}
+
+	public void subscribeToConfigValue() {
+		if (subscribedToConfigValue) {
+			return;
+		}
+		subscribedToConfigValue = true;
+		long listenerGeneration = ++configValueListenerGeneration;
+		onConfigValueChanged(configValue.getValue());
+		try {
+			removeConfigValueListener = Objects.requireNonNull(
+				configValue.addListener(newValue -> dispatchConfigValueChanged(listenerGeneration, newValue)),
+				"config value listener removal callback"
+			);
+		} catch (RuntimeException exception) {
+			subscribedToConfigValue = false;
+			configValueListenerGeneration++;
+			throw exception;
+		}
+		onConfigValueChanged(configValue.getValue());
+	}
+
+	public void unsubscribeFromConfigValue() {
+		if (!subscribedToConfigValue) {
+			return;
+		}
+		subscribedToConfigValue = false;
+		configValueListenerGeneration++;
+		Runnable removeConfigValueListener = this.removeConfigValueListener;
+		this.removeConfigValueListener = null;
+		if (removeConfigValueListener != null) {
+			removeConfigValueListener.run();
+		}
+	}
+
+	private void dispatchConfigValueChanged(long listenerGeneration, T newValue) {
+		clientThreadDispatcher.accept(() -> {
+			if (subscribedToConfigValue && configValueListenerGeneration == listenerGeneration) {
+				onConfigValueChanged(newValue);
+			}
+		});
+	}
+
+	private static void runOnClientThread(Runnable task) {
+		@Nullable
+		Minecraft minecraft = Minecraft.getInstance();
+		if (minecraft == null || minecraft.isSameThread()) {
+			task.run();
+		} else {
+			minecraft.execute(task);
+		}
+	}
+
+	private void onConfigValueChanged(T newValue) {
+		boolean hasPendingChange = !Objects.equals(value, lastKnownConfigValue);
+		lastKnownConfigValue = newValue;
+		if (!hasPendingChange && !Objects.equals(value, newValue)) {
+			value = newValue;
+			onValueChanged();
+		}
 	}
 
 	public int getHeight() {
@@ -318,7 +394,12 @@ public abstract class ConfigEntryWidget<T> {
 	}
 
 	public boolean hasPendingChange() {
-		return !value.equals(configValue.getValue());
+		T configValue = this.configValue.getValue();
+		if (Objects.equals(value, configValue)) {
+			lastKnownConfigValue = configValue;
+			return false;
+		}
+		return true;
 	}
 
 	public Optional<ConfigValueChange<T>> getPendingChange() {
@@ -357,7 +438,9 @@ public abstract class ConfigEntryWidget<T> {
 	}
 
 	public void discardPendingChange() {
-		setValue(configValue.getValue());
+		T configValue = this.configValue.getValue();
+		lastKnownConfigValue = configValue;
+		setValue(configValue);
 	}
 
 	public ConfigInfo getInfo() {
@@ -406,12 +489,15 @@ public abstract class ConfigEntryWidget<T> {
 		if (appliesImmediately()) {
 			T oldValue = configValue.getValue();
 			boolean changed = configValue.set(value);
-			if (!changed && !configValue.getValue().equals(value)) {
-				this.value = configValue.getValue();
+			T storedValue = configValue.getValue();
+			if (!changed && !storedValue.equals(value)) {
+				this.value = storedValue;
+				this.lastKnownConfigValue = storedValue;
 				return false;
 			}
+			this.lastKnownConfigValue = storedValue;
 			if (changed) {
-				appliedChangeListener.accept(new AppliedConfigValueChange<>(configValue, oldValue, configValue.getValue()));
+				appliedChangeListener.accept(new AppliedConfigValueChange<>(configValue, oldValue, storedValue));
 			}
 		}
 		onValueChanged();

@@ -209,6 +209,11 @@ public interface IConfigScreenValue<T> {
 
 	/**
 	 * Add a listener that is called with the new value when this config screen value changes.
+	 * <p>
+	 * Callbacks run synchronously on the thread applying or loading the change; implementations must not dispatch them
+	 * to another thread. Implementations must notify listeners for successful changes made through {@link #set(Object)}
+	 * and for external reload or change events exposed by their backing storage. The GUI subscribes while its screen is
+	 * active and dispatches callbacks to the Minecraft client thread before updating widgets.
 	 *
 	 * @return a callback that removes this listener
 	 *

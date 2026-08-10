@@ -329,6 +329,14 @@ public class ConfigScreen extends Screen {
 		if (ConfigGuiOptions.focusSearchOnOpen()) {
 			searchBox.setFocused(true);
 		}
+		controller.startListening();
+	}
+
+	@Override
+	public void removed() {
+		controller.stopListening();
+		closeValueSelector();
+		super.removed();
 	}
 
 	@Override

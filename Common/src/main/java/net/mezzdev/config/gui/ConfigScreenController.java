@@ -71,6 +71,16 @@ final class ConfigScreenController {
 			.anyMatch(ConfigEntryWidget::hasPendingChange);
 	}
 
+	public void startListening() {
+		model.getAllEntryWidgets()
+			.forEach(ConfigEntryWidget::subscribeToConfigValue);
+	}
+
+	public void stopListening() {
+		model.getAllEntryWidgets()
+			.forEach(ConfigEntryWidget::unsubscribeFromConfigValue);
+	}
+
 	public boolean hasUndoableChanges() {
 		return hasPendingChanges() || appliedChangeTracker.hasChanges();
 	}
