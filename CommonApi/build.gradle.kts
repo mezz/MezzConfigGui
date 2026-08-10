@@ -1,11 +1,22 @@
+import me.champeau.gradle.japicmp.JapicmpTask
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+
 plugins {
     id("idea")
     id("java")
     id("net.neoforged.moddev")
     id("maven-publish")
+    id("me.champeau.gradle.japicmp")
 }
 
 repositories {
+    maven {
+        name = "publicationValidation"
+        url = rootProject.layout.buildDirectory.dir("publication-validation").get().asFile.toURI()
+        content {
+            includeGroup("net.mezzdev.config")
+        }
+    }
     val deployDir = rootProject.findProperty("DEPLOY_DIR")
     if (deployDir != null) {
         maven(deployDir) {
@@ -35,6 +46,9 @@ val configModGroup: String by extra
 val modJavaVersion: String by extra
 val jetbrainsAnnotationsVersion: String by extra
 val mezzConfigApiDependency: String by rootProject.extra
+val apiBaselineVersion: String by extra
+val apiBaselineRequired: String by extra
+val requireApiBaseline = apiBaselineRequired.toBooleanStrict()
 
 group = configModGroup
 
@@ -63,6 +77,29 @@ dependencies {
 	compileOnly(mezzConfigApiDependency)
 }
 
+val apiBaseline by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+    isTransitive = true
+}
+
+dependencies {
+    apiBaseline("$group:$baseArchivesName:$apiBaselineVersion")
+}
+
+val apiBaselineClasspath = apiBaseline.incoming.artifactView {
+    isLenient = !requireApiBaseline
+}.files
+val apiBaselineArchives = apiBaseline.incoming.artifactView {
+    isLenient = !requireApiBaseline
+    componentFilter {
+        it is ModuleComponentIdentifier &&
+            it.group == project.group.toString() &&
+            it.module == baseArchivesName &&
+            it.version == apiBaselineVersion
+    }
+}.files
+
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(modJavaVersion))
@@ -78,6 +115,32 @@ tasks.withType<JavaCompile> {
             languageVersion.set(JavaLanguageVersion.of(modJavaVersion))
         }
     }
+}
+
+val apiCompatibilityCheck = tasks.register<JapicmpTask>("apiCompatibilityCheck") {
+    group = "verification"
+    description = "Checks CommonApi binary compatibility with the first released API baseline."
+    dependsOn(tasks.jar)
+
+    oldClasspath.from(apiBaselineClasspath)
+    oldArchives.from(apiBaselineArchives)
+    newClasspath.from(configurations.runtimeClasspath)
+    newArchives.from(tasks.jar)
+    onlyModified.set(true)
+    ignoreMissingClasses.set(true)
+    richReport {
+        title.set("MezzConfig GUI CommonApi compatibility")
+        description.set("Binary compatibility against CommonApi $apiBaselineVersion.")
+        destinationDir.set(layout.buildDirectory.dir("reports/api-compatibility"))
+        reportName.set("index.html")
+    }
+    onlyIf("CommonApi $apiBaselineVersion has been published") {
+        !oldArchives.isEmpty
+    }
+}
+
+tasks.check {
+    dependsOn(apiCompatibilityCheck)
 }
 
 publishing {
