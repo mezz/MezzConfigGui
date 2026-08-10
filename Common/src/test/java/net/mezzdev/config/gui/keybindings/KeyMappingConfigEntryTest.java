@@ -10,7 +10,6 @@ import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -191,7 +190,7 @@ class KeyMappingConfigEntryTest {
 		}
 
 		@Override
-		public Optional<Collection<KeyMappingValue>> getAllValidValues() {
+		public Optional<List<KeyMappingValue>> getAllValidValues() {
 			return Optional.empty();
 		}
 

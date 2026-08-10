@@ -245,10 +245,6 @@ class MezzConfigScreenSchemaTest {
 			return () -> {};
 		}
 
-		@Override
-		public void clearListeners() {
-
-		}
 	}
 
 	private record TestConfigManager(
@@ -401,7 +397,7 @@ class MezzConfigScreenSchemaTest {
 		}
 
 		@Override
-		public Optional<Collection<String>> getAllValidValues() {
+		public Optional<List<String>> getAllValidValues() {
 			return Optional.empty();
 		}
 

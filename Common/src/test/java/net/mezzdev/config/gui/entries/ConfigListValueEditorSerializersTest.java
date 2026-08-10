@@ -7,7 +7,6 @@ import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -70,7 +69,7 @@ class ConfigListValueEditorSerializersTest {
 		}
 
 		@Override
-		public Optional<Collection<List<String>>> getAllValidValues() {
+		public Optional<List<List<String>>> getAllValidValues() {
 			return Optional.empty();
 		}
 
@@ -97,7 +96,7 @@ class ConfigListValueEditorSerializersTest {
 		}
 
 		@Override
-		public Optional<Collection<String>> getAllValidValues() {
+		public Optional<List<String>> getAllValidValues() {
 			return Optional.empty();
 		}
 

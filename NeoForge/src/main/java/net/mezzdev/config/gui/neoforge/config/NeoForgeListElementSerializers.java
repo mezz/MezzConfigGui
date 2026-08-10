@@ -5,7 +5,6 @@ import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -121,7 +120,7 @@ final class NeoForgeListElementSerializers {
 		}
 
 		@Override
-		public Optional<Collection<String>> getAllValidValues() {
+		public Optional<List<String>> getAllValidValues() {
 			return Optional.empty();
 		}
 
@@ -156,7 +155,7 @@ final class NeoForgeListElementSerializers {
 		}
 
 		@Override
-		public Optional<Collection<Long>> getAllValidValues() {
+		public Optional<List<Long>> getAllValidValues() {
 			return Optional.empty();
 		}
 
@@ -194,7 +193,7 @@ final class NeoForgeListElementSerializers {
 		}
 
 		@Override
-		public Optional<Collection<Double>> getAllValidValues() {
+		public Optional<List<Double>> getAllValidValues() {
 			return Optional.empty();
 		}
 

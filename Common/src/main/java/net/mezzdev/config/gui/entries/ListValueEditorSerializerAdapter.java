@@ -8,7 +8,6 @@ import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigValueLocalizationProvider;
 import net.minecraft.network.chat.Component;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -53,7 +52,7 @@ final class ListValueEditorSerializerAdapter<T> implements IConfigListValueEdito
 	}
 
 	@Override
-	public Optional<Collection<List<T>>> getAllValidValues() {
+	public Optional<List<List<T>>> getAllValidValues() {
 		return listSerializer.getAllValidValues();
 	}
 

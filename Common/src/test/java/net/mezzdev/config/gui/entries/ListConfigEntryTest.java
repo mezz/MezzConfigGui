@@ -10,7 +10,6 @@ import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -100,7 +99,7 @@ class ListConfigEntryTest {
 
 	private static ListConfigEntry<String> createEntry(
 		boolean allowsRemovingValues,
-		Optional<Collection<String>> allValidValues
+		Optional<List<String>> allValidValues
 	) {
 		TestListSerializer serializer = new TestListSerializer(
 			allowsRemovingValues,
@@ -180,7 +179,7 @@ class ListConfigEntryTest {
 
 		private TestListSerializer(
 			boolean allowsRemovingValues,
-			Optional<Collection<String>> allValidValues,
+			Optional<List<String>> allValidValues,
 			ConfigListOrdering ordering
 		) {
 			this.allowsRemovingValues = allowsRemovingValues;
@@ -204,7 +203,7 @@ class ListConfigEntryTest {
 		}
 
 		@Override
-		public Optional<Collection<List<String>>> getAllValidValues() {
+		public Optional<List<List<String>>> getAllValidValues() {
 			return Optional.empty();
 		}
 
@@ -235,9 +234,9 @@ class ListConfigEntryTest {
 	}
 
 	private static final class TestElementSerializer implements IConfigValueSerializer<String> {
-		private final Optional<Collection<String>> allValidValues;
+		private final Optional<List<String>> allValidValues;
 
-		private TestElementSerializer(Optional<Collection<String>> allValidValues) {
+		private TestElementSerializer(Optional<List<String>> allValidValues) {
 			this.allValidValues = allValidValues.map(List::copyOf);
 		}
 
@@ -257,7 +256,7 @@ class ListConfigEntryTest {
 		}
 
 		@Override
-		public Optional<Collection<String>> getAllValidValues() {
+		public Optional<List<String>> getAllValidValues() {
 			return allValidValues;
 		}
 

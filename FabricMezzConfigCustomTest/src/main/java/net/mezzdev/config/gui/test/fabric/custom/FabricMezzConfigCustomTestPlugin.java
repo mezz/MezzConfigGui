@@ -36,7 +36,6 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -216,7 +215,7 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 		}
 
 		@Override
-		public Optional<Collection<String>> getAllValidValues() {
+		public Optional<List<String>> getAllValidValues() {
 			return Optional.empty();
 		}
 
@@ -261,7 +260,7 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 		}
 
 		@Override
-		public Optional<Collection<TestColor>> getAllValidValues() {
+		public Optional<List<TestColor>> getAllValidValues() {
 			return Optional.of(List.of(TestColor.values()));
 		}
 
@@ -305,7 +304,7 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 		}
 
 		@Override
-		public Optional<Collection<CombinedEnabled>> getAllValidValues() {
+		public Optional<List<CombinedEnabled>> getAllValidValues() {
 			return Optional.of(List.of(CombinedEnabled.values()));
 		}
 
@@ -349,7 +348,7 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 		}
 
 		@Override
-		public Optional<Collection<TestMode>> getAllValidValues() {
+		public Optional<List<TestMode>> getAllValidValues() {
 			return Optional.of(List.of(TestMode.values()));
 		}
 
@@ -392,7 +391,7 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 				.map(ModeSerializer.INSTANCE::deserialize)
 				.<TestMode>mapMulti((result, consumer) -> {
 					result.getResult().ifPresent(consumer);
-					errors.addAll(result.getErrors());
+					errors.addAll(result.getDiagnostics());
 				})
 				.toList();
 			if (!errors.isEmpty()) {
@@ -407,7 +406,7 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 		}
 
 		@Override
-		public Optional<Collection<List<TestMode>>> getAllValidValues() {
+		public Optional<List<List<TestMode>>> getAllValidValues() {
 			return Optional.empty();
 		}
 

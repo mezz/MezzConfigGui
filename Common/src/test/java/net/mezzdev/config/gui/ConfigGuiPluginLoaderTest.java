@@ -1201,7 +1201,7 @@ class ConfigGuiPluginLoaderTest {
 		}
 
 		@Override
-		public Optional<Collection<String>> getAllValidValues() {
+		public Optional<List<String>> getAllValidValues() {
 			return Optional.empty();
 		}
 

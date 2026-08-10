@@ -56,7 +56,7 @@ final class KeyValueElementSerializerAdapter<T> {
 
 	private static Optional<Object> deserialize(IConfigValueSerializer<Object> serializer, String serializedValue) {
 		IDeserializeResult<Object> result = serializer.deserialize(serializedValue);
-		if (!result.getErrors().isEmpty()) {
+		if (!result.getDiagnostics().isEmpty()) {
 			return Optional.empty();
 		}
 		return result.getResult()

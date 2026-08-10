@@ -127,7 +127,7 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 	private ConfigInfo createInvalidValueInfo() {
 		IDeserializeResult<T> result = serializer.deserialize(editText);
 		List<Component> lines = new ArrayList<>();
-		for (String error : result.getErrors()) {
+		for (String error : result.getDiagnostics()) {
 			lines.add(Component.literal(error));
 		}
 		if (lines.isEmpty()) {
@@ -164,7 +164,7 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 
 	private Optional<T> getParsedEditValue() {
 		IDeserializeResult<T> result = serializer.deserialize(editText);
-		if (!result.getErrors().isEmpty()) {
+		if (!result.getDiagnostics().isEmpty()) {
 			return Optional.empty();
 		}
 		return result.getResult()

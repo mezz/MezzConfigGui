@@ -8,7 +8,6 @@ import net.mezzdev.config.gui.model.AppliedConfigValueChange;
 import net.mezzdev.config.gui.model.ConfigValueChange;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -134,7 +133,7 @@ class AppliedConfigChangeTrackerTest {
 		}
 
 		@Override
-		public Optional<Collection<String>> getAllValidValues() {
+		public Optional<List<String>> getAllValidValues() {
 			return Optional.empty();
 		}
 

@@ -108,10 +108,12 @@ class SortableConfigValueFactoryTest {
 		assertFalse(elementSerializer.isValid("third"));
 		IDeserializeResult<String> elementResult = elementSerializer.deserialize("third");
 		assertTrue(elementResult.getResult().isEmpty());
-		assertTrue(elementResult.getErrors().stream().anyMatch(error -> error.contains("third")));
+		assertTrue(elementResult.getDiagnostics().stream().anyMatch(error -> error.contains("third")));
 		IDeserializeResult<List<String>> listResult = listSerializer.deserialize("first, third");
-		assertTrue(listResult.getErrors().stream().anyMatch(error -> error.contains("third")));
-		assertFalse(configValue.set(List.of("first", "third")));
+		assertTrue(listResult.getDiagnostics().stream().anyMatch(error -> error.contains("third")));
+		IDeserializeResult<List<String>> allInvalidResult = listSerializer.deserialize("third");
+		assertTrue(allInvalidResult.getResult().isEmpty());
+		assertThrows(IllegalArgumentException.class, () -> configValue.set(List.of("first", "third")));
 		assertEquals(List.of(), sortingConfig.savedValues);
 	}
 
@@ -167,8 +169,8 @@ class SortableConfigValueFactoryTest {
 
 		IConfigValueSerializer<String> elementSerializer = getListSerializer(configValue).getElementSerializer();
 		assertFalse(elementSerializer.isValid("third"));
-		assertTrue(elementSerializer.deserialize("third").getErrors().stream().anyMatch(error -> error.contains("third")));
-		assertFalse(configValue.set(List.of("first", "third")));
+		assertTrue(elementSerializer.deserialize("third").getDiagnostics().stream().anyMatch(error -> error.contains("third")));
+		assertThrows(IllegalArgumentException.class, () -> configValue.set(List.of("first", "third")));
 		assertEquals(List.of(), sortingConfig.savedValues);
 	}
 
@@ -269,7 +271,7 @@ class SortableConfigValueFactoryTest {
 		}
 
 		@Override
-		public Optional<Collection<String>> getAllValidValues() {
+		public Optional<List<String>> getAllValidValues() {
 			return Optional.empty();
 		}
 

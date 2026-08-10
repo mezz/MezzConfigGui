@@ -10,7 +10,6 @@ import net.mezzdev.config.api.value.IConfigValueChangeListener;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 
 import java.lang.reflect.Field;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -143,7 +142,7 @@ public final class ConfigGuiOptionsTestUtil {
 		}
 
 		@Override
-		public Optional<Collection<T>> getAllValidValues() {
+		public Optional<List<T>> getAllValidValues() {
 			return Optional.empty();
 		}
 

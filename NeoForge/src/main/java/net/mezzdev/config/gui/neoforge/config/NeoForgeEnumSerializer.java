@@ -50,7 +50,7 @@ final class NeoForgeEnumSerializer<T extends Enum<T>> implements IConfigValueEdi
 	}
 
 	@Override
-	public Optional<Collection<T>> getAllValidValues() {
+	public Optional<List<T>> getAllValidValues() {
 		return Optional.of(validValues);
 	}
 

@@ -10,7 +10,6 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,7 +45,7 @@ final class NeoForgeBooleanSerializer implements IConfigValueEditorSerializer<Bo
 	}
 
 	@Override
-	public Optional<Collection<Boolean>> getAllValidValues() {
+	public Optional<List<Boolean>> getAllValidValues() {
 		return Optional.of(List.of(true, false));
 	}
 

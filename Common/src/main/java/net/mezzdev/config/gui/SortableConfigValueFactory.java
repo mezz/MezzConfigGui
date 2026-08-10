@@ -428,7 +428,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 				.map(valueSerializer::deserialize)
 				.<T>mapMulti((result, consumer) -> {
 					result.getResult().ifPresent(consumer);
-					errors.addAll(result.getErrors());
+					errors.addAll(result.getDiagnostics());
 				})
 				.toList();
 
@@ -436,7 +436,13 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 				errors.add("List values must not contain duplicates.");
 			}
 
-			return IDeserializeResult.of(results, errors);
+			if (errors.isEmpty()) {
+				return IDeserializeResult.success(results);
+			}
+			if (results.isEmpty()) {
+				return IDeserializeResult.failure(errors);
+			}
+			return IDeserializeResult.partialSuccess(results, errors);
 		}
 
 		@Override
@@ -446,7 +452,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		}
 
 		@Override
-		public Optional<Collection<List<T>>> getAllValidValues() {
+		public Optional<List<List<T>>> getAllValidValues() {
 			return Optional.empty();
 		}
 
@@ -511,7 +517,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 			IDeserializeResult<T> result = valueSerializer.deserialize(string);
 			Optional<T> value = result.getResult();
 			if (value.isPresent() && !isRuntimeValue(value.get())) {
-				List<String> errors = new ArrayList<>(result.getErrors());
+				List<String> errors = new ArrayList<>(result.getDiagnostics());
 				errors.add("Unknown value '%s'. Must be %s.".formatted(valueSerializer.serialize(value.get()), getValidValuesDescription()));
 				return IDeserializeResult.failure(errors);
 			}
@@ -524,7 +530,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		}
 
 		@Override
-		public Optional<Collection<T>> getAllValidValues() {
+		public Optional<List<T>> getAllValidValues() {
 			return Optional.of(validValues);
 		}
 
@@ -597,7 +603,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		}
 
 		@Override
-		public Optional<Collection<String>> getAllValidValues() {
+		public Optional<List<String>> getAllValidValues() {
 			return Optional.empty();
 		}
 

@@ -39,7 +39,6 @@ import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -126,7 +125,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		boolean configuredAllowsRemovingValues = !(listSerializer instanceof IConfigListValueEditorOptions editorOptions) ||
 			editorOptions.allowsRemovingValues();
 		this.allowsRemovingValues = configuredAllowsRemovingValues || keyValueSerializer != null;
-		Optional<Collection<T>> allValidValues = elementSerializer.getAllValidValues();
+		Optional<List<T>> allValidValues = elementSerializer.getAllValidValues();
 		this.allowsTypedInput = allowsRemovingValues && allValidValues.isEmpty();
 		this.allValidValues = allValidValues
 			.map(List::copyOf)
@@ -466,7 +465,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	private ConfigInfo createInvalidAddValueInfo() {
 		IDeserializeResult<T> result = elementSerializer.deserialize(addValueText);
 		List<Component> lines = new ArrayList<>();
-		for (String error : result.getErrors()) {
+		for (String error : result.getDiagnostics()) {
 			lines.add(Component.literal(error));
 		}
 		if (lines.isEmpty()) {
@@ -676,7 +675,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			return Optional.empty();
 		}
 		IDeserializeResult<T> result = elementSerializer.deserialize(addValueText);
-		if (!result.getErrors().isEmpty()) {
+		if (!result.getDiagnostics().isEmpty()) {
 			return Optional.empty();
 		}
 		return result.getResult()
@@ -769,7 +768,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		if (component instanceof PackedColor color) {
 			return (IConfigValuePopup<Object>) (IConfigValuePopup<?>) new ColorPickerPopup(color, focusHexInput);
 		}
-		Optional<Collection<Object>> allValidValues = componentConfigValue.getSerializer().getAllValidValues();
+		Optional<List<Object>> allValidValues = componentConfigValue.getSerializer().getAllValidValues();
 		if (allValidValues.isPresent()) {
 			ConfigValueSelector<Object> selector = new ConfigValueSelector<>(
 				componentConfigValue,

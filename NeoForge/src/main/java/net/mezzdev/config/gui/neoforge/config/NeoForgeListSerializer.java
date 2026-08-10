@@ -7,7 +7,6 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -57,11 +56,17 @@ final class NeoForgeListSerializer<T> implements IConfigListValueSerializer<T> {
 			.map(elementSerializer::deserialize)
 			.<T>mapMulti((result, consumer) -> {
 				result.getResult().ifPresent(consumer);
-				errors.addAll(result.getErrors());
+				errors.addAll(result.getDiagnostics());
 			})
 			.toList();
 
-		return IDeserializeResult.of(results, errors);
+		if (errors.isEmpty()) {
+			return IDeserializeResult.success(results);
+		}
+		if (results.isEmpty()) {
+			return IDeserializeResult.failure(errors);
+		}
+		return IDeserializeResult.partialSuccess(results, errors);
 	}
 
 	@Override
@@ -101,7 +106,7 @@ final class NeoForgeListSerializer<T> implements IConfigListValueSerializer<T> {
 	}
 
 	@Override
-	public Optional<Collection<List<T>>> getAllValidValues() {
+	public Optional<List<List<T>>> getAllValidValues() {
 		return Optional.empty();
 	}
 

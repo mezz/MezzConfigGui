@@ -6,7 +6,7 @@ import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 abstract class NeoForgeTextSerializer<T> implements IConfigValueEditorSerializer<T> {
@@ -31,7 +31,7 @@ abstract class NeoForgeTextSerializer<T> implements IConfigValueEditorSerializer
 	}
 
 	@Override
-	public Optional<Collection<T>> getAllValidValues() {
+	public Optional<List<T>> getAllValidValues() {
 		return Optional.empty();
 	}
 

@@ -140,7 +140,7 @@ public final class FabricMezzConfigDefaultsTestPlugin implements IConfigPlugin, 
 				return IDeserializeResult.failure("Named colors must contain a name and RGB color separated by ':'");
 			}
 			IDeserializeResult<PackedColor> colorResult = RgbColorSerializer.INSTANCE.deserialize(parts[1]);
-			if (!colorResult.getErrors().isEmpty()) {
+			if (!colorResult.getDiagnostics().isEmpty()) {
 				return IDeserializeResult.failure("Named colors must contain an RGB color");
 			}
 			return colorResult.getResult()

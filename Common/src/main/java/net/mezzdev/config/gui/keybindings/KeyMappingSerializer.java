@@ -7,7 +7,7 @@ import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.minecraft.network.chat.Component;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -50,7 +50,7 @@ final class KeyMappingSerializer implements IConfigValueEditorSerializer<KeyMapp
 	}
 
 	@Override
-	public Optional<Collection<KeyMappingValue>> getAllValidValues() {
+	public Optional<List<KeyMappingValue>> getAllValidValues() {
 		return Optional.empty();
 	}
 
