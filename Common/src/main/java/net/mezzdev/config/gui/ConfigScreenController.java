@@ -85,7 +85,7 @@ final class ConfigScreenController {
 		return hasPendingChanges() || appliedChangeTracker.hasChanges();
 	}
 
-	public void recordAppliedChange(AppliedConfigValueChange<?> change) {
+	private void recordAppliedChange(AppliedConfigValueChange<?> change) {
 		appliedChangeTracker.add(change);
 	}
 
@@ -99,6 +99,13 @@ final class ConfigScreenController {
 		recordAppliedChanges(result.appliedChanges());
 		updateContentLayout();
 		return result;
+	}
+
+	public boolean applyImmediateChange(ConfigValueChange<?> change) {
+		ConfigChangesResult result = changesHandler.applyChanges(List.of(change));
+		recordAppliedChanges(result.appliedChanges());
+		updateContentLayout();
+		return result.succeeded();
 	}
 
 	private void recordAppliedChanges(List<AppliedConfigValueChange<?>> changes) {

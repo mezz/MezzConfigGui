@@ -202,6 +202,7 @@ public interface IConfigScreenValue<T> {
 	 * @param value the new value
 	 * @return {@code true} when the stored value changed, or {@code false} when the value was valid but unchanged
 	 * @throws IllegalArgumentException when the value is invalid
+	 * @throws RuntimeException when the value cannot be stored or saved
 	 *
 	 * @since 0.1.0
 	 */

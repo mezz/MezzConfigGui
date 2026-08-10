@@ -192,7 +192,7 @@ public class ConfigScreen extends Screen {
 		ConfigEntryWidget<?> entryWidget = entryWidgetsByValueKey.get(identityKey);
 		if (entryWidget == null) {
 			entryWidget = entryWidgetFactory.create(configValue);
-			entryWidget.setAppliedChangeListener(controller::recordAppliedChange);
+			entryWidget.setImmediateChangeHandler(controller::applyImmediateChange);
 			entryWidgetsByValueKey.put(identityKey, entryWidget);
 			allEntryWidgets.add(entryWidget);
 		}

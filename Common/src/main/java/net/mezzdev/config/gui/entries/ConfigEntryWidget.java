@@ -3,7 +3,6 @@ package net.mezzdev.config.gui.entries;
 import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
-import net.mezzdev.config.gui.model.AppliedConfigValueChange;
 import net.mezzdev.config.gui.model.ConfigValueChange;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.textures.ConfigTextures;
@@ -31,6 +30,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Base widget for one editable config value row, including reset and pending-change handling.
@@ -144,7 +144,7 @@ public abstract class ConfigEntryWidget<T> {
 	private long configValueListenerGeneration;
 	@Nullable
 	private Runnable removeConfigValueListener;
-	private Consumer<AppliedConfigValueChange<?>> appliedChangeListener = change -> {};
+	private Function<ConfigValueChange<?>, Boolean> immediateChangeHandler = change -> false;
 
 	protected List<FormattedCharSequence> nameLines = List.of();
 
@@ -282,8 +282,8 @@ public abstract class ConfigEntryWidget<T> {
 		return new EntryWidgetInputHandler();
 	}
 
-	public void setAppliedChangeListener(Consumer<AppliedConfigValueChange<?>> appliedChangeListener) {
-		this.appliedChangeListener = Objects.requireNonNull(appliedChangeListener, "appliedChangeListener");
+	public void setImmediateChangeHandler(Function<ConfigValueChange<?>, Boolean> immediateChangeHandler) {
+		this.immediateChangeHandler = Objects.requireNonNull(immediateChangeHandler, "immediateChangeHandler");
 	}
 
 	protected boolean onMouseClicked(UserInput input) {
@@ -485,21 +485,28 @@ public abstract class ConfigEntryWidget<T> {
 		if (!configValue.getSerializer().isValid(value) || this.value.equals(value)) {
 			return false;
 		}
-		this.value = value;
 		if (appliesImmediately()) {
-			T oldValue = configValue.getValue();
-			boolean changed = configValue.set(value);
-			T storedValue = configValue.getValue();
-			if (!changed && !storedValue.equals(value)) {
-				this.value = storedValue;
-				this.lastKnownConfigValue = storedValue;
+			T previousDisplayedValue = this.value;
+			boolean succeeded = immediateChangeHandler.apply(new ConfigValueChange<>(configValue, value));
+			if (!succeeded) {
+				boolean displayedValueChanged = !Objects.equals(this.value, previousDisplayedValue);
+				this.value = previousDisplayedValue;
+				this.lastKnownConfigValue = previousDisplayedValue;
+				if (displayedValueChanged) {
+					onValueChanged();
+				}
 				return false;
 			}
+			T storedValue = configValue.getValue();
 			this.lastKnownConfigValue = storedValue;
-			if (changed) {
-				appliedChangeListener.accept(new AppliedConfigValueChange<>(configValue, oldValue, storedValue));
+			boolean displayedValueChanged = !Objects.equals(this.value, storedValue);
+			this.value = storedValue;
+			if (displayedValueChanged) {
+				onValueChanged();
 			}
+			return Objects.equals(storedValue, value) && !Objects.equals(previousDisplayedValue, storedValue);
 		}
+		this.value = value;
 		onValueChanged();
 		return true;
 	}
