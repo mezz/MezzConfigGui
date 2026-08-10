@@ -74,16 +74,6 @@ class ConfigScreenValueWithApplyMode<T> implements IConfigScreenValue<T> {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		return configValue.equals(obj);
-	}
-
-	@Override
-	public int hashCode() {
-		return configValue.hashCode();
-	}
-
-	@Override
 	public String toString() {
 		return configValue.toString();
 	}

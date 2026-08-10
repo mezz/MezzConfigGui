@@ -652,6 +652,31 @@ class ConfigGuiPluginLoaderTest {
 	}
 
 	@Test
+	void decoratorsUseStableIdentityWithoutChangingEquals() {
+		TestConfigValue value = new TestConfigValue("enabled");
+		IConfigScreenValue<String> decoratedValue = IConfigScreenValue.withApplyMode(value, ConfigValueApplyMode.IMMEDIATE);
+		TestCategory originalCategory = new TestCategory("general", List.of(value));
+
+		List<ConfigScreenCategory> categories = createCategories(
+			List.of(originalCategory),
+			screenBuilder -> {
+				IConfigScreenCategoryBuilder categoryBuilder = screenBuilder.configureCategory("general");
+				categoryBuilder.addScreenValue(decoratedValue);
+				categoryBuilder.getScreenValueBuilder(decoratedValue)
+					.setRestartRequirement(ConfigValueRestartRequirement.WORLD_RESTART);
+			},
+			lookup -> List.of()
+		);
+
+		assertFalse(value.equals(decoratedValue));
+		assertFalse(decoratedValue.equals(value));
+		assertSame(value.getIdentityKey(), decoratedValue.getIdentityKey());
+		List<? extends IConfigScreenValue<?>> values = List.copyOf(categories.getFirst().getConfigValues());
+		assertEquals(1, values.size());
+		assertEquals(ConfigValueRestartRequirement.WORLD_RESTART, values.getFirst().getRestartRequirement());
+	}
+
+	@Test
 	void configValueChangesKeepTheStrongestRestartRequirement() {
 		IConfigScreenValue<String> worldRestartValue = IConfigScreenValue.withRestartRequirement(
 			new TestConfigValue("worldRestart"),

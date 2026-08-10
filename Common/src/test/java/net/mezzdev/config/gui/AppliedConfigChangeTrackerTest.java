@@ -2,6 +2,7 @@ package net.mezzdev.config.gui;
 
 import net.mezzdev.config.api.value.IDeserializeResult;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.model.AppliedConfigValueChange;
 import net.mezzdev.config.gui.model.ConfigValueChange;
@@ -52,6 +53,23 @@ class AppliedConfigChangeTrackerTest {
 		tracker.add(new AppliedConfigValueChange<>(secondValue, "first", "third"));
 
 		assertEquals(2, tracker.getUndoChanges().size());
+	}
+
+	@Test
+	void coalescesDecoratorsByStableIdentityKey() {
+		AppliedConfigChangeTracker tracker = new AppliedConfigChangeTracker();
+		TestConfigValue value = new TestConfigValue("first");
+		IConfigScreenValue<String> decoratedValue = IConfigScreenValue.withApplyMode(
+			value,
+			ConfigValueApplyMode.IMMEDIATE
+		);
+
+		tracker.add(new AppliedConfigValueChange<>(value, "first", "second"));
+		tracker.add(new AppliedConfigValueChange<>(decoratedValue, "second", "third"));
+
+		List<ConfigValueChange<?>> undoChanges = tracker.getUndoChanges();
+		assertEquals(1, undoChanges.size());
+		assertEquals("first", undoChanges.getFirst().value());
 	}
 
 	private static final class TestConfigValue implements IConfigScreenValue<String> {

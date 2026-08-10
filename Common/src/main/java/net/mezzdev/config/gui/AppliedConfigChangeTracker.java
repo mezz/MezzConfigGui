@@ -13,7 +13,7 @@ import java.util.Objects;
  * Tracks applied config changes so they can be undone in one batch.
  */
 final class AppliedConfigChangeTracker {
-	private final Map<IConfigScreenValue<?>, AppliedConfigValueChange<?>> changesByValue = new IdentityHashMap<>();
+	private final Map<Object, AppliedConfigValueChange<?>> changesByValueKey = new IdentityHashMap<>();
 
 	public void add(AppliedConfigValueChange<?> change) {
 		addTyped(change);
@@ -22,24 +22,25 @@ final class AppliedConfigChangeTracker {
 	@SuppressWarnings("unchecked")
 	private <T> void addTyped(AppliedConfigValueChange<T> change) {
 		IConfigScreenValue<T> configValue = change.configValue();
-		AppliedConfigValueChange<T> existing = (AppliedConfigValueChange<T>) changesByValue.get(configValue);
+		Object identityKey = configValue.getIdentityKey();
+		AppliedConfigValueChange<T> existing = (AppliedConfigValueChange<T>) changesByValueKey.get(identityKey);
 		T oldValue = change.oldValue();
 		if (existing != null) {
 			oldValue = existing.oldValue();
 		}
 		if (Objects.equals(oldValue, change.newValue())) {
-			changesByValue.remove(configValue);
+			changesByValueKey.remove(identityKey);
 			return;
 		}
-		changesByValue.put(configValue, new AppliedConfigValueChange<>(configValue, oldValue, change.newValue()));
+		changesByValueKey.put(identityKey, new AppliedConfigValueChange<>(configValue, oldValue, change.newValue()));
 	}
 
 	public boolean hasChanges() {
-		return !changesByValue.isEmpty();
+		return !changesByValueKey.isEmpty();
 	}
 
 	public List<ConfigValueChange<?>> getUndoChanges() {
-		return changesByValue.values()
+		return changesByValueKey.values()
 			.stream()
 			.<ConfigValueChange<?>>map(AppliedConfigValueChange::toUndoChange)
 			.toList();

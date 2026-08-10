@@ -35,8 +35,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -829,9 +831,7 @@ final class ConfigGuiPluginLoader {
 			return new ConfigScreenValueMatcher() {
 				@Override
 				public boolean matches(String categoryName, IConfigScreenValue<?> value) {
-					return value.getConfigValue()
-						.filter(configValue -> configValue == checkedConfigValue)
-						.isPresent();
+					return value.getIdentityKey() == checkedConfigValue;
 				}
 
 				@Override
@@ -843,10 +843,11 @@ final class ConfigGuiPluginLoader {
 
 		static ConfigScreenValueMatcher screenValue(IConfigScreenValue<?> configValue) {
 			IConfigScreenValue<?> checkedConfigValue = ErrorUtil.checkNotNull(configValue, "configValue");
+			Object identityKey = checkedConfigValue.getIdentityKey();
 			return new ConfigScreenValueMatcher() {
 				@Override
 				public boolean matches(String categoryName, IConfigScreenValue<?> value) {
-					return checkedConfigValue == value;
+					return value.getIdentityKey() == identityKey;
 				}
 
 				@Override
@@ -1093,15 +1094,15 @@ final class ConfigGuiPluginLoader {
 		ConfiguredScreenCategory configuredCategory
 	) {
 		List<IConfigScreenValue<?>> values = new ArrayList<>();
-		Set<IConfigScreenValue<?>> usedValues = new HashSet<>();
-		Set<IConfigScreenValue<?>> hiddenValues = getHiddenConfiguredValues(modId, resolvedCategories, configuredCategory);
+		Set<Object> usedValueKeys = createIdentitySet();
+		Set<Object> hiddenValueKeys = getHiddenConfiguredValueKeys(modId, resolvedCategories, configuredCategory);
 		ConfigScreenValueLookup lookup = new ConfigScreenValueLookup(modId, configuredCategory.name(), resolvedCategories);
 		if (!configuredCategory.clearDefaultValues()) {
-			addOriginalValues(configuredCategory, lookup, resolvedCategories, hiddenValues, usedValues, values);
+			addOriginalValues(configuredCategory, lookup, resolvedCategories, hiddenValueKeys, usedValueKeys, values);
 		}
 		for (ConfigScreenValueProvider valueProvider : configuredCategory.valueProviders()) {
 			for (IConfigScreenValue<?> configValue : valueProvider.getValues(lookup)) {
-				addConfiguredValue(usedValues, values, configValue);
+				addConfiguredValue(usedValueKeys, values, configValue);
 			}
 		}
 		values = applyConfiguredValueSettings(modId, configuredCategory, values);
@@ -1243,19 +1244,19 @@ final class ConfigGuiPluginLoader {
 		return configuredValue;
 	}
 
-	private static Set<IConfigScreenValue<?>> getHiddenConfiguredValues(
+	private static Set<Object> getHiddenConfiguredValueKeys(
 		String modId,
 		List<ResolvedScreenCategory> resolvedCategories,
 		ConfiguredScreenCategory configuredCategory
 	) {
-		Set<IConfigScreenValue<?>> hiddenValues = new HashSet<>();
+		Set<Object> hiddenValueKeys = createIdentitySet();
 		ConfigScreenValueLookup lookup = new ConfigScreenValueLookup(modId, configuredCategory.name(), resolvedCategories);
 		for (ConfigScreenValueProvider valueProvider : configuredCategory.hiddenValueProviders()) {
 			for (IConfigScreenValue<?> configValue : valueProvider.getValues(lookup)) {
-				hiddenValues.add(configValue);
+				hiddenValueKeys.add(configValue.getIdentityKey());
 			}
 		}
-		return hiddenValues;
+		return hiddenValueKeys;
 	}
 
 	private static Component getCategoryTitle(
@@ -1335,11 +1336,11 @@ final class ConfigGuiPluginLoader {
 	}
 
 	private static void addConfiguredValue(
-		Set<IConfigScreenValue<?>> usedValues,
+		Set<Object> usedValueKeys,
 		List<IConfigScreenValue<?>> values,
 		IConfigScreenValue<?> configValue
 	) {
-		if (!usedValues.add(configValue)) {
+		if (!usedValueKeys.add(configValue.getIdentityKey())) {
 			return;
 		}
 		values.add(configValue);
@@ -1349,8 +1350,8 @@ final class ConfigGuiPluginLoader {
 		ConfiguredScreenCategory configuredCategory,
 		ConfigScreenValueLookup lookup,
 		List<ResolvedScreenCategory> originalCategories,
-		Set<IConfigScreenValue<?>> hiddenValues,
-		Set<IConfigScreenValue<?>> usedValues,
+		Set<Object> hiddenValueKeys,
+		Set<Object> usedValueKeys,
 		List<IConfigScreenValue<?>> values
 	) {
 		for (ResolvedScreenCategory originalCategory : originalCategories) {
@@ -1358,11 +1359,11 @@ final class ConfigGuiPluginLoader {
 				continue;
 			}
 			for (IConfigScreenValue<?> value : originalCategory.values()) {
-				addInsertedValues(configuredCategory, lookup, value, ConfigScreenValueInsertionPosition.BEFORE, usedValues, values);
-				if (!hiddenValues.contains(value)) {
-					addConfiguredValue(usedValues, values, value);
+				addInsertedValues(configuredCategory, lookup, value, ConfigScreenValueInsertionPosition.BEFORE, usedValueKeys, values);
+				if (!hiddenValueKeys.contains(value.getIdentityKey())) {
+					addConfiguredValue(usedValueKeys, values, value);
 				}
-				addInsertedValues(configuredCategory, lookup, value, ConfigScreenValueInsertionPosition.AFTER, usedValues, values);
+				addInsertedValues(configuredCategory, lookup, value, ConfigScreenValueInsertionPosition.AFTER, usedValueKeys, values);
 			}
 		}
 	}
@@ -1372,7 +1373,7 @@ final class ConfigGuiPluginLoader {
 		ConfigScreenValueLookup lookup,
 		IConfigScreenValue<?> anchorValue,
 		ConfigScreenValueInsertionPosition position,
-		Set<IConfigScreenValue<?>> usedValues,
+		Set<Object> usedValueKeys,
 		List<IConfigScreenValue<?>> values
 	) {
 		for (ConfigScreenValueInsertion insertion : configuredCategory.valueInsertions()) {
@@ -1384,9 +1385,13 @@ final class ConfigGuiPluginLoader {
 				continue;
 			}
 			for (IConfigScreenValue<?> insertedValue : insertion.valueProvider().getValues(lookup)) {
-				addConfiguredValue(usedValues, values, insertedValue);
+				addConfiguredValue(usedValueKeys, values, insertedValue);
 			}
 		}
+	}
+
+	private static Set<Object> createIdentitySet() {
+		return Collections.newSetFromMap(new IdentityHashMap<>());
 	}
 
 	private static List<IConfigScreenValue<?>> getAllValues(List<ResolvedScreenCategory> screenCategories) {

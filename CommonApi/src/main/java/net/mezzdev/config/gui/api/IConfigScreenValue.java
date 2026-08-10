@@ -117,21 +117,8 @@ public interface IConfigScreenValue<T> {
 			}
 
 			@Override
-			public boolean equals(Object obj) {
-				if (this == obj) {
-					return true;
-				}
-				if (obj instanceof IConfigScreenValue<?> other) {
-					return other.getConfigValue()
-						.filter(configValue -> configValue == checkedConfigValue)
-						.isPresent();
-				}
-				return false;
-			}
-
-			@Override
-			public int hashCode() {
-				return System.identityHashCode(checkedConfigValue);
+			public Object getIdentityKey() {
+				return checkedConfigValue;
 			}
 
 			@Override
@@ -256,9 +243,7 @@ public interface IConfigScreenValue<T> {
 
 	/**
 	 * Get the backing MezzConfig value, if this screen value adapts one.
-	 * <p>
-	 * Platform-native values should leave this empty and provide their own identity through stable names or
-	 * platform-specific reference helpers.
+	 * Platform-native and screen-only values should leave this empty. Value matching uses {@link #getIdentityKey()}.
 	 *
 	 * @since 0.1.0
 	 */

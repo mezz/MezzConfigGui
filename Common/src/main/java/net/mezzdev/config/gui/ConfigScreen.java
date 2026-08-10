@@ -122,13 +122,13 @@ public class ConfigScreen extends Screen {
 			textures,
 			valueEditorFactories
 		);
-		Map<IConfigScreenValue<?>, ConfigEntryWidget<?>> entryWidgetsByValue = new IdentityHashMap<>();
+		Map<Object, ConfigEntryWidget<?>> entryWidgetsByValueKey = new IdentityHashMap<>();
 		List<ConfigEntryWidget<?>> allEntryWidgets = new ArrayList<>();
 		for (int i = 0; i < categories.size(); i++) {
 			ConfigScreenCategory category = categories.get(i);
 			List<ConfigEntryWidget<?>> entryWidgets = createEntryWidgets(
 				category,
-				entryWidgetsByValue,
+				entryWidgetsByValueKey,
 				allEntryWidgets,
 				entryWidgetFactory,
 				controller
@@ -165,14 +165,14 @@ public class ConfigScreen extends Screen {
 
 	private static List<ConfigEntryWidget<?>> createEntryWidgets(
 		ConfigScreenCategory category,
-		Map<IConfigScreenValue<?>, ConfigEntryWidget<?>> entryWidgetsByValue,
+		Map<Object, ConfigEntryWidget<?>> entryWidgetsByValueKey,
 		List<ConfigEntryWidget<?>> allEntryWidgets,
 		ConfigEntryWidgetFactory entryWidgetFactory,
 		ConfigScreenController controller
 	) {
 		List<ConfigEntryWidget<?>> entryWidgets = new ArrayList<>();
 		for (IConfigScreenValue<?> configValue : category.getConfigValues()) {
-			entryWidgets.add(getOrCreateEntryWidget(entryWidgetsByValue, allEntryWidgets, entryWidgetFactory, controller, configValue));
+			entryWidgets.add(getOrCreateEntryWidget(entryWidgetsByValueKey, allEntryWidgets, entryWidgetFactory, controller, configValue));
 		}
 		return entryWidgets;
 	}
@@ -182,17 +182,18 @@ public class ConfigScreen extends Screen {
 	}
 
 	private static ConfigEntryWidget<?> getOrCreateEntryWidget(
-		Map<IConfigScreenValue<?>, ConfigEntryWidget<?>> entryWidgetsByValue,
+		Map<Object, ConfigEntryWidget<?>> entryWidgetsByValueKey,
 		List<ConfigEntryWidget<?>> allEntryWidgets,
 		ConfigEntryWidgetFactory entryWidgetFactory,
 		ConfigScreenController controller,
 		IConfigScreenValue<?> configValue
 	) {
-		ConfigEntryWidget<?> entryWidget = entryWidgetsByValue.get(configValue);
+		Object identityKey = configValue.getIdentityKey();
+		ConfigEntryWidget<?> entryWidget = entryWidgetsByValueKey.get(identityKey);
 		if (entryWidget == null) {
 			entryWidget = entryWidgetFactory.create(configValue);
 			entryWidget.setAppliedChangeListener(controller::recordAppliedChange);
-			entryWidgetsByValue.put(configValue, entryWidget);
+			entryWidgetsByValueKey.put(identityKey, entryWidget);
 			allEntryWidgets.add(entryWidget);
 		}
 		return entryWidget;
