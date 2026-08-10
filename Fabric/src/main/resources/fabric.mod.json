@@ -3,7 +3,7 @@
   "id": "${configGuiModId}",
   "version": "${version}",
 
-  "name": "Mezz Config GUI",
+  "name": "MezzConfig GUI",
   "description": "Shared config GUI support for Minecraft mods.",
   "authors": [
     "${modAuthor}"

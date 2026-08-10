@@ -3,8 +3,8 @@
   "id": "mezz_config_gui_test_fabric_defaults",
   "version": "${version}",
 
-  "name": "Mezz Config GUI Fabric Defaults Test",
-  "description": "Default MezzConfig-backed config screen test for Mezz Config GUI on Fabric.",
+  "name": "MezzConfig GUI Fabric Defaults Test",
+  "description": "Default MezzConfig-backed config screen test for MezzConfig GUI on Fabric.",
   "authors": [
     "${modAuthor}"
   ],

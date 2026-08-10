@@ -6,7 +6,7 @@ license="The MIT License (MIT)"
 [[mods]]
 modId="${configGuiModId}"
 version="${version}"
-displayName="Mezz Config GUI"
+displayName="MezzConfig GUI"
 displayURL="${githubUrl}"
 logoFile="mezz_config_gui-icon.png"
 authors="${modAuthor}"

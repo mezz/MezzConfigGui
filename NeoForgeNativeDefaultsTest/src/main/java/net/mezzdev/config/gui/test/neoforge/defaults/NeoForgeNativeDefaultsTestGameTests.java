@@ -17,7 +17,7 @@ public final class NeoForgeNativeDefaultsTestGameTests {
 	@GameTest(templateNamespace = "minecraft", template = "bastion/blocks/air")
 	@PrefixGameTestTemplate(false)
 	public static void nativeDefaultConfigLoadsOnServer(GameTestHelper helper) {
-		helper.assertTrue(ModList.get().isLoaded(CONFIG_GUI_MOD_ID), "Mezz Config GUI must be loaded for the integrated GameTest run.");
+		helper.assertTrue(ModList.get().isLoaded(CONFIG_GUI_MOD_ID), "MezzConfig GUI must be loaded for the integrated GameTest run.");
 		helper.assertTrue(ModList.get().isLoaded(NeoForgeNativeDefaultsTestMod.MOD_ID), "NeoForge native defaults test mod must be loaded.");
 		helper.assertTrue(NeoForgeNativeDefaultsTestMod.COMMON_SPEC.isLoaded(), "Common native config spec must be loaded.");
 		helper.assertValueEqual(4096L, NeoForgeNativeDefaultsTestMod.CACHE_BUDGET.get(), "Native common long default must load.");

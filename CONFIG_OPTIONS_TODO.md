@@ -1,8 +1,8 @@
-# MezzConfigGui config options TODO
+# MezzConfig GUI config options TODO
 
 ## Planned options
 
-- [x] Add MezzConfigGui's own MezzConfig file and config screen.
+- [x] Add MezzConfig GUI's own MezzConfig file and config screen.
 - [x] GUI mode: `WINDOW` with a persisted resizable width and height, or `FULLSCREEN`.
 - [x] Row density: `COMFORTABLE`, `COMPACT`.
 - [x] Subtle horizontal row coloring.

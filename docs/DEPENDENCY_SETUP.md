@@ -1,6 +1,7 @@
 # Dependency Setup for Minecraft 1.21.1
 
-Compile only against the Mezz Config GUI API, then load the full artifact for your platform at runtime. This keeps implementation classes off your compile classpath and follows the same separation described in [JEI's dependency setup](https://github.com/mezz/JustEnoughItems/wiki/Getting-Started-%5BMinecraft-26.1.2-and-26.2%5D).
+Compile only against the MezzConfig GUI API, then load the full artifact for your platform at runtime.
+This keeps implementation classes off your compile classpath, to avoid having your mod depend on unstable internal classes that will change over time.
 
 The examples use Gradle Kotlin DSL. Set the versions in `gradle.properties`:
 
@@ -25,36 +26,6 @@ val mezzConfigGuiVersion: String by project
 val mezzConfigGuiApi =
     "net.mezzdev.config:mezz_config_gui-$minecraftVersion-config-gui-api:$mezzConfigGuiVersion"
 ```
-
-## Fabric Loom
-
-Use the API as a normal compile-only dependency. Load the remapped Fabric artifact as a mod at runtime:
-
-```kotlin
-dependencies {
-    compileOnly(mezzConfigGuiApi)
-    modRuntimeOnly(
-        "net.mezzdev.config:mezz_config_gui-$minecraftVersion-fabric:$mezzConfigGuiVersion"
-    )
-}
-```
-
-## ForgeGradle
-
-Pass both artifacts through ForgeGradle's deobfuscation helper:
-
-```kotlin
-dependencies {
-    compileOnly(fg.deobf(mezzConfigGuiApi))
-    runtimeOnly(
-        fg.deobf(
-            "net.mezzdev.config:mezz_config_gui-$minecraftVersion-forge:$mezzConfigGuiVersion"
-        )
-    )
-}
-```
-
-ModDevGradle's `legacyforge` plugin is not an alternative for this Minecraft version. Its [official support range](https://github.com/neoforged/ModDevGradle/blob/main/LEGACY.md) ends at Minecraft 1.20.1, so Forge 1.21.1 projects should use ForgeGradle.
 
 ## NeoForge with ModDevGradle
 
@@ -94,4 +65,30 @@ dependencies {
 }
 ```
 
-The platform runtime dependency brings in the loader-independent GUI implementation and matching MezzConfig platform artifact transitively. Do not add either implementation artifact to your compile classpath.
+## Fabric Loom
+
+Use the API as a normal compile-only dependency. Load the remapped Fabric artifact as a mod at runtime:
+
+```kotlin
+dependencies {
+    compileOnly(mezzConfigGuiApi)
+    modRuntimeOnly(
+        "net.mezzdev.config:mezz_config_gui-$minecraftVersion-fabric:$mezzConfigGuiVersion"
+    )
+}
+```
+
+## ForgeGradle
+
+Pass both artifacts through ForgeGradle's deobfuscation helper:
+
+```kotlin
+dependencies {
+    compileOnly(fg.deobf(mezzConfigGuiApi))
+    runtimeOnly(
+        fg.deobf(
+            "net.mezzdev.config:mezz_config_gui-$minecraftVersion-forge:$mezzConfigGuiVersion"
+        )
+    )
+}
+```

@@ -8,7 +8,7 @@ import net.mezzdev.config.gui.api.IConfigGuiRegistration;
 import net.minecraft.network.chat.Component;
 
 /**
- * Registers MezzConfigGui's own user-facing options.
+ * Registers MezzConfig GUI's own user-facing options.
  */
 @net.mezzdev.config.api.plugin.ConfigPlugin
 @ConfigGuiPlugin

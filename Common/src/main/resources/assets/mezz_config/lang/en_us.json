@@ -1,5 +1,5 @@
 {
-  "mezz_config.config.screen.title": "Mezz Config Options",
+  "mezz_config.config.screen.title": "MezzConfig Options",
   "mezz_config.config.screen.search": "find configs by name",
   "mezz_config.config.screen.search.info.title": "Search",
   "mezz_config.config.screen.search.info": "Filter config options by name.",
@@ -71,9 +71,9 @@
   "mezz_config.config.keyMapping.conflict.mod": "Mod: %s",
   "mezz_config.config.keyMapping.conflict.category": "Category: %s",
   "mezz_config.config.keyMapping.conflict.more": "And %s more...",
-  "mezz_config_gui.config.screen.title": "Mezz Config GUI Options",
+  "mezz_config_gui.config.screen.title": "MezzConfig GUI Options",
   "mezz_config_gui.config.appearance": "Appearance",
-  "mezz_config_gui.config.appearance.description": "Controls the size and density of MezzConfigGui screens.",
+  "mezz_config_gui.config.appearance.description": "Controls the size and density of MezzConfig GUI screens.",
   "mezz_config_gui.config.appearance.guiMode": "GUI Mode",
   "mezz_config_gui.config.appearance.guiMode.description": "Choose between a centered, resizable window and the full game window.",
   "mezz_config_gui.config.appearance.guiMode.window": "Window",

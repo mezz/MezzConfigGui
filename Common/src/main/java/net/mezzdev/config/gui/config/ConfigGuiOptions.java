@@ -10,7 +10,7 @@ import net.mezzdev.config.api.value.IConfigValue;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * User-configurable options for MezzConfigGui's own screen behavior.
+ * User-configurable options for MezzConfig GUI's own screen behavior.
  */
 public final class ConfigGuiOptions {
 	public static final String MOD_ID = "mezz_config_gui";
@@ -143,7 +143,7 @@ public final class ConfigGuiOptions {
 
 	public static IConfigSchema getSchema() {
 		if (schema == null) {
-			throw new IllegalStateException("MezzConfigGui options have not been registered yet.");
+			throw new IllegalStateException("MezzConfig GUI options have not been registered yet.");
 		}
 		return schema;
 	}

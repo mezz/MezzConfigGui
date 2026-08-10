@@ -163,7 +163,7 @@ loom {
 
         named("client") {
             client()
-            configName = "Mezz Config GUI Fabric Client"
+            configName = "MezzConfig GUI Fabric Client"
             ideConfigGenerated(true)
             runDir(loomRunDir.resolve("client").toString())
             vmArgs(
@@ -173,7 +173,7 @@ loom {
         }
         named("server") {
             server()
-            configName = "Mezz Config GUI Fabric Server"
+            configName = "MezzConfig GUI Fabric Server"
             ideConfigGenerated(true)
             runDir(loomRunDir.resolve("server").toString())
             vmArgs(

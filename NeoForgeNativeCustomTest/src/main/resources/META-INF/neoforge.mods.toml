@@ -6,12 +6,12 @@ license="The MIT License (MIT)"
 [[mods]]
 modId="mezz_config_gui_test_neoforge_custom"
 version="${version}"
-displayName="Mezz Config GUI NeoForge Native Custom Test"
+displayName="MezzConfig GUI NeoForge Native Custom Test"
 displayURL="${githubUrl}"
 displayTest="IGNORE_SERVER_VERSION"
 authors="${modAuthor}"
 description='''
-Customized native NeoForge config screen test for Mezz Config GUI.
+Customized native NeoForge config screen test for MezzConfig GUI.
 '''
 
 [[dependencies.mezz_config_gui_test_neoforge_custom]]
