@@ -2,6 +2,7 @@ package net.mezzdev.config.gui;
 
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.sorting.ISortingConfig;
+import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
@@ -447,38 +448,35 @@ final class ConfigGuiPluginLoader {
 		}
 
 		@Override
-		public IConfigScreenCategoryBuilder setValueRequiresRestart(IConfigValue<?> value) {
-			return setValueRequiresRestart(value, true);
-		}
-
-		@Override
-		public IConfigScreenCategoryBuilder setValueRequiresRestart(IConfigValue<?> value, boolean requiresRestart) {
+		public IConfigScreenCategoryBuilder setValueRestartRequirement(
+			IConfigValue<?> value,
+			ConfigValueRestartRequirement restartRequirement
+		) {
 			ConfigScreenValueMatcher valueMatcher = ConfigScreenValueMatcher.configValue(value);
-			restartRequirementOverrides.add(new ConfigScreenValueRestartRequirementOverride(valueMatcher, requiresRestart));
+			ConfigValueRestartRequirement checkedRestartRequirement = ErrorUtil.checkNotNull(restartRequirement, "restartRequirement");
+			restartRequirementOverrides.add(new ConfigScreenValueRestartRequirementOverride(valueMatcher, checkedRestartRequirement));
 			return this;
 		}
 
 		@Override
-		public IConfigScreenCategoryBuilder setScreenValueRequiresRestart(IConfigScreenValue<?> value) {
-			return setScreenValueRequiresRestart(value, true);
-		}
-
-		@Override
-		public IConfigScreenCategoryBuilder setScreenValueRequiresRestart(IConfigScreenValue<?> value, boolean requiresRestart) {
+		public IConfigScreenCategoryBuilder setScreenValueRestartRequirement(
+			IConfigScreenValue<?> value,
+			ConfigValueRestartRequirement restartRequirement
+		) {
 			ConfigScreenValueMatcher valueMatcher = ConfigScreenValueMatcher.screenValue(value);
-			restartRequirementOverrides.add(new ConfigScreenValueRestartRequirementOverride(valueMatcher, requiresRestart));
+			ConfigValueRestartRequirement checkedRestartRequirement = ErrorUtil.checkNotNull(restartRequirement, "restartRequirement");
+			restartRequirementOverrides.add(new ConfigScreenValueRestartRequirementOverride(valueMatcher, checkedRestartRequirement));
 			return this;
 		}
 
 		@Override
-		public IConfigScreenCategoryBuilder setValueRequiresRestartByName(String valueName) {
-			return setValueRequiresRestartByName(valueName, true);
-		}
-
-		@Override
-		public IConfigScreenCategoryBuilder setValueRequiresRestartByName(String valueName, boolean requiresRestart) {
+		public IConfigScreenCategoryBuilder setValueRestartRequirementByName(
+			String valueName,
+			ConfigValueRestartRequirement restartRequirement
+		) {
 			ConfigScreenValueMatcher valueMatcher = ConfigScreenValueMatcher.named(valueName);
-			restartRequirementOverrides.add(new ConfigScreenValueRestartRequirementOverride(valueMatcher, requiresRestart));
+			ConfigValueRestartRequirement checkedRestartRequirement = ErrorUtil.checkNotNull(restartRequirement, "restartRequirement");
+			restartRequirementOverrides.add(new ConfigScreenValueRestartRequirementOverride(valueMatcher, checkedRestartRequirement));
 			return this;
 		}
 
@@ -685,13 +683,9 @@ final class ConfigGuiPluginLoader {
 			}
 
 			@Override
-			public IConfigScreenValueBuilder setRequiresRestart() {
-				return setRequiresRestart(true);
-			}
-
-			@Override
-			public IConfigScreenValueBuilder setRequiresRestart(boolean requiresRestart) {
-				restartRequirementOverrides.add(new ConfigScreenValueRestartRequirementOverride(valueMatcher, requiresRestart));
+			public IConfigScreenValueBuilder setRestartRequirement(ConfigValueRestartRequirement restartRequirement) {
+				ConfigValueRestartRequirement checkedRestartRequirement = ErrorUtil.checkNotNull(restartRequirement, "restartRequirement");
+				restartRequirementOverrides.add(new ConfigScreenValueRestartRequirementOverride(valueMatcher, checkedRestartRequirement));
 				return this;
 			}
 
@@ -823,7 +817,7 @@ final class ConfigGuiPluginLoader {
 
 	private record ConfigScreenValueRestartRequirementOverride(
 		ConfigScreenValueMatcher valueMatcher,
-		boolean requiresRestart
+		ConfigValueRestartRequirement restartRequirement
 	) {
 
 	}
@@ -1149,8 +1143,8 @@ final class ConfigGuiPluginLoader {
 		List<IConfigScreenValue<?>> configuredValues = new ArrayList<>(values.size());
 		for (IConfigScreenValue<?> value : values) {
 			ConfigValueApplyMode applyMode = getConfiguredApplyMode(modId, configuredCategory, value, values);
-			boolean requiresRestart = getConfiguredRestartRequirement(modId, configuredCategory, value, values);
-			configuredValues.add(withValueSettings(value, applyMode, requiresRestart));
+			ConfigValueRestartRequirement restartRequirement = getConfiguredRestartRequirement(modId, configuredCategory, value, values);
+			configuredValues.add(withValueSettings(value, applyMode, restartRequirement));
 		}
 		return List.copyOf(configuredValues);
 	}
@@ -1176,21 +1170,21 @@ final class ConfigGuiPluginLoader {
 		return applyMode;
 	}
 
-	private static boolean getConfiguredRestartRequirement(
+	private static ConfigValueRestartRequirement getConfiguredRestartRequirement(
 		String modId,
 		ConfiguredScreenCategory configuredCategory,
 		IConfigScreenValue<?> value,
 		List<IConfigScreenValue<?>> values
 	) {
-		boolean requiresRestart = value.requiresRestart();
+		ConfigValueRestartRequirement restartRequirement = value.getRestartRequirement();
 		for (ConfigScreenValueRestartRequirementOverride restartRequirementOverride : configuredCategory.restartRequirementOverrides()) {
 			ConfigScreenValueMatcher valueMatcher = restartRequirementOverride.valueMatcher();
 			if (valueMatcher.matches(configuredCategory.name(), value)) {
 				validateRestartRequirementMatcher(modId, configuredCategory, valueMatcher, values);
-				requiresRestart = restartRequirementOverride.requiresRestart();
+				restartRequirement = restartRequirementOverride.restartRequirement();
 			}
 		}
-		return requiresRestart;
+		return restartRequirement;
 	}
 
 	private static void validateApplyModeMatcher(
@@ -1237,14 +1231,14 @@ final class ConfigGuiPluginLoader {
 	private static <T> IConfigScreenValue<T> withValueSettings(
 		IConfigScreenValue<T> value,
 		ConfigValueApplyMode applyMode,
-		boolean requiresRestart
+		ConfigValueRestartRequirement restartRequirement
 	) {
 		IConfigScreenValue<T> configuredValue = value;
 		if (applyMode != value.getApplyMode()) {
 			configuredValue = IConfigScreenValue.withApplyMode(configuredValue, applyMode);
 		}
-		if (requiresRestart != value.requiresRestart()) {
-			configuredValue = IConfigScreenValue.withRestartRequirement(configuredValue, requiresRestart);
+		if (restartRequirement != value.getRestartRequirement()) {
+			configuredValue = IConfigScreenValue.withRestartRequirement(configuredValue, restartRequirement);
 		}
 		return configuredValue;
 	}
@@ -1598,31 +1592,51 @@ final class ConfigGuiPluginLoader {
 		Component title
 	) {
 		return changes -> {
-			boolean requiresRestart = applyChanges(changes);
-			if (requiresRestart) {
-				notifyRestartDeferred(modId, title);
+			ConfigValueRestartRequirement restartRequirement = applyChanges(changes);
+			if (restartRequirement != ConfigValueRestartRequirement.NONE) {
+				notifyRestartDeferred(modId, title, restartRequirement);
 			}
-			return requiresRestart;
+			return restartRequirement != ConfigValueRestartRequirement.NONE;
 		};
 	}
 
-	private static boolean applyChanges(List<ConfigValueChange<?>> changes) {
-		boolean requiresRestart = false;
+	private static ConfigValueRestartRequirement applyChanges(List<ConfigValueChange<?>> changes) {
+		ConfigValueRestartRequirement restartRequirement = ConfigValueRestartRequirement.NONE;
 		for (ConfigValueChange<?> change : changes) {
-			if (change.apply()) {
-				requiresRestart |= change.configValue().requiresRestart();
+			if (!change.apply()) {
+				continue;
+			}
+			ConfigValueRestartRequirement changeRequirement = change.configValue().getRestartRequirement();
+			if (changeRequirement == ConfigValueRestartRequirement.GAME_RESTART) {
+				restartRequirement = changeRequirement;
+			} else if (changeRequirement == ConfigValueRestartRequirement.WORLD_RESTART &&
+				restartRequirement == ConfigValueRestartRequirement.NONE) {
+				restartRequirement = changeRequirement;
 			}
 		}
-		return requiresRestart;
+		return restartRequirement;
 	}
 
-	private static void notifyRestartDeferred(String modId, Component title) {
-		Component message = Component.translatable("mezz_config.config.screen.restart.nextGameStart", title);
+	private static void notifyRestartDeferred(
+		String modId,
+		Component title,
+		ConfigValueRestartRequirement restartRequirement
+	) {
+		String translationKey = switch (restartRequirement) {
+			case NONE -> throw new IllegalArgumentException("restartRequirement must require a restart.");
+			case WORLD_RESTART -> "mezz_config.config.screen.restart.nextWorldLoad";
+			case GAME_RESTART -> "mezz_config.config.screen.restart.nextGameStart";
+		};
+		Component message = Component.translatable(translationKey, title);
 		Minecraft minecraft = Minecraft.getInstance();
 		if (minecraft.player != null) {
 			minecraft.player.displayClientMessage(message, false);
 		}
-		LOGGER.info("Config changes for {} were saved and will be applied the next time the game is started.", modId);
+		if (restartRequirement == ConfigValueRestartRequirement.WORLD_RESTART) {
+			LOGGER.info("Config changes for {} were saved and will be applied the next time a world is opened.", modId);
+		} else {
+			LOGGER.info("Config changes for {} were saved and will be applied the next time the game is started.", modId);
+		}
 	}
 
 	private static void validateConfigScreenFactoryInputs(

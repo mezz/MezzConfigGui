@@ -8,6 +8,7 @@ import net.mezzdev.config.api.schema.IConfigCategoryBuilder;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.schema.IConfigSchemaBuilder;
 import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.api.ConfigValueEditorType;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.api.value.IConfigValue;
@@ -474,8 +475,8 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 		}
 
 		@Override
-		public boolean requiresRestart() {
-			return true;
+		public ConfigValueRestartRequirement getRestartRequirement() {
+			return ConfigValueRestartRequirement.GAME_RESTART;
 		}
 
 		@Override

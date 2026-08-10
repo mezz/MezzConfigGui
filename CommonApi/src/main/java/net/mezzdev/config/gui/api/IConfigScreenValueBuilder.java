@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.api;
 
+import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IConfigValue;
 
 /**
@@ -19,23 +20,14 @@ public interface IConfigScreenValueBuilder {
 	IConfigScreenValueBuilder setApplyMode(ConfigValueApplyMode applyMode);
 
 	/**
-	 * Mark this value as requiring a restart or larger reload after it is saved.
+	 * Set the restart or reload required after this value is saved.
 	 *
+	 * @param restartRequirement the required restart or reload
 	 * @return this builder
 	 *
 	 * @since 0.1.0
 	 */
-	IConfigScreenValueBuilder setRequiresRestart();
-
-	/**
-	 * Set whether this value requires a restart or larger reload after it is saved.
-	 *
-	 * @param requiresRestart true if saving this value requires a restart or larger reload
-	 * @return this builder
-	 *
-	 * @since 0.1.0
-	 */
-	IConfigScreenValueBuilder setRequiresRestart(boolean requiresRestart);
+	IConfigScreenValueBuilder setRestartRequirement(ConfigValueRestartRequirement restartRequirement);
 
 	/**
 	 * Hide this value from this category.

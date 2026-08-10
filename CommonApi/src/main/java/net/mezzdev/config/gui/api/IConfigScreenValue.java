@@ -31,7 +31,7 @@ public interface IConfigScreenValue<T> {
 		IConfigValue<T> checkedConfigValue = Objects.requireNonNull(configValue, "configValue");
 		ConfigValueEditMode editMode = Objects.requireNonNull(checkedConfigValue.getEditMode(), "configValue editMode");
 		ConfigValueRestartRequirement restartRequirement = Objects.requireNonNull(checkedConfigValue.getRestartRequirement(), "configValue restartRequirement");
-		return configValue(checkedConfigValue, getApplyMode(editMode), requiresRestart(restartRequirement));
+		return configValue(checkedConfigValue, getApplyMode(editMode), restartRequirement);
 	}
 
 	/**
@@ -42,20 +42,13 @@ public interface IConfigScreenValue<T> {
 	static <T> IConfigScreenValue<T> configValue(IConfigValue<T> configValue, ConfigValueApplyMode applyMode) {
 		IConfigValue<T> checkedConfigValue = Objects.requireNonNull(configValue, "configValue");
 		ConfigValueRestartRequirement restartRequirement = Objects.requireNonNull(checkedConfigValue.getRestartRequirement(), "configValue restartRequirement");
-		return configValue(checkedConfigValue, applyMode, requiresRestart(restartRequirement));
+		return configValue(checkedConfigValue, applyMode, restartRequirement);
 	}
 
 	private static ConfigValueApplyMode getApplyMode(ConfigValueEditMode editMode) {
 		return switch (editMode) {
 			case IMMEDIATE -> ConfigValueApplyMode.IMMEDIATE;
 			case BATCH -> ConfigValueApplyMode.ON_APPLY;
-		};
-	}
-
-	private static boolean requiresRestart(ConfigValueRestartRequirement restartRequirement) {
-		return switch (restartRequirement) {
-			case NONE -> false;
-			case WORLD_RESTART, GAME_RESTART -> true;
 		};
 	}
 
@@ -67,10 +60,11 @@ public interface IConfigScreenValue<T> {
 	static <T> IConfigScreenValue<T> configValue(
 		IConfigValue<T> configValue,
 		ConfigValueApplyMode applyMode,
-		boolean requiresRestart
+		ConfigValueRestartRequirement restartRequirement
 	) {
 		IConfigValue<T> checkedConfigValue = Objects.requireNonNull(configValue, "configValue");
 		ConfigValueApplyMode checkedApplyMode = Objects.requireNonNull(applyMode, "applyMode");
+		ConfigValueRestartRequirement checkedRestartRequirement = Objects.requireNonNull(restartRequirement, "restartRequirement");
 		return new IConfigScreenValue<>() {
 			@Override
 			public String getName() {
@@ -108,8 +102,8 @@ public interface IConfigScreenValue<T> {
 			}
 
 			@Override
-			public boolean requiresRestart() {
-				return requiresRestart;
+			public ConfigValueRestartRequirement getRestartRequirement() {
+				return checkedRestartRequirement;
 			}
 
 			@Override
@@ -162,16 +156,20 @@ public interface IConfigScreenValue<T> {
 	}
 
 	/**
-	 * Override whether this config screen value needs a restart or larger reload after it is saved.
+	 * Override the restart or reload required after this config screen value is saved.
 	 *
 	 * @since 0.1.0
 	 */
-	static <T> IConfigScreenValue<T> withRestartRequirement(IConfigScreenValue<T> configValue, boolean requiresRestart) {
+	static <T> IConfigScreenValue<T> withRestartRequirement(
+		IConfigScreenValue<T> configValue,
+		ConfigValueRestartRequirement restartRequirement
+	) {
 		IConfigScreenValue<T> checkedConfigValue = Objects.requireNonNull(configValue, "configValue");
+		ConfigValueRestartRequirement checkedRestartRequirement = Objects.requireNonNull(restartRequirement, "restartRequirement");
 		if (checkedConfigValue instanceof IConfigLocalizedValue localizedValue) {
-			return new ConfigScreenValueWithRestartRequirement.Localized<>(checkedConfigValue, requiresRestart, localizedValue);
+			return new ConfigScreenValueWithRestartRequirement.Localized<>(checkedConfigValue, checkedRestartRequirement, localizedValue);
 		}
-		return new ConfigScreenValueWithRestartRequirement<>(checkedConfigValue, requiresRestart);
+		return new ConfigScreenValueWithRestartRequirement<>(checkedConfigValue, checkedRestartRequirement);
 	}
 
 	/**
@@ -228,12 +226,25 @@ public interface IConfigScreenValue<T> {
 	}
 
 	/**
-	 * Return true if changes to this value need a restart or larger reload before they fully take effect.
+	 * Get the restart or reload required after this value is saved.
 	 *
 	 * @since 0.1.0
 	 */
-	default boolean requiresRestart() {
-		return false;
+	default ConfigValueRestartRequirement getRestartRequirement() {
+		return ConfigValueRestartRequirement.NONE;
+	}
+
+	/**
+	 * Get the reference-stable identity key used to match and deduplicate this value.
+	 * <p>
+	 * Keys are compared by reference, not with {@link Object#equals(Object)}. Decorators must return the wrapped
+	 * value's key. Values that share a key must represent the same logical value and type. The default gives direct
+	 * implementations identity for the lifetime of the object.
+	 *
+	 * @since 0.1.0
+	 */
+	default Object getIdentityKey() {
+		return this;
 	}
 
 	/**

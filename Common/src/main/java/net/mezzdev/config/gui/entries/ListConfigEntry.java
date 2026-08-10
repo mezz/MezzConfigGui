@@ -2,6 +2,7 @@ package net.mezzdev.config.gui.entries;
 
 import net.mezzdev.config.api.value.IDeserializeResult;
 import net.mezzdev.config.api.value.ConfigListOrdering;
+import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.api.value.PackedColor;
 import net.mezzdev.config.gui.ConfigInputHandler;
@@ -1834,8 +1835,8 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		}
 
 		@Override
-		public boolean requiresRestart() {
-			return configValue.requiresRestart();
+		public ConfigValueRestartRequirement getRestartRequirement() {
+			return configValue.getRestartRequirement();
 		}
 
 		@Override

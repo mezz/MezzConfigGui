@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui;
 
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
+import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.model.PendingConfigChange;
@@ -52,7 +53,7 @@ final class PendingChangesScreen extends Screen {
 
 	private final BooleanConsumer callback;
 	private final Runnable backAction;
-	private final boolean requiresRestart;
+	private final ConfigValueRestartRequirement restartRequirement;
 	private final List<PendingConfigChange> pendingChanges;
 	private int scrollOffset;
 	private ImmutableRect2i changeListArea = ImmutableRect2i.EMPTY;
@@ -61,13 +62,13 @@ final class PendingChangesScreen extends Screen {
 	public PendingChangesScreen(
 		BooleanConsumer callback,
 		Runnable backAction,
-		boolean requiresRestart,
+		ConfigValueRestartRequirement restartRequirement,
 		List<PendingConfigChange> pendingChanges
 	) {
 		super(Component.translatable("mezz_config.config.screen.pendingChanges.title"));
 		this.callback = callback;
 		this.backAction = backAction;
-		this.requiresRestart = requiresRestart;
+		this.restartRequirement = restartRequirement;
 		this.pendingChanges = List.copyOf(pendingChanges);
 	}
 
@@ -83,7 +84,7 @@ final class PendingChangesScreen extends Screen {
 				button -> callback.accept(true)
 			)
 			.bounds(x, actionButtonY, BUTTON_WIDTH, BUTTON_HEIGHT)
-			.tooltip(Tooltip.create(getApplyInfo(requiresRestart)))
+			.tooltip(Tooltip.create(getApplyInfo(restartRequirement)))
 			.build());
 		addRenderableWidget(Button.builder(
 				Component.translatable("mezz_config.config.screen.discard"),
@@ -115,7 +116,7 @@ final class PendingChangesScreen extends Screen {
 	@Nullable
 	private PendingConfigChange drawContent(GuiGraphics guiGraphics, int mouseX, int mouseY) {
 		ScreenLayout screenLayout = getScreenLayout();
-		Component message = getPendingChangesMessage(requiresRestart);
+		Component message = getPendingChangesMessage(restartRequirement);
 		List<FormattedCharSequence> messageLines = font.split(message, screenLayout.contentWidth());
 		int messageY = screenLayout.messageY();
 
@@ -293,7 +294,7 @@ final class PendingChangesScreen extends Screen {
 	private ScreenLayout getScreenLayout() {
 		int contentWidth = Math.min(CONTENT_MAX_WIDTH, Math.max(CONTENT_MIN_WIDTH, width - SCREEN_PADDING * 2));
 		int contentX = (width - contentWidth) / 2;
-		Component message = getPendingChangesMessage(requiresRestart);
+		Component message = getPendingChangesMessage(restartRequirement);
 		List<FormattedCharSequence> messageLines = font.split(message, contentWidth);
 		int messageHeight = messageLines.size() * font.lineHeight;
 		int headerHeight = font.lineHeight + TITLE_MESSAGE_GAP + messageHeight + MESSAGE_PANEL_GAP;
@@ -349,18 +350,20 @@ final class PendingChangesScreen extends Screen {
 		backAction.run();
 	}
 
-	private static Component getPendingChangesMessage(boolean requiresRestart) {
-		if (requiresRestart) {
-			return Component.translatable("mezz_config.config.screen.pendingChanges.restart.message");
-		}
-		return Component.translatable("mezz_config.config.screen.pendingChanges.message");
+	private static Component getPendingChangesMessage(ConfigValueRestartRequirement restartRequirement) {
+		return switch (restartRequirement) {
+			case NONE -> Component.translatable("mezz_config.config.screen.pendingChanges.message");
+			case WORLD_RESTART -> Component.translatable("mezz_config.config.screen.pendingChanges.worldRestart.message");
+			case GAME_RESTART -> Component.translatable("mezz_config.config.screen.pendingChanges.gameRestart.message");
+		};
 	}
 
-	private static Component getApplyInfo(boolean requiresRestart) {
-		if (requiresRestart) {
-			return Component.translatable("mezz_config.config.screen.apply.restart.info");
-		}
-		return Component.translatable("mezz_config.config.screen.apply.info");
+	private static Component getApplyInfo(ConfigValueRestartRequirement restartRequirement) {
+		return switch (restartRequirement) {
+			case NONE -> Component.translatable("mezz_config.config.screen.apply.info");
+			case WORLD_RESTART -> Component.translatable("mezz_config.config.screen.apply.worldRestart.info");
+			case GAME_RESTART -> Component.translatable("mezz_config.config.screen.apply.gameRestart.info");
+		};
 	}
 
 	private record ScreenLayout(

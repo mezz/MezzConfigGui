@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.entries;
 
+import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.model.AppliedConfigValueChange;
@@ -419,7 +420,7 @@ public abstract class ConfigEntryWidget<T> {
 
 	private boolean appliesImmediately() {
 		return configValue.getApplyMode() == ConfigValueApplyMode.IMMEDIATE &&
-			!configValue.requiresRestart();
+			configValue.getRestartRequirement() == ConfigValueRestartRequirement.NONE;
 	}
 
 	protected void onValueChanged() {

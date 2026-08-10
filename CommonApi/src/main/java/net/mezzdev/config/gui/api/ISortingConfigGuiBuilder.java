@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.api;
 
+import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.minecraft.network.chat.Component;
 
 import java.util.Map;
@@ -25,14 +26,14 @@ public interface ISortingConfigGuiBuilder<T> {
 	ISortingConfigGuiBuilder<T> setApplyMode(ConfigValueApplyMode applyMode);
 
 	/**
-	 * Set whether saving this sort-order value requires a restart or larger reload.
+	 * Set the restart or reload required after this sort-order value is saved.
 	 *
-	 * @param requiresRestart true if saving this sort-order value requires a restart or larger reload
+	 * @param restartRequirement the required restart or reload
 	 * @return this builder
 	 *
 	 * @since 0.1.0
 	 */
-	ISortingConfigGuiBuilder<T> setRequiresRestart(boolean requiresRestart);
+	ISortingConfigGuiBuilder<T> setRestartRequirement(ConfigValueRestartRequirement restartRequirement);
 
 	/**
 	 * Set display names for sortable values.

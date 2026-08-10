@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.model;
 
+import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 
 import java.util.List;
@@ -11,10 +12,18 @@ public record ConfigValueChange<T>(
 	IConfigScreenValue<T> configValue,
 	T value
 ) {
-	public static boolean requiresRestart(List<ConfigValueChange<?>> changes) {
-		return changes.stream()
-			.map(ConfigValueChange::configValue)
-			.anyMatch(IConfigScreenValue::requiresRestart);
+	public static ConfigValueRestartRequirement getRestartRequirement(List<ConfigValueChange<?>> changes) {
+		ConfigValueRestartRequirement result = ConfigValueRestartRequirement.NONE;
+		for (ConfigValueChange<?> change : changes) {
+			ConfigValueRestartRequirement restartRequirement = change.configValue().getRestartRequirement();
+			if (restartRequirement == ConfigValueRestartRequirement.GAME_RESTART) {
+				return restartRequirement;
+			}
+			if (restartRequirement == ConfigValueRestartRequirement.WORLD_RESTART) {
+				result = restartRequirement;
+			}
+		}
+		return result;
 	}
 
 	public boolean apply() {

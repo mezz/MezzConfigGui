@@ -24,6 +24,7 @@ import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigValueIcon;
 import net.mezzdev.config.gui.api.IConfigValueIconProvider;
 import net.mezzdev.config.gui.config.ConfigGuiOptionsTestUtil;
+import net.mezzdev.config.gui.model.ConfigValueChange;
 import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryRegistry;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.network.chat.Component;
@@ -294,7 +295,7 @@ class ConfigGuiPluginLoaderTest {
 		);
 		IConfigScreenValue<?> insertedValue = valueByName(category, "alignment");
 		assertEquals(ConfigValueApplyMode.ON_APPLY, insertedValue.getApplyMode());
-		assertFalse(insertedValue.requiresRestart());
+		assertEquals(ConfigValueRestartRequirement.NONE, insertedValue.getRestartRequirement());
 	}
 
 	@Test
@@ -315,7 +316,7 @@ class ConfigGuiPluginLoaderTest {
 				.setValueDescriptions(Map.of("first", Component.literal("First description")))
 				.setValueIcons(Map.of("first", firstIcon))
 				.setApplyMode(ConfigValueApplyMode.IMMEDIATE)
-				.setRequiresRestart(true),
+				.setRestartRequirement(ConfigValueRestartRequirement.WORLD_RESTART),
 			lookup -> List.of()
 		);
 
@@ -325,7 +326,7 @@ class ConfigGuiPluginLoaderTest {
 		assertEquals(List.of("first", "second"), value.getDefaultValue());
 		assertEquals(List.of("first", "second"), value.getValue());
 		assertEquals(ConfigValueApplyMode.IMMEDIATE, value.getApplyMode());
-		assertTrue(value.requiresRestart());
+		assertEquals(ConfigValueRestartRequirement.WORLD_RESTART, value.getRestartRequirement());
 
 		IConfigListValueEditorSerializer<String> listSerializer = getStringListSerializer(value);
 		assertEquals(List.of("first", "second"), List.copyOf(listSerializer.getElementSerializer().getAllValidValues().orElseThrow()));
@@ -641,13 +642,37 @@ class ConfigGuiPluginLoaderTest {
 			List.of(originalCategory),
 			screenBuilder -> screenBuilder.configureCategory("general")
 				.getScreenValueBuilder(restartValue)
-				.setRequiresRestart(),
+				.setRestartRequirement(ConfigValueRestartRequirement.WORLD_RESTART),
 			lookup -> List.of()
 		);
 
 		List<? extends IConfigScreenValue<?>> values = List.copyOf(categories.getFirst().getConfigValues());
-		assertFalse(values.get(0).requiresRestart());
-		assertTrue(values.get(1).requiresRestart());
+		assertEquals(ConfigValueRestartRequirement.NONE, values.get(0).getRestartRequirement());
+		assertEquals(ConfigValueRestartRequirement.WORLD_RESTART, values.get(1).getRestartRequirement());
+	}
+
+	@Test
+	void configValueChangesKeepTheStrongestRestartRequirement() {
+		IConfigScreenValue<String> worldRestartValue = IConfigScreenValue.withRestartRequirement(
+			new TestConfigValue("worldRestart"),
+			ConfigValueRestartRequirement.WORLD_RESTART
+		);
+		IConfigScreenValue<String> gameRestartValue = IConfigScreenValue.withRestartRequirement(
+			new TestConfigValue("gameRestart"),
+			ConfigValueRestartRequirement.GAME_RESTART
+		);
+
+		assertEquals(
+			ConfigValueRestartRequirement.WORLD_RESTART,
+			ConfigValueChange.getRestartRequirement(List.of(new ConfigValueChange<>(worldRestartValue, "changed")))
+		);
+		assertEquals(
+			ConfigValueRestartRequirement.GAME_RESTART,
+			ConfigValueChange.getRestartRequirement(List.of(
+				new ConfigValueChange<>(worldRestartValue, "changed"),
+				new ConfigValueChange<>(gameRestartValue, "changed")
+			))
+		);
 	}
 
 	@Test
@@ -661,13 +686,13 @@ class ConfigGuiPluginLoaderTest {
 			screenBuilder -> screenBuilder.configureCategory("general")
 				.getValueBuilder(backingValue)
 				.setApplyMode(ConfigValueApplyMode.IMMEDIATE)
-				.setRequiresRestart(),
+				.setRestartRequirement(ConfigValueRestartRequirement.GAME_RESTART),
 			lookup -> List.of()
 		);
 
 		IConfigScreenValue<?> configuredValue = List.copyOf(categories.getFirst().getConfigValues()).getFirst();
 		assertEquals(ConfigValueApplyMode.IMMEDIATE, configuredValue.getApplyMode());
-		assertTrue(configuredValue.requiresRestart());
+		assertEquals(ConfigValueRestartRequirement.GAME_RESTART, configuredValue.getRestartRequirement());
 	}
 
 	@Test
@@ -680,7 +705,7 @@ class ConfigGuiPluginLoaderTest {
 		TestConfigValue mode = new TestConfigValue("client.mode");
 		TestConfigValue label = new TestConfigValue("client.label");
 		TestConfigValue rowCount = new TestConfigValue("client.rowCount");
-		TestConfigValue opacity = new TestConfigValue("client.opacity", true);
+		TestConfigValue opacity = new TestConfigValue("client.opacity", ConfigValueRestartRequirement.GAME_RESTART);
 		TestConfigValue enabledHistory = new TestConfigValue("client.enabledHistory");
 		TestConfigValue favoriteRows = new TestConfigValue("client.favoriteRows");
 		TestConfigValue favoriteModes = new TestConfigValue("client.favoriteModes");
@@ -725,7 +750,7 @@ class ConfigGuiPluginLoaderTest {
 					.setDefaultApplyMode(ConfigValueApplyMode.IMMEDIATE);
 				quickCategory.getValueBuilderByName("client.mode")
 					.setApplyMode(ConfigValueApplyMode.ON_APPLY)
-					.setRequiresRestart();
+					.setRestartRequirement(ConfigValueRestartRequirement.GAME_RESTART);
 				quickCategory.addValuesByName(List.of(
 					"client.enabled",
 					"client.mode",
@@ -739,7 +764,7 @@ class ConfigGuiPluginLoaderTest {
 				listsCategory.getValueBuilderByName("client.aliases")
 					.setApplyMode(ConfigValueApplyMode.IMMEDIATE);
 				listsCategory.getValueBuilderByName("client.opacitySteps")
-					.setRequiresRestart();
+					.setRestartRequirement(ConfigValueRestartRequirement.GAME_RESTART);
 				listsCategory.addValuesByName(List.of(
 					"client.enabledHistory",
 					"client.favoriteRows",
@@ -762,7 +787,7 @@ class ConfigGuiPluginLoaderTest {
 				clientCategoryBuilder.getValueBuilderByName("client.extraEffects")
 					.setApplyMode(ConfigValueApplyMode.IMMEDIATE);
 				clientCategoryBuilder.getValueBuilderByName("client.label")
-					.setRequiresRestart();
+					.setRestartRequirement(ConfigValueRestartRequirement.GAME_RESTART);
 				clientCategoryBuilder.hideValuesByName(List.of(
 					"client.enabled",
 					"client.secretDiagnostics",
@@ -783,7 +808,7 @@ class ConfigGuiPluginLoaderTest {
 				commonCategoryBuilder.getValueBuilderByName("common.enabled")
 					.setApplyMode(ConfigValueApplyMode.IMMEDIATE);
 				commonCategoryBuilder.getValueBuilderByName("common.cacheBudget")
-					.setRequiresRestart();
+					.setRestartRequirement(ConfigValueRestartRequirement.GAME_RESTART);
 			},
 			lookup -> {
 				defaultProviderCalled.set(true);
@@ -819,14 +844,14 @@ class ConfigGuiPluginLoaderTest {
 		assertEquals(ConfigValueApplyMode.IMMEDIATE, valueByName(categories.get(0), "client.enabled").getApplyMode());
 		assertEquals(ConfigValueApplyMode.ON_APPLY, valueByName(categories.get(0), "client.mode").getApplyMode());
 		assertEquals(ConfigValueApplyMode.IMMEDIATE, valueByName(categories.get(0), "client.rowCount").getApplyMode());
-		assertTrue(valueByName(categories.get(0), "client.mode").requiresRestart());
+		assertEquals(ConfigValueRestartRequirement.GAME_RESTART, valueByName(categories.get(0), "client.mode").getRestartRequirement());
 		assertEquals(ConfigValueApplyMode.IMMEDIATE, valueByName(categories.get(1), "client.aliases").getApplyMode());
-		assertTrue(valueByName(categories.get(1), "client.opacitySteps").requiresRestart());
+		assertEquals(ConfigValueRestartRequirement.GAME_RESTART, valueByName(categories.get(1), "client.opacitySteps").getRestartRequirement());
 		assertEquals(ConfigValueApplyMode.IMMEDIATE, valueByName(categories.get(2), "client.extraEffects").getApplyMode());
-		assertTrue(valueByName(categories.get(2), "client.label").requiresRestart());
-		assertTrue(valueByName(categories.get(2), "client.opacity").requiresRestart());
+		assertEquals(ConfigValueRestartRequirement.GAME_RESTART, valueByName(categories.get(2), "client.label").getRestartRequirement());
+		assertEquals(ConfigValueRestartRequirement.GAME_RESTART, valueByName(categories.get(2), "client.opacity").getRestartRequirement());
 		assertEquals(ConfigValueApplyMode.IMMEDIATE, valueByName(categories.get(3), "common.enabled").getApplyMode());
-		assertTrue(valueByName(categories.get(3), "common.cacheBudget").requiresRestart());
+		assertEquals(ConfigValueRestartRequirement.GAME_RESTART, valueByName(categories.get(3), "common.cacheBudget").getRestartRequirement());
 	}
 
 	private static List<ConfigScreenCategory> createCategories(
@@ -961,10 +986,10 @@ class ConfigGuiPluginLoaderTest {
 
 	private record TestConfigValue(
 		String name,
-		boolean requiresRestart
+		ConfigValueRestartRequirement restartRequirement
 	) implements IConfigScreenValue<String>, IConfigLocalizedValue {
 		private TestConfigValue(String name) {
-			this(name, false);
+			this(name, ConfigValueRestartRequirement.NONE);
 		}
 
 		@Override
@@ -1013,8 +1038,8 @@ class ConfigGuiPluginLoaderTest {
 		}
 
 		@Override
-		public boolean requiresRestart() {
-			return requiresRestart;
+		public ConfigValueRestartRequirement getRestartRequirement() {
+			return restartRequirement;
 		}
 	}
 

@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui.test.neoforge.custom;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.gui.api.ConfigGuiPlugin;
@@ -54,7 +55,7 @@ public final class NeoForgeNativeCustomTestGuiPlugin implements IConfigGuiPlugin
 				.setDefaultApplyMode(ConfigValueApplyMode.IMMEDIATE);
 			quickCategory.getValueBuilderByName(configValueName(NeoForgeNativeCustomTestMod.MODE))
 				.setApplyMode(ConfigValueApplyMode.ON_APPLY)
-				.setRequiresRestart();
+				.setRestartRequirement(ConfigValueRestartRequirement.GAME_RESTART);
 			quickCategory.addValuesByName(List.of(
 				configValueName(NeoForgeNativeCustomTestMod.ENABLED),
 				configValueName(NeoForgeNativeCustomTestMod.MODE),
@@ -68,7 +69,7 @@ public final class NeoForgeNativeCustomTestGuiPlugin implements IConfigGuiPlugin
 			listsCategory.getValueBuilderByName(configValueName(NeoForgeNativeCustomTestMod.ALIASES))
 				.setApplyMode(ConfigValueApplyMode.IMMEDIATE);
 			listsCategory.getValueBuilderByName(configValueName(NeoForgeNativeCustomTestMod.OPACITY_STEPS))
-				.setRequiresRestart();
+				.setRestartRequirement(ConfigValueRestartRequirement.GAME_RESTART);
 			listsCategory.addValuesByName(List.of(
 				configValueName(NeoForgeNativeCustomTestMod.ENABLED_HISTORY),
 				configValueName(NeoForgeNativeCustomTestMod.FAVORITE_ROWS),
@@ -91,7 +92,7 @@ public final class NeoForgeNativeCustomTestGuiPlugin implements IConfigGuiPlugin
 			clientCategory.getValueBuilderByName(configValueName(NeoForgeNativeCustomTestMod.EXTRA_EFFECTS))
 				.setApplyMode(ConfigValueApplyMode.IMMEDIATE);
 			clientCategory.getValueBuilderByName(configValueName(NeoForgeNativeCustomTestMod.LABEL))
-				.setRequiresRestart();
+				.setRestartRequirement(ConfigValueRestartRequirement.GAME_RESTART);
 			clientCategory.hideValuesByName(List.of(
 				configValueName(NeoForgeNativeCustomTestMod.ENABLED),
 				configValueName(NeoForgeNativeCustomTestMod.SECRET_DIAGNOSTICS),
@@ -112,7 +113,7 @@ public final class NeoForgeNativeCustomTestGuiPlugin implements IConfigGuiPlugin
 			commonCategory.getValueBuilderByName(configValueName(NeoForgeNativeCustomTestMod.COMMON_ENABLED))
 				.setApplyMode(ConfigValueApplyMode.IMMEDIATE);
 			commonCategory.getValueBuilderByName(configValueName(NeoForgeNativeCustomTestMod.COMMON_CACHE_BUDGET))
-				.setRequiresRestart();
+				.setRestartRequirement(ConfigValueRestartRequirement.GAME_RESTART);
 		});
 	}
 

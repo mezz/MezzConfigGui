@@ -2,6 +2,7 @@ package net.mezzdev.config.gui;
 
 import net.mezzdev.config.api.sorting.ISortingConfig;
 import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.ConfigValueEditorType;
@@ -139,7 +140,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		IConfigValueSerializer<T> valueSerializer,
 		RuntimeValueDisplay<T> display,
 		ConfigValueApplyMode applyMode,
-		boolean requiresRestart
+		ConfigValueRestartRequirement restartRequirement
 	) {
 		List<T> valuesCopy = List.copyOf(values);
 		List<T> defaultValues = List.copyOf(sortingConfig.getDefaultSortedValues(valuesCopy));
@@ -156,7 +157,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 			defaultValues,
 			listSerializer,
 			applyMode,
-			requiresRestart
+			restartRequirement
 		);
 	}
 
@@ -170,7 +171,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		private Function<T, Optional<Component>> valueDescriptionFactory = value -> Optional.empty();
 		private Function<T, Optional<IConfigValueIcon>> valueIconFactory = value -> Optional.empty();
 		private ConfigValueApplyMode applyMode = DEFAULT_APPLY_MODE;
-		private boolean requiresRestart;
+		private ConfigValueRestartRequirement restartRequirement = ConfigValueRestartRequirement.NONE;
 
 		private SortingConfigGuiBuilder(
 			String name,
@@ -193,8 +194,8 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		}
 
 		@Override
-		public ISortingConfigGuiBuilder<T> setRequiresRestart(boolean requiresRestart) {
-			this.requiresRestart = requiresRestart;
+		public ISortingConfigGuiBuilder<T> setRestartRequirement(ConfigValueRestartRequirement restartRequirement) {
+			this.restartRequirement = Objects.requireNonNull(restartRequirement, "restartRequirement");
 			return this;
 		}
 
@@ -254,7 +255,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 				valueSerializer,
 				display,
 				applyMode,
-				requiresRestart
+				restartRequirement
 			);
 		}
 	}
@@ -266,7 +267,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		private final List<T> values;
 		private final IConfigListValueEditorSerializer<T> serializer;
 		private final ConfigValueApplyMode applyMode;
-		private final boolean requiresRestart;
+		private final ConfigValueRestartRequirement restartRequirement;
 		private final List<Consumer<List<T>>> listeners = new ArrayList<>();
 
 		private SortableConfigValue(
@@ -276,7 +277,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 			List<T> values,
 			IConfigListValueEditorSerializer<T> serializer,
 			ConfigValueApplyMode applyMode,
-			boolean requiresRestart
+			ConfigValueRestartRequirement restartRequirement
 		) {
 			this.name = name;
 			this.localizationKey = localizationKey;
@@ -284,7 +285,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 			this.values = List.copyOf(values);
 			this.serializer = serializer;
 			this.applyMode = applyMode;
-			this.requiresRestart = requiresRestart;
+			this.restartRequirement = restartRequirement;
 		}
 
 		@Override
@@ -345,8 +346,8 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		}
 
 		@Override
-		public boolean requiresRestart() {
-			return requiresRestart;
+		public ConfigValueRestartRequirement getRestartRequirement() {
+			return restartRequirement;
 		}
 
 		@Override

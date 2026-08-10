@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui.api;
 
 import net.mezzdev.config.api.sorting.ISortingConfig;
+import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.minecraft.client.KeyMapping;
@@ -141,76 +142,47 @@ public interface IConfigScreenCategoryBuilder {
 	IConfigScreenCategoryBuilder setValueApplyModeByName(String valueName, ConfigValueApplyMode applyMode);
 
 	/**
-	 * Mark one config value in this category as requiring a restart or larger reload after it is saved.
+	 * Set the restart or reload required after one config value in this category is saved.
 	 *
 	 * @param value config value to configure
+	 * @param restartRequirement the required restart or reload
 	 * @return this builder
 	 *
 	 * @since 0.1.0
 	 */
-	IConfigScreenCategoryBuilder setValueRequiresRestart(IConfigValue<?> value);
+	IConfigScreenCategoryBuilder setValueRestartRequirement(
+		IConfigValue<?> value,
+		ConfigValueRestartRequirement restartRequirement
+	);
 
 	/**
-	 * Set whether one config value in this category requires a restart or larger reload after it is saved.
-	 * <p>
-	 * Equivalent to {@code getValueBuilder(value).setRequiresRestart(requiresRestart)}.
-	 *
-	 * @param value config value to configure
-	 * @param requiresRestart true if saving this value requires a restart or larger reload
-	 * @return this builder
-	 *
-	 * @since 0.1.0
-	 */
-	IConfigScreenCategoryBuilder setValueRequiresRestart(IConfigValue<?> value, boolean requiresRestart);
-
-	/**
-	 * Mark one config screen value in this category as requiring a restart or larger reload after it is saved.
+	 * Set the restart or reload required after one config screen value in this category is saved.
 	 *
 	 * @param value config screen value to configure
+	 * @param restartRequirement the required restart or reload
 	 * @return this builder
 	 *
 	 * @since 0.1.0
 	 */
-	IConfigScreenCategoryBuilder setScreenValueRequiresRestart(IConfigScreenValue<?> value);
+	IConfigScreenCategoryBuilder setScreenValueRestartRequirement(
+		IConfigScreenValue<?> value,
+		ConfigValueRestartRequirement restartRequirement
+	);
 
 	/**
-	 * Set whether one config screen value in this category requires a restart or larger reload after it is saved.
-	 * <p>
-	 * Equivalent to {@code getScreenValueBuilder(value).setRequiresRestart(requiresRestart)}.
-	 *
-	 * @param value config screen value to configure
-	 * @param requiresRestart true if saving this value requires a restart or larger reload
-	 * @return this builder
-	 *
-	 * @since 0.1.0
-	 */
-	IConfigScreenCategoryBuilder setScreenValueRequiresRestart(IConfigScreenValue<?> value, boolean requiresRestart);
-
-	/**
-	 * Mark one config screen value in this category by stable name as requiring a restart or larger reload after it is saved.
+	 * Set the restart or reload required after one config screen value in this category is saved, selected by stable
+	 * name.
 	 *
 	 * @param valueName stable config screen value name
+	 * @param restartRequirement the required restart or reload
 	 * @return this builder
 	 *
 	 * @since 0.1.0
 	 */
-	IConfigScreenCategoryBuilder setValueRequiresRestartByName(String valueName);
-
-	/**
-	 * Set whether one config screen value in this category by stable name requires a restart or larger reload after it is saved.
-	 * <p>
-	 * Equivalent to {@code getValueBuilderByName(valueName).setRequiresRestart(requiresRestart)}.
-	 * <p>
-	 * This is useful for screen values that do not have a MezzConfig {@link IConfigValue} backing object, such as
-	 * platform-native config values adapted for the config GUI.
-	 *
-	 * @param valueName stable config screen value name
-	 * @param requiresRestart true if saving this value requires a restart or larger reload
-	 * @return this builder
-	 *
-	 * @since 0.1.0
-	 */
-	IConfigScreenCategoryBuilder setValueRequiresRestartByName(String valueName, boolean requiresRestart);
+	IConfigScreenCategoryBuilder setValueRestartRequirementByName(
+		String valueName,
+		ConfigValueRestartRequirement restartRequirement
+	);
 
 	/**
 	 * Add one config value to this category.

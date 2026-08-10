@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.info;
 
+import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;
@@ -81,7 +82,7 @@ public final class ConfigValueInfoFactory {
 		}
 		lines.add(Component.literal("Name: " + configValue.getName()));
 		lines.add(Component.literal("Apply mode: " + configValue.getApplyMode()));
-		lines.add(Component.literal("Requires restart: " + configValue.requiresRestart()));
+		lines.add(Component.literal("Restart requirement: " + configValue.getRestartRequirement()));
 		lines.add(Component.literal("Serializer: " + configValue.getSerializer().getClass().getSimpleName()));
 		if (configValue.getSerializer() instanceof IConfigValueEditorSerializer<?> editorSerializer) {
 			lines.add(Component.literal("Editor: " + editorSerializer.getEditorType().getUid()));
@@ -89,11 +90,19 @@ public final class ConfigValueInfoFactory {
 	}
 
 	private static Optional<Component> getUpdateInfo(IConfigScreenValue<?> configValue, boolean hasPendingChange) {
-		if (configValue.requiresRestart()) {
+		ConfigValueRestartRequirement restartRequirement = configValue.getRestartRequirement();
+		if (restartRequirement == ConfigValueRestartRequirement.WORLD_RESTART) {
 			return Optional.of(getUpdateInfoComponent(
 				hasPendingChange,
-				"mezz_config.config.screen.update.restart.pending",
-				"mezz_config.config.screen.update.restart.info"
+				"mezz_config.config.screen.update.worldRestart.pending",
+				"mezz_config.config.screen.update.worldRestart.info"
+			));
+		}
+		if (restartRequirement == ConfigValueRestartRequirement.GAME_RESTART) {
+			return Optional.of(getUpdateInfoComponent(
+				hasPendingChange,
+				"mezz_config.config.screen.update.gameRestart.pending",
+				"mezz_config.config.screen.update.gameRestart.info"
 			));
 		}
 		if (configValue.getApplyMode() == ConfigValueApplyMode.ON_APPLY) {

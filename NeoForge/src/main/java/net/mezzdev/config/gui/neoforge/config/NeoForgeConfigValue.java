@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.neoforge.config;
 
+import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
@@ -27,7 +28,7 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 	private final ModConfigSpec.ConfigValue<T> configValue;
 	private final T defaultValue;
 	private final IConfigValueSerializer<T> serializer;
-	private final boolean requiresRestart;
+	private final ConfigValueRestartRequirement restartRequirement;
 	@Nullable
 	private List<Consumer<T>> listeners;
 
@@ -48,12 +49,21 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 		this.configValue = configValue;
 		this.defaultValue = configValue.getDefault();
 		this.serializer = serializer;
-		this.requiresRestart = requiresRestart(modConfig, valueSpec);
+		this.restartRequirement = getRestartRequirement(modConfig, valueSpec);
 	}
 
-	private static boolean requiresRestart(ModConfig modConfig, ModConfigSpec.ValueSpec valueSpec) {
-		return modConfig.getType() == ModConfig.Type.STARTUP ||
-			valueSpec.restartType() != ModConfigSpec.RestartType.NONE;
+	private static ConfigValueRestartRequirement getRestartRequirement(
+		ModConfig modConfig,
+		ModConfigSpec.ValueSpec valueSpec
+	) {
+		if (modConfig.getType() == ModConfig.Type.STARTUP) {
+			return ConfigValueRestartRequirement.GAME_RESTART;
+		}
+		return switch (valueSpec.restartType()) {
+			case NONE -> ConfigValueRestartRequirement.NONE;
+			case WORLD -> ConfigValueRestartRequirement.WORLD_RESTART;
+			case GAME -> ConfigValueRestartRequirement.GAME_RESTART;
+		};
 	}
 
 	@Override
@@ -127,8 +137,8 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 	}
 
 	@Override
-	public boolean requiresRestart() {
-		return requiresRestart;
+	public ConfigValueRestartRequirement getRestartRequirement() {
+		return restartRequirement;
 	}
 
 	@Override

@@ -2,6 +2,7 @@ package net.mezzdev.config.gui.api;
 
 import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.minecraft.network.chat.Component;
 
 import java.util.Objects;
@@ -53,8 +54,13 @@ class ConfigScreenValueWithApplyMode<T> implements IConfigScreenValue<T> {
 	}
 
 	@Override
-	public boolean requiresRestart() {
-		return configValue.requiresRestart();
+	public ConfigValueRestartRequirement getRestartRequirement() {
+		return configValue.getRestartRequirement();
+	}
+
+	@Override
+	public Object getIdentityKey() {
+		return configValue.getIdentityKey();
 	}
 
 	@Override

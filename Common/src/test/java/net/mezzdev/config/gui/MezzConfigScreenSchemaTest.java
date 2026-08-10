@@ -26,9 +26,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MezzConfigScreenSchemaTest {
 	@Test
@@ -54,9 +52,9 @@ class MezzConfigScreenSchemaTest {
 			ConfigValueRestartRequirement.GAME_RESTART
 		));
 
-		assertFalse(noRestartValue.requiresRestart());
-		assertTrue(worldRestartValue.requiresRestart());
-		assertTrue(gameRestartValue.requiresRestart());
+		assertEquals(ConfigValueRestartRequirement.NONE, noRestartValue.getRestartRequirement());
+		assertEquals(ConfigValueRestartRequirement.WORLD_RESTART, worldRestartValue.getRestartRequirement());
+		assertEquals(ConfigValueRestartRequirement.GAME_RESTART, gameRestartValue.getRestartRequirement());
 	}
 
 	@Test
@@ -67,7 +65,7 @@ class MezzConfigScreenSchemaTest {
 		);
 
 		assertEquals(ConfigValueApplyMode.IMMEDIATE, restartValue.getApplyMode());
-		assertTrue(restartValue.requiresRestart());
+		assertEquals(ConfigValueRestartRequirement.GAME_RESTART, restartValue.getRestartRequirement());
 	}
 
 	@Test

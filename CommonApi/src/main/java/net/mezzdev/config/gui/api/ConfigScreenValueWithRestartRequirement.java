@@ -2,6 +2,7 @@ package net.mezzdev.config.gui.api;
 
 import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.minecraft.network.chat.Component;
 
 import java.util.Objects;
@@ -10,11 +11,14 @@ import java.util.function.Consumer;
 
 class ConfigScreenValueWithRestartRequirement<T> implements IConfigScreenValue<T> {
 	private final IConfigScreenValue<T> configValue;
-	private final boolean requiresRestart;
+	private final ConfigValueRestartRequirement restartRequirement;
 
-	public ConfigScreenValueWithRestartRequirement(IConfigScreenValue<T> configValue, boolean requiresRestart) {
+	public ConfigScreenValueWithRestartRequirement(
+		IConfigScreenValue<T> configValue,
+		ConfigValueRestartRequirement restartRequirement
+	) {
 		this.configValue = Objects.requireNonNull(configValue, "configValue");
-		this.requiresRestart = requiresRestart;
+		this.restartRequirement = Objects.requireNonNull(restartRequirement, "restartRequirement");
 	}
 
 	@Override
@@ -53,8 +57,13 @@ class ConfigScreenValueWithRestartRequirement<T> implements IConfigScreenValue<T
 	}
 
 	@Override
-	public boolean requiresRestart() {
-		return requiresRestart;
+	public ConfigValueRestartRequirement getRestartRequirement() {
+		return restartRequirement;
+	}
+
+	@Override
+	public Object getIdentityKey() {
+		return configValue.getIdentityKey();
 	}
 
 	@Override
@@ -87,10 +96,10 @@ class ConfigScreenValueWithRestartRequirement<T> implements IConfigScreenValue<T
 
 		public Localized(
 			IConfigScreenValue<T> configValue,
-			boolean requiresRestart,
+			ConfigValueRestartRequirement restartRequirement,
 			IConfigLocalizedValue localizedValue
 		) {
-			super(configValue, requiresRestart);
+			super(configValue, restartRequirement);
 			this.localizedValue = Objects.requireNonNull(localizedValue, "localizedValue");
 		}
 

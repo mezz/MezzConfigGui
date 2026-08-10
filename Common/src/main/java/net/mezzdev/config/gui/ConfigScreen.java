@@ -377,7 +377,7 @@ public class ConfigScreen extends Screen {
 				leaveAction.run();
 			},
 			() -> minecraft.setScreen(this),
-			controller.pendingChangesRequireRestart(),
+			controller.getPendingChangesRestartRequirement(),
 			controller.getPendingConfigChanges()
 		);
 		minecraft.setScreen(pendingChangesScreen);
