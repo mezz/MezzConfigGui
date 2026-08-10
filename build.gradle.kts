@@ -1,3 +1,10 @@
+import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
+import org.gradle.api.provider.Property
+import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.TaskAction
+
 plugins {
 	// https://github.com/mezz/JavaFormatting
 	id("net.mezzdev.java-formatting") version("0.2.4")
@@ -51,6 +58,44 @@ val neoforgeLoaderVersionRange: String by extra
 val jeiLocalPath: String by extra
 val jeiVersion: String by extra
 val specificationVersion: String by extra
+val releaseSpecificationVersion = specificationVersion
+
+abstract class ValidateReleaseVersion : DefaultTask() {
+    @get:Input
+    abstract val releaseVersion: Property<String>
+
+    @get:Input
+    abstract val specificationVersion: Property<String>
+
+    @TaskAction
+    fun validate() {
+        val releaseVersion = releaseVersion.get()
+        val specificationVersion = specificationVersion.get()
+        if (releaseVersion.isBlank()) {
+            throw GradleException("No release version was provided; set RELEASE_VERSION or TAG_NAME.")
+        }
+        if (releaseVersion != specificationVersion) {
+            throw GradleException(
+                "Release version '$releaseVersion' does not match specificationVersion '$specificationVersion'."
+            )
+        }
+    }
+}
+
+fun normalizeReleaseVersion(value: String): String {
+    val tagName = value.trim().substringAfterLast('/')
+    return tagName.removePrefix("v")
+}
+
+val configuredReleaseVersion = providers.gradleProperty("RELEASE_VERSION")
+    .orElse(providers.environmentVariable("TAG_NAME"))
+    .orNull
+    ?.let(::normalizeReleaseVersion)
+    ?.takeIf(String::isNotEmpty)
+val buildNumber = providers.gradleProperty("BUILD_NUMBER")
+    .orElse("9999")
+    .get()
+val projectVersion = configuredReleaseVersion ?: "${releaseSpecificationVersion}.${buildNumber}"
 
 extra["mezzConfigApiDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-config-api:$mezzConfigVersion"
 extra["mezzConfigFabricDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-fabric:$mezzConfigVersion"
@@ -63,15 +108,23 @@ javaFormatting {
 	all()
 }
 
-subprojects {
-    //adds the build number to the end of the version string if on a build server
-    var buildNumber = project.findProperty("BUILD_NUMBER")
-    if (buildNumber == null) {
-        buildNumber = "9999"
-    }
+tasks.register<ValidateReleaseVersion>("validateReleaseVersion") {
+    group = "verification"
+    description = "Checks that a release tag matches specificationVersion."
 
-    version = "${specificationVersion}.${buildNumber}"
+    releaseVersion.set(configuredReleaseVersion ?: "")
+    specificationVersion.set(releaseSpecificationVersion)
+}
+
+subprojects {
+    version = projectVersion
     group = modGroup
+
+    if (configuredReleaseVersion != null) {
+        tasks.withType<PublishToMavenRepository>().configureEach {
+            dependsOn(rootProject.tasks.named("validateReleaseVersion"))
+        }
+    }
 
     tasks.withType<Javadoc> {
         // workaround cast for https://github.com/gradle/gradle/issues/7038
