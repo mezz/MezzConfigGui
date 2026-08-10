@@ -54,14 +54,41 @@ dependencies {
 }
 ```
 
-## NeoForge ModDevGradle
+ModDevGradle's `legacyforge` plugin is not an alternative for this Minecraft version. Its [official support range](https://github.com/neoforged/ModDevGradle/blob/main/LEGACY.md) ends at Minecraft 1.20.1, so Forge 1.21.1 projects should use ForgeGradle.
 
-Use normal Gradle dependency configurations with ModDevGradle:
+## NeoForge with ModDevGradle
+
+The [Minecraft 1.21.1 ModDevGradle template](https://github.com/NeoForgeMDKs/MDK-1.21.1-ModDevGradle) uses a local runtime configuration for optional full-mod dependencies. This makes the platform artifact available to development runs without publishing it as a dependency of your mod:
 
 ```kotlin
+val localRuntime by configurations.getting
+configurations.named("runtimeClasspath") {
+    extendsFrom(localRuntime)
+}
+
 dependencies {
     compileOnly(mezzConfigGuiApi)
-    runtimeOnly(
+    add(
+        localRuntime.name,
+        "net.mezzdev.config:mezz_config_gui-$minecraftVersion-neoforge:$mezzConfigGuiVersion"
+    )
+}
+```
+
+## NeoForge with NeoGradle
+
+The [Minecraft 1.21.1 NeoGradle template](https://github.com/NeoForgeMDKs/MDK-1.21.1-NeoGradle) uses the same local runtime pattern:
+
+```kotlin
+val localRuntime by configurations.getting
+configurations.named("runtimeClasspath") {
+    extendsFrom(localRuntime)
+}
+
+dependencies {
+    compileOnly(mezzConfigGuiApi)
+    add(
+        localRuntime.name,
         "net.mezzdev.config:mezz_config_gui-$minecraftVersion-neoforge:$mezzConfigGuiVersion"
     )
 }
