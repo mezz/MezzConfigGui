@@ -23,8 +23,6 @@ repositories {
 
 val minecraftVersion: String by project
 val mezzConfigGuiVersion: String by project
-val mezzConfigGuiApi =
-    "net.mezzdev.config:mezz_config_gui-$minecraftVersion-config-gui-api:$mezzConfigGuiVersion"
 ```
 
 ## NeoForge with ModDevGradle
@@ -38,7 +36,7 @@ configurations.named("runtimeClasspath") {
 }
 
 dependencies {
-    compileOnly(mezzConfigGuiApi)
+    compileOnly("net.mezzdev.config:mezz_config_gui-$minecraftVersion-config-gui-api:$mezzConfigGuiVersion")
     add(
         localRuntime.name,
         "net.mezzdev.config:mezz_config_gui-$minecraftVersion-neoforge:$mezzConfigGuiVersion"
@@ -57,7 +55,7 @@ configurations.named("runtimeClasspath") {
 }
 
 dependencies {
-    compileOnly(mezzConfigGuiApi)
+    compileOnly("net.mezzdev.config:mezz_config_gui-$minecraftVersion-config-gui-api:$mezzConfigGuiVersion")
     add(
         localRuntime.name,
         "net.mezzdev.config:mezz_config_gui-$minecraftVersion-neoforge:$mezzConfigGuiVersion"
@@ -71,7 +69,7 @@ Use the API as a normal compile-only dependency. Load the remapped Fabric artifa
 
 ```kotlin
 dependencies {
-    compileOnly(mezzConfigGuiApi)
+    compileOnly("net.mezzdev.config:mezz_config_gui-$minecraftVersion-config-gui-api:$mezzConfigGuiVersion")
     modRuntimeOnly(
         "net.mezzdev.config:mezz_config_gui-$minecraftVersion-fabric:$mezzConfigGuiVersion"
     )
@@ -84,7 +82,7 @@ Pass both artifacts through ForgeGradle's deobfuscation helper:
 
 ```kotlin
 dependencies {
-    compileOnly(fg.deobf(mezzConfigGuiApi))
+    compileOnly(fg.deobf("net.mezzdev.config:mezz_config_gui-$minecraftVersion-config-gui-api:$mezzConfigGuiVersion"))
     runtimeOnly(
         fg.deobf(
             "net.mezzdev.config:mezz_config_gui-$minecraftVersion-forge:$mezzConfigGuiVersion"
