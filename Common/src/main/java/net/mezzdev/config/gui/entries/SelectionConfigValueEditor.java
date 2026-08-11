@@ -6,8 +6,7 @@ import net.mezzdev.config.gui.api.IConfigValueEditor;
 import net.mezzdev.config.gui.api.IConfigValuePopup;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.popup.ConfigValueSelector;
-import net.mezzdev.config.gui.textures.ConfigDrawableStatic;
-import net.mezzdev.config.gui.textures.ConfigTextures;
+import net.mezzdev.config.gui.textures.ConfigButtonIcon;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -28,10 +27,7 @@ final class SelectionConfigValueEditor<T> implements IConfigValueEditor<T> {
 	private static final int VALUE_BUTTON_HEIGHT = 18;
 	private static final int MAX_VALUE_BUTTON_WIDTH = 140;
 
-	private final ConfigTextures textures;
-
-	SelectionConfigValueEditor(ConfigTextures textures) {
-		this.textures = textures;
+	SelectionConfigValueEditor() {
 	}
 
 	@Override
@@ -64,10 +60,13 @@ final class SelectionConfigValueEditor<T> implements IConfigValueEditor<T> {
 			.cropRight(ARROW_SIZE + ARROW_PADDING * 2);
 		ConfigEntryWidget.drawFittedText(guiGraphics, font, valueName, textArea, ConfigEntryWidget.TEXT_COLOR, false);
 
-		ConfigDrawableStatic arrowDown = textures.getArrowDown();
-		int arrowX = area.getX() + area.getWidth() - ARROW_SIZE - ARROW_PADDING;
-		int arrowY = area.getY() + (area.getHeight() - ARROW_SIZE) / 2;
-		arrowDown.draw(guiGraphics, arrowX, arrowY);
+		Rect2i arrowArea = new Rect2i(
+			area.getX() + area.getWidth() - ARROW_SIZE - ARROW_PADDING,
+			area.getY(),
+			ARROW_SIZE,
+			area.getHeight()
+		);
+		ConfigButtonIcon.DOWN.draw(guiGraphics, arrowArea, true);
 	}
 
 	@Override

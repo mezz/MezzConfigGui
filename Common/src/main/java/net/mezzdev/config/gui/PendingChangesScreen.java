@@ -9,7 +9,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
@@ -21,7 +21,7 @@ import java.util.List;
 /**
  * Confirmation screen shown when closing the config screen with unapplied changes.
  */
-final class PendingChangesScreen extends Screen {
+final class PendingChangesScreen extends MezzConfigScreen {
 	private static final int BUTTON_WIDTH = 100;
 	private static final int BUTTON_HEIGHT = 20;
 	private static final int BUTTON_GAP = 4;
@@ -310,6 +310,21 @@ final class PendingChangesScreen extends Screen {
 		int panelY = messageY + messageHeight + MESSAGE_PANEL_GAP;
 		int actionButtonY = panelY + panelHeight + PANEL_BUTTON_GAP;
 		return new ScreenLayout(contentX, contentWidth, titleY, messageY, panelY, panelHeight, actionButtonY);
+	}
+
+	@Override
+	public Rect2i getScreenArea() {
+		ScreenLayout screenLayout = getScreenLayout();
+		int actionButtonsWidth = BUTTON_WIDTH * 2 + BUTTON_GAP;
+		int guiWidth = Math.max(screenLayout.contentWidth(), actionButtonsWidth);
+		int guiLeft = (width - guiWidth) / 2;
+		int guiBottom = screenLayout.actionButtonY() + BUTTON_HEIGHT + BACK_BUTTON_TOP_MARGIN + BUTTON_HEIGHT;
+		return new Rect2i(
+			guiLeft,
+			screenLayout.titleY(),
+			guiWidth,
+			Math.max(0, guiBottom - screenLayout.titleY())
+		);
 	}
 
 	private int getPreferredPanelHeight(int contentWidth, int maxPanelHeight) {

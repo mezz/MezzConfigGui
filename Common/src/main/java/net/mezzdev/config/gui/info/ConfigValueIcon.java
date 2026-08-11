@@ -5,10 +5,10 @@ import net.mezzdev.config.api.value.PackedColor;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueIcon;
 import net.mezzdev.config.gui.api.IConfigValueIconProvider;
+import net.mezzdev.config.gui.textures.ConfigCheckbox;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
-import net.minecraft.resources.ResourceLocation;
 
 import java.util.Optional;
 
@@ -19,8 +19,6 @@ public final class ConfigValueIcon {
 	public static final int ICON_SIZE = 18;
 	static final int TEXT_GAP = 3;
 	private static final int BUTTON_ICON_SIZE = 16;
-	private static final ResourceLocation ENABLED_ICON = ResourceLocation.withDefaultNamespace("container/beacon/confirm");
-	private static final ResourceLocation DISABLED_ICON = ResourceLocation.withDefaultNamespace("container/beacon/cancel");
 
 	private ConfigValueIcon() {
 
@@ -64,7 +62,7 @@ public final class ConfigValueIcon {
 			return Optional.of((guiGraphics, area) -> ColorSwatch.draw(guiGraphics, area, color));
 		}
 		if (value instanceof Boolean booleanValue) {
-			return Optional.of(new SpriteConfigValueIcon(getBooleanIconLocation(booleanValue)));
+			return Optional.of(new CheckboxConfigValueIcon(booleanValue));
 		}
 		return Optional.empty();
 	}
@@ -78,17 +76,10 @@ public final class ConfigValueIcon {
 		return Optional.empty();
 	}
 
-	private static ResourceLocation getBooleanIconLocation(boolean value) {
-		if (value) {
-			return ENABLED_ICON;
-		}
-		return DISABLED_ICON;
-	}
-
-	private record SpriteConfigValueIcon(ResourceLocation location) implements IConfigValueIcon {
+	private record CheckboxConfigValueIcon(boolean checked) implements IConfigValueIcon {
 		@Override
 		public void draw(GuiGraphics guiGraphics, Rect2i area) {
-			guiGraphics.blitSprite(location, area.getX(), area.getY(), area.getWidth(), area.getHeight());
+			ConfigCheckbox.draw(guiGraphics, area, checked, false);
 		}
 	}
 }

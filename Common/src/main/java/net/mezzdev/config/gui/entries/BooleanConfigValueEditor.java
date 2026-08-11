@@ -3,28 +3,27 @@ package net.mezzdev.config.gui.entries;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueEditor;
-import net.mezzdev.config.gui.info.ConfigValueIcon;
 import net.mezzdev.config.gui.info.ConfigValueInfoFactory;
-import net.mezzdev.config.gui.util.ImmutableRect2i;
+import net.mezzdev.config.gui.textures.ConfigCheckbox;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
 
 import java.util.Optional;
 
 /**
- * Compact toggle editor for boolean values.
+ * Checkbox editor for boolean values.
  */
 final class BooleanConfigValueEditor implements IConfigValueEditor<Boolean> {
-	private static final int BUTTON_SIZE = 18;
+	private static final int CONTROL_SIZE = 18;
 
 	@Override
 	public int getControlWidth(IConfigScreenValue<Boolean> configValue, Boolean value) {
-		return BUTTON_SIZE;
+		return CONTROL_SIZE;
 	}
 
 	@Override
 	public int getControlHeight(IConfigScreenValue<Boolean> configValue, Boolean value) {
-		return BUTTON_SIZE;
+		return CONTROL_SIZE;
 	}
 
 	@Override
@@ -36,7 +35,7 @@ final class BooleanConfigValueEditor implements IConfigValueEditor<Boolean> {
 		boolean hovered,
 		boolean hasPendingChange
 	) {
-		ConfigValueIcon.drawInButton(guiGraphics, configValue, value, toImmutableRect2i(area));
+		ConfigCheckbox.draw(guiGraphics, area, value, hovered);
 	}
 
 	@Override
@@ -64,9 +63,5 @@ final class BooleanConfigValueEditor implements IConfigValueEditor<Boolean> {
 			return Optional.empty();
 		}
 		return Optional.of(!value);
-	}
-
-	private static ImmutableRect2i toImmutableRect2i(Rect2i area) {
-		return new ImmutableRect2i(area.getX(), area.getY(), area.getWidth(), area.getHeight());
 	}
 }

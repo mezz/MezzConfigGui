@@ -5,6 +5,7 @@
 - [x] Add MezzConfig GUI's own MezzConfig file and config screen.
 - [x] GUI mode: `WINDOW` with a persisted resizable width and height, or `FULLSCREEN`.
 - [x] Row density: `COMFORTABLE`, `COMPACT`.
+- [x] Number display mode: Minecraft-style sliders or text and buttons.
 - [x] Subtle horizontal row coloring.
 - [x] Remember last category per mod.
 - [x] Search descriptions.

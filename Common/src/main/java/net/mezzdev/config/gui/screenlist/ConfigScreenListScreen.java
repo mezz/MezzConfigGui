@@ -5,6 +5,7 @@ import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.entries.ConfigEntryWidget;
 import net.mezzdev.config.gui.input.InputType;
 import net.mezzdev.config.gui.input.UserInput;
+import net.mezzdev.config.gui.MezzConfigScreen;
 import net.mezzdev.config.gui.textures.ConfigScalableDrawable;
 import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.mezzdev.config.gui.util.ConfigLocale;
@@ -14,6 +15,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -36,7 +38,7 @@ import java.util.Optional;
 /**
  * Screen for choosing one of the config screens discovered for the current mod loader.
  */
-public final class ConfigScreenListScreen extends Screen {
+public final class ConfigScreenListScreen extends MezzConfigScreen {
 	private static final Logger LOGGER = LogManager.getLogger();
 	private static final Component TITLE = Component.translatable("mezz_config.config.screen.list.title");
 	private static final Component SEARCH = Component.translatable("mezz_config.config.screen.list.search");
@@ -231,6 +233,15 @@ public final class ConfigScreenListScreen extends Screen {
 			guiWidth,
 			guiHeight
 		);
+	}
+
+	@Override
+	@Nullable
+	public Rect2i getScreenArea() {
+		if (area.isEmpty()) {
+			return null;
+		}
+		return new Rect2i(area.getX(), area.getY(), area.getWidth(), area.getHeight());
 	}
 
 	private int getTotalListHeight() {

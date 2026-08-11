@@ -5,7 +5,6 @@ import net.mezzdev.config.gui.util.Pair;
 import net.mezzdev.config.gui.util.StringUtil;
 import net.mezzdev.config.gui.ConfigInputUtil;
 import net.mezzdev.config.gui.ConfigScreenLayout;
-import net.mezzdev.config.gui.entries.ConfigEntryWidget;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.ConfigInputHandler;
 import net.mezzdev.config.gui.input.UserInput;
@@ -38,6 +37,9 @@ public final class ConfigNavItem implements ConfigInputHandler {
 	private static final int ACTIVE_BACKGROUND_COLOR = 0x66313A46;
 	private static final int ACTIVE_ACCENT_COLOR = 0xFF5E9AD6;
 	private static final int DIVIDER_COLOR = 0x2AFFFFFF;
+	private static final int TEXT_COLOR = 0xFF303030;
+	private static final int HOVER_TEXT_COLOR = 0xFF202020;
+	private static final int ACTIVE_TEXT_COLOR = 0xFF18202A;
 
 	private final Component fullName;
 	private final int categoryIndex;
@@ -121,10 +123,13 @@ public final class ConfigNavItem implements ConfigInputHandler {
 	}
 
 	private static int getTextColor(boolean active, boolean hovered) {
-		if (active || hovered) {
-			return ConfigEntryWidget.HOVER_TEXT_COLOR;
+		if (active) {
+			return ACTIVE_TEXT_COLOR;
 		}
-		return ConfigEntryWidget.TEXT_COLOR;
+		if (hovered) {
+			return HOVER_TEXT_COLOR;
+		}
+		return TEXT_COLOR;
 	}
 
 	private static int getTextLeftPadding(boolean active) {

@@ -322,12 +322,13 @@ public abstract class ConfigEntryWidget<T> {
 
 	public void draw(GuiGraphics guiGraphics, double mouseX, double mouseY, boolean allowHover, int rowIndex) {
 		drawRowStripe(guiGraphics, rowIndex);
-		if (allowHover && area.contains(mouseX, mouseY)) {
+		ImmutableRect2i hoverArea = getHoverArea();
+		if (allowHover && hoverArea.contains(mouseX, mouseY)) {
 			guiGraphics.fill(
-				area.getX() + 1,
-				area.getY(),
-				area.getX() + area.getWidth() - 1,
-				area.getY() + area.getHeight(),
+				hoverArea.getX() + 1,
+				hoverArea.getY(),
+				hoverArea.getX() + hoverArea.getWidth() - 1,
+				hoverArea.getY() + hoverArea.getHeight(),
 				ROW_HOVER_COLOR
 			);
 		}
@@ -355,6 +356,10 @@ public abstract class ConfigEntryWidget<T> {
 		}
 		drawContent(guiGraphics, drawMouseX, drawMouseY);
 		drawResetButton(guiGraphics, drawMouseX, drawMouseY);
+	}
+
+	protected ImmutableRect2i getHoverArea() {
+		return area;
 	}
 
 	private void drawRowStripe(GuiGraphics guiGraphics, int rowIndex) {

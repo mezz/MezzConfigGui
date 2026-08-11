@@ -28,6 +28,7 @@ final class CustomConfigEntry<T> extends ConfigEntryWidget<T> {
 
 	private final IConfigValueEditor<T> editor;
 	private final Consumer<ConfigPopupSelector> valueSelectorOpener;
+	private final boolean drawDefaultBackground;
 	private ImmutableRect2i valueArea = ImmutableRect2i.EMPTY;
 
 	CustomConfigEntry(
@@ -36,9 +37,20 @@ final class CustomConfigEntry<T> extends ConfigEntryWidget<T> {
 		Consumer<ConfigPopupSelector> valueSelectorOpener,
 		ConfigTextures textures
 	) {
+		this(value, editor, valueSelectorOpener, textures, true);
+	}
+
+	CustomConfigEntry(
+		IConfigScreenValue<T> value,
+		IConfigValueEditor<T> editor,
+		Consumer<ConfigPopupSelector> valueSelectorOpener,
+		ConfigTextures textures,
+		boolean drawDefaultBackground
+	) {
 		super(value, textures);
 		this.editor = editor;
 		this.valueSelectorOpener = valueSelectorOpener;
+		this.drawDefaultBackground = drawDefaultBackground;
 	}
 
 	@Override
@@ -64,7 +76,9 @@ final class CustomConfigEntry<T> extends ConfigEntryWidget<T> {
 		drawName(guiGraphics);
 
 		boolean hovered = valueArea.contains(mouseX, mouseY);
-		drawButtonBackground(guiGraphics, getTextures(), valueArea, true, hovered);
+		if (drawDefaultBackground) {
+			drawButtonBackground(guiGraphics, getTextures(), valueArea, true, hovered);
+		}
 		editor.draw(guiGraphics, toRect2i(valueArea), configValue, getValue(), hovered, hasPendingChange());
 	}
 

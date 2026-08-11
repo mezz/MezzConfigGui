@@ -12,6 +12,7 @@ import net.mezzdev.config.gui.model.ConfigCategoryWidget;
 import net.mezzdev.config.gui.model.ConfigNavItem;
 import net.mezzdev.config.gui.model.ConfigScreenHistory;
 import net.mezzdev.config.gui.model.ConfigScreenModel;
+import net.mezzdev.config.gui.model.ConfigValueChange;
 import net.mezzdev.config.gui.popup.ConfigPopupSelector;
 import net.mezzdev.config.gui.popup.ConfigValueSelectorInputHandler;
 import net.mezzdev.config.gui.textures.ConfigTextures;
@@ -38,7 +39,7 @@ import java.util.Optional;
 /**
  * Main in-game config screen that wires the model, layout, view, and input routing together.
  */
-public class ConfigScreen extends Screen {
+public class ConfigScreen extends MezzConfigScreen {
 	private static final int SEARCH_TEXT_COLOR = 0xFFE8EEF7;
 	private static final int SEARCH_HINT_COLOR = 0xFF8F98A6;
 
@@ -163,7 +164,7 @@ public class ConfigScreen extends Screen {
 		this.inputHandler = new ConfigInputRouter(allInputHandlers);
 	}
 
-	private static List<ConfigEntryWidget<?>> createEntryWidgets(
+	private List<ConfigEntryWidget<?>> createEntryWidgets(
 		ConfigScreenCategory category,
 		Map<Object, ConfigEntryWidget<?>> entryWidgetsByValueKey,
 		List<ConfigEntryWidget<?>> allEntryWidgets,
@@ -181,7 +182,7 @@ public class ConfigScreen extends Screen {
 		return List.copyOf(schema.getCategories());
 	}
 
-	private static ConfigEntryWidget<?> getOrCreateEntryWidget(
+	private ConfigEntryWidget<?> getOrCreateEntryWidget(
 		Map<Object, ConfigEntryWidget<?>> entryWidgetsByValueKey,
 		List<ConfigEntryWidget<?>> allEntryWidgets,
 		ConfigEntryWidgetFactory entryWidgetFactory,
@@ -192,11 +193,19 @@ public class ConfigScreen extends Screen {
 		ConfigEntryWidget<?> entryWidget = entryWidgetsByValueKey.get(identityKey);
 		if (entryWidget == null) {
 			entryWidget = entryWidgetFactory.create(configValue);
-			entryWidget.setImmediateChangeHandler(controller::applyImmediateChange);
+			entryWidget.setImmediateChangeHandler(this::applyImmediateChange);
 			entryWidgetsByValueKey.put(identityKey, entryWidget);
 			allEntryWidgets.add(entryWidget);
 		}
 		return entryWidget;
+	}
+
+	private boolean applyImmediateChange(ConfigValueChange<?> change) {
+		boolean succeeded = controller.applyImmediateChange(change);
+		if (succeeded) {
+			refreshLayout();
+		}
+		return succeeded;
 	}
 
 	private ConfigInputHandler createEntryInputHandler(ConfigEntryWidget<?> entry) {
@@ -300,6 +309,7 @@ public class ConfigScreen extends Screen {
 	}
 
 	@Nullable
+	@Override
 	public Rect2i getScreenArea() {
 		ImmutableRect2i area = layout.getArea();
 		if (area.isEmpty()) {

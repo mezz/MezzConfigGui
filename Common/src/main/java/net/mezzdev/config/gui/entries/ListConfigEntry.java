@@ -25,7 +25,7 @@ import net.mezzdev.config.gui.popup.ColorPickerPopup;
 import net.mezzdev.config.gui.popup.ConfigPopupSelector;
 import net.mezzdev.config.gui.popup.ConfigValuePopupSelector;
 import net.mezzdev.config.gui.popup.ConfigValueSelector;
-import net.mezzdev.config.gui.textures.ConfigDrawableStatic;
+import net.mezzdev.config.gui.textures.ConfigButtonIcon;
 import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.Minecraft;
@@ -55,7 +55,6 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 
 	private static final int BUTTON_SIZE = 18;
 	private static final int BUTTON_GAP = 2;
-	private static final int ARROW_ICON_SIZE = 9;
 	private static final int VALUE_GROUP_TOP_GAP = 3;
 	private static final int VALUE_GROUP_BOTTOM_PADDING = 3;
 	private static final int VALUE_GROUP_BORDER_SIZE = 1;
@@ -74,6 +73,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	private static final int ORDERED_GROUP_BORDER_DARK_COLOR = 0x90000000;
 	private static final int ORDERED_GROUP_BORDER_LIGHT_COLOR = 0x24FFFFFF;
 	private static final int ORDERED_ROW_BACKGROUND_COLOR = 0x1E000000;
+	private static final int LIST_ROW_HOVER_COLOR = 0x18FFFFFF;
 	private static final int ORDERED_ROW_DRAG_GAP_COLOR = 0x28000000;
 	private static final int ORDERED_ROW_DROP_TARGET_COLOR = 0x52000000;
 	private static final int ORDERED_ROW_MOVED_BACKGROUND_COLOR = 0x285E9AD6;
@@ -98,6 +98,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	private final boolean ordered;
 	private final boolean allowsRemovingValues;
 	private final boolean allowsTypedInput;
+	private ImmutableRect2i headerArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i valueGroupArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i addValueRowArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i addValueTextArea = ImmutableRect2i.EMPTY;
@@ -181,7 +182,8 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	public void updateBounds(ImmutableRect2i area) {
 		super.updateBounds(new ImmutableRect2i(area.getX(), area.getY(), area.getWidth(), Math.max(getMinimumHeight(), area.getHeight())));
 		int headerHeight = super.getHeight();
-		super.updateBounds(new ImmutableRect2i(area.getX(), area.getY(), area.getWidth(), headerHeight));
+		this.headerArea = new ImmutableRect2i(area.getX(), area.getY(), area.getWidth(), headerHeight);
+		super.updateBounds(headerArea);
 		this.area = area;
 
 		int y = area.getY() + headerHeight + VALUE_GROUP_TOP_GAP;
@@ -217,6 +219,11 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		}
 		y += getAddValueTopGap();
 		updateAddValueBounds(y);
+	}
+
+	@Override
+	protected ImmutableRect2i getHoverArea() {
+		return headerArea;
 	}
 
 	private static int getEntryRowHeight() {
@@ -312,6 +319,9 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			addValueRowArea.getY() + addValueRowArea.getHeight(),
 			UNUSED_ROW_BACKGROUND_COLOR
 		);
+		if (addValueRowArea.contains(mouseX, mouseY)) {
+			fillRowHover(guiGraphics, addValueRowArea);
+		}
 		drawButtonBackground(guiGraphics, textures, addValueTextArea, true, addValueTextArea.contains(mouseX, mouseY));
 		String displayText = getAddValueDisplayText();
 		int textColor = getAddValueTextColor();
@@ -320,7 +330,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		boolean canAdd = canAddTypedValue();
 		boolean addHovered = canAdd && addValueButtonArea.contains(mouseX, mouseY);
 		drawButtonBackground(guiGraphics, textures, addValueButtonArea, canAdd, addHovered);
-		drawCenteredButtonText(guiGraphics, font, "+", addValueButtonArea, getControlTextColor(addHovered));
+		ConfigButtonIcon.ADD.draw(guiGraphics, addValueButtonArea, canAdd);
 	}
 
 	private String getAddValueDisplayText() {
@@ -371,6 +381,16 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		guiGraphics.fill(x, bottom - 1, right, bottom, ORDERED_GROUP_BORDER_LIGHT_COLOR);
 	}
 
+	private static void fillRowHover(GuiGraphics guiGraphics, ImmutableRect2i rowArea) {
+		guiGraphics.fill(
+			rowArea.getX(),
+			rowArea.getY(),
+			rowArea.getX() + rowArea.getWidth(),
+			rowArea.getY() + rowArea.getHeight(),
+			LIST_ROW_HOVER_COLOR
+		);
+	}
+
 	private static ImmutableRect2i createButtonArea(ImmutableRect2i area, int y, int buttonsFromRight) {
 		int xOffset = (BUTTON_SIZE + BUTTON_GAP) * buttonsFromRight;
 		return new ImmutableRect2i(
@@ -393,13 +413,6 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			area.getHeight()
 		);
 		return new ColorComponentAreas(swatchArea, hexArea);
-	}
-
-	private static int getControlTextColor(boolean hovered) {
-		if (hovered) {
-			return HOVER_TEXT_COLOR;
-		}
-		return TEXT_COLOR;
 	}
 
 	@Override
@@ -1502,6 +1515,9 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			guiGraphics.fill(rowArea.getX(), rowArea.getY(),
 				rowArea.getX() + rowArea.getWidth(), rowArea.getY() + rowArea.getHeight(),
 				backgroundColor);
+			if (drawControls && rowArea.contains(mouseX, mouseY)) {
+				fillRowHover(guiGraphics, rowArea);
+			}
 			if (index > 0) {
 				guiGraphics.fill(rowArea.getX(), rowArea.getY(), rowArea.getX() + rowArea.getWidth(), rowArea.getY() + 1, ORDERED_ROW_DIVIDER_COLOR);
 			}
@@ -1519,17 +1535,17 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			if (drawControls) {
 				if (selected) {
 					if (ordered) {
-						drawMoveButton(guiGraphics, textures, moveUpArea, textures.getArrowUp(), canMoveUp(), mouseX, mouseY);
-						drawMoveButton(guiGraphics, textures, moveDownArea, textures.getArrowDown(), canMoveDown(), mouseX, mouseY);
+						drawMoveButton(guiGraphics, textures, moveUpArea, ConfigButtonIcon.UP, canMoveUp(), mouseX, mouseY);
+						drawMoveButton(guiGraphics, textures, moveDownArea, ConfigButtonIcon.DOWN, canMoveDown(), mouseX, mouseY);
 					}
 					if (!resetArea.isEmpty()) {
 						drawResetButton(guiGraphics, textures, mouseX, mouseY);
 					}
 					if (allowsRemovingValues) {
-						drawDeleteButton(guiGraphics, textures, font, mouseX, mouseY);
+						drawDeleteButton(guiGraphics, textures, mouseX, mouseY);
 					}
 				} else {
-					drawAddButton(guiGraphics, textures, font, mouseX, mouseY);
+					drawAddButton(guiGraphics, textures, mouseX, mouseY);
 				}
 			}
 		}
@@ -1728,31 +1744,20 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			GuiGraphics guiGraphics,
 			ConfigTextures textures,
 			ImmutableRect2i buttonArea,
-			ConfigDrawableStatic icon,
+			ConfigButtonIcon icon,
 			boolean active,
 			double mouseX,
 			double mouseY
 		) {
 			boolean hovered = active && buttonArea.contains(mouseX, mouseY);
 			ConfigEntryWidget.drawButtonBackground(guiGraphics, textures, buttonArea, active, hovered);
-			int iconX = buttonArea.getX() + (buttonArea.getWidth() - ARROW_ICON_SIZE) / 2;
-			int iconY = buttonArea.getY() + (buttonArea.getHeight() - ARROW_ICON_SIZE) / 2;
-			if (active) {
-				icon.draw(guiGraphics, iconX, iconY);
-				return;
-			}
-
-			guiGraphics.pose().pushPose();
-			guiGraphics.setColor(0.3f, 0.3f, 0.3f, 0.5f);
-			icon.draw(guiGraphics, iconX, iconY);
-			guiGraphics.setColor(1f, 1f, 1f, 1f);
-			guiGraphics.pose().popPose();
+			icon.draw(guiGraphics, buttonArea, active);
 		}
 
-		private void drawDeleteButton(GuiGraphics guiGraphics, ConfigTextures textures, Font font, double mouseX, double mouseY) {
+		private void drawDeleteButton(GuiGraphics guiGraphics, ConfigTextures textures, double mouseX, double mouseY) {
 			boolean deleteHovered = deleteArea.contains(mouseX, mouseY);
 			ConfigEntryWidget.drawButtonBackground(guiGraphics, textures, deleteArea, true, deleteHovered);
-			ConfigEntryWidget.drawCenteredButtonText(guiGraphics, font, "x", deleteArea, getControlTextColor(deleteHovered));
+			ConfigButtonIcon.X.draw(guiGraphics, deleteArea, true);
 		}
 
 		private void drawResetButton(GuiGraphics guiGraphics, ConfigTextures textures, double mouseX, double mouseY) {
@@ -1762,10 +1767,10 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			ConfigResetIcon.draw(guiGraphics, resetArea, active);
 		}
 
-		private void drawAddButton(GuiGraphics guiGraphics, ConfigTextures textures, Font font, double mouseX, double mouseY) {
+		private void drawAddButton(GuiGraphics guiGraphics, ConfigTextures textures, double mouseX, double mouseY) {
 			boolean addHovered = addArea.contains(mouseX, mouseY);
 			ConfigEntryWidget.drawButtonBackground(guiGraphics, textures, addArea, true, addHovered);
-			ConfigEntryWidget.drawCenteredButtonText(guiGraphics, font, "+", addArea, getControlTextColor(addHovered));
+			ConfigButtonIcon.ADD.draw(guiGraphics, addArea, true);
 		}
 
 	}

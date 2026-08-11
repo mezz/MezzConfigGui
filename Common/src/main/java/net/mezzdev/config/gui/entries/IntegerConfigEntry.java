@@ -6,7 +6,7 @@ import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.info.ConfigValueInfoFactory;
 import net.mezzdev.config.gui.input.UserInput;
-import net.mezzdev.config.gui.textures.ConfigDrawableStatic;
+import net.mezzdev.config.gui.textures.ConfigButtonIcon;
 import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.Minecraft;
@@ -27,7 +27,6 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 
 	private static final int BUTTON_SIZE = 18;
 	private static final int BUTTON_GAP = 2;
-	private static final int ICON_SIZE = 9;
 	private static final int VALUE_BOX_WIDTH = 42;
 	private static final int VALUE_BOX_HEIGHT = BUTTON_SIZE;
 	private static final int VALUE_TEXT_PADDING = 3;
@@ -114,34 +113,12 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 		boolean canUp = getValue() < max;
 		boolean upHovered = canUp && upArea.contains(mouseX, mouseY);
 		drawButtonBackground(guiGraphics, textures, upArea, canUp, upHovered);
-		ConfigDrawableStatic upIcon = textures.getArrowUp();
-		int upIx = upArea.getX() + (upArea.getWidth() - ICON_SIZE) / 2;
-		int upIy = upArea.getY() + (upArea.getHeight() - ICON_SIZE) / 2;
-		if (canUp) {
-			upIcon.draw(guiGraphics, upIx, upIy);
-		} else {
-			guiGraphics.pose().pushPose();
-			guiGraphics.setColor(0.3f, 0.3f, 0.3f, 0.5f);
-			upIcon.draw(guiGraphics, upIx, upIy);
-			guiGraphics.setColor(1f, 1f, 1f, 1f);
-			guiGraphics.pose().popPose();
-		}
+		ConfigButtonIcon.UP.draw(guiGraphics, upArea, canUp);
 
 		boolean canDown = getValue() > min;
 		boolean downHovered = canDown && downArea.contains(mouseX, mouseY);
 		drawButtonBackground(guiGraphics, textures, downArea, canDown, downHovered);
-		ConfigDrawableStatic downIcon = textures.getArrowDown();
-		int downIx = downArea.getX() + (downArea.getWidth() - ICON_SIZE) / 2;
-		int downIy = downArea.getY() + (downArea.getHeight() - ICON_SIZE) / 2;
-		if (canDown) {
-			downIcon.draw(guiGraphics, downIx, downIy);
-		} else {
-			guiGraphics.pose().pushPose();
-			guiGraphics.setColor(0.3f, 0.3f, 0.3f, 0.5f);
-			downIcon.draw(guiGraphics, downIx, downIy);
-			guiGraphics.setColor(1f, 1f, 1f, 1f);
-			guiGraphics.pose().popPose();
-		}
+		ConfigButtonIcon.DOWN.draw(guiGraphics, downArea, canDown);
 	}
 
 	private void drawRightAlignedText(GuiGraphics guiGraphics, Font font, String text, int y, int color) {

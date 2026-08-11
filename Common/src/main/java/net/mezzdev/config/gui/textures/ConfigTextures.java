@@ -23,6 +23,8 @@ public class ConfigTextures {
 
 	private final ConfigDrawableStatic arrowUp;
 	private final ConfigDrawableStatic arrowDown;
+	private final ConfigDrawableStatic checkbox;
+	private final ConfigDrawableStatic checkboxHighlight;
 
 	private ConfigTextures(ConfigGuiSpriteManager guiSpriteManager) {
 		this.guiSpriteManager = guiSpriteManager;
@@ -39,6 +41,8 @@ public class ConfigTextures {
 
 		this.arrowUp = createGuiSprite("icons/arrow_up", 9, 9);
 		this.arrowDown = createGuiSprite("icons/arrow_down", 9, 9);
+		this.checkbox = createGuiSprite("checkbox", 18, 18);
+		this.checkboxHighlight = createGuiSprite("checkbox_highlight", 18, 18);
 	}
 
 	public static ConfigTextures get() {
@@ -108,5 +112,12 @@ public class ConfigTextures {
 
 	public ConfigDrawableStatic getArrowDown() {
 		return arrowDown;
+	}
+
+	ConfigDrawableStatic getCheckbox(boolean hovered) {
+		if (hovered) {
+			return checkboxHighlight;
+		}
+		return checkbox;
 	}
 }

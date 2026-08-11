@@ -1,11 +1,22 @@
 package net.mezzdev.config.gui.neoforge.config;
 
+import net.mezzdev.config.api.value.ConfigValueRange;
 import net.mezzdev.config.api.value.IDeserializeResult;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
+import java.util.Optional;
+
 final class NeoForgeLongSerializer extends NeoForgeTextSerializer<Long> {
+	private final ConfigValueRange<Long> range;
+
 	public NeoForgeLongSerializer(ModConfigSpec.ValueSpec valueSpec, long min, long max) {
 		super(valueSpec, getValidValuesDescription(min, max));
+		this.range = new ConfigValueRange<>(min, max);
+	}
+
+	@Override
+	public Optional<ConfigValueRange<Long>> getRange() {
+		return Optional.of(range);
 	}
 
 	private static String getValidValuesDescription(long min, long max) {

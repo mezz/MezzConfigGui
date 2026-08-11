@@ -10,6 +10,7 @@ import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueEditor;
 import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigValueEditorFactory;
+import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.keybindings.KeyMappingConfigEntry;
 import net.mezzdev.config.gui.keybindings.KeyMappingValue;
 import net.mezzdev.config.gui.popup.ConfigPopupSelector;
@@ -19,6 +20,7 @@ import net.mezzdev.config.gui.util.ErrorUtil;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
@@ -41,7 +43,7 @@ public final class ConfigEntryWidgetFactory {
 		this.textures = textures;
 
 		register(ConfigValueEditorTypes.<KeyMappingValue>getKeyMapping(), this::createKeyMappingEntry);
-		register(ConfigValueEditorTypes.BOOLEAN, value -> new CustomConfigEntry<>(value, new BooleanConfigValueEditor(), valueSelectorOpener, textures));
+		register(ConfigValueEditorTypes.BOOLEAN, value -> new CustomConfigEntry<>(value, new BooleanConfigValueEditor(), valueSelectorOpener, textures, false));
 		register(ConfigValueEditorTypes.INTEGER, this::createIntegerEntry);
 		register(ConfigValueEditorTypes.COLOR, this::createColorEntry);
 		register(ConfigValueEditorTypes.getText(), this::createTextEntry);
@@ -66,12 +68,30 @@ public final class ConfigEntryWidgetFactory {
 	}
 
 	public ConfigEntryWidget<?> create(IConfigScreenValue<?> value) {
+		if (ConfigGuiOptions.getNumberDisplayMode() == ConfigGuiOptions.NumberDisplayMode.SLIDER && allowsNumberSlider(value)) {
+			Optional<? extends ConfigEntryWidget<?>> sliderEntry = NumberSliderConfigEntry.create(value, textures);
+			if (sliderEntry.isPresent()) {
+				return sliderEntry.get();
+			}
+		}
 		ConfigValueEditorType<?> editorType = getEditorType(value);
 		ConfigEntryWidgetCreator<?> creator = creators.get(editorType);
 		if (creator == null) {
 			throw new UnsupportedOperationException("Unsupported config value editor type: " + editorType);
 		}
 		return create(creator, value);
+	}
+
+	private static boolean allowsNumberSlider(IConfigScreenValue<?> value) {
+		if (!(value.getValue() instanceof Number)) {
+			return false;
+		}
+		IConfigValueSerializer<?> serializer = value.getSerializer();
+		if (serializer instanceof IConfigValueEditorSerializer<?> editorSerializer) {
+			ConfigValueEditorType<?> editorType = editorSerializer.getEditorType();
+			return editorType == ConfigValueEditorTypes.INTEGER || editorType == ConfigValueEditorTypes.getText();
+		}
+		return true;
 	}
 
 	private static ConfigValueEditorType<?> getEditorType(IConfigScreenValue<?> value) {
@@ -128,7 +148,7 @@ public final class ConfigEntryWidgetFactory {
 	}
 
 	private <T> void registerSelectionEditor() {
-		register(ConfigValueEditorTypes.getSelection(), value -> new CustomConfigEntry<>(value, new SelectionConfigValueEditor<>(textures), valueSelectorOpener, textures));
+		register(ConfigValueEditorTypes.getSelection(), value -> new CustomConfigEntry<>(value, new SelectionConfigValueEditor<>(), valueSelectorOpener, textures));
 	}
 
 	@FunctionalInterface

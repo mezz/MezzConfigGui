@@ -34,6 +34,8 @@ public final class ConfigGuiOptions {
 	@Nullable
 	private static IConfigValue<RowDensity> rowDensity;
 	@Nullable
+	private static IConfigValue<NumberDisplayMode> numberDisplayMode;
+	@Nullable
 	private static IConfigValue<Boolean> showRowStriping;
 	@Nullable
 	private static IConfigValue<Boolean> rememberLastCategory;
@@ -71,24 +73,27 @@ public final class ConfigGuiOptions {
 		IConfigCategoryBuilder appearance = schemaBuilder.addCategory("appearance");
 		guiMode = appearance.addEnum("guiMode", GuiMode.WINDOW)
 			.addLegacyValueMigration("appearance", "guiSize", ConfigGuiOptions::migrateGuiMode)
-			.setEditMode(ConfigValueEditMode.BATCH)
+			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 		windowWidth = appearance.addInteger("windowWidth", DEFAULT_WINDOW_WIDTH, MIN_WINDOW_WIDTH, MAX_WINDOW_SIZE)
 			.addLegacyValueMigration("appearance", "guiSize", ConfigGuiOptions::migrateWindowWidth)
-			.setEditMode(ConfigValueEditMode.BATCH)
+			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 		windowHeight = appearance.addInteger("windowHeight", DEFAULT_WINDOW_HEIGHT, MIN_WINDOW_HEIGHT, MAX_WINDOW_SIZE)
 			.addLegacyValueMigration("appearance", "guiSize", ConfigGuiOptions::migrateWindowHeight)
-			.setEditMode(ConfigValueEditMode.BATCH)
+			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 		rowDensity = appearance.addEnum("rowDensity", RowDensity.COMFORTABLE)
-			.setEditMode(ConfigValueEditMode.BATCH)
+			.setEditMode(ConfigValueEditMode.IMMEDIATE)
+			.build();
+		numberDisplayMode = appearance.addEnum("numberDisplayMode", NumberDisplayMode.SLIDER)
+			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 		showRowStriping = appearance.addBoolean("showRowStriping", true)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 		showAdvancedValueDetails = appearance.addBoolean("showAdvancedValueDetails", false)
-			.setEditMode(ConfigValueEditMode.BATCH)
+			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 
 		IConfigCategoryBuilder navigation = schemaBuilder.addCategory("navigation");
@@ -99,7 +104,7 @@ public final class ConfigGuiOptions {
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 		focusSearchOnOpen = navigation.addBoolean("focusSearchOnOpen", false)
-			.setEditMode(ConfigValueEditMode.BATCH)
+			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 
 		IConfigCategoryBuilder scrolling = schemaBuilder.addCategory("scrolling");
@@ -199,6 +204,10 @@ public final class ConfigGuiOptions {
 
 	public static RowDensity getRowDensity() {
 		return getValue(rowDensity, RowDensity.COMFORTABLE);
+	}
+
+	public static NumberDisplayMode getNumberDisplayMode() {
+		return getValue(numberDisplayMode, NumberDisplayMode.SLIDER);
 	}
 
 	public static boolean showRowStriping() {
@@ -330,6 +339,11 @@ public final class ConfigGuiOptions {
 		public int getListRowHeight() {
 			return listRowHeight;
 		}
+	}
+
+	public enum NumberDisplayMode {
+		SLIDER,
+		TEXT_AND_BUTTONS
 	}
 
 	public enum DiscoveryLogging {

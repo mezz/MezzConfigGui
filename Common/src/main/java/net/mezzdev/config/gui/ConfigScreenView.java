@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui;
 
 import net.mezzdev.config.gui.textures.ConfigTextures;
+import net.mezzdev.config.gui.textures.ConfigButtonIcon;
 import net.mezzdev.config.gui.textures.ConfigScalableDrawable;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.mezzdev.config.gui.entries.ConfigEntryWidget;
@@ -24,12 +25,6 @@ import java.util.List;
  * Draws the config screen frame, navigation, value rows, info panel, popups, and tooltips.
  */
 final class ConfigScreenView {
-	private enum ActionButtonIcon {
-		SCREEN_LIST,
-		UNDO,
-		APPLY
-	}
-
 	private static final int VALUE_SELECTOR_Z_OFFSET = 350;
 	private static final int INFO_PADDING = 5;
 	private static final int INFO_BACKGROUND_COLOR = 0xE0101218;
@@ -37,12 +32,6 @@ final class ConfigScreenView {
 	private static final int INFO_TITLE_COLOR = 0xFFF3F6FF;
 	private static final int INFO_TEXT_COLOR = 0xFFC9D3E2;
 	private static final int TITLE_TEXT_COLOR = 0xFF404040;
-	private static final int CONTROL_ICON_COLOR = 0xFFFFFFFF;
-	private static final int CONTROL_DISABLED_ICON_COLOR = 0xFFA0A0A0;
-	private static final int ACTION_ICON_LINE_LENGTH = 8;
-	private static final int ACTION_ICON_STROKE_SIZE = 2;
-	private static final int SCREEN_LIST_ICON_CELL_SIZE = 3;
-	private static final int SCREEN_LIST_ICON_CELL_GAP = 2;
 	private static final int RESIZE_GRIP_SIZE = 11;
 	private static final int RESIZE_GRIP_LINE_GAP = 3;
 	private static final int RESIZE_EDGE_HIGHLIGHT_SIZE = 2;
@@ -108,15 +97,15 @@ final class ConfigScreenView {
 			valueSelector,
 			valueSelectorClipArea,
 			contentArea,
+			screenListButtonArea,
+			applyPendingChangesButtonArea,
+			undoChangesButtonArea,
 			mouseX,
 			mouseY
 		);
 		@Nullable
 		ConfigInfo hoveredControlInfo = getControlInfo(
 			searchBackgroundArea,
-			screenListButtonArea,
-			applyPendingChangesButtonArea,
-			undoChangesButtonArea,
 			resizeHandle,
 			mouseX,
 			mouseY
@@ -179,21 +168,21 @@ final class ConfigScreenView {
 		drawActionButton(
 			guiGraphics,
 			screenListButtonArea,
-			ActionButtonIcon.SCREEN_LIST,
+			ConfigButtonIcon.SCREEN_LIST,
 			!screenListButtonArea.isEmpty(),
 			screenListButtonArea.contains(mouseX, mouseY)
 		);
 		drawActionButton(
 			guiGraphics,
 			undoChangesButtonArea,
-			ActionButtonIcon.UNDO,
+			ConfigButtonIcon.X,
 			controller.hasUndoableChanges(),
 			undoChangesButtonArea.contains(mouseX, mouseY)
 		);
 		drawActionButton(
 			guiGraphics,
 			applyPendingChangesButtonArea,
-			ActionButtonIcon.APPLY,
+			ConfigButtonIcon.CHECK,
 			controller.hasPendingChanges(),
 			applyPendingChangesButtonArea.contains(mouseX, mouseY)
 		);
@@ -202,7 +191,7 @@ final class ConfigScreenView {
 	private void drawActionButton(
 		GuiGraphics guiGraphics,
 		ImmutableRect2i area,
-		ActionButtonIcon icon,
+		ConfigButtonIcon icon,
 		boolean active,
 		boolean hovered
 	) {
@@ -210,85 +199,7 @@ final class ConfigScreenView {
 			return;
 		}
 		ConfigEntryWidget.drawButtonBackground(guiGraphics, textures, area, active, active && hovered);
-		int iconColor = getControlIconColor(active);
-		drawActionIcon(guiGraphics, area, icon, iconColor);
-	}
-
-	private static int getControlIconColor(boolean active) {
-		if (active) {
-			return CONTROL_ICON_COLOR;
-		}
-		return CONTROL_DISABLED_ICON_COLOR;
-	}
-
-	private static void drawActionIcon(GuiGraphics guiGraphics, ImmutableRect2i area, ActionButtonIcon icon, int color) {
-		switch (icon) {
-			case SCREEN_LIST -> drawScreenListIcon(guiGraphics, area, color);
-			case UNDO -> drawUndoIcon(guiGraphics, area, color);
-			case APPLY -> drawApplyIcon(guiGraphics, area, color);
-		}
-	}
-
-	private static void drawScreenListIcon(GuiGraphics guiGraphics, ImmutableRect2i area, int color) {
-		int iconSize = SCREEN_LIST_ICON_CELL_SIZE * 2 + SCREEN_LIST_ICON_CELL_GAP;
-		int x = area.getX() + (area.getWidth() - iconSize) / 2;
-		int y = area.getY() + (area.getHeight() - iconSize) / 2;
-		drawScreenListIconCell(guiGraphics, x, y, color);
-		drawScreenListIconCell(guiGraphics, x + SCREEN_LIST_ICON_CELL_SIZE + SCREEN_LIST_ICON_CELL_GAP, y, color);
-		drawScreenListIconCell(guiGraphics, x, y + SCREEN_LIST_ICON_CELL_SIZE + SCREEN_LIST_ICON_CELL_GAP, color);
-		drawScreenListIconCell(
-			guiGraphics,
-			x + SCREEN_LIST_ICON_CELL_SIZE + SCREEN_LIST_ICON_CELL_GAP,
-			y + SCREEN_LIST_ICON_CELL_SIZE + SCREEN_LIST_ICON_CELL_GAP,
-			color
-		);
-	}
-
-	private static void drawScreenListIconCell(GuiGraphics guiGraphics, int x, int y, int color) {
-		guiGraphics.fill(
-			x,
-			y,
-			x + SCREEN_LIST_ICON_CELL_SIZE,
-			y + SCREEN_LIST_ICON_CELL_SIZE,
-			color
-		);
-	}
-
-	private static void drawUndoIcon(GuiGraphics guiGraphics, ImmutableRect2i area, int color) {
-		int iconSize = ACTION_ICON_LINE_LENGTH + ACTION_ICON_STROKE_SIZE - 1;
-		int x = area.getX() + (area.getWidth() - iconSize) / 2;
-		int y = area.getY() + (area.getHeight() - iconSize) / 2;
-		drawDownRightIconLine(guiGraphics, x, y, ACTION_ICON_LINE_LENGTH, color);
-		drawUpRightIconLine(guiGraphics, x, y + ACTION_ICON_LINE_LENGTH - 1, ACTION_ICON_LINE_LENGTH, color);
-	}
-
-	private static void drawApplyIcon(GuiGraphics guiGraphics, ImmutableRect2i area, int color) {
-		int x = area.getX() + (area.getWidth() - 11) / 2;
-		int y = area.getY() + (area.getHeight() - 9) / 2;
-		drawDownRightIconLine(guiGraphics, x, y + 5, 4, color);
-		drawUpRightIconLine(guiGraphics, x + 3, y + 8, 7, color);
-	}
-
-	private static void drawDownRightIconLine(GuiGraphics guiGraphics, int x, int y, int length, int color) {
-		for (int i = 0; i < length; i++) {
-			drawIconStroke(guiGraphics, x + i, y + i, color);
-		}
-	}
-
-	private static void drawUpRightIconLine(GuiGraphics guiGraphics, int x, int y, int length, int color) {
-		for (int i = 0; i < length; i++) {
-			drawIconStroke(guiGraphics, x + i, y - i, color);
-		}
-	}
-
-	private static void drawIconStroke(GuiGraphics guiGraphics, int x, int y, int color) {
-		guiGraphics.fill(
-			x,
-			y,
-			x + ACTION_ICON_STROKE_SIZE,
-			y + ACTION_ICON_STROKE_SIZE,
-			color
-		);
+		icon.draw(guiGraphics, area, active);
 	}
 
 	private static void drawResizeHandles(GuiGraphics guiGraphics, ImmutableRect2i area, ConfigScreenLayout.ResizeHandle resizeHandle) {
@@ -486,9 +397,23 @@ final class ConfigScreenView {
 		@Nullable ConfigPopupSelector valueSelector,
 		ImmutableRect2i valueSelectorClipArea,
 		ImmutableRect2i contentArea,
+		ImmutableRect2i screenListButtonArea,
+		ImmutableRect2i applyPendingChangesButtonArea,
+		ImmutableRect2i undoChangesButtonArea,
 		int mouseX,
 		int mouseY
 	) {
+		@Nullable
+		ConfigInfo actionButtonTooltipInfo = getActionButtonTooltipInfo(
+			screenListButtonArea,
+			applyPendingChangesButtonArea,
+			undoChangesButtonArea,
+			mouseX,
+			mouseY
+		);
+		if (actionButtonTooltipInfo != null) {
+			return actionButtonTooltipInfo;
+		}
 		if (valueSelector != null && valueSelectorClipArea.contains(mouseX, mouseY)) {
 			@Nullable
 			ConfigInfo valueSelectorTooltipInfo = valueSelector.getTooltipInfo(mouseX, mouseY);
@@ -511,6 +436,26 @@ final class ConfigScreenView {
 			if (info != null) {
 				return info;
 			}
+		}
+		return null;
+	}
+
+	@Nullable
+	private ConfigInfo getActionButtonTooltipInfo(
+		ImmutableRect2i screenListButtonArea,
+		ImmutableRect2i applyPendingChangesButtonArea,
+		ImmutableRect2i undoChangesButtonArea,
+		int mouseX,
+		int mouseY
+	) {
+		if (screenListButtonArea.contains(mouseX, mouseY)) {
+			return getScreenListTooltipInfo();
+		}
+		if (undoChangesButtonArea.contains(mouseX, mouseY)) {
+			return getUndoChangesTooltipInfo();
+		}
+		if (applyPendingChangesButtonArea.contains(mouseX, mouseY)) {
+			return getApplyPendingChangesTooltipInfo();
 		}
 		return null;
 	}
@@ -565,9 +510,6 @@ final class ConfigScreenView {
 	@Nullable
 	private ConfigInfo getControlInfo(
 		ImmutableRect2i searchBackgroundArea,
-		ImmutableRect2i screenListButtonArea,
-		ImmutableRect2i applyPendingChangesButtonArea,
-		ImmutableRect2i undoChangesButtonArea,
 		ConfigScreenLayout.ResizeHandle resizeHandle,
 		int mouseX,
 		int mouseY
@@ -577,15 +519,6 @@ final class ConfigScreenView {
 		}
 		if (searchBackgroundArea.contains(mouseX, mouseY)) {
 			return getSearchInfo();
-		}
-		if (screenListButtonArea.contains(mouseX, mouseY)) {
-			return getScreenListInfo();
-		}
-		if (undoChangesButtonArea.contains(mouseX, mouseY)) {
-			return getUndoChangesInfo();
-		}
-		if (applyPendingChangesButtonArea.contains(mouseX, mouseY)) {
-			return getApplyPendingChangesInfo();
 		}
 		return null;
 	}
@@ -597,14 +530,14 @@ final class ConfigScreenView {
 		);
 	}
 
-	private static ConfigInfo getScreenListInfo() {
+	private static ConfigInfo getScreenListTooltipInfo() {
 		return new ConfigInfo(
 			Component.translatable("mezz_config.config.screen.allMods.title"),
 			Component.translatable("mezz_config.config.screen.allMods.info")
 		);
 	}
 
-	private ConfigInfo getUndoChangesInfo() {
+	private ConfigInfo getUndoChangesTooltipInfo() {
 		String infoKey = getUndoChangesInfoKey();
 		return new ConfigInfo(
 			Component.translatable("mezz_config.config.screen.undo.title"),
@@ -619,7 +552,7 @@ final class ConfigScreenView {
 		return "mezz_config.config.screen.undo.disabled.info";
 	}
 
-	private ConfigInfo getApplyPendingChangesInfo() {
+	private ConfigInfo getApplyPendingChangesTooltipInfo() {
 		String infoKey = getApplyPendingChangesInfoKey();
 		return new ConfigInfo(
 			Component.translatable("mezz_config.config.screen.applyPending.title"),
