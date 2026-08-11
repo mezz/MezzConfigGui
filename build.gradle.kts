@@ -1,6 +1,8 @@
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.provider.Property
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
@@ -119,9 +121,56 @@ tasks.register<ValidateReleaseVersion>("validateReleaseVersion") {
     specificationVersion.set(releaseSpecificationVersion)
 }
 
+val validatePublishing = tasks.register("validatePublishing") {
+    group = "verification"
+    description = "Publishes every Maven publication to a local validation repository."
+}
+
 subprojects {
     version = projectVersion
     group = modGroup
+
+    plugins.withId("maven-publish") {
+        extensions.configure<PublishingExtension> {
+            repositories {
+                maven {
+                    name = "validation"
+                    url = rootProject.layout.buildDirectory.dir("publication-validation").get().asFile.toURI()
+                }
+            }
+            publications.withType<MavenPublication>().configureEach {
+                pom {
+                    name.set("$modName ${project.name}")
+                    description.set(modDescription)
+                    url.set(githubUrl)
+
+                    licenses {
+                        license {
+                            name.set("MIT License")
+                            url.set("https://opensource.org/license/mit")
+                            distribution.set("repo")
+                        }
+                    }
+                    developers {
+                        developer {
+                            id.set(modAuthor)
+                            name.set(modAuthor)
+                        }
+                    }
+                    scm {
+                        connection.set("scm:git:$githubUrl.git")
+                        developerConnection.set("scm:git:$githubUrl.git")
+                        url.set(githubUrl)
+                    }
+                }
+            }
+        }
+
+        val validationPublicationTaskPath = "$path:publishAllPublicationsToValidationRepository"
+        validatePublishing.configure {
+            dependsOn(validationPublicationTaskPath)
+        }
+    }
 
     if (configuredReleaseVersion != null) {
         tasks.withType<PublishToMavenRepository>().configureEach {
@@ -142,6 +191,10 @@ subprojects {
     }
 
     tasks.withType<Jar> {
+        from(rootProject.file("LICENSE")) {
+            into("META-INF")
+            rename("LICENSE", "LICENSE-MezzConfigGui")
+        }
         manifest {
             attributes(mapOf(
                 "Specification-Title" to modName,
