@@ -39,18 +39,23 @@ pluginManagement {
 
 val minecraftVersion: String by settings
 val mezzConfigLocalPath: String by settings
+val useMezzConfigCompositeBuild = providers.gradleProperty("useMezzConfigCompositeBuild")
+	.map(String::toBoolean)
+	.getOrElse(true)
 
 rootProject.name = "MezzConfigGui"
 
-includeBuild(mezzConfigLocalPath) {
-	dependencySubstitution {
-		substitute(module("net.mezzdev.config:CommonApi")).using(project(":CommonApi"))
-		substitute(module("net.mezzdev.config:Common")).using(project(":Common"))
-		substitute(module("net.mezzdev.config:mezz_config-${minecraftVersion}-config-api")).using(project(":CommonApi"))
-		substitute(module("net.mezzdev.config:mezz_config-${minecraftVersion}-config")).using(project(":Common"))
-		substitute(module("net.mezzdev.config:mezz_config-${minecraftVersion}-fabric")).using(project(":Fabric"))
-		substitute(module("net.mezzdev.config:mezz_config-${minecraftVersion}-forge")).using(project(":Forge"))
-		substitute(module("net.mezzdev.config:mezz_config-${minecraftVersion}-neoforge")).using(project(":NeoForge"))
+if (useMezzConfigCompositeBuild) {
+	includeBuild(mezzConfigLocalPath) {
+		dependencySubstitution {
+			substitute(module("net.mezzdev.config:CommonApi")).using(project(":CommonApi"))
+			substitute(module("net.mezzdev.config:Common")).using(project(":Common"))
+			substitute(module("net.mezzdev.config:mezz_config-${minecraftVersion}-config-api")).using(project(":CommonApi"))
+			substitute(module("net.mezzdev.config:mezz_config-${minecraftVersion}-config")).using(project(":Common"))
+			substitute(module("net.mezzdev.config:mezz_config-${minecraftVersion}-fabric")).using(project(":Fabric"))
+			substitute(module("net.mezzdev.config:mezz_config-${minecraftVersion}-forge")).using(project(":Forge"))
+			substitute(module("net.mezzdev.config:mezz_config-${minecraftVersion}-neoforge")).using(project(":NeoForge"))
+		}
 	}
 }
 
