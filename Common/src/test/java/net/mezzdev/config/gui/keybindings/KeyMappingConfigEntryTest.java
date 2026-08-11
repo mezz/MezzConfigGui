@@ -10,12 +10,15 @@ import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class KeyMappingConfigEntryTest {
 	@Test
@@ -27,6 +30,26 @@ class KeyMappingConfigEntryTest {
 			IllegalArgumentException.class,
 			() -> configValue.set(new KeyMappingValue(null, new TestConfigKeyMapping()))
 		);
+	}
+
+	@Test
+	void screenValueNotifiesListenersAfterSavingAChange() {
+		TestConfigKeyMapping keyMapping = new TestConfigKeyMapping();
+		KeyMappingConfigValue configValue = new KeyMappingConfigValue(keyMapping, () -> {});
+		List<KeyMappingValue> listenerValues = new ArrayList<>();
+		Runnable removeListener = configValue.addListener(listenerValues::add);
+		KeyMappingValue changedValue = new KeyMappingValue(
+			new ConfigKeyBinding("key.keyboard.l", ConfigKeyModifier.NONE),
+			keyMapping
+		);
+
+		assertTrue(configValue.set(changedValue));
+		assertFalse(configValue.set(changedValue));
+		assertEquals(List.of(changedValue), listenerValues);
+
+		removeListener.run();
+		assertTrue(configValue.set(new KeyMappingValue(ConfigKeyBinding.UNKNOWN, keyMapping)));
+		assertEquals(List.of(changedValue), listenerValues);
 	}
 
 	@Test
@@ -108,6 +131,7 @@ class KeyMappingConfigEntryTest {
 		private static final ConfigKeyBinding DEFAULT_BINDING = new ConfigKeyBinding("key.keyboard.k", ConfigKeyModifier.NONE);
 
 		private int conflictLookupCount;
+		private ConfigKeyBinding value = DEFAULT_BINDING;
 
 		@Override
 		public String getName() {
@@ -131,7 +155,7 @@ class KeyMappingConfigEntryTest {
 
 		@Override
 		public ConfigKeyBinding getValue() {
-			return DEFAULT_BINDING;
+			return value;
 		}
 
 		@Override
@@ -146,7 +170,7 @@ class KeyMappingConfigEntryTest {
 
 		@Override
 		public void set(ConfigKeyBinding value) {
-
+			this.value = value;
 		}
 
 		@Override

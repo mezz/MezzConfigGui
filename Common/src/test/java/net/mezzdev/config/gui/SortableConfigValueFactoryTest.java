@@ -140,6 +140,30 @@ class SortableConfigValueFactoryTest {
 	}
 
 	@Test
+	void forwardsExternalSortingConfigChangesWhileSubscribed() {
+		TestSortingConfig sortingConfig = new TestSortingConfig(true);
+		IConfigScreenValue<List<String>> configValue = SORTABLE_CONFIG_VALUES.createStringList(
+			"sortOrder",
+			"test.sortOrder",
+			sortingConfig,
+			List.of("first", "second"),
+			Map.of(),
+			Map.of(),
+			Map.of()
+		);
+		List<List<String>> listenerValues = new ArrayList<>();
+		Runnable removeListener = configValue.addListener(listenerValues::add);
+
+		sortingConfig.setSortedValues(List.of("second", "first"));
+		assertEquals(List.of(List.of("second", "first")), listenerValues);
+
+		removeListener.run();
+		assertEquals(0, sortingConfig.listeners.size());
+		sortingConfig.setSortedValues(List.of("first", "second"));
+		assertEquals(List.of(List.of("second", "first")), listenerValues);
+	}
+
+	@Test
 	void genericFactoryExposesRuntimeValuesThroughElementSerializer() {
 		TestSortingConfig sortingConfig = new TestSortingConfig(false);
 		IConfigScreenValue<List<String>> configValue = SORTABLE_CONFIG_VALUES.create(

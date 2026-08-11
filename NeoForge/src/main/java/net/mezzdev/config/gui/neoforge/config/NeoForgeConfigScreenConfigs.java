@@ -47,6 +47,7 @@ public final class NeoForgeConfigScreenConfigs {
 					);
 			}
 		}
+		modContainers.values().forEach(NeoForgeConfigValueReloads::register);
 		return modContainers.values()
 			.stream()
 			.map(NeoForgeConfigScreenConfig::new)

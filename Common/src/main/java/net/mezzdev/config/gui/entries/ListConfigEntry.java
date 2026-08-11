@@ -35,6 +35,8 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.StringUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
@@ -49,6 +51,7 @@ import java.util.function.Consumer;
  * Config entry widget for list values with add, remove, and optional reorder controls.
  */
 final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
+	private static final Logger LOGGER = LogManager.getLogger();
 
 	private static final int BUTTON_SIZE = 18;
 	private static final int BUTTON_GAP = 2;
@@ -1779,6 +1782,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 
 	private final class KeyValueComponentScreenValue implements IConfigScreenValue<Object>, IConfigLocalizedValue {
 		private final int rowIndex;
+		private final List<Consumer<Object>> listeners = new ArrayList<>();
 
 		private KeyValueComponentScreenValue(int rowIndex) {
 			this.rowIndex = rowIndex;
@@ -1835,12 +1839,22 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			if (!replaceComponent(rowIndex, value)) {
 				throw new IllegalArgumentException("The list does not accept this component value: " + value);
 			}
+			Object newValue = getValue();
+			for (Consumer<Object> listener : List.copyOf(listeners)) {
+				try {
+					listener.accept(newValue);
+				} catch (RuntimeException exception) {
+					LOGGER.error("List component config value listener failed for {}.", getName(), exception);
+				}
+			}
 			return true;
 		}
 
 		@Override
 		public Runnable addListener(Consumer<Object> listener) {
-			return () -> {};
+			Consumer<Object> checkedListener = Objects.requireNonNull(listener, "listener");
+			listeners.add(checkedListener);
+			return () -> listeners.remove(checkedListener);
 		}
 
 		@Override

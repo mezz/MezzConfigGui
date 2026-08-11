@@ -24,6 +24,7 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 	private final String localizationKey;
 	private final Component localizedName;
 	private final Component localizedDescription;
+	private final ModConfig modConfig;
 	private final ModConfigSpec modConfigSpec;
 	private final ModConfigSpec.ConfigValue<T> configValue;
 	private final T defaultValue;
@@ -31,6 +32,8 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 	private final ConfigValueRestartRequirement restartRequirement;
 	@Nullable
 	private List<Consumer<T>> listeners;
+	@Nullable
+	private T lastNotifiedValue;
 
 	public NeoForgeConfigValue(
 		String modId,
@@ -45,6 +48,7 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 		this.localizationKey = NeoForgeConfigLocalization.getValueLocalizationKey(modId, path, valueSpec.getTranslationKey());
 		this.localizedName = NeoForgeConfigLocalization.getValueName(localizationKey, path);
 		this.localizedDescription = NeoForgeConfigLocalization.getValueDescription(localizationKey, valueSpec.getComment());
+		this.modConfig = modConfig;
 		this.modConfigSpec = modConfigSpec;
 		this.configValue = configValue;
 		this.defaultValue = snapshot(configValue.getDefault());
@@ -123,28 +127,56 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 
 	@Override
 	public Runnable addListener(Consumer<T> listener) {
-		if (listeners == null) {
-			listeners = new ArrayList<>();
-		}
 		Consumer<T> checkedListener = Objects.requireNonNull(listener, "listener");
-		listeners.add(checkedListener);
-		return () -> {
-			if (listeners != null) {
-				listeners.remove(checkedListener);
+		synchronized (this) {
+			if (listeners == null) {
+				listeners = new ArrayList<>();
+				lastNotifiedValue = getValue();
+				NeoForgeConfigValueReloads.register(modConfig, this);
 			}
-		};
+			listeners.add(checkedListener);
+		}
+		return () -> removeListener(checkedListener);
 	}
 
 	private void notifyListeners(T value) {
-		if (listeners != null) {
-			for (Consumer<T> listener : List.copyOf(listeners)) {
-				try {
-					listener.accept(value);
-				} catch (RuntimeException exception) {
-					LOGGER.error("NeoForge config value listener failed for {}.", name, exception);
+		T valueSnapshot = snapshot(value);
+		List<Consumer<T>> listeners;
+		synchronized (this) {
+			if (this.listeners == null || Objects.equals(lastNotifiedValue, valueSnapshot)) {
+				return;
+			}
+			lastNotifiedValue = valueSnapshot;
+			listeners = List.copyOf(this.listeners);
+		}
+		for (Consumer<T> listener : listeners) {
+			try {
+				listener.accept(valueSnapshot);
+			} catch (RuntimeException exception) {
+				LOGGER.error("NeoForge config value listener failed for {}.", name, exception);
+			}
+		}
+	}
+
+	private void removeListener(Consumer<T> listener) {
+		boolean unregister = false;
+		synchronized (this) {
+			if (listeners != null) {
+				listeners.remove(listener);
+				if (listeners.isEmpty()) {
+					listeners = null;
+					lastNotifiedValue = null;
+					unregister = true;
 				}
 			}
 		}
+		if (unregister) {
+			NeoForgeConfigValueReloads.unregister(modConfig, this);
+		}
+	}
+
+	void onConfigReloaded() {
+		notifyListeners(getValue());
 	}
 
 	@Override

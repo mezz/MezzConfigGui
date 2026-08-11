@@ -21,6 +21,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -272,6 +273,10 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		private final ConfigValueApplyMode applyMode;
 		private final ConfigValueRestartRequirement restartRequirement;
 		private final List<Consumer<List<T>>> listeners = new ArrayList<>();
+		@Nullable
+		private List<T> lastNotifiedValue;
+		@Nullable
+		private Runnable removeSortingConfigListener;
 
 		private SortableConfigValue(
 			String name,
@@ -332,24 +337,58 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 			if (getValue().equals(valueCopy)) {
 				return false;
 			}
-			if (sortingConfig.setSortedValues(valueCopy)) {
-				for (Consumer<List<T>> listener : List.copyOf(listeners)) {
-					try {
-						listener.accept(valueCopy);
-					} catch (RuntimeException exception) {
-						LOGGER.error("Sortable config value listener failed for {}.", name, exception);
-					}
-				}
-				return true;
-			}
-			return false;
+			return sortingConfig.setSortedValues(valueCopy);
 		}
 
 		@Override
 		public Runnable addListener(Consumer<List<T>> listener) {
 			Consumer<List<T>> checkedListener = Objects.requireNonNull(listener, "listener");
-			listeners.add(checkedListener);
-			return () -> listeners.remove(checkedListener);
+			synchronized (this) {
+				if (listeners.isEmpty()) {
+					lastNotifiedValue = getValue();
+					removeSortingConfigListener = Objects.requireNonNull(
+						sortingConfig.addChangeListener(this::onSortingConfigChanged),
+						"sorting config listener removal callback"
+					);
+				}
+				listeners.add(checkedListener);
+			}
+			return () -> removeListener(checkedListener);
+		}
+
+		private void removeListener(Consumer<List<T>> listener) {
+			@Nullable
+			Runnable removeSortingConfigListener = null;
+			synchronized (this) {
+				listeners.remove(listener);
+				if (listeners.isEmpty()) {
+					lastNotifiedValue = null;
+					removeSortingConfigListener = this.removeSortingConfigListener;
+					this.removeSortingConfigListener = null;
+				}
+			}
+			if (removeSortingConfigListener != null) {
+				removeSortingConfigListener.run();
+			}
+		}
+
+		private void onSortingConfigChanged() {
+			List<T> newValue = getValue();
+			List<Consumer<List<T>>> listeners;
+			synchronized (this) {
+				if (this.listeners.isEmpty() || Objects.equals(lastNotifiedValue, newValue)) {
+					return;
+				}
+				lastNotifiedValue = newValue;
+				listeners = List.copyOf(this.listeners);
+			}
+			for (Consumer<List<T>> listener : listeners) {
+				try {
+					listener.accept(newValue);
+				} catch (RuntimeException exception) {
+					LOGGER.error("Sortable config value listener failed for {}.", name, exception);
+				}
+			}
 		}
 
 		@Override
