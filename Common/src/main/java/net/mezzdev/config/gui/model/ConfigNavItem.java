@@ -8,7 +8,6 @@ import net.mezzdev.config.gui.ConfigScreenLayout;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.ConfigInputHandler;
 import net.mezzdev.config.gui.input.UserInput;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -38,9 +37,9 @@ public final class ConfigNavItem implements ConfigInputHandler {
 	private static final int ACTIVE_BACKGROUND_COLOR = 0x66313A46;
 	private static final int ACTIVE_ACCENT_COLOR = 0xFF5E9AD6;
 	private static final int DIVIDER_COLOR = 0x2AFFFFFF;
-	private static final int TEXT_COLOR = 0xFF303030;
-	private static final int HOVER_TEXT_COLOR = 0xFF202020;
-	private static final int ACTIVE_TEXT_COLOR = 0xFF18202A;
+	private static final int TEXT_COLOR = 0xFF20242A;
+	private static final int HOVER_TEXT_COLOR = 0xFF111820;
+	private static final int ACTIVE_TEXT_COLOR = 0xFF101A24;
 
 	private final Component fullName;
 	private final int categoryIndex;
@@ -60,9 +59,7 @@ public final class ConfigNavItem implements ConfigInputHandler {
 		Supplier<ImmutableRect2i> navAreaSupplier,
 		IntConsumer categorySelector
 	) {
-		this.fullName = StringUtil.stripStyling(displayName)
-			.copy()
-			.withStyle(ChatFormatting.BOLD);
+		this.fullName = StringUtil.stripStyling(displayName);
 		this.categoryIndex = categoryIndex;
 		this.categoryWidget = categoryWidget;
 		this.navAreaSupplier = navAreaSupplier;
