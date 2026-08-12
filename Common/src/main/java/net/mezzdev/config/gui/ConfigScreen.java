@@ -1,5 +1,8 @@
 package net.mezzdev.config.gui;
 
+import net.mezzdev.config.api.schema.ConfigSchemaType;
+import net.mezzdev.config.api.schema.IConfigSchema;
+import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.ConfigValueEditorType;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueEditorFactory;
@@ -35,6 +38,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Main in-game config screen that wires the model, layout, view, and input routing together.
@@ -80,6 +84,7 @@ public class ConfigScreen extends MezzConfigScreen {
 
 	@Nullable
 	private ConfigPopupSelector valueSelector;
+	private boolean changeRequestPending;
 
 	private ConfigScreen(
 		@Nullable Screen parent,
@@ -129,6 +134,7 @@ public class ConfigScreen extends MezzConfigScreen {
 			ConfigScreenCategory category = categories.get(i);
 			List<ConfigEntryWidget<?>> entryWidgets = createEntryWidgets(
 				category,
+				clientSchema,
 				entryWidgetsByValueKey,
 				allEntryWidgets,
 				entryWidgetFactory,
@@ -166,6 +172,7 @@ public class ConfigScreen extends MezzConfigScreen {
 
 	private List<ConfigEntryWidget<?>> createEntryWidgets(
 		ConfigScreenCategory category,
+		ConfigScreenSchema schema,
 		Map<Object, ConfigEntryWidget<?>> entryWidgetsByValueKey,
 		List<ConfigEntryWidget<?>> allEntryWidgets,
 		ConfigEntryWidgetFactory entryWidgetFactory,
@@ -173,7 +180,7 @@ public class ConfigScreen extends MezzConfigScreen {
 	) {
 		List<ConfigEntryWidget<?>> entryWidgets = new ArrayList<>();
 		for (IConfigScreenValue<?> configValue : category.getConfigValues()) {
-			entryWidgets.add(getOrCreateEntryWidget(entryWidgetsByValueKey, allEntryWidgets, entryWidgetFactory, controller, configValue));
+			entryWidgets.add(getOrCreateEntryWidget(schema, entryWidgetsByValueKey, allEntryWidgets, entryWidgetFactory, controller, configValue));
 		}
 		return entryWidgets;
 	}
@@ -183,21 +190,49 @@ public class ConfigScreen extends MezzConfigScreen {
 	}
 
 	private ConfigEntryWidget<?> getOrCreateEntryWidget(
+		ConfigScreenSchema schema,
 		Map<Object, ConfigEntryWidget<?>> entryWidgetsByValueKey,
 		List<ConfigEntryWidget<?>> allEntryWidgets,
 		ConfigEntryWidgetFactory entryWidgetFactory,
 		ConfigScreenController controller,
 		IConfigScreenValue<?> configValue
 	) {
+		Optional<IConfigSchema> backingSchema = schema.findBackingSchema(configValue);
+		configValue = useSupportedApplyMode(configValue, backingSchema);
 		Object identityKey = configValue.getIdentityKey();
 		ConfigEntryWidget<?> entryWidget = entryWidgetsByValueKey.get(identityKey);
 		if (entryWidget == null) {
 			entryWidget = entryWidgetFactory.create(configValue);
 			entryWidget.setImmediateChangeHandler(this::applyImmediateChange);
+			entryWidget.setEditableSupplier(() -> !changeRequestPending && backingSchema
+				.map(IConfigSchema::canEdit)
+				.orElse(true));
 			entryWidgetsByValueKey.put(identityKey, entryWidget);
 			allEntryWidgets.add(entryWidget);
 		}
 		return entryWidget;
+	}
+
+	private static IConfigScreenValue<?> useSupportedApplyMode(
+		IConfigScreenValue<?> configValue,
+		Optional<IConfigSchema> backingSchema
+	) {
+		if (backingSchema
+			.map(IConfigSchema::getType)
+			.filter(type -> type == ConfigSchemaType.SERVER)
+			.isPresent()
+		) {
+			return withApplyMode(configValue, ConfigValueApplyMode.ON_APPLY);
+		}
+		return configValue;
+	}
+
+	@SuppressWarnings("unchecked")
+	private static <T> IConfigScreenValue<T> withApplyMode(
+		IConfigScreenValue<?> configValue,
+		ConfigValueApplyMode applyMode
+	) {
+		return IConfigScreenValue.withApplyMode((IConfigScreenValue<T>) configValue, applyMode);
 	}
 
 	private boolean applyImmediateChange(ConfigValueChange<?> change) {
@@ -213,6 +248,9 @@ public class ConfigScreen extends MezzConfigScreen {
 		return new ConfigInputHandler() {
 			@Override
 			public Optional<ConfigInputHandler> handleUserInput(Screen screen, UserInput input) {
+				if (!entry.isEditable()) {
+					return Optional.empty();
+				}
 				ImmutableRect2i displayArea = layout.getContentArea();
 				if (!entry.getArea().equals(ImmutableRect2i.EMPTY) &&
 					displayArea.contains(input.getMouseX(), input.getMouseY()) &&
@@ -230,7 +268,7 @@ public class ConfigScreen extends MezzConfigScreen {
 
 			@Override
 			public Optional<ConfigInputHandler> handleMouseScrolled(double mouseX, double mouseY, double scrollDeltaX, double scrollDeltaY) {
-				if (!entry.getArea().equals(ImmutableRect2i.EMPTY)) {
+				if (entry.isEditable() && !entry.getArea().equals(ImmutableRect2i.EMPTY)) {
 					return entryInputHandler.handleMouseScrolled(mouseX, mouseY, scrollDeltaX, scrollDeltaY);
 				}
 				return Optional.empty();
@@ -267,6 +305,7 @@ public class ConfigScreen extends MezzConfigScreen {
 	private boolean isCapturingKeyBinding() {
 		return controller.getVisibleEntryWidgets()
 			.stream()
+			.filter(ConfigEntryWidget::isEditable)
 			.anyMatch(ConfigEntryWidget::isCapturingKeyboardInput);
 	}
 
@@ -363,15 +402,16 @@ public class ConfigScreen extends MezzConfigScreen {
 	}
 
 	private void requestLeave(Runnable leaveAction) {
+		if (changeRequestPending) {
+			return;
+		}
 		flushPendingInput();
 		if (controller.hasPendingChanges()) {
 			if (ConfigGuiOptions.confirmPendingChangesOnClose()) {
 				openPendingChangesConfirmation(leaveAction);
 				return;
 			}
-			if (applyPendingChanges()) {
-				leaveAction.run();
-			}
+			applyPendingChanges(leaveAction, () -> {});
 			return;
 		}
 		leaveAction.run();
@@ -396,10 +436,9 @@ public class ConfigScreen extends MezzConfigScreen {
 		PendingChangesScreen pendingChangesScreen = new PendingChangesScreen(
 			applyChanges -> {
 				if (applyChanges) {
-					if (!applyPendingChanges()) {
-						minecraft.setScreen(this);
-						return;
-					}
+					minecraft.setScreen(this);
+					applyPendingChanges(leaveAction, () -> {});
+					return;
 				} else {
 					controller.discardPendingChanges();
 				}
@@ -412,15 +451,51 @@ public class ConfigScreen extends MezzConfigScreen {
 		minecraft.setScreen(pendingChangesScreen);
 	}
 
-	private boolean applyPendingChanges() {
-		ConfigChangesResult result = controller.applyPendingChanges();
-		refreshLayout();
-		return result.succeeded();
+	private void applyPendingChanges() {
+		applyPendingChanges(() -> {}, () -> {});
+	}
+
+	private void applyPendingChanges(Runnable successAction, Runnable failureAction) {
+		if (changeRequestPending) {
+			return;
+		}
+		startChangeRequest(controller.applyPendingChanges(), successAction, failureAction);
 	}
 
 	private void undoChanges() {
-		controller.undoChanges();
-		refreshLayout();
+		if (changeRequestPending) {
+			return;
+		}
+		startChangeRequest(controller.undoChanges(), () -> {}, () -> {});
+	}
+
+	private void startChangeRequest(
+		CompletableFuture<ConfigChangesResult> request,
+		Runnable successAction,
+		Runnable failureAction
+	) {
+		if (changeRequestPending) {
+			return;
+		}
+		changeRequestPending = true;
+		request.whenComplete((result, throwable) -> runOnClientThread(() -> {
+			changeRequestPending = false;
+			refreshLayout();
+			if (throwable == null && result.succeeded()) {
+				successAction.run();
+			} else {
+				failureAction.run();
+			}
+		}));
+	}
+
+	private void runOnClientThread(Runnable task) {
+		Minecraft minecraft = this.minecraft;
+		if (minecraft == null || minecraft.isSameThread()) {
+			task.run();
+		} else {
+			minecraft.execute(task);
+		}
 	}
 
 	private void refreshLayout() {
@@ -478,7 +553,7 @@ public class ConfigScreen extends MezzConfigScreen {
 
 	private boolean forwardCharTypedToEntries(char codePoint, int modifiers) {
 		for (ConfigEntryWidget<?> entry : controller.getVisibleEntryWidgets()) {
-			if (entry.charTyped(codePoint, modifiers)) {
+			if (entry.isEditable() && entry.charTyped(codePoint, modifiers)) {
 				return true;
 			}
 		}
@@ -487,7 +562,7 @@ public class ConfigScreen extends MezzConfigScreen {
 
 	private boolean forwardKeyPressedToEntries(int keyCode, int scanCode, int modifiers) {
 		for (ConfigEntryWidget<?> entry : controller.getVisibleEntryWidgets()) {
-			if (entry.keyPressed(keyCode, scanCode, modifiers)) {
+			if (entry.isEditable() && entry.keyPressed(keyCode, scanCode, modifiers)) {
 				return true;
 			}
 		}
@@ -504,7 +579,7 @@ public class ConfigScreen extends MezzConfigScreen {
 
 	private boolean forwardKeyReleasedToEntries(int keyCode, int scanCode, int modifiers) {
 		for (ConfigEntryWidget<?> entry : controller.getVisibleEntryWidgets()) {
-			if (entry.keyReleased(keyCode, scanCode, modifiers)) {
+			if (entry.isEditable() && entry.keyReleased(keyCode, scanCode, modifiers)) {
 				return true;
 			}
 		}
@@ -577,6 +652,9 @@ public class ConfigScreen extends MezzConfigScreen {
 	}
 
 	private boolean handleActionButton(double mouseX, double mouseY) {
+		if (changeRequestPending) {
+			return false;
+		}
 		if (layout.getScreenListButtonArea().contains(mouseX, mouseY)) {
 			requestOpenScreenList();
 			return true;

@@ -29,15 +29,15 @@ public class ConfigTextures {
 	private ConfigTextures(ConfigGuiSpriteManager guiSpriteManager) {
 		this.guiSpriteManager = guiSpriteManager;
 
-		this.buttonDisabled = createScalableGuiSprite("button_disabled_v2");
-		this.buttonEnabled = createScalableGuiSprite("button_enabled_v2");
-		this.buttonHighlight = createScalableGuiSprite("button_highlight_v2");
-		this.buttonPressed = createScalableGuiSprite("button_pressed_v2");
-		this.buttonPressedHighlight = createScalableGuiSprite("button_pressed_highlight_v2");
-		this.configScreenBackground = createScalableGuiSprite("gui_background_v2");
-		this.searchBackground = createScalableGuiSprite("search_background_v2");
-		this.scrollbarBackground = createScalableGuiSprite("scrollbar_background_v2");
-		this.scrollbarMarker = createScalableGuiSprite("scrollbar_marker_v2");
+		this.buttonDisabled = createScalableGuiSprite("button_disabled");
+		this.buttonEnabled = createScalableGuiSprite("button_enabled");
+		this.buttonHighlight = createScalableGuiSprite("button_highlight");
+		this.buttonPressed = createScalableGuiSprite("button_pressed");
+		this.buttonPressedHighlight = createScalableGuiSprite("button_pressed_highlight");
+		this.configScreenBackground = createScalableGuiSprite("gui_background");
+		this.searchBackground = createScalableGuiSprite("search_background");
+		this.scrollbarBackground = createScalableGuiSprite("scrollbar_background");
+		this.scrollbarMarker = createScalableGuiSprite("scrollbar_marker");
 
 		this.arrowUp = createGuiSprite("icons/arrow_up", 9, 9);
 		this.arrowDown = createGuiSprite("icons/arrow_down", 9, 9);

@@ -57,6 +57,18 @@ class ConfigEntryWidgetImmediateWriteTest {
 		assertEquals(0, widget.getValueChangedCount());
 	}
 
+	@Test
+	void readOnlyWidgetRejectsEditsWithoutWriting() {
+		TestConfigValue configValue = new TestConfigValue("initial", false);
+		TestConfigEntryWidget widget = new TestConfigEntryWidget(configValue);
+		widget.setEditableSupplier(() -> false);
+
+		assertFalse(widget.setDisplayedValue("changed"));
+
+		assertEquals("initial", widget.getDisplayedValue());
+		assertEquals("initial", configValue.getStoredValue());
+	}
+
 	private static final class TestConfigEntryWidget extends ConfigEntryWidget<String> {
 		private int valueChangedCount;
 

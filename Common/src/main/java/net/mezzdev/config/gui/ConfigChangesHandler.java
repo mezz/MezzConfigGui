@@ -1,17 +1,69 @@
 package net.mezzdev.config.gui;
 
+import net.mezzdev.config.api.schema.IConfigBatchUpdater;
+import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.value.IConfigValue;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.model.AppliedConfigValueChange;
 import net.mezzdev.config.gui.model.ConfigValueChange;
 
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.function.Function;
 
 @FunctionalInterface
 interface ConfigChangesHandler {
-	ConfigChangesResult applyChanges(List<ConfigValueChange<?>> changes);
+	CompletableFuture<ConfigChangesResult> applyChanges(List<ConfigValueChange<?>> changes);
+
+	static CompletableFuture<ConfigChangesResult> applyBySchema(
+		List<ConfigValueChange<?>> changes,
+		Function<IConfigScreenValue<?>, Optional<IConfigSchema>> schemaResolver
+	) {
+		Objects.requireNonNull(changes, "changes");
+		Objects.requireNonNull(schemaResolver, "schemaResolver");
+		List<ConfigChangeBatch> batches = createBatches(changes, schemaResolver);
+		CompletableFuture<ConfigChangesResult> result = CompletableFuture.completedFuture(ConfigChangesResult.success());
+		for (ConfigChangeBatch batch : batches) {
+			result = result.thenCompose(previousResult -> {
+				if (!previousResult.succeeded()) {
+					return CompletableFuture.completedFuture(previousResult);
+				}
+				return batch.apply()
+					.thenApply(previousResult::append);
+			});
+		}
+		return result;
+	}
+
+	private static List<ConfigChangeBatch> createBatches(
+		List<ConfigValueChange<?>> changes,
+		Function<IConfigScreenValue<?>, Optional<IConfigSchema>> schemaResolver
+	) {
+		List<ConfigChangeBatch> batches = new ArrayList<>();
+		IdentityHashMap<IConfigSchema, ConfigChangeBatch> batchesBySchema = new IdentityHashMap<>();
+		for (ConfigValueChange<?> change : changes) {
+			IConfigSchema schema = schemaResolver.apply(change.configValue())
+				.orElse(null);
+			if (schema == null) {
+				batches.add(new ConfigChangeBatch(null, List.of(change)));
+				continue;
+			}
+			ConfigChangeBatch batch = batchesBySchema.get(schema);
+			if (batch == null) {
+				batch = new ConfigChangeBatch(schema, new ArrayList<>());
+				batchesBySchema.put(schema, batch);
+				batches.add(batch);
+			}
+			batch.changes().add(change);
+		}
+		return batches;
+	}
 
 	static ConfigChangesResult applySequentially(List<ConfigValueChange<?>> changes) {
 		List<AppliedConfigValueChange<?>> appliedChanges = new ArrayList<>();
@@ -37,6 +89,61 @@ interface ConfigChangesHandler {
 		return new ConfigChangesResult(appliedChanges, restartRequirement, Optional.empty());
 	}
 
+	private static CompletableFuture<ConfigChangesResult> applySchemaChanges(
+		IConfigSchema schema,
+		List<ConfigValueChange<?>> changes
+	) {
+		List<AppliedChangeCandidate<?>> candidates = new ArrayList<>();
+		CompletableFuture<Void> request;
+		try {
+			for (ConfigValueChange<?> change : changes) {
+				candidates.add(createCandidate(change));
+			}
+			request = Objects.requireNonNull(
+				schema.requestBatchUpdate(updater -> changes.forEach(change -> queueChange(updater, change))),
+				"schema request result"
+			);
+		} catch (RuntimeException exception) {
+			return CompletableFuture.completedFuture(ConfigChangesResult.failure(changes.getFirst(), exception));
+		}
+		return request.handle((ignored, throwable) -> {
+			if (throwable != null) {
+				return ConfigChangesResult.failure(changes.getFirst(), asRuntimeException(throwable));
+			}
+			try {
+				List<AppliedConfigValueChange<?>> appliedChanges = new ArrayList<>();
+				for (AppliedChangeCandidate<?> candidate : candidates) {
+					candidate.createAppliedChange().ifPresent(appliedChanges::add);
+				}
+				return ConfigChangesResult.success(appliedChanges);
+			} catch (RuntimeException exception) {
+				return ConfigChangesResult.failure(changes.getFirst(), exception);
+			}
+		});
+	}
+
+	private static RuntimeException asRuntimeException(Throwable throwable) {
+		Throwable cause = throwable;
+		while (cause instanceof CompletionException && cause.getCause() != null) {
+			cause = cause.getCause();
+		}
+		if (cause instanceof RuntimeException runtimeException) {
+			return runtimeException;
+		}
+		return new RuntimeException(cause);
+	}
+
+	private static <T> AppliedChangeCandidate<T> createCandidate(ConfigValueChange<T> change) {
+		return new AppliedChangeCandidate<>(change.configValue(), change.configValue().getValue());
+	}
+
+	private static <T> void queueChange(IConfigBatchUpdater updater, ConfigValueChange<T> change) {
+		IConfigValue<T> configValue = change.configValue()
+			.getConfigValue()
+			.orElseThrow(() -> new IllegalArgumentException("Config value does not have a MezzConfig backing value: " + change.configValue().getName()));
+		updater.set(configValue, change.value());
+	}
+
 	private static <T> Optional<AppliedConfigValueChange<T>> applyChange(ConfigValueChange<T> change) {
 		T oldValue = change.configValue().getValue();
 		if (!change.apply()) {
@@ -57,6 +164,31 @@ interface ConfigChangesHandler {
 		}
 		return ConfigValueRestartRequirement.NONE;
 	}
+
+	record ConfigChangeBatch(
+		IConfigSchema schema,
+		List<ConfigValueChange<?>> changes
+	) {
+		private CompletableFuture<ConfigChangesResult> apply() {
+			if (schema == null) {
+				return CompletableFuture.completedFuture(applySequentially(changes));
+			}
+			return applySchemaChanges(schema, changes);
+		}
+	}
+
+	record AppliedChangeCandidate<T>(
+		IConfigScreenValue<T> configValue,
+		T oldValue
+	) {
+		private Optional<AppliedConfigValueChange<T>> createAppliedChange() {
+			T newValue = configValue.getValue();
+			if (Objects.equals(oldValue, newValue)) {
+				return Optional.empty();
+			}
+			return Optional.of(new AppliedConfigValueChange<>(configValue, oldValue, newValue));
+		}
+	}
 }
 
 record ConfigChangesResult(
@@ -72,6 +204,56 @@ record ConfigChangesResult(
 
 	boolean succeeded() {
 		return failure.isEmpty();
+	}
+
+	static ConfigChangesResult success() {
+		return new ConfigChangesResult(List.of(), ConfigValueRestartRequirement.NONE, Optional.empty());
+	}
+
+	static ConfigChangesResult success(List<AppliedConfigValueChange<?>> appliedChanges) {
+		ConfigValueRestartRequirement restartRequirement = ConfigValueRestartRequirement.NONE;
+		for (AppliedConfigValueChange<?> change : appliedChanges) {
+			restartRequirement = getLargerRestartRequirement(
+				restartRequirement,
+				change.configValue().getRestartRequirement()
+			);
+		}
+		return new ConfigChangesResult(appliedChanges, restartRequirement, Optional.empty());
+	}
+
+	static ConfigChangesResult failure(ConfigValueChange<?> change, RuntimeException exception) {
+		return new ConfigChangesResult(
+			List.of(),
+			ConfigValueRestartRequirement.NONE,
+			Optional.of(new ConfigChangeFailure(change, exception))
+		);
+	}
+
+	ConfigChangesResult append(ConfigChangesResult other) {
+		List<AppliedConfigValueChange<?>> combinedChanges = new ArrayList<>(appliedChanges);
+		combinedChanges.addAll(other.appliedChanges);
+		Optional<ConfigChangeFailure> combinedFailure = failure;
+		if (other.failure.isPresent()) {
+			combinedFailure = other.failure;
+		}
+		return new ConfigChangesResult(
+			combinedChanges,
+			getLargerRestartRequirement(restartRequirement, other.restartRequirement),
+			combinedFailure
+		);
+	}
+
+	private static ConfigValueRestartRequirement getLargerRestartRequirement(
+		ConfigValueRestartRequirement first,
+		ConfigValueRestartRequirement second
+	) {
+		if (first == ConfigValueRestartRequirement.GAME_RESTART || second == ConfigValueRestartRequirement.GAME_RESTART) {
+			return ConfigValueRestartRequirement.GAME_RESTART;
+		}
+		if (first == ConfigValueRestartRequirement.WORLD_RESTART || second == ConfigValueRestartRequirement.WORLD_RESTART) {
+			return ConfigValueRestartRequirement.WORLD_RESTART;
+		}
+		return ConfigValueRestartRequirement.NONE;
 	}
 }
 

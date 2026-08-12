@@ -8,6 +8,7 @@ import net.mezzdev.config.gui.ConfigScreenLayout;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.ConfigInputHandler;
 import net.mezzdev.config.gui.input.UserInput;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -59,7 +60,9 @@ public final class ConfigNavItem implements ConfigInputHandler {
 		Supplier<ImmutableRect2i> navAreaSupplier,
 		IntConsumer categorySelector
 	) {
-		this.fullName = StringUtil.stripStyling(displayName);
+		this.fullName = StringUtil.stripStyling(displayName)
+			.copy()
+			.withStyle(ChatFormatting.BOLD);
 		this.categoryIndex = categoryIndex;
 		this.categoryWidget = categoryWidget;
 		this.navAreaSupplier = navAreaSupplier;

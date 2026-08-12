@@ -10,24 +10,43 @@ import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Internal screen schema adapter for MezzConfig schemas.
  */
 final class MezzConfigScreenSchema implements ConfigScreenSchema {
 	private final IConfigSchema schema;
+	private final Set<Object> configValueKeys;
 
 	public MezzConfigScreenSchema(IConfigSchema schema) {
 		this.schema = Objects.requireNonNull(schema, "schema");
+		Set<Object> configValueKeys = Collections.newSetFromMap(new IdentityHashMap<>());
+		for (IConfigCategory category : schema.getCategories()) {
+			configValueKeys.addAll(category.getConfigValues());
+		}
+		this.configValueKeys = configValueKeys;
 	}
 
 	@Override
 	public List<? extends ConfigScreenCategory> getCategories() {
 		return createCategories(schema.getCategories(), schema.getEditorCategories());
+	}
+
+	@Override
+	public Optional<IConfigSchema> findBackingSchema(IConfigScreenValue<?> value) {
+		Objects.requireNonNull(value, "value");
+		if (configValueKeys.contains(value.getIdentityKey())) {
+			return Optional.of(schema);
+		}
+		return Optional.empty();
 	}
 
 	private static List<ConfigScreenCategory> createCategories(

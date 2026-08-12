@@ -29,6 +29,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -53,6 +54,7 @@ public abstract class ConfigEntryWidget<T> {
 	private static final int ROW_HOVER_COLOR = 0x18FFFFFF;
 	private static final int PENDING_BACKGROUND_COLOR = 0x302F5F8E;
 	private static final int PENDING_ACCENT_COLOR = 0xFF5E9AD6;
+	private static final int READ_ONLY_OVERLAY_COLOR = 0x50000000;
 	private static final int BUTTON_UNDERLAY_COLOR = 0xFF111216;
 	private static final int BUTTON_TEXT_PADDING = 3;
 
@@ -145,6 +147,7 @@ public abstract class ConfigEntryWidget<T> {
 	@Nullable
 	private Runnable removeConfigValueListener;
 	private Function<ConfigValueChange<?>, Boolean> immediateChangeHandler = change -> false;
+	private BooleanSupplier editableSupplier = () -> true;
 
 	protected List<FormattedCharSequence> nameLines = List.of();
 
@@ -286,8 +289,16 @@ public abstract class ConfigEntryWidget<T> {
 		this.immediateChangeHandler = Objects.requireNonNull(immediateChangeHandler, "immediateChangeHandler");
 	}
 
+	public void setEditableSupplier(BooleanSupplier editableSupplier) {
+		this.editableSupplier = Objects.requireNonNull(editableSupplier, "editableSupplier");
+	}
+
+	public boolean isEditable() {
+		return editableSupplier.getAsBoolean();
+	}
+
 	protected boolean onMouseClicked(UserInput input) {
-		if (isModified() && resetArea.contains(input.getMouseX(), input.getMouseY())) {
+		if (isEditable() && isModified() && resetArea.contains(input.getMouseX(), input.getMouseY())) {
 			if (!input.isSimulate()) {
 				resetToDefault();
 			}
@@ -356,6 +367,15 @@ public abstract class ConfigEntryWidget<T> {
 		}
 		drawContent(guiGraphics, drawMouseX, drawMouseY);
 		drawResetButton(guiGraphics, drawMouseX, drawMouseY);
+		if (!isEditable()) {
+			guiGraphics.fill(
+				area.getX() + 1,
+				area.getY(),
+				area.getX() + area.getWidth() - 1,
+				area.getY() + area.getHeight(),
+				READ_ONLY_OVERLAY_COLOR
+			);
+		}
 	}
 
 	protected ImmutableRect2i getHoverArea() {
@@ -384,7 +404,7 @@ public abstract class ConfigEntryWidget<T> {
 	}
 
 	private void drawResetButton(GuiGraphics guiGraphics, double mouseX, double mouseY) {
-		boolean active = isModified();
+		boolean active = isEditable() && isModified();
 		boolean hovered = active && resetArea.contains(mouseX, mouseY);
 		drawButtonBackground(guiGraphics, textures, resetArea, active, hovered);
 		ConfigResetIcon.draw(guiGraphics, resetArea, active);
@@ -445,7 +465,10 @@ public abstract class ConfigEntryWidget<T> {
 	public void discardPendingChange() {
 		T configValue = this.configValue.getValue();
 		lastKnownConfigValue = configValue;
-		setValue(configValue);
+		if (!Objects.equals(value, configValue)) {
+			value = configValue;
+			onValueChanged();
+		}
 	}
 
 	public ConfigInfo getInfo() {
@@ -487,7 +510,7 @@ public abstract class ConfigEntryWidget<T> {
 	}
 
 	protected boolean setValue(T value) {
-		if (!configValue.getSerializer().isValid(value) || this.value.equals(value)) {
+		if (!isEditable() || !configValue.getSerializer().isValid(value) || this.value.equals(value)) {
 			return false;
 		}
 		if (appliesImmediately()) {
@@ -530,6 +553,9 @@ public abstract class ConfigEntryWidget<T> {
 	private class EntryWidgetInputHandler implements ConfigInputHandler {
 		@Override
 		public Optional<ConfigInputHandler> handleUserInput(Screen screen, UserInput input) {
+			if (!isEditable()) {
+				return Optional.empty();
+			}
 			if (onMouseClicked(input)) {
 				return Optional.of(new SameConfigElementInputHandler(this, area::contains));
 			}

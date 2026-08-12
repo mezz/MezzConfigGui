@@ -3,6 +3,7 @@ package net.mezzdev.config.gui;
 import net.mezzdev.config.api.files.ConfigManagers;
 import net.mezzdev.config.api.files.IConfigManager;
 import net.mezzdev.config.api.schema.IConfigSchema;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.util.ConfigNameUtil;
 import net.minecraft.network.chat.Component;
 
@@ -13,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Creates generated config GUI screens from schemas registered with MezzConfig.
@@ -90,11 +92,20 @@ public final class MezzConfigScreenConfigs {
 		@Override
 		public List<? extends ConfigScreenCategory> getCategories() {
 			List<ConfigScreenSchema> activeSchemas = schemas.stream()
-				.filter(schema -> schema.getPath().isPresent())
+				.filter(IConfigSchema::isActive)
 				.map(ConfigScreenSchema::from)
 				.toList();
 			return new MergedConfigScreenSchema(activeSchemas)
 				.getCategories();
+		}
+
+		@Override
+		public Optional<IConfigSchema> findBackingSchema(IConfigScreenValue<?> value) {
+			return schemas.stream()
+				.map(ConfigScreenSchema::from)
+				.map(schema -> schema.findBackingSchema(value))
+				.flatMap(Optional::stream)
+				.findFirst();
 		}
 	}
 }

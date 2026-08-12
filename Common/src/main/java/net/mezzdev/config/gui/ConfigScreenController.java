@@ -12,6 +12,7 @@ import net.mezzdev.config.gui.model.AppliedConfigValueChange;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.IntConsumer;
 
 /**
@@ -93,16 +94,21 @@ final class ConfigScreenController {
 		return ConfigValueChange.getRestartRequirement(getPendingChanges());
 	}
 
-	public ConfigChangesResult applyPendingChanges() {
+	public CompletableFuture<ConfigChangesResult> applyPendingChanges() {
 		List<ConfigValueChange<?>> changes = getPendingChanges();
-		ConfigChangesResult result = changesHandler.applyChanges(changes);
-		recordAppliedChanges(result.appliedChanges());
-		updateContentLayout();
-		return result;
+		return changesHandler.applyChanges(changes)
+			.thenApply(result -> {
+				recordAppliedChanges(result.appliedChanges());
+				return result;
+			});
 	}
 
 	public boolean applyImmediateChange(ConfigValueChange<?> change) {
-		ConfigChangesResult result = changesHandler.applyChanges(List.of(change));
+		CompletableFuture<ConfigChangesResult> resultFuture = changesHandler.applyChanges(List.of(change));
+		if (!resultFuture.isDone()) {
+			throw new IllegalStateException("Immediate config changes must complete synchronously.");
+		}
+		ConfigChangesResult result = resultFuture.join();
 		recordAppliedChanges(result.appliedChanges());
 		updateContentLayout();
 		return result.succeeded();
@@ -141,15 +147,16 @@ final class ConfigScreenController {
 			.forEach(ConfigEntryWidget::discardPendingChange);
 	}
 
-	public ConfigChangesResult undoChanges() {
+	public CompletableFuture<ConfigChangesResult> undoChanges() {
 		discardPendingChangesInternal();
 		List<ConfigValueChange<?>> undoChanges = appliedChangeTracker.getUndoChanges();
-		ConfigChangesResult result = changesHandler.applyChanges(undoChanges);
-		recordAppliedChanges(result.appliedChanges());
-		model.getAllEntryWidgets()
-			.forEach(ConfigEntryWidget::discardPendingChange);
-		updateContentLayout();
-		return result;
+		return changesHandler.applyChanges(undoChanges)
+			.thenApply(result -> {
+				recordAppliedChanges(result.appliedChanges());
+				model.getAllEntryWidgets()
+					.forEach(ConfigEntryWidget::discardPendingChange);
+				return result;
+			});
 	}
 
 	public List<ConfigEntryWidget<?>> getVisibleEntryWidgets() {

@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui;
 
+import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.minecraft.network.chat.Component;
 
@@ -10,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Combines config screen schemas while preserving source and category order.
@@ -39,6 +41,14 @@ final class MergedConfigScreenSchema implements ConfigScreenSchema {
 			.stream()
 			.map(MutableMergedConfigScreenCategory::toConfigScreenCategory)
 			.toList();
+	}
+
+	@Override
+	public Optional<IConfigSchema> findBackingSchema(IConfigScreenValue<?> value) {
+		return schemas.stream()
+			.map(schema -> schema.findBackingSchema(value))
+			.flatMap(Optional::stream)
+			.findFirst();
 	}
 
 	private static final class MutableMergedConfigScreenCategory {

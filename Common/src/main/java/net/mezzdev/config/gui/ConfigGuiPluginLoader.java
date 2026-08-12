@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -910,6 +911,11 @@ final class ConfigGuiPluginLoader {
 		public List<? extends ConfigScreenCategory> getCategories() {
 			return createScreenCategories(modId, schema.getCategories(), configuredCategories, clearDefaultCategories);
 		}
+
+		@Override
+		public Optional<IConfigSchema> findBackingSchema(IConfigScreenValue<?> value) {
+			return schema.findBackingSchema(value);
+		}
 	}
 
 	private static List<ConfigScreenCategory> createScreenCategories(
@@ -1567,7 +1573,7 @@ final class ConfigGuiPluginLoader {
 			ConfigScreenBuilder screenBuilder = createScreenBuilder(modId, config, screenCustomizersCopy);
 			ConfigScreenSchema schema = createCustomizedScreenSchema(modId, config.schemaSupplier(), screenBuilder);
 			Component title = screenBuilder.getTitle();
-			ConfigChangesHandler changesHandler = createChangesHandler(modId, title);
+			ConfigChangesHandler changesHandler = createChangesHandler(modId, title, schema);
 			return ConfigScreen.create(parent, modId, title, schema, changesHandler, valueEditorFactoriesCopy, navigation);
 		};
 	}
@@ -1603,17 +1609,35 @@ final class ConfigGuiPluginLoader {
 
 	private static ConfigChangesHandler createChangesHandler(
 		String modId,
-		Component title
+		Component title,
+		ConfigScreenSchema schema
 	) {
 		return changes -> {
-			ConfigChangesResult result = ConfigChangesHandler.applySequentially(changes);
-			ConfigValueRestartRequirement restartRequirement = result.restartRequirement();
-			if (restartRequirement != ConfigValueRestartRequirement.NONE) {
-				notifyRestartDeferred(modId, title, restartRequirement);
+			CompletableFuture<ConfigChangesResult> resultFuture = ConfigChangesHandler.applyBySchema(
+				changes,
+				schema::findBackingSchema
+			);
+			if (resultFuture.isDone()) {
+				return resultFuture.thenApply(result -> notifyChangesResult(modId, title, result));
 			}
-			result.failure().ifPresent(failure -> notifyChangeFailure(modId, failure));
-			return result;
+			return resultFuture.thenApplyAsync(
+				result -> notifyChangesResult(modId, title, result),
+				Minecraft.getInstance()
+			);
 		};
+	}
+
+	private static ConfigChangesResult notifyChangesResult(
+		String modId,
+		Component title,
+		ConfigChangesResult result
+	) {
+		ConfigValueRestartRequirement restartRequirement = result.restartRequirement();
+		if (restartRequirement != ConfigValueRestartRequirement.NONE) {
+			notifyRestartDeferred(modId, title, restartRequirement);
+		}
+		result.failure().ifPresent(failure -> notifyChangeFailure(modId, failure));
+		return result;
 	}
 
 	private static void notifyChangeFailure(String modId, ConfigChangeFailure failure) {

@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui;
 
 import net.mezzdev.config.api.files.IConfigManager;
+import net.mezzdev.config.api.schema.ConfigSchemaType;
 import net.mezzdev.config.api.schema.IConfigBatchUpdater;
 import net.mezzdev.config.api.schema.IConfigCategory;
 import net.mezzdev.config.api.schema.IConfigEditorCategory;
@@ -23,6 +24,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -172,6 +174,61 @@ class MezzConfigScreenSchemaTest {
 		assertEquals(List.of("active"), valueNames(categories.getFirst()));
 	}
 
+	@Test
+	void automaticConfigScreensIncludeActiveRemoteServerSchemasWithoutLocalPaths() {
+		TestConfigCategory serverCategory = new TestConfigCategory(
+			"server",
+			"test.config.server",
+			List.of(new TestConfigValue("serverValue", ConfigValueEditMode.BATCH))
+		);
+		TestConfigManager manager = new TestConfigManager(List.of(
+			new TestConfigSchema(
+				"test",
+				Path.of("server.ini"),
+				true,
+				List.of(serverCategory),
+				List.of(serverCategory),
+				ConfigSchemaType.SERVER
+			)
+		));
+
+		List<? extends ConfigScreenCategory> categories = MezzConfigScreenConfigs.getConfigScreens(manager)
+			.getFirst()
+			.getSchema()
+			.getCategories();
+
+		assertEquals(List.of("server"), categoryNames(categories));
+		assertEquals(List.of("serverValue"), valueNames(categories.getFirst()));
+	}
+
+	@Test
+	void screenValuesResolveTheirBackingSchema() {
+		TestConfigValue value = new TestConfigValue("value", ConfigValueEditMode.BATCH);
+		TestConfigCategory category = new TestConfigCategory("general", "test.config.general", List.of(value));
+		TestConfigSchema schema = new TestConfigSchema(List.of(category), List.of(category));
+		ConfigScreenSchema screenSchema = ConfigScreenSchema.from(schema);
+		IConfigScreenValue<?> screenValue = screenSchema.getCategories()
+			.getFirst()
+			.getConfigValues()
+			.iterator()
+			.next();
+
+		assertSame(schema, screenSchema.findBackingSchema(screenValue).orElseThrow());
+	}
+
+	@Test
+	void customizedScreenValuesResolveTheirBackingSchemaByIdentity() {
+		TestConfigValue value = new TestConfigValue("value", ConfigValueEditMode.BATCH);
+		TestConfigCategory category = new TestConfigCategory("general", "test.config.general", List.of(value));
+		TestConfigSchema schema = new TestConfigSchema(List.of(category), List.of(category));
+		ConfigScreenSchema screenSchema = ConfigScreenSchema.from(schema);
+		IConfigScreenValue<String> customizedValue = new IdentityOnlyScreenValue(
+			IConfigScreenValue.configValue(value)
+		);
+
+		assertSame(schema, screenSchema.findBackingSchema(customizedValue).orElseThrow());
+	}
+
 	private static List<String> screenModIds(List<? extends ConfigScreenConfig> screens) {
 		return screens.stream()
 			.map(ConfigScreenConfig::getModId)
@@ -196,13 +253,24 @@ class MezzConfigScreenSchemaTest {
 		Path path,
 		boolean active,
 		List<TestConfigCategory> categories,
-		List<IConfigEditorCategory> editorCategories
+		List<IConfigEditorCategory> editorCategories,
+		ConfigSchemaType type
 	) implements IConfigSchema {
+		private TestConfigSchema(
+			String modId,
+			Path path,
+			boolean active,
+			List<TestConfigCategory> categories,
+			List<IConfigEditorCategory> editorCategories
+		) {
+			this(modId, path, active, categories, editorCategories, ConfigSchemaType.CLIENT_WORLD);
+		}
+
 		private TestConfigSchema(
 			List<TestConfigCategory> categories,
 			List<IConfigEditorCategory> editorCategories
 		) {
-			this("test", Path.of("test.ini"), true, categories, editorCategories);
+			this("test", Path.of("test.ini"), true, categories, editorCategories, ConfigSchemaType.CLIENT);
 		}
 
 		private TestConfigSchema {
@@ -218,8 +286,23 @@ class MezzConfigScreenSchemaTest {
 		}
 
 		@Override
+		public ConfigSchemaType getType() {
+			return type;
+		}
+
+		@Override
+		public boolean isActive() {
+			return active;
+		}
+
+		@Override
+		public boolean canEdit() {
+			return active;
+		}
+
+		@Override
 		public Optional<Path> getPath() {
-			if (active) {
+			if (active && type != ConfigSchemaType.SERVER) {
 				return Optional.of(path);
 			}
 			return Optional.empty();
@@ -238,6 +321,11 @@ class MezzConfigScreenSchemaTest {
 		@Override
 		public List<? extends IAppliedConfigValueChange<?>> batchUpdate(Consumer<IConfigBatchUpdater> updateBatch) {
 			return List.of();
+		}
+
+		@Override
+		public CompletableFuture<Void> requestBatchUpdate(Consumer<IConfigBatchUpdater> updateBatch) {
+			return CompletableFuture.completedFuture(null);
 		}
 
 		@Override
@@ -375,6 +463,60 @@ class MezzConfigScreenSchemaTest {
 		@Override
 		public IConfigValueSerializer<String> getSerializer() {
 			return TestSerializer.INSTANCE;
+		}
+	}
+
+	private record IdentityOnlyScreenValue(
+		IConfigScreenValue<String> delegate
+	) implements IConfigScreenValue<String> {
+		@Override
+		public String getName() {
+			return delegate.getName();
+		}
+
+		@Override
+		public String getLocalizationKey() {
+			return delegate.getLocalizationKey();
+		}
+
+		@Override
+		public String getValue() {
+			return delegate.getValue();
+		}
+
+		@Override
+		public String getDefaultValue() {
+			return delegate.getDefaultValue();
+		}
+
+		@Override
+		public boolean set(String value) {
+			return delegate.set(value);
+		}
+
+		@Override
+		public Runnable addListener(Consumer<String> listener) {
+			return delegate.addListener(listener);
+		}
+
+		@Override
+		public ConfigValueApplyMode getApplyMode() {
+			return delegate.getApplyMode();
+		}
+
+		@Override
+		public ConfigValueRestartRequirement getRestartRequirement() {
+			return delegate.getRestartRequirement();
+		}
+
+		@Override
+		public Object getIdentityKey() {
+			return delegate.getIdentityKey();
+		}
+
+		@Override
+		public IConfigValueSerializer<String> getSerializer() {
+			return delegate.getSerializer();
 		}
 	}
 
