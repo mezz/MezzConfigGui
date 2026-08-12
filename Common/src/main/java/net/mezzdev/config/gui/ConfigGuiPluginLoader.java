@@ -1615,7 +1615,8 @@ final class ConfigGuiPluginLoader {
 		return changes -> {
 			CompletableFuture<ConfigChangesResult> resultFuture = ConfigChangesHandler.applyBySchema(
 				changes,
-				schema::findBackingSchema
+				schema::findBackingSchema,
+				Minecraft.getInstance()
 			);
 			if (resultFuture.isDone()) {
 				return resultFuture.thenApply(result -> notifyChangesResult(modId, title, result));

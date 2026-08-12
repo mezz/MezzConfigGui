@@ -13,6 +13,7 @@ import net.mezzdev.config.api.value.IConfigValueBatchChangeListener;
 import net.mezzdev.config.api.value.IConfigValueChangeListener;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.model.AppliedConfigValueChange;
 import net.mezzdev.config.gui.model.ConfigValueChange;
@@ -58,9 +59,9 @@ class ConfigChangesHandlerTest {
 	void batchesSchemaChangesAndWaitsForAuthoritativeCompletion() {
 		TestMezzConfigValue first = new TestMezzConfigValue("first");
 		TestMezzConfigValue second = new TestMezzConfigValue("second");
-		IConfigScreenValue<String> firstScreenValue = IConfigScreenValue.configValue(first);
+		IConfigScreenValue<String> firstScreenValue = new IdentityOnlyScreenValue(IConfigScreenValue.configValue(first));
 		IConfigScreenValue<String> secondScreenValue = IConfigScreenValue.configValue(second);
-		TestConfigSchema schema = new TestConfigSchema();
+		TestConfigSchema schema = new TestConfigSchema(first, second);
 
 		CompletableFuture<ConfigChangesResult> resultFuture = ConfigChangesHandler.applyBySchema(
 			List.of(
@@ -82,6 +83,44 @@ class ConfigChangesHandlerTest {
 		assertEquals("first changed", first.getValue());
 		assertEquals("second changed", second.getValue());
 		assertEquals(2, result.appliedChanges().size());
+	}
+
+	@Test
+	void continuesFollowingBatchesOnTheConfiguredExecutor() {
+		TestMezzConfigValue remote = new TestMezzConfigValue("remote");
+		IConfigScreenValue<String> remoteScreenValue = IConfigScreenValue.configValue(remote);
+		TestConfigValue localScreenValue = new TestConfigValue(
+			"local",
+			ConfigValueRestartRequirement.NONE,
+			false
+		);
+		TestConfigSchema schema = new TestConfigSchema(remote);
+		List<Runnable> continuationTasks = new ArrayList<>();
+
+		CompletableFuture<ConfigChangesResult> resultFuture = ConfigChangesHandler.applyBySchema(
+			List.of(
+				new ConfigValueChange<>(remoteScreenValue, "remote changed"),
+				new ConfigValueChange<>(localScreenValue, "local changed")
+			),
+			value -> {
+				if (value.getIdentityKey() == remote) {
+					return Optional.of(schema);
+				}
+				return Optional.empty();
+			},
+			continuationTasks::add
+		);
+
+		schema.completeRequest();
+
+		assertFalse(resultFuture.isDone());
+		assertEquals("local", localScreenValue.getValue());
+		assertEquals(1, continuationTasks.size());
+
+		continuationTasks.getFirst().run();
+
+		assertTrue(resultFuture.join().succeeded());
+		assertEquals("local changed", localScreenValue.getValue());
 	}
 
 	private static final class TestConfigValue implements IConfigScreenValue<String> {
@@ -146,9 +185,14 @@ class ConfigChangesHandlerTest {
 	}
 
 	private static final class TestConfigSchema implements IConfigSchema {
+		private final List<TestMezzConfigValue> configValues;
 		private final List<Runnable> pendingUpdates = new ArrayList<>();
 		private CompletableFuture<Void> request = new CompletableFuture<>();
 		private int requestCount;
+
+		private TestConfigSchema(TestMezzConfigValue... configValues) {
+			this.configValues = List.of(configValues);
+		}
 
 		@Override
 		public String getModId() {
@@ -177,7 +221,7 @@ class ConfigChangesHandlerTest {
 
 		@Override
 		public List<? extends IConfigCategory> getCategories() {
-			return List.of();
+			return List.of(new TestConfigCategory(configValues));
 		}
 
 		@Override
@@ -215,6 +259,79 @@ class ConfigChangesHandlerTest {
 		private void completeRequest() {
 			pendingUpdates.forEach(Runnable::run);
 			request.complete(null);
+		}
+	}
+
+	private record TestConfigCategory(
+		List<TestMezzConfigValue> configValues
+	) implements IConfigCategory {
+		@Override
+		public String getName() {
+			return "test";
+		}
+
+		@Override
+		public String getLocalizationKey() {
+			return "test";
+		}
+
+		@Override
+		public List<? extends IConfigValue<?>> getConfigValues() {
+			return configValues;
+		}
+	}
+
+	private record IdentityOnlyScreenValue(
+		IConfigScreenValue<String> delegate
+	) implements IConfigScreenValue<String> {
+		@Override
+		public String getName() {
+			return delegate.getName();
+		}
+
+		@Override
+		public String getLocalizationKey() {
+			return delegate.getLocalizationKey();
+		}
+
+		@Override
+		public String getValue() {
+			return delegate.getValue();
+		}
+
+		@Override
+		public String getDefaultValue() {
+			return delegate.getDefaultValue();
+		}
+
+		@Override
+		public boolean set(String value) {
+			return delegate.set(value);
+		}
+
+		@Override
+		public Runnable addListener(Consumer<String> listener) {
+			return delegate.addListener(listener);
+		}
+
+		@Override
+		public ConfigValueApplyMode getApplyMode() {
+			return delegate.getApplyMode();
+		}
+
+		@Override
+		public ConfigValueRestartRequirement getRestartRequirement() {
+			return delegate.getRestartRequirement();
+		}
+
+		@Override
+		public Object getIdentityKey() {
+			return delegate.getIdentityKey();
+		}
+
+		@Override
+		public IConfigValueSerializer<String> getSerializer() {
+			return delegate.getSerializer();
 		}
 	}
 

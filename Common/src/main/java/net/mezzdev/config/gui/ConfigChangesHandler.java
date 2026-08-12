@@ -15,6 +15,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executor;
 import java.util.function.Function;
 
 @FunctionalInterface
@@ -25,18 +26,32 @@ interface ConfigChangesHandler {
 		List<ConfigValueChange<?>> changes,
 		Function<IConfigScreenValue<?>, Optional<IConfigSchema>> schemaResolver
 	) {
+		return applyBySchema(changes, schemaResolver, Runnable::run);
+	}
+
+	static CompletableFuture<ConfigChangesResult> applyBySchema(
+		List<ConfigValueChange<?>> changes,
+		Function<IConfigScreenValue<?>, Optional<IConfigSchema>> schemaResolver,
+		Executor continuationExecutor
+	) {
 		Objects.requireNonNull(changes, "changes");
 		Objects.requireNonNull(schemaResolver, "schemaResolver");
+		Objects.requireNonNull(continuationExecutor, "continuationExecutor");
 		List<ConfigChangeBatch> batches = createBatches(changes, schemaResolver);
 		CompletableFuture<ConfigChangesResult> result = CompletableFuture.completedFuture(ConfigChangesResult.success());
 		for (ConfigChangeBatch batch : batches) {
-			result = result.thenCompose(previousResult -> {
+			Function<ConfigChangesResult, CompletableFuture<ConfigChangesResult>> applyBatch = previousResult -> {
 				if (!previousResult.succeeded()) {
 					return CompletableFuture.completedFuture(previousResult);
 				}
 				return batch.apply()
 					.thenApply(previousResult::append);
-			});
+			};
+			if (result.isDone()) {
+				result = result.thenCompose(applyBatch);
+			} else {
+				result = result.thenComposeAsync(applyBatch, continuationExecutor);
+			}
 		}
 		return result;
 	}
@@ -100,7 +115,7 @@ interface ConfigChangesHandler {
 				candidates.add(createCandidate(change));
 			}
 			request = Objects.requireNonNull(
-				schema.requestBatchUpdate(updater -> changes.forEach(change -> queueChange(updater, change))),
+				schema.requestBatchUpdate(updater -> changes.forEach(change -> queueChange(updater, schema, change))),
 				"schema request result"
 			);
 		} catch (RuntimeException exception) {
@@ -137,11 +152,29 @@ interface ConfigChangesHandler {
 		return new AppliedChangeCandidate<>(change.configValue(), change.configValue().getValue());
 	}
 
-	private static <T> void queueChange(IConfigBatchUpdater updater, ConfigValueChange<T> change) {
-		IConfigValue<T> configValue = change.configValue()
-			.getConfigValue()
-			.orElseThrow(() -> new IllegalArgumentException("Config value does not have a MezzConfig backing value: " + change.configValue().getName()));
+	private static <T> void queueChange(
+		IConfigBatchUpdater updater,
+		IConfigSchema schema,
+		ConfigValueChange<T> change
+	) {
+		IConfigValue<T> configValue = findBackingConfigValue(schema, change.configValue());
 		updater.set(configValue, change.value());
+	}
+
+	@SuppressWarnings("unchecked")
+	private static <T> IConfigValue<T> findBackingConfigValue(
+		IConfigSchema schema,
+		IConfigScreenValue<T> screenValue
+	) {
+		Object identityKey = screenValue.getIdentityKey();
+		return (IConfigValue<T>) schema.getCategories()
+			.stream()
+			.flatMap(category -> category.getConfigValues().stream())
+			.filter(configValue -> configValue == identityKey)
+			.findFirst()
+			.orElseThrow(() -> new IllegalArgumentException(
+				"Config value does not have a MezzConfig backing value in this schema: " + screenValue.getName()
+			));
 	}
 
 	private static <T> Optional<AppliedConfigValueChange<T>> applyChange(ConfigValueChange<T> change) {
