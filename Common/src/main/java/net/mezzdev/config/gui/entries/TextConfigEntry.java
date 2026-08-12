@@ -2,6 +2,7 @@ package net.mezzdev.config.gui.entries;
 
 import net.mezzdev.config.api.value.IDeserializeResult;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.info.ConfigValueInfoFactory;
@@ -30,8 +31,6 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 	private static final int VALUE_TEXT_PADDING = 4;
 	private static final int MIN_NAME_WIDTH = 68;
 	private static final int MAX_EDIT_TEXT_LENGTH = 512;
-	private static final int INVALID_TEXT_COLOR = 0xFFFF7070;
-
 	private final IConfigValueSerializer<T> serializer;
 	private ImmutableRect2i valueArea = ImmutableRect2i.EMPTY;
 
@@ -73,9 +72,9 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 
 	private int getTextColor() {
 		if (editing && !isValidEditText()) {
-			return INVALID_TEXT_COLOR;
+			return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_INVALID_TEXT);
 		}
-		return TEXT_COLOR;
+		return getConfiguredTextColor();
 	}
 
 	private String getDisplayText() {

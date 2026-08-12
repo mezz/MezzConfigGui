@@ -5,6 +5,7 @@ import net.mezzdev.config.api.value.ConfigListOrdering;
 import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.api.value.PackedColor;
+import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.ConfigInputHandler;
 import net.mezzdev.config.gui.ConfigInputUtil;
 import net.mezzdev.config.gui.api.ConfigInfo;
@@ -69,24 +70,6 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	private static final int MAX_ADD_VALUE_TEXT_LENGTH = 512;
 	private static final int ORDERED_ROW_DRAG_FLOAT_Z_OFFSET = 200;
 	private static final int ORDERED_ROW_MAX_HORIZONTAL_DRAG_OFFSET = 24;
-	private static final int ORDERED_GROUP_BACKGROUND_COLOR = 0x22000000;
-	private static final int ORDERED_GROUP_BORDER_DARK_COLOR = 0x90000000;
-	private static final int ORDERED_GROUP_BORDER_LIGHT_COLOR = 0x24FFFFFF;
-	private static final int ORDERED_ROW_BACKGROUND_COLOR = 0x1E000000;
-	private static final int LIST_ROW_HOVER_COLOR = 0x18FFFFFF;
-	private static final int ORDERED_ROW_DRAG_GAP_COLOR = 0x28000000;
-	private static final int ORDERED_ROW_DROP_TARGET_COLOR = 0x52000000;
-	private static final int ORDERED_ROW_MOVED_BACKGROUND_COLOR = 0x285E9AD6;
-	private static final int ORDERED_ROW_MOVED_ACCENT_COLOR = 0xFF7DB6F2;
-	private static final int ORDERED_ROW_DRAG_FLOAT_BACKGROUND_COLOR = 0xFF404A59;
-	private static final int ORDERED_ROW_DRAG_FLOAT_SHADOW_COLOR = 0x70000000;
-	private static final int ORDERED_ROW_DRAG_FLOAT_BORDER_COLOR = 0xD0D7E6FF;
-	private static final int ORDERED_ROW_DRAG_FLOAT_ACCENT_COLOR = 0xFFEAF2FF;
-	private static final int ORDERED_ROW_DIVIDER_COLOR = 0x18FFFFFF;
-	private static final int UNUSED_ROW_BACKGROUND_COLOR = 0x30000000;
-	private static final int UNUSED_ROW_TEXT_COLOR = 0xFF707070;
-	private static final int INVALID_TEXT_COLOR = 0xFFFF7070;
-
 	private final List<ListValueRow> valueRows = new ArrayList<>();
 	private final List<ListValueRow> unusedValueRows = new ArrayList<>();
 	private final List<T> allValidValues;
@@ -317,7 +300,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			addValueRowArea.getY(),
 			addValueRowArea.getX() + addValueRowArea.getWidth(),
 			addValueRowArea.getY() + addValueRowArea.getHeight(),
-			UNUSED_ROW_BACKGROUND_COLOR
+			ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_UNUSED_ROW_BACKGROUND)
 		);
 		if (addValueRowArea.contains(mouseX, mouseY)) {
 			fillRowHover(guiGraphics, addValueRowArea);
@@ -342,12 +325,12 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 
 	private int getAddValueTextColor() {
 		if (addingValue && !addValueText.isEmpty() && !canAddTypedValue()) {
-			return INVALID_TEXT_COLOR;
+			return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_INVALID_TEXT);
 		}
 		if (addingValue) {
-			return TEXT_COLOR;
+			return getConfiguredTextColor();
 		}
-		return UNUSED_ROW_TEXT_COLOR;
+		return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_UNUSED_ROW_TEXT);
 	}
 
 	private void drawAddValueText(GuiGraphics guiGraphics, Font font, String text, int color) {
@@ -374,11 +357,11 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		int right = x + groupArea.getWidth();
 		int bottom = y + groupArea.getHeight();
 
-		guiGraphics.fill(x, y, right, bottom, ORDERED_GROUP_BACKGROUND_COLOR);
-		guiGraphics.fill(x, y, right, y + 1, ORDERED_GROUP_BORDER_DARK_COLOR);
-		guiGraphics.fill(x, y, x + 1, bottom, ORDERED_GROUP_BORDER_DARK_COLOR);
-		guiGraphics.fill(right - 1, y, right, bottom, ORDERED_GROUP_BORDER_LIGHT_COLOR);
-		guiGraphics.fill(x, bottom - 1, right, bottom, ORDERED_GROUP_BORDER_LIGHT_COLOR);
+		guiGraphics.fill(x, y, right, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_ORDERED_GROUP_BACKGROUND));
+		guiGraphics.fill(x, y, right, y + 1, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_ORDERED_GROUP_BORDER_DARK));
+		guiGraphics.fill(x, y, x + 1, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_ORDERED_GROUP_BORDER_DARK));
+		guiGraphics.fill(right - 1, y, right, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_ORDERED_GROUP_BORDER_LIGHT));
+		guiGraphics.fill(x, bottom - 1, right, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_ORDERED_GROUP_BORDER_LIGHT));
 	}
 
 	private static void fillRowHover(GuiGraphics guiGraphics, ImmutableRect2i rowArea) {
@@ -387,7 +370,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			rowArea.getY(),
 			rowArea.getX() + rowArea.getWidth(),
 			rowArea.getY() + rowArea.getHeight(),
-			LIST_ROW_HOVER_COLOR
+			ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_ROW_HOVER)
 		);
 	}
 
@@ -1480,13 +1463,13 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			int y = area.getY();
 			int right = x + area.getWidth();
 			int bottom = y + area.getHeight();
-			int color = ORDERED_ROW_DRAG_GAP_COLOR;
+			int color = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_ORDERED_ROW_DRAG_GAP);
 			if (dropTarget) {
-				color = ORDERED_ROW_DROP_TARGET_COLOR;
+				color = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_ORDERED_ROW_DROP_TARGET);
 			}
 			guiGraphics.fill(x, y, right, bottom, color);
 			if (index > 0) {
-				guiGraphics.fill(x, y, right, y + 1, ORDERED_ROW_DIVIDER_COLOR);
+				guiGraphics.fill(x, y, right, y + 1, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_ORDERED_ROW_DIVIDER));
 			}
 		}
 
@@ -1494,7 +1477,13 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			ImmutableRect2i floatingArea = new ImmutableRect2i(x, y, area.getWidth(), area.getHeight());
 			int floatingX = floatingArea.getX();
 			int bottom = floatingArea.getY() + floatingArea.getHeight();
-			guiGraphics.fill(floatingX, bottom, floatingX + floatingArea.getWidth(), bottom + 2, ORDERED_ROW_DRAG_FLOAT_SHADOW_COLOR);
+			guiGraphics.fill(
+				floatingX,
+				bottom,
+				floatingX + floatingArea.getWidth(),
+				bottom + 2,
+				ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_ORDERED_ROW_DRAG_FLOAT_SHADOW)
+			);
 			draw(guiGraphics, floatingArea, 0, 0, false, true, false, false);
 		}
 
@@ -1519,7 +1508,13 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 				fillRowHover(guiGraphics, rowArea);
 			}
 			if (index > 0) {
-				guiGraphics.fill(rowArea.getX(), rowArea.getY(), rowArea.getX() + rowArea.getWidth(), rowArea.getY() + 1, ORDERED_ROW_DIVIDER_COLOR);
+				guiGraphics.fill(
+					rowArea.getX(),
+					rowArea.getY(),
+					rowArea.getX() + rowArea.getWidth(),
+					rowArea.getY() + 1,
+					ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_ORDERED_ROW_DIVIDER)
+				);
 			}
 			if (floating) {
 				drawFloatingHighlight(guiGraphics, rowArea);
@@ -1651,7 +1646,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			if (editSession != null && editSession.rowIndex == index && valueComponent) {
 				text = Component.literal(editSession.editText + "_");
 				if (getEditedEntry().isEmpty()) {
-					textColor = INVALID_TEXT_COLOR;
+					textColor = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_INVALID_TEXT);
 				}
 			} else {
 				String localizationKeySuffix = ".key";
@@ -1701,32 +1696,32 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 
 		private int getValueTextColor() {
 			if (selected) {
-				return TEXT_COLOR;
+				return getConfiguredTextColor();
 			}
-			return UNUSED_ROW_TEXT_COLOR;
+			return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_UNUSED_ROW_TEXT);
 		}
 
 		private int getBackgroundColor(boolean floating, boolean dropTarget, boolean recentlyMoved) {
 			if (floating) {
-				return ORDERED_ROW_DRAG_FLOAT_BACKGROUND_COLOR;
+				return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_ORDERED_ROW_DRAG_FLOAT_BACKGROUND);
 			}
 			if (dropTarget) {
-				return ORDERED_ROW_DROP_TARGET_COLOR;
+				return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_ORDERED_ROW_DROP_TARGET);
 			}
 			if (recentlyMoved) {
-				return ORDERED_ROW_MOVED_BACKGROUND_COLOR;
+				return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_ORDERED_ROW_MOVED_BACKGROUND);
 			}
 			if (selected) {
-				return ORDERED_ROW_BACKGROUND_COLOR;
+				return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_ORDERED_ROW_BACKGROUND);
 			}
-			return UNUSED_ROW_BACKGROUND_COLOR;
+			return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_UNUSED_ROW_BACKGROUND);
 		}
 
 		private void drawMovedHighlight(GuiGraphics guiGraphics, ImmutableRect2i rowArea) {
 			int x = rowArea.getX();
 			int y = rowArea.getY();
 			int bottom = y + rowArea.getHeight();
-			guiGraphics.fill(x, y, x + 2, bottom, ORDERED_ROW_MOVED_ACCENT_COLOR);
+			guiGraphics.fill(x, y, x + 2, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_ORDERED_ROW_MOVED_ACCENT));
 		}
 
 		private void drawFloatingHighlight(GuiGraphics guiGraphics, ImmutableRect2i rowArea) {
@@ -1734,10 +1729,11 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			int y = rowArea.getY();
 			int right = x + rowArea.getWidth();
 			int bottom = y + rowArea.getHeight();
-			guiGraphics.fill(x, y, right, y + 1, ORDERED_ROW_DRAG_FLOAT_BORDER_COLOR);
-			guiGraphics.fill(x, bottom - 1, right, bottom, ORDERED_ROW_DRAG_FLOAT_BORDER_COLOR);
-			guiGraphics.fill(x, y, x + 2, bottom, ORDERED_ROW_DRAG_FLOAT_ACCENT_COLOR);
-			guiGraphics.fill(right - 1, y, right, bottom, ORDERED_ROW_DRAG_FLOAT_BORDER_COLOR);
+			int borderColor = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_ORDERED_ROW_DRAG_FLOAT_BORDER);
+			guiGraphics.fill(x, y, right, y + 1, borderColor);
+			guiGraphics.fill(x, bottom - 1, right, bottom, borderColor);
+			guiGraphics.fill(x, y, x + 2, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_ORDERED_ROW_DRAG_FLOAT_ACCENT));
+			guiGraphics.fill(right - 1, y, right, bottom, borderColor);
 		}
 
 		private void drawMoveButton(

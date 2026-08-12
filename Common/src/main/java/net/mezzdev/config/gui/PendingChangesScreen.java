@@ -5,7 +5,6 @@ import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.model.PendingConfigChange;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
@@ -26,18 +25,6 @@ final class PendingChangesScreen extends MezzConfigScreen {
 	private static final int BUTTON_HEIGHT = 20;
 	private static final int BUTTON_GAP = 4;
 	private static final int BACK_BUTTON_TOP_MARGIN = 8;
-	private static final int BACKGROUND_COLOR = 0xC0101010;
-	private static final int PANEL_BACKGROUND_COLOR = 0xF0191D26;
-	private static final int PANEL_BORDER_COLOR = 0x90FFFFFF;
-	private static final int ROW_BACKGROUND_COLOR = 0xFF252B36;
-	private static final int ROW_ALTERNATE_BACKGROUND_COLOR = 0xFF2B3342;
-	private static final int ROW_HOVER_COLOR = 0xFF364456;
-	private static final int TITLE_COLOR = 0xFFFFFFFF;
-	private static final int MESSAGE_TEXT_COLOR = 0xFFE0E0E0;
-	private static final int ROW_TEXT_COLOR = 0xFFE8EEF7;
-	private static final int SCROLLBAR_TRACK_COLOR = 0xFF07080C;
-	private static final int SCROLLBAR_MARKER_COLOR = 0xFF9AA8BC;
-	private static final int CHANGE_TEXT_COLOR = 0xFFC9D3E2;
 	private static final int SCREEN_PADDING = 24;
 	private static final int PANEL_PADDING = 6;
 	private static final int ROW_PADDING = 5;
@@ -110,7 +97,7 @@ final class PendingChangesScreen extends MezzConfigScreen {
 
 	@Override
 	public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-		guiGraphics.fill(0, 0, width, height, BACKGROUND_COLOR);
+		guiGraphics.fill(0, 0, width, height, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.PENDING_CHANGES_BACKGROUND));
 	}
 
 	@Nullable
@@ -120,9 +107,21 @@ final class PendingChangesScreen extends MezzConfigScreen {
 		List<FormattedCharSequence> messageLines = font.split(message, screenLayout.contentWidth());
 		int messageY = screenLayout.messageY();
 
-		guiGraphics.drawCenteredString(font, title, width / 2, screenLayout.titleY(), TITLE_COLOR);
+		guiGraphics.drawCenteredString(
+			font,
+			title,
+			width / 2,
+			screenLayout.titleY(),
+			ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.PENDING_CHANGES_TITLE_TEXT)
+		);
 		for (FormattedCharSequence line : messageLines) {
-			guiGraphics.drawString(font, line, screenLayout.contentX(), messageY, MESSAGE_TEXT_COLOR);
+			guiGraphics.drawString(
+				font,
+				line,
+				screenLayout.contentX(),
+				messageY,
+				ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.PENDING_CHANGES_MESSAGE_TEXT)
+			);
 			messageY += font.lineHeight;
 		}
 
@@ -137,8 +136,14 @@ final class PendingChangesScreen extends MezzConfigScreen {
 
 	@Nullable
 	private PendingConfigChange drawChangeList(GuiGraphics guiGraphics, ImmutableRect2i area, int mouseX, int mouseY) {
-		guiGraphics.fill(area.getX(), area.getY(), area.getX() + area.getWidth(), area.getY() + area.getHeight(), PANEL_BACKGROUND_COLOR);
-		drawBorder(guiGraphics, area, PANEL_BORDER_COLOR);
+		guiGraphics.fill(
+			area.getX(),
+			area.getY(),
+			area.getX() + area.getWidth(),
+			area.getY() + area.getHeight(),
+			ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.PENDING_CHANGES_PANEL_BACKGROUND)
+		);
+		drawBorder(guiGraphics, area, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.PENDING_CHANGES_PANEL_BORDER));
 
 		ImmutableRect2i innerArea = area.insetBy(PANEL_PADDING);
 		int contentWidth = innerArea.getWidth();
@@ -195,24 +200,24 @@ final class PendingChangesScreen extends MezzConfigScreen {
 		int textY = y + ROW_PADDING;
 		int textWidth = width - ROW_PADDING * 2;
 		for (FormattedCharSequence line : font.split(change.name(), textWidth)) {
-			guiGraphics.drawString(font, line, textX, textY, ROW_TEXT_COLOR);
+			guiGraphics.drawString(font, line, textX, textY, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.PENDING_CHANGES_ROW_TEXT));
 			textY += font.lineHeight;
 		}
 
 		for (FormattedCharSequence line : font.split(change.valueChange(), textWidth)) {
-			guiGraphics.drawString(font, line, textX, textY, CHANGE_TEXT_COLOR);
+			guiGraphics.drawString(font, line, textX, textY, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.PENDING_CHANGES_CHANGE_TEXT));
 			textY += font.lineHeight;
 		}
 	}
 
 	private static int getRowColor(int index, boolean hovered) {
 		if (hovered) {
-			return ROW_HOVER_COLOR;
+			return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.PENDING_CHANGES_ROW_HOVER);
 		}
 		if (index % 2 == 0) {
-			return ROW_BACKGROUND_COLOR;
+			return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.PENDING_CHANGES_ROW_BACKGROUND);
 		}
-		return ROW_ALTERNATE_BACKGROUND_COLOR;
+		return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.PENDING_CHANGES_ROW_ALTERNATE_BACKGROUND);
 	}
 
 	private int calculateChangeListHeight(int width) {
@@ -240,7 +245,13 @@ final class PendingChangesScreen extends MezzConfigScreen {
 		int x = innerArea.getX() + innerArea.getWidth() - SCROLLBAR_WIDTH;
 		int y = innerArea.getY();
 		int height = innerArea.getHeight();
-		guiGraphics.fill(x, y, x + SCROLLBAR_WIDTH, y + height, SCROLLBAR_TRACK_COLOR);
+		guiGraphics.fill(
+			x,
+			y,
+			x + SCROLLBAR_WIDTH,
+			y + height,
+			ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.PENDING_CHANGES_SCROLLBAR_TRACK)
+		);
 
 		int markerHeight = Math.max(12, height * height / changeListContentHeight);
 		int maxScroll = getMaxScroll();
@@ -248,7 +259,13 @@ final class PendingChangesScreen extends MezzConfigScreen {
 		if (maxScroll > 0) {
 			markerY += (height - markerHeight) * scrollOffset / maxScroll;
 		}
-		guiGraphics.fill(x, markerY, x + SCROLLBAR_WIDTH, markerY + markerHeight, SCROLLBAR_MARKER_COLOR);
+		guiGraphics.fill(
+			x,
+			markerY,
+			x + SCROLLBAR_WIDTH,
+			markerY + markerHeight,
+			ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.PENDING_CHANGES_SCROLLBAR_MARKER)
+		);
 	}
 
 	private boolean hasScrollbar() {
@@ -273,11 +290,16 @@ final class PendingChangesScreen extends MezzConfigScreen {
 
 		ConfigInfo info = hoveredChange.tooltipInfo();
 		ConfigTooltip tooltip = new ConfigTooltip();
-		tooltip.add(info.title().copy().withStyle(ChatFormatting.WHITE));
+		tooltip.add(withColor(info.title(), ConfigGuiColors.GuiColor.PENDING_CHANGES_TOOLTIP_TITLE_TEXT));
 		for (Component line : info.lines()) {
-			tooltip.add(line.copy().withStyle(ChatFormatting.GRAY));
+			tooltip.add(withColor(line, ConfigGuiColors.GuiColor.PENDING_CHANGES_TOOLTIP_TEXT));
 		}
 		tooltip.draw(guiGraphics, mouseX, mouseY);
+	}
+
+	private static Component withColor(Component component, ConfigGuiColors.GuiColor color) {
+		int rgb = ConfigGuiColors.getColor(color) & 0xFFFFFF;
+		return component.copy().setStyle(component.getStyle().withColor(rgb));
 	}
 
 	private void clampScrollOffset() {

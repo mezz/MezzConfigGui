@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.popup;
 
+import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValuePopup;
 import net.mezzdev.config.gui.entries.ConfigEntryWidget;
@@ -26,14 +27,7 @@ public final class ConfigValueSelector<T> implements IConfigValuePopup<T> {
 	private static final int MIN_ENTRY_WIDTH = 50;
 	private static final int MAX_ENTRY_WIDTH = 160;
 	private static final int TEXT_PADDING = 4;
-	private static final int BACKGROUND_COLOR = 0xF0101218;
-	private static final int ROW_BACKGROUND_COLOR = 0xAA1A1D24;
-	private static final int ROW_HOVER_COLOR = 0xFF313A46;
-	private static final int BORDER_DARK_COLOR = 0xE0000000;
-	private static final int BORDER_LIGHT_COLOR = 0x45FFFFFF;
-	private static final int DIVIDER_COLOR = 0x22FFFFFF;
 	private static final int SCROLLBAR_WIDTH = 3;
-	private static final int SCROLLBAR_COLOR = 0xAA9AA4B2;
 
 	private final IConfigScreenValue<T> configValue;
 	private final List<ValueEntry> valueEntries;
@@ -154,11 +148,11 @@ public final class ConfigValueSelector<T> implements IConfigValuePopup<T> {
 		int right = x + area.getWidth();
 		int bottom = y + area.getHeight();
 
-		guiGraphics.fill(x, y, right, bottom, BACKGROUND_COLOR);
-		guiGraphics.fill(x, y, right, y + 1, BORDER_DARK_COLOR);
-		guiGraphics.fill(x, y, x + 1, bottom, BORDER_DARK_COLOR);
-		guiGraphics.fill(right - 1, y, right, bottom, BORDER_LIGHT_COLOR);
-		guiGraphics.fill(x, bottom - 1, right, bottom, BORDER_LIGHT_COLOR);
+		guiGraphics.fill(x, y, right, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.VALUE_SELECTOR_BACKGROUND));
+		guiGraphics.fill(x, y, right, y + 1, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.VALUE_SELECTOR_BORDER_DARK));
+		guiGraphics.fill(x, y, x + 1, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.VALUE_SELECTOR_BORDER_DARK));
+		guiGraphics.fill(right - 1, y, right, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.VALUE_SELECTOR_BORDER_LIGHT));
+		guiGraphics.fill(x, bottom - 1, right, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.VALUE_SELECTOR_BORDER_LIGHT));
 	}
 
 	private static void drawEntryBackground(GuiGraphics guiGraphics, ImmutableRect2i valueArea, boolean hovered, boolean drawDivider) {
@@ -169,22 +163,22 @@ public final class ConfigValueSelector<T> implements IConfigValuePopup<T> {
 
 		guiGraphics.fill(x, y, right, bottom, getBackgroundColor(hovered));
 		if (drawDivider) {
-			guiGraphics.fill(x, y, right, y + 1, DIVIDER_COLOR);
+			guiGraphics.fill(x, y, right, y + 1, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.VALUE_SELECTOR_DIVIDER));
 		}
 	}
 
 	private static int getTextColor(boolean hovered) {
 		if (hovered) {
-			return ConfigEntryWidget.HOVER_TEXT_COLOR;
+			return ConfigEntryWidget.getConfiguredHoverTextColor();
 		}
-		return ConfigEntryWidget.TEXT_COLOR;
+		return ConfigEntryWidget.getConfiguredTextColor();
 	}
 
 	private static int getBackgroundColor(boolean hovered) {
 		if (hovered) {
-			return ROW_HOVER_COLOR;
+			return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.VALUE_SELECTOR_ROW_HOVER);
 		}
-		return ROW_BACKGROUND_COLOR;
+		return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.VALUE_SELECTOR_ROW_BACKGROUND);
 	}
 
 	private ImmutableRect2i getValueArea(Rect2i area, int index) {
@@ -227,7 +221,7 @@ public final class ConfigValueSelector<T> implements IConfigValuePopup<T> {
 			scrollbarY,
 			scrollbarX + SCROLLBAR_WIDTH,
 			scrollbarY + scrollbarHeight,
-			SCROLLBAR_COLOR
+			ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.VALUE_SELECTOR_SCROLLBAR)
 		);
 	}
 

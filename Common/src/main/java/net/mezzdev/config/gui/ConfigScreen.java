@@ -44,9 +44,6 @@ import java.util.concurrent.CompletableFuture;
  * Main in-game config screen that wires the model, layout, view, and input routing together.
  */
 public class ConfigScreen extends MezzConfigScreen {
-	private static final int SEARCH_TEXT_COLOR = 0xFFE8EEF7;
-	private static final int SEARCH_HINT_COLOR = 0xFF8F98A6;
-
 	static Screen create(
 		@Nullable Screen parent,
 		String modId,
@@ -282,9 +279,9 @@ public class ConfigScreen extends MezzConfigScreen {
 
 	private static int getSearchTextColor(String searchText) {
 		if (searchText.isEmpty()) {
-			return SEARCH_HINT_COLOR;
+			return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_SCREEN_SEARCH_HINT);
 		}
-		return SEARCH_TEXT_COLOR;
+		return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_SCREEN_SEARCH_TEXT);
 	}
 
 	private void openValueSelector(ConfigPopupSelector selector) {
@@ -725,6 +722,7 @@ public class ConfigScreen extends MezzConfigScreen {
 		if (minecraft == null) {
 			return;
 		}
+		updateSearchTextColor(searchBox.getValue());
 		renderTransparentBackground(guiGraphics);
 		controller.stepScrollPositions();
 		updateValueSelectorBounds();

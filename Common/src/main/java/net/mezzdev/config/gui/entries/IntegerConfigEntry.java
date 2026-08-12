@@ -2,6 +2,7 @@ package net.mezzdev.config.gui.entries;
 
 import net.mezzdev.config.api.value.ConfigValueRange;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.info.ConfigValueInfoFactory;
@@ -94,20 +95,20 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 		int textY = getCenteredTextY(font, valueBoxArea);
 		if (editing) {
 			String displayText = editText + "_";
-			int textColor = TEXT_COLOR;
+			int textColor = getConfiguredTextColor();
 			if (!editText.isEmpty() && !editText.equals("-")) {
 				try {
 					int parsed = Integer.parseInt(editText);
 					if (parsed < min || parsed > max) {
-						textColor = 0xFFFF7070;
+						textColor = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_INVALID_TEXT);
 					}
 				} catch (NumberFormatException ignored) {
-					textColor = 0xFFFF7070;
+					textColor = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_INVALID_TEXT);
 				}
 			}
 			drawRightAlignedText(guiGraphics, font, displayText, textY, textColor);
 		} else {
-			drawRightAlignedText(guiGraphics, font, getValue().toString(), textY, TEXT_COLOR);
+			drawRightAlignedText(guiGraphics, font, getValue().toString(), textY, getConfiguredTextColor());
 		}
 
 		boolean canUp = getValue() < max;

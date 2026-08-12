@@ -9,7 +9,7 @@ import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.model.ConfigNavItem;
 import net.mezzdev.config.gui.model.ConfigScreenModel;
 import net.mezzdev.config.gui.popup.ConfigPopupSelector;
-import net.minecraft.ChatFormatting;
+import net.mezzdev.config.gui.ConfigGuiColors.GuiColor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -27,19 +27,9 @@ import java.util.List;
 final class ConfigScreenView {
 	private static final int VALUE_SELECTOR_Z_OFFSET = 350;
 	private static final int INFO_PADDING = 5;
-	private static final int INFO_BACKGROUND_COLOR = 0xE0101218;
-	private static final int INFO_BORDER_COLOR = 0x70FFFFFF;
-	private static final int INFO_TITLE_COLOR = 0xFFF3F6FF;
-	private static final int INFO_TEXT_COLOR = 0xFFC9D3E2;
-	private static final int TITLE_TEXT_COLOR = 0xFF404040;
 	private static final int RESIZE_GRIP_SIZE = 11;
 	private static final int RESIZE_GRIP_LINE_GAP = 3;
 	private static final int RESIZE_EDGE_HIGHLIGHT_SIZE = 2;
-	private static final int RESIZE_GRIP_COLOR = 0x45FFFFFF;
-	private static final int RESIZE_HANDLE_HOVER_COLOR = 0x80FFFFFF;
-	private static final int VALUE_AREA_BACKGROUND_COLOR = 0x82000000;
-	private static final int INSET_BORDER_DARK_COLOR = 0xB0000000;
-	private static final int INSET_BORDER_LIGHT_COLOR = 0x35FFFFFF;
 
 	private final Component title;
 	private final EditBox searchBox;
@@ -152,7 +142,7 @@ final class ConfigScreenView {
 			font,
 			title,
 			titleArea,
-			TITLE_TEXT_COLOR,
+			ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_TITLE_TEXT),
 			true
 		);
 	}
@@ -226,9 +216,9 @@ final class ConfigScreenView {
 
 	private static int getResizeGripColor(boolean hovered) {
 		if (hovered) {
-			return RESIZE_HANDLE_HOVER_COLOR;
+			return ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_RESIZE_HANDLE_HOVER);
 		}
-		return RESIZE_GRIP_COLOR;
+		return ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_RESIZE_GRIP);
 	}
 
 	private static void drawResizeGripLine(GuiGraphics guiGraphics, int x1, int y1, int x2, int y2, int color) {
@@ -248,16 +238,16 @@ final class ConfigScreenView {
 		int right = x + area.getWidth();
 		int bottom = y + area.getHeight();
 		if (resizeHandle.left()) {
-			guiGraphics.fill(x, y, x + RESIZE_EDGE_HIGHLIGHT_SIZE, bottom, RESIZE_HANDLE_HOVER_COLOR);
+			guiGraphics.fill(x, y, x + RESIZE_EDGE_HIGHLIGHT_SIZE, bottom, ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_RESIZE_HANDLE_HOVER));
 		}
 		if (resizeHandle.right()) {
-			guiGraphics.fill(right - RESIZE_EDGE_HIGHLIGHT_SIZE, y, right, bottom, RESIZE_HANDLE_HOVER_COLOR);
+			guiGraphics.fill(right - RESIZE_EDGE_HIGHLIGHT_SIZE, y, right, bottom, ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_RESIZE_HANDLE_HOVER));
 		}
 		if (resizeHandle.top()) {
-			guiGraphics.fill(x, y, right, y + RESIZE_EDGE_HIGHLIGHT_SIZE, RESIZE_HANDLE_HOVER_COLOR);
+			guiGraphics.fill(x, y, right, y + RESIZE_EDGE_HIGHLIGHT_SIZE, ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_RESIZE_HANDLE_HOVER));
 		}
 		if (resizeHandle.bottom()) {
-			guiGraphics.fill(x, bottom - RESIZE_EDGE_HIGHLIGHT_SIZE, right, bottom, RESIZE_HANDLE_HOVER_COLOR);
+			guiGraphics.fill(x, bottom - RESIZE_EDGE_HIGHLIGHT_SIZE, right, bottom, ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_RESIZE_HANDLE_HOVER));
 		}
 	}
 
@@ -267,7 +257,7 @@ final class ConfigScreenView {
 			navArea.getY(),
 			navArea.getX() + navArea.getWidth(),
 			navArea.getY() + navArea.getHeight(),
-			0x18000000
+			ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_NAVIGATION_BACKGROUND)
 		);
 	}
 
@@ -312,7 +302,7 @@ final class ConfigScreenView {
 			contentArea.getY(),
 			contentArea.getX() + contentArea.getWidth(),
 			contentArea.getY() + contentArea.getHeight(),
-			VALUE_AREA_BACKGROUND_COLOR
+			ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_VALUE_AREA_BACKGROUND)
 		);
 	}
 
@@ -325,21 +315,21 @@ final class ConfigScreenView {
 		int right = x + area.getWidth();
 		int bottom = y + area.getHeight();
 
-		guiGraphics.fill(x, y, right, y + 1, INSET_BORDER_DARK_COLOR);
-		guiGraphics.fill(x, y, x + 1, bottom, INSET_BORDER_DARK_COLOR);
+		guiGraphics.fill(x, y, right, y + 1, ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_INSET_BORDER_DARK));
+		guiGraphics.fill(x, y, x + 1, bottom, ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_INSET_BORDER_DARK));
 		guiGraphics.fill(
 			x,
 			bottom - 1,
 			right,
 			bottom,
-			INSET_BORDER_LIGHT_COLOR
+			ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_INSET_BORDER_LIGHT)
 		);
 		guiGraphics.fill(
 			right - 1,
 			y,
 			right,
 			bottom,
-			INSET_BORDER_LIGHT_COLOR
+			ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_INSET_BORDER_LIGHT)
 		);
 	}
 
@@ -581,14 +571,14 @@ final class ConfigScreenView {
 			infoArea.getY(),
 			infoArea.getX() + infoArea.getWidth(),
 			infoArea.getY() + infoArea.getHeight(),
-			INFO_BACKGROUND_COLOR
+			ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_INFO_BACKGROUND)
 		);
 		guiGraphics.fill(
 			infoArea.getX(),
 			infoArea.getY(),
 			infoArea.getX() + infoArea.getWidth(),
 			infoArea.getY() + 1,
-			INFO_BORDER_COLOR
+			ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_INFO_BORDER)
 		);
 		if (info == null) {
 			return;
@@ -608,7 +598,7 @@ final class ConfigScreenView {
 
 		List<FormattedCharSequence> titleLines = font.split(info.title(), textWidth);
 		if (!titleLines.isEmpty()) {
-			guiGraphics.drawString(font, titleLines.getFirst(), textX, textY, INFO_TITLE_COLOR, false);
+			guiGraphics.drawString(font, titleLines.getFirst(), textX, textY, ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_INFO_TITLE_TEXT), false);
 			textY += font.lineHeight + 2;
 		}
 
@@ -618,7 +608,7 @@ final class ConfigScreenView {
 					guiGraphics.disableScissor();
 					return;
 				}
-				guiGraphics.drawString(font, wrappedLine, textX, textY, INFO_TEXT_COLOR, false);
+				guiGraphics.drawString(font, wrappedLine, textX, textY, ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_INFO_TEXT), false);
 				textY += font.lineHeight;
 			}
 		}
@@ -654,17 +644,17 @@ final class ConfigScreenView {
 			return;
 		}
 		ConfigTooltip tooltip = new ConfigTooltip();
-		tooltip.add(withDefaultColor(info.title(), ChatFormatting.WHITE));
+		tooltip.add(withDefaultColor(info.title(), ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_TOOLTIP_TITLE_TEXT)));
 		for (Component line : info.lines()) {
-			tooltip.add(withDefaultColor(line, ChatFormatting.GRAY));
+			tooltip.add(withDefaultColor(line, ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_TOOLTIP_TEXT)));
 		}
 		tooltip.draw(guiGraphics, mouseX, mouseY);
 	}
 
-	private static MutableComponent withDefaultColor(Component component, ChatFormatting color) {
+	private static MutableComponent withDefaultColor(Component component, int color) {
 		MutableComponent result = component.copy();
 		if (result.getStyle().getColor() == null) {
-			result.withStyle(color);
+			result.setStyle(result.getStyle().withColor(color & 0xFFFFFF));
 		}
 		return result;
 	}

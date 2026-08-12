@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.textures;
 
+import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
@@ -16,8 +17,6 @@ public enum ConfigButtonIcon {
 	ADD("icons/add", 10, 10),
 	UP("icons/button_up", 8, 8),
 	DOWN("icons/button_down", 8, 8);
-
-	private static final float DISABLED_TINT = 0.625f;
 
 	private final int width;
 	private final int height;
@@ -51,7 +50,13 @@ public enum ConfigButtonIcon {
 		}
 
 		guiGraphics.pose().pushPose();
-		guiGraphics.setColor(DISABLED_TINT, DISABLED_TINT, DISABLED_TINT, 1.0f);
+		int color = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.DISABLED_BUTTON_ICON_TINT);
+		guiGraphics.setColor(
+			((color >>> 16) & 0xFF) / 255.0f,
+			((color >>> 8) & 0xFF) / 255.0f,
+			(color & 0xFF) / 255.0f,
+			((color >>> 24) & 0xFF) / 255.0f
+		);
 		drawable.draw(guiGraphics, x, y);
 		guiGraphics.setColor(1.0f, 1.0f, 1.0f, 1.0f);
 		guiGraphics.pose().popPose();

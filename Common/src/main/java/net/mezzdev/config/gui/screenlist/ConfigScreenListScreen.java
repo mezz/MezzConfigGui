@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui.screenlist;
 
 import com.mojang.blaze3d.platform.NativeImage;
+import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.entries.ConfigEntryWidget;
 import net.mezzdev.config.gui.input.InputType;
@@ -42,17 +43,6 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 	private static final Logger LOGGER = LogManager.getLogger();
 	private static final Component TITLE = Component.translatable("mezz_config.config.screen.list.title");
 	private static final Component SEARCH = Component.translatable("mezz_config.config.screen.list.search");
-	private static final int TITLE_TEXT_COLOR = 0xFF404040;
-	private static final int SEARCH_TEXT_COLOR = 0xFFE8EEF7;
-	private static final int SEARCH_HINT_COLOR = 0xFF8F98A6;
-	private static final int LIST_BACKGROUND_COLOR = 0x82000000;
-	private static final int INSET_BORDER_DARK_COLOR = 0xB0000000;
-	private static final int INSET_BORDER_LIGHT_COLOR = 0x35FFFFFF;
-	private static final int ROW_BACKGROUND_COLOR = 0x33000000;
-	private static final int ROW_HOVER_COLOR = 0x22FFFFFF;
-	private static final int ROW_DIVIDER_COLOR = 0x2AFFFFFF;
-	private static final int ICON_BORDER_COLOR = 0x40FFFFFF;
-	private static final int EMPTY_TEXT_COLOR = 0xFFA0A0A0;
 	private static final int BORDER_PADDING = 6;
 	private static final int SECTION_GAP = BORDER_PADDING / 2;
 	private static final int TITLE_HEIGHT = 18;
@@ -171,10 +161,10 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 
 	private void updateSearchTextColor(String searchText) {
 		if (searchText.isEmpty()) {
-			searchBox.setTextColor(SEARCH_HINT_COLOR);
+			searchBox.setTextColor(ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SCREEN_LIST_SEARCH_HINT));
 			return;
 		}
-		searchBox.setTextColor(SEARCH_TEXT_COLOR);
+		searchBox.setTextColor(ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SCREEN_LIST_SEARCH_TEXT));
 	}
 
 	private void updateVisibleEntries() {
@@ -405,6 +395,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 
 	@Override
 	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+		updateSearchTextColor(searchBox.getValue());
 		renderTransparentBackground(guiGraphics);
 		stepScroll();
 		draw(guiGraphics, mouseX, mouseY, partialTick);
@@ -432,7 +423,14 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 	}
 
 	private void drawTitle(GuiGraphics guiGraphics, Font font) {
-		ConfigEntryWidget.drawFittedText(guiGraphics, font, TITLE, titleArea, TITLE_TEXT_COLOR, true);
+		ConfigEntryWidget.drawFittedText(
+			guiGraphics,
+			font,
+			TITLE,
+			titleArea,
+			ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SCREEN_LIST_TITLE_TEXT),
+			true
+		);
 	}
 
 	private void drawSearch(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
@@ -447,7 +445,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 			listArea.getY(),
 			listArea.getX() + listArea.getWidth(),
 			listArea.getY() + listArea.getHeight(),
-			LIST_BACKGROUND_COLOR
+			ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SCREEN_LIST_BACKGROUND)
 		);
 		drawInsetBorder(guiGraphics, listArea);
 		if (visibleEntries.isEmpty()) {
@@ -474,7 +472,14 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 
 	private void drawEmptyListMessage(GuiGraphics guiGraphics, Font font) {
 		Component message = Component.translatable("mezz_config.config.screen.list.empty");
-		ConfigEntryWidget.drawFittedText(guiGraphics, font, message, listArea.insetBy(ROW_PADDING), EMPTY_TEXT_COLOR, true);
+		ConfigEntryWidget.drawFittedText(
+			guiGraphics,
+			font,
+			message,
+			listArea.insetBy(ROW_PADDING),
+			ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SCREEN_LIST_EMPTY_TEXT),
+			true
+		);
 	}
 
 	private void drawEntry(
@@ -484,11 +489,29 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 		Entry entry,
 		boolean hovered
 	) {
-		guiGraphics.fill(rowArea.getX(), rowArea.getY(), rowArea.getX() + rowArea.getWidth(), rowArea.getY() + rowArea.getHeight(), ROW_BACKGROUND_COLOR);
+		guiGraphics.fill(
+			rowArea.getX(),
+			rowArea.getY(),
+			rowArea.getX() + rowArea.getWidth(),
+			rowArea.getY() + rowArea.getHeight(),
+			ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SCREEN_LIST_ROW_BACKGROUND)
+		);
 		if (hovered) {
-			guiGraphics.fill(rowArea.getX(), rowArea.getY(), rowArea.getX() + rowArea.getWidth(), rowArea.getY() + rowArea.getHeight(), ROW_HOVER_COLOR);
+			guiGraphics.fill(
+				rowArea.getX(),
+				rowArea.getY(),
+				rowArea.getX() + rowArea.getWidth(),
+				rowArea.getY() + rowArea.getHeight(),
+				ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SCREEN_LIST_ROW_HOVER)
+			);
 		}
-		guiGraphics.fill(rowArea.getX(), rowArea.getY() + rowArea.getHeight() - 1, rowArea.getX() + rowArea.getWidth(), rowArea.getY() + rowArea.getHeight(), ROW_DIVIDER_COLOR);
+		guiGraphics.fill(
+			rowArea.getX(),
+			rowArea.getY() + rowArea.getHeight() - 1,
+			rowArea.getX() + rowArea.getWidth(),
+			rowArea.getY() + rowArea.getHeight(),
+			ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SCREEN_LIST_ROW_DIVIDER)
+		);
 
 		ImmutableRect2i iconArea = new ImmutableRect2i(
 			rowArea.getX() + ROW_PADDING,
@@ -506,7 +529,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 			font.lineHeight
 		);
 
-		ConfigEntryWidget.drawFittedText(guiGraphics, font, entry.title(), titleTextArea, ConfigEntryWidget.TEXT_COLOR, false);
+		ConfigEntryWidget.drawFittedText(guiGraphics, font, entry.title(), titleTextArea, ConfigEntryWidget.getConfiguredTextColor(), false);
 	}
 
 	private static void drawInsetBorder(GuiGraphics guiGraphics, ImmutableRect2i area) {
@@ -517,10 +540,10 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 		int y = area.getY();
 		int right = x + area.getWidth();
 		int bottom = y + area.getHeight();
-		guiGraphics.fill(x, y, right, y + 1, INSET_BORDER_DARK_COLOR);
-		guiGraphics.fill(x, y, x + 1, bottom, INSET_BORDER_DARK_COLOR);
-		guiGraphics.fill(x, bottom - 1, right, bottom, INSET_BORDER_LIGHT_COLOR);
-		guiGraphics.fill(right - 1, y, right, bottom, INSET_BORDER_LIGHT_COLOR);
+		guiGraphics.fill(x, y, right, y + 1, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SCREEN_LIST_INSET_BORDER_DARK));
+		guiGraphics.fill(x, y, x + 1, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SCREEN_LIST_INSET_BORDER_DARK));
+		guiGraphics.fill(x, bottom - 1, right, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SCREEN_LIST_INSET_BORDER_LIGHT));
+		guiGraphics.fill(right - 1, y, right, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SCREEN_LIST_INSET_BORDER_LIGHT));
 	}
 
 	private void drawScrollBar(GuiGraphics guiGraphics) {
@@ -635,7 +658,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 				initial,
 				iconArea.getX() + iconArea.getWidth() / 2,
 				iconArea.getY() + (iconArea.getHeight() - font.lineHeight) / 2,
-				ConfigEntryWidget.TEXT_COLOR
+				ConfigEntryWidget.getConfiguredTextColor()
 			);
 		}
 
@@ -645,7 +668,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 				iconArea.getY() - 1,
 				iconArea.getX() + iconArea.getWidth() + 1,
 				iconArea.getY() + iconArea.getHeight() + 1,
-				ICON_BORDER_COLOR
+				ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SCREEN_LIST_ICON_BORDER)
 			);
 			guiGraphics.pose().pushPose();
 			float scale = (float) iconArea.getWidth() / ITEM_ICON_SIZE;
@@ -691,7 +714,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 				iconArea.getY() - 1,
 				iconArea.getX() + iconArea.getWidth() + 1,
 				iconArea.getY() + iconArea.getHeight() + 1,
-				ICON_BORDER_COLOR
+				ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SCREEN_LIST_ICON_BORDER)
 			);
 			ImmutableRect2i fittedIconArea = getFittedIconArea(iconArea);
 			guiGraphics.blit(

@@ -2,6 +2,7 @@ package net.mezzdev.config.gui.info;
 
 import net.mezzdev.config.api.value.ConfigColorFormat;
 import net.mezzdev.config.api.value.PackedColor;
+import net.mezzdev.config.gui.ConfigGuiColors;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
 
@@ -9,9 +10,6 @@ import net.minecraft.client.renderer.Rect2i;
  * Draws and formats packed RGB and ARGB colors.
  */
 public final class ColorSwatch {
-	private static final int BORDER_COLOR = 0xFF08090C;
-	private static final int CHECKER_LIGHT_COLOR = 0xFFB8B8B8;
-	private static final int CHECKER_DARK_COLOR = 0xFF727272;
 	private static final int CHECKER_SIZE = 3;
 
 	private ColorSwatch() {
@@ -35,7 +33,7 @@ public final class ColorSwatch {
 		}
 		int right = area.getX() + area.getWidth();
 		int bottom = area.getY() + area.getHeight();
-		guiGraphics.fill(area.getX(), area.getY(), right, bottom, BORDER_COLOR);
+		guiGraphics.fill(area.getX(), area.getY(), right, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_SWATCH_BORDER));
 
 		int x = area.getX() + 1;
 		int y = area.getY() + 1;
@@ -50,9 +48,9 @@ public final class ColorSwatch {
 			for (int tileX = x; tileX < right; tileX += CHECKER_SIZE) {
 				int column = (tileX - x) / CHECKER_SIZE;
 				int row = (tileY - y) / CHECKER_SIZE;
-				int checkerColor = CHECKER_DARK_COLOR;
+				int checkerColor = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_SWATCH_CHECKER_DARK);
 				if ((column + row) % 2 == 0) {
-					checkerColor = CHECKER_LIGHT_COLOR;
+					checkerColor = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_SWATCH_CHECKER_LIGHT);
 				}
 				guiGraphics.fill(
 					tileX,

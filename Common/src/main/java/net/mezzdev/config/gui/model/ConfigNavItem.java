@@ -4,6 +4,7 @@ import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.mezzdev.config.gui.util.Pair;
 import net.mezzdev.config.gui.util.StringUtil;
 import net.mezzdev.config.gui.ConfigInputUtil;
+import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.ConfigScreenLayout;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.ConfigInputHandler;
@@ -32,14 +33,6 @@ public final class ConfigNavItem implements ConfigInputHandler {
 	private static final int TEXT_VERTICAL_PADDING = 5;
 	private static final int MAX_TEXT_LINES = 2;
 	private static final int ACTIVE_ACCENT_WIDTH = 2;
-	private static final int BACKGROUND_COLOR = 0x33000000;
-	private static final int HOVER_BACKGROUND_COLOR = 0x22FFFFFF;
-	private static final int ACTIVE_BACKGROUND_COLOR = 0x66313A46;
-	private static final int ACTIVE_ACCENT_COLOR = 0xFF5E9AD6;
-	private static final int DIVIDER_COLOR = 0x2AFFFFFF;
-	private static final int TEXT_COLOR = 0xFF20242A;
-	private static final int HOVER_TEXT_COLOR = 0xFF111820;
-	private static final int ACTIVE_TEXT_COLOR = 0xFF101A24;
 
 	private final Component fullName;
 	private final int categoryIndex;
@@ -98,12 +91,12 @@ public final class ConfigNavItem implements ConfigInputHandler {
 
 		guiGraphics.fill(x, y, right, bottom, getBackgroundColor(active));
 		if (hovered) {
-			guiGraphics.fill(x, y, right, hoverBottom, HOVER_BACKGROUND_COLOR);
+			guiGraphics.fill(x, y, right, hoverBottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.NAV_ITEM_HOVER_BACKGROUND));
 		}
 		if (active) {
-			guiGraphics.fill(x, y, x + ACTIVE_ACCENT_WIDTH, bottom, ACTIVE_ACCENT_COLOR);
+			guiGraphics.fill(x, y, x + ACTIVE_ACCENT_WIDTH, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.NAV_ITEM_ACTIVE_ACCENT));
 		}
-		guiGraphics.fill(x, bottom - 1, right, bottom, DIVIDER_COLOR);
+		guiGraphics.fill(x, bottom - 1, right, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.NAV_ITEM_DIVIDER));
 
 		int textColor = getTextColor(active, hovered);
 		int textX = area.getX() + getTextLeftPadding(active);
@@ -117,19 +110,19 @@ public final class ConfigNavItem implements ConfigInputHandler {
 
 	private static int getBackgroundColor(boolean active) {
 		if (active) {
-			return ACTIVE_BACKGROUND_COLOR;
+			return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.NAV_ITEM_ACTIVE_BACKGROUND);
 		}
-		return BACKGROUND_COLOR;
+		return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.NAV_ITEM_BACKGROUND);
 	}
 
 	private static int getTextColor(boolean active, boolean hovered) {
 		if (active) {
-			return ACTIVE_TEXT_COLOR;
+			return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.NAV_ITEM_ACTIVE_TEXT);
 		}
 		if (hovered) {
-			return HOVER_TEXT_COLOR;
+			return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.NAV_ITEM_HOVER_TEXT);
 		}
-		return TEXT_COLOR;
+		return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.NAV_ITEM_TEXT);
 	}
 
 	private static int getTextLeftPadding(boolean active) {

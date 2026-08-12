@@ -2,6 +2,7 @@ package net.mezzdev.config.gui.neoforge;
 
 import net.mezzdev.config.gui.api.IConfigScreenFactory;
 import net.mezzdev.config.gui.ConfigGui;
+import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.ConfigScreenConfig;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.neoforge.config.NeoForgeConfigScreenConfigs;
@@ -74,5 +75,6 @@ public final class ConfigGuiNeoForgeClient {
 
 	private static void onRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {
 		event.registerReloadListener(ConfigTextures.get().getGuiSpriteManager());
+		event.registerReloadListener(ConfigGuiColors.createReloadListener());
 	}
 }

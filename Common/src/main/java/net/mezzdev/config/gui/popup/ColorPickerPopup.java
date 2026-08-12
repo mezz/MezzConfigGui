@@ -2,6 +2,7 @@ package net.mezzdev.config.gui.popup;
 
 import net.mezzdev.config.api.value.ConfigColorFormat;
 import net.mezzdev.config.api.value.PackedColor;
+import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.api.IConfigValuePopup;
 import net.mezzdev.config.gui.entries.ConfigEntryWidget;
 import net.mezzdev.config.gui.info.ColorSwatch;
@@ -65,17 +66,6 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 	private static final int FIELD_TEXT_PADDING = 2;
 	private static final int MAX_EDIT_TEXT_LENGTH = 12;
 	private static final float PRECISE_SLIDER_SCALE = 0.1f;
-	private static final int BACKGROUND_COLOR = 0xF0101218;
-	private static final int BORDER_DARK_COLOR = 0xFF050609;
-	private static final int BORDER_LIGHT_COLOR = 0x667F8A9A;
-	private static final int MARKER_DARK_COLOR = 0xFF000000;
-	private static final int MARKER_LIGHT_COLOR = 0xFFFFFFFF;
-	private static final int FIELD_BACKGROUND_COLOR = 0xFF171A20;
-	private static final int FIELD_FOCUSED_COLOR = 0xFF1F2C3A;
-	private static final int FIELD_BORDER_COLOR = 0x555E6877;
-	private static final int FIELD_FOCUSED_BORDER_COLOR = 0xFF7DB6F2;
-	private static final int FIELD_INVALID_BORDER_COLOR = 0xFFFF7070;
-
 	private final ConfigColorFormat format;
 	private final ColorPickerModel model;
 	private ColorAxis verticalAxis = ColorAxis.VALUE;
@@ -398,7 +388,7 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 				bottomColor
 			);
 		}
-		drawBorder(guiGraphics, area, FIELD_BORDER_COLOR);
+		drawBorder(guiGraphics, area, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_FIELD_BORDER));
 		float markerXPosition = switch (verticalAxis) {
 			case HUE -> model.getSaturation();
 			case SATURATION, VALUE -> model.getHue();
@@ -426,7 +416,7 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 			int color = getVerticalAxisColor(position);
 			guiGraphics.fill(area.getX(), area.getY() + yOffset, area.getX() + area.getWidth(), area.getY() + yOffset + 1, color);
 		}
-		drawBorder(guiGraphics, area, FIELD_BORDER_COLOR);
+		drawBorder(guiGraphics, area, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_FIELD_BORDER));
 		float markerPosition = switch (verticalAxis) {
 			case HUE -> model.getHue();
 			case SATURATION -> 1.0f - model.getSaturation();
@@ -455,19 +445,19 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 			Rect2i area = selectorArea.area();
 			boolean selected = selectorArea.axis() == verticalAxis;
 			boolean hovered = contains(area, mouseX, mouseY);
-			int backgroundColor = FIELD_BACKGROUND_COLOR;
+			int backgroundColor = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_FIELD_BACKGROUND);
 			if (selected) {
-				backgroundColor = FIELD_FOCUSED_COLOR;
+				backgroundColor = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_FIELD_FOCUSED_BACKGROUND);
 			}
-			int borderColor = FIELD_BORDER_COLOR;
+			int borderColor = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_FIELD_BORDER);
 			if (selected || hovered) {
-				borderColor = FIELD_FOCUSED_BORDER_COLOR;
+				borderColor = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_FIELD_FOCUSED_BORDER);
 			}
 			fillWithBorder(guiGraphics, area, backgroundColor, borderColor);
 			String label = selectorArea.axis().label;
 			int x = area.getX() + (area.getWidth() - font.width(label)) / 2 + 1;
 			int y = area.getY() + (area.getHeight() - font.lineHeight) / 2 + 1;
-			guiGraphics.drawString(font, label, x, y, MARKER_LIGHT_COLOR, false);
+			guiGraphics.drawString(font, label, x, y, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_LIGHT), false);
 		}
 	}
 
@@ -485,7 +475,7 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 			int color = getSliderColor(slider.field(), position);
 			guiGraphics.fill(area.getX() + offset, area.getY(), area.getX() + offset + 1, area.getY() + area.getHeight(), color);
 		}
-		drawBorder(guiGraphics, area, FIELD_BORDER_COLOR);
+		drawBorder(guiGraphics, area, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_FIELD_BORDER));
 		float markerPosition = getSliderPosition(slider.field());
 		int markerX = area.getX() + Math.round(markerPosition * (area.getWidth() - 1));
 		drawVerticalMarker(guiGraphics, area, markerX);
@@ -516,10 +506,10 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		int textY = area.getY() + (area.getHeight() - font.lineHeight) / 2;
 		String label = slider.field().label;
 		int labelX = area.getX() - labelWidth + (labelWidth - font.width(label)) / 2;
-		guiGraphics.drawString(font, label, labelX, textY, MARKER_LIGHT_COLOR, false);
+		guiGraphics.drawString(font, label, labelX, textY, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_LIGHT), false);
 		String value = getFieldText(slider.field());
 		int valueX = area.getX() + area.getWidth() + 3;
-		guiGraphics.drawString(font, value, valueX, textY, MARKER_LIGHT_COLOR, false);
+		guiGraphics.drawString(font, value, valueX, textY, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_LIGHT), false);
 	}
 
 	private void drawAlpha(GuiGraphics guiGraphics, Rect2i area, int labelWidth) {
@@ -538,17 +528,17 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		}
 		int markerX = area.getX() + Math.round(model.getAlpha() * (area.getWidth() - 1));
 		drawVerticalMarker(guiGraphics, area, markerX);
-		drawBorder(guiGraphics, area, FIELD_BORDER_COLOR);
+		drawBorder(guiGraphics, area, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_FIELD_BORDER));
 		Font font = Minecraft.getInstance().font;
 		int textY = area.getY() + (area.getHeight() - font.lineHeight) / 2;
 		int labelX = area.getX() - labelWidth + (labelWidth - font.width(ColorField.ALPHA.label)) / 2;
-		guiGraphics.drawString(font, ColorField.ALPHA.label, labelX, textY, MARKER_LIGHT_COLOR, false);
+		guiGraphics.drawString(font, ColorField.ALPHA.label, labelX, textY, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_LIGHT), false);
 		guiGraphics.drawString(
 			font,
 			getFieldText(ColorField.ALPHA),
 			area.getX() + area.getWidth() + 3,
 			textY,
-			MARKER_LIGHT_COLOR,
+			ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_LIGHT),
 			false
 		);
 	}
@@ -562,15 +552,15 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		ColorField field = fieldArea.field();
 		boolean focused = field == focusedField;
 		boolean valid = !focused || isEditTextValid();
-		int backgroundColor = FIELD_BACKGROUND_COLOR;
+		int backgroundColor = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_FIELD_BACKGROUND);
 		if (focused) {
-			backgroundColor = FIELD_FOCUSED_COLOR;
+			backgroundColor = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_FIELD_FOCUSED_BACKGROUND);
 		}
-		int borderColor = FIELD_BORDER_COLOR;
+		int borderColor = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_FIELD_BORDER);
 		if (focused) {
-			borderColor = FIELD_INVALID_BORDER_COLOR;
+			borderColor = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_FIELD_INVALID_BORDER);
 			if (valid) {
-				borderColor = FIELD_FOCUSED_BORDER_COLOR;
+				borderColor = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_FIELD_FOCUSED_BORDER);
 			}
 		}
 		fillWithBorder(guiGraphics, fieldArea.area(), backgroundColor, borderColor);
@@ -588,9 +578,9 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 			visibleText = font.plainSubstrByWidth(visibleText, textArea.getWidth(), true);
 		}
 		int textY = ConfigEntryWidget.getCenteredTextY(font, textArea);
-		int textColor = FIELD_INVALID_BORDER_COLOR;
+		int textColor = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_FIELD_INVALID_BORDER);
 		if (valid) {
-			textColor = ConfigEntryWidget.TEXT_COLOR;
+			textColor = ConfigEntryWidget.getConfiguredTextColor();
 		}
 		ConfigEntryWidget.drawText(guiGraphics, font, visibleText, textArea.getX(), textY, textColor);
 	}
@@ -718,11 +708,11 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 	private static void drawBackground(GuiGraphics guiGraphics, Rect2i area) {
 		int right = area.getX() + area.getWidth();
 		int bottom = area.getY() + area.getHeight();
-		guiGraphics.fill(area.getX(), area.getY(), right, bottom, BACKGROUND_COLOR);
-		guiGraphics.fill(area.getX(), area.getY(), right, area.getY() + 1, BORDER_DARK_COLOR);
-		guiGraphics.fill(area.getX(), area.getY(), area.getX() + 1, bottom, BORDER_DARK_COLOR);
-		guiGraphics.fill(right - 1, area.getY(), right, bottom, BORDER_LIGHT_COLOR);
-		guiGraphics.fill(area.getX(), bottom - 1, right, bottom, BORDER_LIGHT_COLOR);
+		guiGraphics.fill(area.getX(), area.getY(), right, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_BACKGROUND));
+		guiGraphics.fill(area.getX(), area.getY(), right, area.getY() + 1, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_BORDER_DARK));
+		guiGraphics.fill(area.getX(), area.getY(), area.getX() + 1, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_BORDER_DARK));
+		guiGraphics.fill(right - 1, area.getY(), right, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_BORDER_LIGHT));
+		guiGraphics.fill(area.getX(), bottom - 1, right, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_BORDER_LIGHT));
 	}
 
 	private static void fillWithBorder(GuiGraphics guiGraphics, Rect2i area, int fillColor, int borderColor) {
@@ -742,19 +732,19 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 	}
 
 	private static void drawPointMarker(GuiGraphics guiGraphics, int x, int y) {
-		guiGraphics.fill(x - 3, y - 3, x + 4, y + 4, MARKER_DARK_COLOR);
-		guiGraphics.fill(x - 2, y - 2, x + 3, y + 3, MARKER_LIGHT_COLOR);
-		guiGraphics.fill(x - 1, y - 1, x + 2, y + 2, MARKER_DARK_COLOR);
+		guiGraphics.fill(x - 3, y - 3, x + 4, y + 4, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_DARK));
+		guiGraphics.fill(x - 2, y - 2, x + 3, y + 3, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_LIGHT));
+		guiGraphics.fill(x - 1, y - 1, x + 2, y + 2, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_DARK));
 	}
 
 	private static void drawHorizontalMarker(GuiGraphics guiGraphics, Rect2i area, int y) {
-		guiGraphics.fill(area.getX() - 1, y - 1, area.getX() + area.getWidth() + 1, y + 2, MARKER_DARK_COLOR);
-		guiGraphics.fill(area.getX(), y, area.getX() + area.getWidth(), y + 1, MARKER_LIGHT_COLOR);
+		guiGraphics.fill(area.getX() - 1, y - 1, area.getX() + area.getWidth() + 1, y + 2, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_DARK));
+		guiGraphics.fill(area.getX(), y, area.getX() + area.getWidth(), y + 1, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_LIGHT));
 	}
 
 	private static void drawVerticalMarker(GuiGraphics guiGraphics, Rect2i area, int x) {
-		guiGraphics.fill(x - 1, area.getY() - 1, x + 2, area.getY() + area.getHeight() + 1, MARKER_DARK_COLOR);
-		guiGraphics.fill(x, area.getY(), x + 1, area.getY() + area.getHeight(), MARKER_LIGHT_COLOR);
+		guiGraphics.fill(x - 1, area.getY() - 1, x + 2, area.getY() + area.getHeight() + 1, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_DARK));
+		guiGraphics.fill(x, area.getY(), x + 1, area.getY() + area.getHeight(), ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_LIGHT));
 	}
 
 	private PickerLayout createLayout(Rect2i area) {

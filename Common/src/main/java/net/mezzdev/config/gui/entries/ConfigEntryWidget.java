@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui.entries;
 
 import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
+import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.model.ConfigValueChange;
@@ -49,14 +50,23 @@ public abstract class ConfigEntryWidget<T> {
 	private static final int RESET_BUTTON_SIZE = 18;
 	private static final int RESET_BUTTON_RIGHT_PADDING = 2;
 	protected static final int VALUE_CONTROL_RIGHT_RESERVE = RESET_BUTTON_SIZE + RESET_BUTTON_RIGHT_PADDING + 2;
-	private static final int ROW_STRIPE_LIGHT_COLOR = 0x08FFFFFF;
-	private static final int ROW_STRIPE_DARK_COLOR = 0x08000000;
-	private static final int ROW_HOVER_COLOR = 0x18FFFFFF;
-	private static final int PENDING_BACKGROUND_COLOR = 0x302F5F8E;
-	private static final int PENDING_ACCENT_COLOR = 0xFF5E9AD6;
-	private static final int READ_ONLY_OVERLAY_COLOR = 0x50000000;
-	private static final int BUTTON_UNDERLAY_COLOR = 0xFF111216;
 	private static final int BUTTON_TEXT_PADDING = 3;
+
+	public static int getConfiguredTextColor() {
+		return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_TEXT);
+	}
+
+	public static int getConfiguredSecondaryTextColor() {
+		return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_SECONDARY_TEXT);
+	}
+
+	public static int getConfiguredHoverTextColor() {
+		return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_HOVER_TEXT);
+	}
+
+	public static int getConfiguredDisabledTextColor() {
+		return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_DISABLED_TEXT);
+	}
 
 	public static void drawText(GuiGraphics guiGraphics, Font font, FormattedCharSequence text, int x, int y, int color) {
 		guiGraphics.drawString(font, text, x, y, color, false);
@@ -132,7 +142,13 @@ public abstract class ConfigEntryWidget<T> {
 		boolean active,
 		boolean hovered
 	) {
-		guiGraphics.fill(area.getX(), area.getY(), area.getX() + area.getWidth(), area.getY() + area.getHeight(), BUTTON_UNDERLAY_COLOR);
+		guiGraphics.fill(
+			area.getX(),
+			area.getY(),
+			area.getX() + area.getWidth(),
+			area.getY() + area.getHeight(),
+			ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_BUTTON_UNDERLAY)
+		);
 		textures.getButtonForState(false, active, hovered).draw(guiGraphics, area);
 	}
 
@@ -340,7 +356,7 @@ public abstract class ConfigEntryWidget<T> {
 				hoverArea.getY(),
 				hoverArea.getX() + hoverArea.getWidth() - 1,
 				hoverArea.getY() + hoverArea.getHeight(),
-				ROW_HOVER_COLOR
+				ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_ROW_HOVER)
 			);
 		}
 		if (hasPendingChange()) {
@@ -349,14 +365,14 @@ public abstract class ConfigEntryWidget<T> {
 				area.getY(),
 				area.getX() + area.getWidth() - 1,
 				area.getY() + area.getHeight(),
-				PENDING_BACKGROUND_COLOR
+				ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_PENDING_BACKGROUND)
 			);
 			guiGraphics.fill(
 				area.getX() + 1,
 				area.getY(),
 				area.getX() + 3,
 				area.getY() + area.getHeight(),
-				PENDING_ACCENT_COLOR
+				ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_PENDING_ACCENT)
 			);
 		}
 		double drawMouseX = Double.NaN;
@@ -373,7 +389,7 @@ public abstract class ConfigEntryWidget<T> {
 				area.getY(),
 				area.getX() + area.getWidth() - 1,
 				area.getY() + area.getHeight(),
-				READ_ONLY_OVERLAY_COLOR
+				ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_READ_ONLY_OVERLAY)
 			);
 		}
 	}
@@ -398,9 +414,9 @@ public abstract class ConfigEntryWidget<T> {
 
 	private static int getRowStripeColor(int rowIndex) {
 		if (rowIndex % 2 == 0) {
-			return ROW_STRIPE_LIGHT_COLOR;
+			return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_ROW_STRIPE_LIGHT);
 		}
-		return ROW_STRIPE_DARK_COLOR;
+		return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_ROW_STRIPE_DARK);
 	}
 
 	private void drawResetButton(GuiGraphics guiGraphics, double mouseX, double mouseY) {
@@ -496,7 +512,14 @@ public abstract class ConfigEntryWidget<T> {
 		int scaledLineHeight = getScaledLineHeight(font);
 		int y = nameArea.getY();
 		for (FormattedCharSequence line : nameLines) {
-			drawText(guiGraphics, font, line, nameArea.getX(), y, TEXT_COLOR);
+			drawText(
+				guiGraphics,
+				font,
+				line,
+				nameArea.getX(),
+				y,
+				getConfiguredTextColor()
+			);
 			y += scaledLineHeight;
 		}
 	}

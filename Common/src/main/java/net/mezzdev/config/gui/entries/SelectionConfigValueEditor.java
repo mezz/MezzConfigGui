@@ -58,7 +58,7 @@ final class SelectionConfigValueEditor<T> implements IConfigValueEditor<T> {
 		ImmutableRect2i textArea = toImmutableRect2i(area)
 			.cropLeft(VALUE_TEXT_PADDING)
 			.cropRight(ARROW_SIZE + ARROW_PADDING * 2);
-		ConfigEntryWidget.drawFittedText(guiGraphics, font, valueName, textArea, ConfigEntryWidget.TEXT_COLOR, false);
+		ConfigEntryWidget.drawFittedText(guiGraphics, font, valueName, textArea, ConfigEntryWidget.getConfiguredTextColor(), false);
 
 		Rect2i arrowArea = new Rect2i(
 			area.getX() + area.getWidth() - ARROW_SIZE - ARROW_PADDING,

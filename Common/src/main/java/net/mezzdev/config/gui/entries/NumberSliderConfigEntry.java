@@ -85,7 +85,7 @@ final class NumberSliderConfigEntry<T> extends ConfigEntryWidget<T> {
 		guiGraphics.blitSprite(handleSprite, handleX, sliderArea.getY(), HANDLE_WIDTH, sliderArea.getHeight());
 
 		Font font = Minecraft.getInstance().font;
-		drawCenteredButtonText(guiGraphics, font, getValueName(getValue()), sliderArea, TEXT_COLOR);
+		drawCenteredButtonText(guiGraphics, font, getValueName(getValue()), sliderArea, getConfiguredTextColor());
 	}
 
 	@Override

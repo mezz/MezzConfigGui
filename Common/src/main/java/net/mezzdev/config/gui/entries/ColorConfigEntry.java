@@ -81,7 +81,7 @@ final class ColorConfigEntry extends ConfigEntryWidget<PackedColor> {
 		if (font.width(visibleText) > textArea.getWidth()) {
 			visibleText = font.plainSubstrByWidth(visibleText, textArea.getWidth(), true);
 		}
-		drawText(guiGraphics, font, visibleText, textArea.getX(), y, TEXT_COLOR);
+		drawText(guiGraphics, font, visibleText, textArea.getX(), y, getConfiguredTextColor());
 	}
 
 	@Override

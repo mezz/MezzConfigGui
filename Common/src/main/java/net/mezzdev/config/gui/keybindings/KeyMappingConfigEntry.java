@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui.keybindings;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.textures.ConfigTextures;
@@ -27,8 +28,6 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 	private static final int BUTTON_WIDTH = 86;
 	private static final int BUTTON_HEIGHT = 22;
 	private static final int BUTTON_TEXT_PADDING = 4;
-	private static final int CONFLICT_ACCENT_COLOR = 0xFFFFD34D;
-
 	private final IConfigKeyMapping configKeyMapping;
 	private ImmutableRect2i buttonArea = ImmutableRect2i.EMPTY;
 	private boolean listening = false;
@@ -64,7 +63,7 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 				area.getY(),
 				area.getX() + 3,
 				area.getY() + area.getHeight(),
-				CONFLICT_ACCENT_COLOR
+				ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.KEY_MAPPING_CONFLICT_ACCENT)
 			);
 		}
 
@@ -88,25 +87,25 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 	private Component getButtonText() {
 		Component keyName = configKeyMapping.getValueName(getDisplayValue());
 		if (listening) {
-			return Component.literal("> ")
-				.append(keyName.copy().withStyle(ChatFormatting.WHITE, ChatFormatting.UNDERLINE))
-				.append(" <")
-				.withStyle(ChatFormatting.YELLOW);
+			MutableComponent listeningText = Component.literal("> ")
+				.append(withColor(keyName.copy().withStyle(ChatFormatting.UNDERLINE), ConfigGuiColors.GuiColor.KEY_MAPPING_LISTENING_KEY_TEXT))
+				.append(" <");
+			return withColor(listeningText, ConfigGuiColors.GuiColor.KEY_MAPPING_LISTENING_TEXT);
 		}
 		return keyName;
 	}
 
 	private int getButtonTextColor(boolean hasConflict, boolean hovered) {
 		if (hasConflict) {
-			return CONFLICT_ACCENT_COLOR;
+			return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.KEY_MAPPING_CONFLICT_ACCENT);
 		}
 		if (listening || hovered) {
-			return HOVER_TEXT_COLOR;
+			return getConfiguredHoverTextColor();
 		}
 		if (getDisplayValue().isUnbound()) {
-			return DISABLED_TEXT_COLOR;
+			return getConfiguredDisabledTextColor();
 		}
-		return TEXT_COLOR;
+		return getConfiguredTextColor();
 	}
 
 	@Override
@@ -116,7 +115,7 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 		lines.add(Component.translatable("mezz_config.config.keyMapping.context.info", getValue().context()));
 		List<ConfigKeyMappingConflict> conflicts = getConflicts();
 		if (!conflicts.isEmpty()) {
-			lines.add(getConflictInfo(conflicts).withStyle(ChatFormatting.YELLOW));
+			lines.add(withColor(getConflictInfo(conflicts), ConfigGuiColors.GuiColor.KEY_MAPPING_CONFLICT_INFO_TEXT));
 		}
 		return new ConfigInfo(info.title(), lines);
 	}
@@ -265,10 +264,17 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 			));
 		}
 		return new ConfigInfo(
-			Component.translatable("mezz_config.config.keyMapping.conflict.title")
-				.withStyle(ChatFormatting.YELLOW),
+			withColor(
+				Component.translatable("mezz_config.config.keyMapping.conflict.title"),
+				ConfigGuiColors.GuiColor.KEY_MAPPING_CONFLICT_INFO_TEXT
+			),
 			lines
 		);
+	}
+
+	private static MutableComponent withColor(MutableComponent component, ConfigGuiColors.GuiColor color) {
+		int rgb = ConfigGuiColors.getColor(color) & 0xFFFFFF;
+		return component.setStyle(component.getStyle().withColor(rgb));
 	}
 
 	private static MutableComponent getConflictInfo(List<ConfigKeyMappingConflict> conflicts) {
