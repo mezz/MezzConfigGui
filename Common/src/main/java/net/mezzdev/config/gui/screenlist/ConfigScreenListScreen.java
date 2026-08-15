@@ -2,6 +2,7 @@ package net.mezzdev.config.gui.screenlist;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import net.mezzdev.config.gui.ConfigGuiColors;
+import net.mezzdev.config.gui.ConfigScreenResizer;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.entries.ConfigEntryWidget;
 import net.mezzdev.config.gui.input.InputType;
@@ -69,6 +70,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 	private final ConfigScalableDrawable background;
 	private final ConfigScalableDrawable scrollbarBackground;
 	private final ConfigScalableDrawable scrollbarMarker;
+	private final ConfigScreenResizer resizer = new ConfigScreenResizer();
 
 	@Nullable
 	private final Screen parent;
@@ -189,7 +191,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 	}
 
 	private void updateLayout() {
-		area = getScreenArea(width, height);
+		area = resizer.updateScreenBounds(width, height);
 		ImmutableRect2i innerArea = area.insetBy(BORDER_PADDING);
 		titleArea = innerArea.keepTop(TITLE_HEIGHT);
 		searchArea = innerArea
@@ -212,17 +214,6 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 		searchBox.setWidth(searchArea.getWidth() - SEARCH_TEXT_LEFT_PADDING - SEARCH_TEXT_RIGHT_PADDING);
 		searchBox.setHeight(SEARCH_HEIGHT);
 		clampScroll();
-	}
-
-	private static ImmutableRect2i getScreenArea(int screenWidth, int screenHeight) {
-		int guiWidth = ConfigGuiOptions.getGuiWidth(screenWidth);
-		int guiHeight = ConfigGuiOptions.getGuiHeight(screenHeight);
-		return new ImmutableRect2i(
-			(screenWidth - guiWidth) / 2,
-			(screenHeight - guiHeight) / 2,
-			guiWidth,
-			guiHeight
-		);
 	}
 
 	@Override
@@ -286,6 +277,10 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		if (button == 0 && resizer.startResizeDrag(mouseX, mouseY)) {
+			pressedEntry = null;
+			return true;
+		}
 		if (button == 1 && searchBox.isMouseOver(mouseX, mouseY)) {
 			if (!searchBox.getValue().isEmpty()) {
 				searchBox.setValue("");
@@ -311,6 +306,11 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		if (button == 0 && resizer.isResizing()) {
+			resizer.finishResizeDrag()
+				.ifPresent(resizedArea -> ConfigGuiOptions.setWindowSize(resizedArea.getWidth(), resizedArea.getHeight()));
+			return true;
+		}
 		if (button == 0 && draggingScroll) {
 			draggingScroll = false;
 			return true;
@@ -347,6 +347,12 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+		if (button == 0 && resizer.isResizing()) {
+			if (resizer.dragResize(mouseX, mouseY, width, height)) {
+				updateLayout();
+			}
+			return true;
+		}
 		if (button == 0 && draggingScroll) {
 			setScrollFromMarkerY(mouseY - scrollDragOffsetY);
 			return true;
@@ -416,6 +422,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 	private void draw(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
 		Font font = Minecraft.getInstance().font;
 		background.draw(guiGraphics, area);
+		ConfigScreenResizer.drawResizeHandles(guiGraphics, area, resizer.getActiveResizeHandle(mouseX, mouseY));
 		drawTitle(guiGraphics, font);
 		drawSearch(guiGraphics, mouseX, mouseY, partialTick);
 		drawList(guiGraphics, font, mouseX, mouseY);

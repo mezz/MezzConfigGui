@@ -27,9 +27,6 @@ import java.util.List;
 final class ConfigScreenView {
 	private static final int VALUE_SELECTOR_Z_OFFSET = 350;
 	private static final int INFO_PADDING = 5;
-	private static final int RESIZE_GRIP_SIZE = 11;
-	private static final int RESIZE_GRIP_LINE_GAP = 3;
-	private static final int RESIZE_EDGE_HIGHLIGHT_SIZE = 2;
 
 	private final Component title;
 	private final EditBox searchBox;
@@ -103,7 +100,7 @@ final class ConfigScreenView {
 
 		guiGraphics.pose().pushPose();
 		background.draw(guiGraphics, area);
-		drawResizeHandles(guiGraphics, area, resizeHandle);
+		ConfigScreenResizer.drawResizeHandles(guiGraphics, area, resizeHandle);
 		drawTitle(guiGraphics, font, titleArea, title);
 		drawActionButtons(guiGraphics, screenListButtonArea, applyPendingChangesButtonArea, undoChangesButtonArea, mouseX, mouseY);
 		drawNavBackground(guiGraphics, navArea);
@@ -190,65 +187,6 @@ final class ConfigScreenView {
 		}
 		ConfigEntryWidget.drawButtonBackground(guiGraphics, textures, area, active, active && hovered);
 		icon.draw(guiGraphics, area, active);
-	}
-
-	private static void drawResizeHandles(GuiGraphics guiGraphics, ImmutableRect2i area, ConfigScreenLayout.ResizeHandle resizeHandle) {
-		if (area.isEmpty()) {
-			return;
-		}
-		drawResizeGrip(guiGraphics, area, resizeHandle == ConfigScreenLayout.ResizeHandle.BOTTOM_RIGHT);
-		if (resizeHandle == ConfigScreenLayout.ResizeHandle.NONE) {
-			return;
-		}
-		drawResizeEdgeHighlight(guiGraphics, area, resizeHandle);
-	}
-
-	private static void drawResizeGrip(GuiGraphics guiGraphics, ImmutableRect2i area, boolean hovered) {
-		int color = getResizeGripColor(hovered);
-		int right = area.getX() + area.getWidth() - 4;
-		int bottom = area.getY() + area.getHeight() - 4;
-		for (int i = 0; i < 3; i++) {
-			int lineLength = RESIZE_GRIP_SIZE - i * RESIZE_GRIP_LINE_GAP;
-			int lineRight = right - i * RESIZE_GRIP_LINE_GAP;
-			drawResizeGripLine(guiGraphics, lineRight - lineLength, bottom, lineRight, bottom - lineLength, color);
-		}
-	}
-
-	private static int getResizeGripColor(boolean hovered) {
-		if (hovered) {
-			return ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_RESIZE_HANDLE_HOVER);
-		}
-		return ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_RESIZE_GRIP);
-	}
-
-	private static void drawResizeGripLine(GuiGraphics guiGraphics, int x1, int y1, int x2, int y2, int color) {
-		int length = Math.min(x2 - x1, y1 - y2);
-		for (int i = 0; i <= length; i++) {
-			guiGraphics.fill(x1 + i, y1 - i, x1 + i + 1, y1 - i + 1, color);
-		}
-	}
-
-	private static void drawResizeEdgeHighlight(
-		GuiGraphics guiGraphics,
-		ImmutableRect2i area,
-		ConfigScreenLayout.ResizeHandle resizeHandle
-	) {
-		int x = area.getX();
-		int y = area.getY();
-		int right = x + area.getWidth();
-		int bottom = y + area.getHeight();
-		if (resizeHandle.left()) {
-			guiGraphics.fill(x, y, x + RESIZE_EDGE_HIGHLIGHT_SIZE, bottom, ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_RESIZE_HANDLE_HOVER));
-		}
-		if (resizeHandle.right()) {
-			guiGraphics.fill(right - RESIZE_EDGE_HIGHLIGHT_SIZE, y, right, bottom, ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_RESIZE_HANDLE_HOVER));
-		}
-		if (resizeHandle.top()) {
-			guiGraphics.fill(x, y, right, y + RESIZE_EDGE_HIGHLIGHT_SIZE, ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_RESIZE_HANDLE_HOVER));
-		}
-		if (resizeHandle.bottom()) {
-			guiGraphics.fill(x, bottom - RESIZE_EDGE_HIGHLIGHT_SIZE, right, bottom, ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_RESIZE_HANDLE_HOVER));
-		}
 	}
 
 	private static void drawNavBackground(GuiGraphics guiGraphics, ImmutableRect2i navArea) {

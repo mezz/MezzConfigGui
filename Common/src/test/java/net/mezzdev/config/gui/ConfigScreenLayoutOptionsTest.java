@@ -171,6 +171,23 @@ class ConfigScreenLayoutOptionsTest {
 	}
 
 	@Test
+	void disabledWindowResizingIgnoresEdges() {
+		ConfigScreenLayout layout = new ConfigScreenLayout();
+		EditBox searchBox = createSearchBox();
+
+		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("enableWindowResizing", false)) {
+			layout.updateScreenBounds(1000, 800, searchBox);
+			ImmutableRect2i area = layout.getArea();
+			double resizeX = area.getX() + area.getWidth() - 1;
+			double resizeY = area.getY() + area.getHeight() - 1;
+
+			assertEquals(ConfigScreenLayout.ResizeHandle.NONE, layout.getResizeHandle(resizeX, resizeY));
+			assertFalse(layout.startResizeDrag(resizeX, resizeY));
+			assertFalse(layout.isResizing());
+		}
+	}
+
+	@Test
 	void headerControlsUseRequestedRowsAndKeepTitleCentered() {
 		ConfigScreenLayout layout = new ConfigScreenLayout();
 		EditBox searchBox = createSearchBox();

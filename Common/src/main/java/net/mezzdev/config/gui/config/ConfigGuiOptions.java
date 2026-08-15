@@ -28,6 +28,8 @@ public final class ConfigGuiOptions {
 	@Nullable
 	private static IConfigValue<GuiMode> guiMode;
 	@Nullable
+	private static IConfigValue<Boolean> enableWindowResizing;
+	@Nullable
 	private static IConfigValue<Integer> windowWidth;
 	@Nullable
 	private static IConfigValue<Integer> windowHeight;
@@ -73,6 +75,9 @@ public final class ConfigGuiOptions {
 		IConfigCategoryBuilder appearance = schemaBuilder.addCategory("appearance");
 		guiMode = appearance.addEnum("guiMode", GuiMode.WINDOW)
 			.addLegacyValueMigration("appearance", "guiSize", ConfigGuiOptions::migrateGuiMode)
+			.setEditMode(ConfigValueEditMode.IMMEDIATE)
+			.build();
+		enableWindowResizing = appearance.addBoolean("enableWindowResizing", true)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 		windowWidth = appearance.addInteger("windowWidth", DEFAULT_WINDOW_WIDTH, MIN_WINDOW_WIDTH, MAX_WINDOW_SIZE)
@@ -159,6 +164,10 @@ public final class ConfigGuiOptions {
 
 	public static int getWindowWidth() {
 		return getValue(windowWidth, DEFAULT_WINDOW_WIDTH);
+	}
+
+	public static boolean enableWindowResizing() {
+		return getValue(enableWindowResizing, true);
 	}
 
 	public static int getWindowHeight() {

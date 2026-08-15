@@ -4,7 +4,6 @@ import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.util.Mth;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
@@ -31,10 +30,8 @@ public final class ConfigScreenLayout {
 	private static final int MIN_SCROLL_MARKER_HEIGHT = 10;
 	private static final int SCROLL_MARKER_TRACK_INSET = 1;
 	private static final int DRAG_SCROLL_EDGE_SIZE = 20;
-	private static final int RESIZE_HANDLE_SIZE = 5;
-	private static final int MIN_RESIZABLE_WIDTH = 320;
-	private static final int MIN_RESIZABLE_HEIGHT = 230;
 	private static final double SCROLL_LERP = 0.35;
+	private final ConfigScreenResizer resizer = new ConfigScreenResizer();
 
 	private ImmutableRect2i area = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i titleArea = ImmutableRect2i.EMPTY;
@@ -49,12 +46,6 @@ public final class ConfigScreenLayout {
 	private ImmutableRect2i scrollBarArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i infoArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i contentWithScrollArea = ImmutableRect2i.EMPTY;
-	@Nullable
-	private ImmutableRect2i customArea;
-	@Nullable
-	private ResizeDragSession resizeDragSession;
-	private boolean resizeDragChanged;
-
 	private int totalContentHeight = 0;
 	private double targetScrollY = 0;
 	private double currentScrollY = 0;
@@ -74,7 +65,7 @@ public final class ConfigScreenLayout {
 	}
 
 	public void updateScreenBounds(int screenWidth, int screenHeight, EditBox searchBox, boolean hasScreenListButton) {
-		area = getScreenArea(screenWidth, screenHeight);
+		area = resizer.updateScreenBounds(screenWidth, screenHeight);
 
 		ImmutableRect2i innerArea = area.insetBy(BORDER_PADDING);
 		titleArea = innerArea.keepTop(TITLE_HEIGHT);
@@ -98,20 +89,6 @@ public final class ConfigScreenLayout {
 		searchBox.setHeight(SEARCH_HEIGHT);
 
 		updateContentAndScrollBarAreas();
-	}
-
-	private ImmutableRect2i getScreenArea(int screenWidth, int screenHeight) {
-		ImmutableRect2i customArea = this.customArea;
-		if (customArea != null) {
-			ImmutableRect2i clampedArea = centerResizableArea(customArea.getWidth(), customArea.getHeight(), screenWidth, screenHeight);
-			this.customArea = clampedArea;
-			return clampedArea;
-		}
-		int guiWidth = ConfigGuiOptions.getGuiWidth(screenWidth);
-		int guiHeight = ConfigGuiOptions.getGuiHeight(screenHeight);
-		int guiLeft = (screenWidth - guiWidth) / 2;
-		int guiTop = (screenHeight - guiHeight) / 2;
-		return new ImmutableRect2i(guiLeft, guiTop, guiWidth, guiHeight);
 	}
 
 	public ImmutableRect2i getArea() {
@@ -170,72 +147,27 @@ public final class ConfigScreenLayout {
 	}
 
 	public ResizeHandle getResizeHandle(double mouseX, double mouseY) {
-		if (area.isEmpty() || !isInResizeArea(mouseX, mouseY)) {
-			return ResizeHandle.NONE;
-		}
-		boolean left = mouseX < area.getX() + RESIZE_HANDLE_SIZE;
-		boolean right = mouseX >= area.getX() + area.getWidth() - RESIZE_HANDLE_SIZE;
-		boolean top = mouseY < area.getY() + RESIZE_HANDLE_SIZE;
-		boolean bottom = mouseY >= area.getY() + area.getHeight() - RESIZE_HANDLE_SIZE;
-		return ResizeHandle.get(left, right, top, bottom);
+		return resizer.getResizeHandle(mouseX, mouseY);
 	}
 
 	public ResizeHandle getActiveResizeHandle(double mouseX, double mouseY) {
-		ResizeDragSession resizeDragSession = this.resizeDragSession;
-		if (resizeDragSession != null) {
-			return resizeDragSession.resizeHandle();
-		}
-		return getResizeHandle(mouseX, mouseY);
-	}
-
-	private boolean isInResizeArea(double mouseX, double mouseY) {
-		return mouseX >= area.getX() &&
-			mouseY >= area.getY() &&
-			mouseX < area.getX() + area.getWidth() &&
-			mouseY < area.getY() + area.getHeight();
+		return resizer.getActiveResizeHandle(mouseX, mouseY);
 	}
 
 	public boolean startResizeDrag(double mouseX, double mouseY) {
-		ResizeHandle resizeHandle = getResizeHandle(mouseX, mouseY);
-		if (resizeHandle == ResizeHandle.NONE) {
-			return false;
-		}
-		resizeDragSession = new ResizeDragSession(resizeHandle, area);
-		resizeDragChanged = false;
-		return true;
+		return resizer.startResizeDrag(mouseX, mouseY);
 	}
 
 	public boolean dragResize(double mouseX, double mouseY, int screenWidth, int screenHeight) {
-		ResizeDragSession session = resizeDragSession;
-		if (session == null) {
-			return false;
-		}
-		ImmutableRect2i resizedArea = session.resize(mouseX, mouseY, screenWidth, screenHeight);
-		if (resizedArea.equals(area)) {
-			return false;
-		}
-		customArea = resizedArea;
-		resizeDragChanged = true;
-		return true;
+		return resizer.dragResize(mouseX, mouseY, screenWidth, screenHeight);
 	}
 
 	public boolean isResizing() {
-		return resizeDragSession != null;
+		return resizer.isResizing();
 	}
 
 	public Optional<ImmutableRect2i> finishResizeDrag() {
-		if (resizeDragSession == null) {
-			return Optional.empty();
-		}
-		resizeDragSession = null;
-		if (!resizeDragChanged || customArea == null) {
-			resizeDragChanged = false;
-			return Optional.empty();
-		}
-		ImmutableRect2i resizedArea = customArea;
-		customArea = null;
-		resizeDragChanged = false;
-		return Optional.of(resizedArea);
+		return resizer.finishResizeDrag();
 	}
 
 	public ImmutableRect2i getScrollMarkerArea() {
@@ -606,18 +538,6 @@ public final class ConfigScreenLayout {
 		return oldTarget != navTargetScrollY || oldCurrent != navCurrentScrollY;
 	}
 
-	private static ImmutableRect2i centerResizableArea(int areaWidth, int areaHeight, int screenWidth, int screenHeight) {
-		int maxWidth = Math.max(1, screenWidth);
-		int maxHeight = Math.max(1, screenHeight);
-		int minWidth = Math.min(MIN_RESIZABLE_WIDTH, maxWidth);
-		int minHeight = Math.min(MIN_RESIZABLE_HEIGHT, maxHeight);
-		int width = Math.clamp(areaWidth, minWidth, maxWidth);
-		int height = Math.clamp(areaHeight, minHeight, maxHeight);
-		int x = (maxWidth - width) / 2;
-		int y = (maxHeight - height) / 2;
-		return new ImmutableRect2i(x, y, width, height);
-	}
-
 	public enum ResizeHandle {
 		NONE(false, false, false, false),
 		LEFT(true, false, false, false),
@@ -686,36 +606,4 @@ public final class ConfigScreenLayout {
 		}
 	}
 
-	private record ResizeDragSession(
-		ResizeHandle resizeHandle,
-		ImmutableRect2i startArea
-	) {
-		private ImmutableRect2i resize(double mouseX, double mouseY, int screenWidth, int screenHeight) {
-			int width = startArea.getWidth();
-			int height = startArea.getHeight();
-			if (resizeHandle.left() || resizeHandle.right()) {
-				width = getCenteredWidth(mouseX, screenWidth, resizeHandle);
-			}
-			if (resizeHandle.top() || resizeHandle.bottom()) {
-				height = getCenteredHeight(mouseY, screenHeight, resizeHandle);
-			}
-			return centerResizableArea(width, height, screenWidth, screenHeight);
-		}
-
-		private static int getCenteredWidth(double mouseX, int screenWidth, ResizeHandle resizeHandle) {
-			double centerX = screenWidth / 2.0;
-			if (resizeHandle.left()) {
-				return (int) Math.round((centerX - mouseX) * 2.0);
-			}
-			return (int) Math.round((mouseX - centerX) * 2.0);
-		}
-
-		private static int getCenteredHeight(double mouseY, int screenHeight, ResizeHandle resizeHandle) {
-			double centerY = screenHeight / 2.0;
-			if (resizeHandle.top()) {
-				return (int) Math.round((centerY - mouseY) * 2.0);
-			}
-			return (int) Math.round((mouseY - centerY) * 2.0);
-		}
-	}
 }
