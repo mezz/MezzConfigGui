@@ -86,6 +86,30 @@ class ConfigChangesHandlerTest {
 	}
 
 	@Test
+	void recordsPendingStartupChangesWithoutChangingEffectiveValue() {
+		TestMezzConfigValue startupValue = new TestMezzConfigValue("startup", true);
+		IConfigScreenValue<String> screenValue = IConfigScreenValue.configValue(startupValue);
+		TestConfigSchema schema = new TestConfigSchema(ConfigSchemaType.CLIENT_STARTUP, startupValue);
+
+		CompletableFuture<ConfigChangesResult> resultFuture = ConfigChangesHandler.applyBySchema(
+			List.of(new ConfigValueChange<>(screenValue, "startup changed")),
+			ignored -> Optional.of(schema)
+		);
+
+		schema.completeRequest();
+		ConfigChangesResult result = resultFuture.join();
+
+		assertTrue(result.succeeded());
+		assertEquals("startup", startupValue.getValue());
+		assertEquals("startup changed", startupValue.getPendingValue());
+		assertEquals("startup changed", screenValue.getValue());
+		assertEquals(ConfigValueRestartRequirement.GAME_RESTART, result.restartRequirement());
+		AppliedConfigValueChange<?> appliedChange = result.appliedChanges().getFirst();
+		assertEquals("startup", appliedChange.oldValue());
+		assertEquals("startup changed", appliedChange.newValue());
+	}
+
+	@Test
 	void continuesFollowingBatchesOnTheConfiguredExecutor() {
 		TestMezzConfigValue remote = new TestMezzConfigValue("remote");
 		IConfigScreenValue<String> remoteScreenValue = IConfigScreenValue.configValue(remote);
@@ -185,12 +209,18 @@ class ConfigChangesHandlerTest {
 	}
 
 	private static final class TestConfigSchema implements IConfigSchema {
-		private final List<TestMezzConfigValue> configValues;
+		private final ConfigSchemaType type;
+		private final List<IConfigValue<?>> configValues;
 		private final List<Runnable> pendingUpdates = new ArrayList<>();
 		private CompletableFuture<Void> request = new CompletableFuture<>();
 		private int requestCount;
 
-		private TestConfigSchema(TestMezzConfigValue... configValues) {
+		private TestConfigSchema(IConfigValue<?>... configValues) {
+			this(ConfigSchemaType.SERVER, configValues);
+		}
+
+		private TestConfigSchema(ConfigSchemaType type, IConfigValue<?>... configValues) {
+			this.type = type;
 			this.configValues = List.of(configValues);
 		}
 
@@ -201,7 +231,7 @@ class ConfigChangesHandlerTest {
 
 		@Override
 		public ConfigSchemaType getType() {
-			return ConfigSchemaType.SERVER;
+			return type;
 		}
 
 		@Override
@@ -263,7 +293,7 @@ class ConfigChangesHandlerTest {
 	}
 
 	private record TestConfigCategory(
-		List<TestMezzConfigValue> configValues
+		List<IConfigValue<?>> configValues
 	) implements IConfigCategory {
 		@Override
 		public String getName() {
@@ -337,11 +367,19 @@ class ConfigChangesHandlerTest {
 
 	private static final class TestMezzConfigValue implements IConfigValue<String> {
 		private final String name;
+		private final boolean startup;
 		private String value;
+		private String pendingValue;
 
 		private TestMezzConfigValue(String value) {
+			this(value, false);
+		}
+
+		private TestMezzConfigValue(String value, boolean startup) {
 			this.name = value;
+			this.startup = startup;
 			this.value = value;
+			this.pendingValue = value;
 		}
 
 		@Override
@@ -360,6 +398,11 @@ class ConfigChangesHandlerTest {
 		}
 
 		@Override
+		public String getPendingValue() {
+			return pendingValue;
+		}
+
+		@Override
 		public String getDefaultValue() {
 			return name;
 		}
@@ -371,6 +414,9 @@ class ConfigChangesHandlerTest {
 
 		@Override
 		public ConfigValueRestartRequirement getRestartRequirement() {
+			if (startup) {
+				return ConfigValueRestartRequirement.GAME_RESTART;
+			}
 			return ConfigValueRestartRequirement.NONE;
 		}
 
@@ -381,10 +427,19 @@ class ConfigChangesHandlerTest {
 
 		@Override
 		public boolean set(String value) {
-			if (Objects.equals(this.value, value)) {
+			String storedValue = this.value;
+			if (startup) {
+				storedValue = pendingValue;
+			}
+			if (Objects.equals(storedValue, value)) {
 				return false;
 			}
-			this.value = value;
+			if (startup) {
+				pendingValue = value;
+			} else {
+				this.value = value;
+				pendingValue = value;
+			}
 			return true;
 		}
 

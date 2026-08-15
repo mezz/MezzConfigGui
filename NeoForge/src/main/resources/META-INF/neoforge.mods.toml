@@ -32,7 +32,7 @@ Shared config GUI support for Minecraft mods.
 [[dependencies.${configGuiModId}]]
     modId="${configModId}"
     type="required"
-    versionRange="[0,)"
+    versionRange="${mezzConfigVersionRange}"
     ordering="AFTER"
     side="BOTH"
 

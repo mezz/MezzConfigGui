@@ -13,7 +13,7 @@
 
   "environment": "client",
   "entrypoints": {
-    "mezz_config_plugin": [
+    "mezz_config_client_plugin": [
       "net.mezzdev.config.gui.test.fabric.defaults.FabricMezzConfigDefaultsTestPlugin"
     ],
     "mezz_config_gui_plugin": [
@@ -24,7 +24,7 @@
   "depends": {
     "fabricloader": "${fabricLoaderVersionRange}",
     "minecraft": "${minecraftVersion}",
-    "${configModId}": "*",
+    "${configModId}": "${mezzConfigFabricVersionRange}",
     "${configGuiModId}": "*",
     "java": ">=${modJavaVersion}"
   }

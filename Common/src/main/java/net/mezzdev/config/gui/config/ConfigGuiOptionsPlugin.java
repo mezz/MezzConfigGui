@@ -1,25 +1,28 @@
 package net.mezzdev.config.gui.config;
 
-import net.mezzdev.config.api.plugin.IConfigPlugin;
-import net.mezzdev.config.api.plugin.IConfigRegistration;
+import net.mezzdev.config.api.plugin.client.ClientConfigPlugin;
+import net.mezzdev.config.api.plugin.client.IClientConfigPlugin;
+import net.mezzdev.config.api.plugin.client.IClientConfigRegistration;
 import net.mezzdev.config.gui.api.ConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigGuiRegistration;
+import net.mezzdev.config.gui.MezzConfigScreenConfigs;
 import net.minecraft.network.chat.Component;
 
 /**
  * Registers MezzConfig GUI's own user-facing options.
  */
-@net.mezzdev.config.api.plugin.ConfigPlugin
+@ClientConfigPlugin
 @ConfigGuiPlugin
-public final class ConfigGuiOptionsPlugin implements IConfigPlugin, IConfigGuiPlugin {
+public final class ConfigGuiOptionsPlugin implements IClientConfigPlugin, IConfigGuiPlugin {
 	@Override
 	public String getModId() {
 		return ConfigGuiOptions.MOD_ID;
 	}
 
 	@Override
-	public void registerConfigFiles(IConfigRegistration registration) {
+	public void registerClientConfigFiles(IClientConfigRegistration registration) {
+		MezzConfigScreenConfigs.setConfigManager(registration.getConfigManager());
 		ConfigGuiOptions.register(registration);
 	}
 

@@ -1,9 +1,9 @@
 package net.mezzdev.config.gui.test.fabric.custom;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import net.mezzdev.config.api.plugin.ConfigPlugin;
-import net.mezzdev.config.api.plugin.IConfigPlugin;
-import net.mezzdev.config.api.plugin.IConfigRegistration;
+import net.mezzdev.config.api.plugin.client.ClientConfigPlugin;
+import net.mezzdev.config.api.plugin.client.IClientConfigPlugin;
+import net.mezzdev.config.api.plugin.client.IClientConfigRegistration;
 import net.mezzdev.config.api.schema.IConfigCategoryBuilder;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.schema.IConfigSchemaBuilder;
@@ -42,9 +42,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-@ConfigPlugin
+@ClientConfigPlugin
 @ConfigGuiPlugin
-public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IConfigGuiPlugin {
+public final class FabricMezzConfigCustomTestPlugin implements IClientConfigPlugin, IConfigGuiPlugin {
 	private static final String MOD_ID = "mezz_config_gui_test_fabric_custom";
 	private static final String LOCALIZATION_PATH = "mezz_config_gui_test.fabric.custom";
 	private static final KeyMapping OPEN_SCREEN_KEY = new KeyMapping(
@@ -77,8 +77,8 @@ public final class FabricMezzConfigCustomTestPlugin implements IConfigPlugin, IC
 	}
 
 	@Override
-	public void registerConfigFiles(IConfigRegistration registration) {
-		IConfigSchemaBuilder schemaBuilder = registration.createSchemaBuilder("config-gui-fabric-custom-test.ini", LOCALIZATION_PATH);
+	public void registerClientConfigFiles(IClientConfigRegistration registration) {
+		IConfigSchemaBuilder schemaBuilder = registration.createClientSchemaBuilder("config-gui-fabric-custom-test.ini", LOCALIZATION_PATH);
 		IConfigCategoryBuilder controls = schemaBuilder.addCategory("controls");
 		primaryEnabled = controls.addBoolean("primaryEnabled", true).build();
 		secondaryEnabled = controls.addBoolean("secondaryEnabled", false).build();

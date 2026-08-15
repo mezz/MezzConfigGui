@@ -28,6 +28,7 @@ import java.util.function.Consumer;
 public interface IConfigScreenValue<T> {
 	/**
 	 * Adapt a MezzConfig-managed config value for display on a config screen.
+	 * Startup config values display their pending value for the next launch while their effective value remains fixed.
 	 *
 	 * @since 0.1.0
 	 */
@@ -82,7 +83,7 @@ public interface IConfigScreenValue<T> {
 
 			@Override
 			public T getValue() {
-				return checkedConfigValue.getValue();
+				return checkedConfigValue.getPendingValue();
 			}
 
 			@Override

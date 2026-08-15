@@ -1,7 +1,7 @@
 # MezzConfig GUI
 
 MezzConfig GUI is a shared, client-side config screen for Minecraft mods.
-It can discover client-owned and synchronized server-authoritative schemas registered with [MezzConfig](https://github.com/mezz/MezzConfig), supplies editors for common value types, and supports additional screen customization through its API.
+It can discover client-owned, local startup, and synchronized server-authoritative schemas registered with [MezzConfig](https://github.com/mezz/MezzConfig), supplies editors for common value types, and supports additional screen customization through its API.
 
 This branch targets Minecraft 1.21.1 on Fabric, Forge, and NeoForge. Java 21 is required.
 

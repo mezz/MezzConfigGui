@@ -50,6 +50,8 @@ val forgeVersionRange: String by extra
 val githubUrl: String by extra
 val forgeLoaderVersionRange: String by extra
 val mezzConfigVersion: String by extra
+val mezzConfigFabricVersionRange: String by extra
+val mezzConfigVersionRange: String by extra
 val minecraftVersion: String by extra
 val minecraftVersionRange: String by extra
 val modAuthor: String by extra
@@ -226,6 +228,8 @@ subprojects {
             "neoforgeLoaderVersionRange" to neoforgeLoaderVersionRange,
             "minecraftVersion" to minecraftVersion,
             "minecraftVersionRange" to minecraftVersionRange,
+            "mezzConfigFabricVersionRange" to mezzConfigFabricVersionRange,
+            "mezzConfigVersionRange" to mezzConfigVersionRange,
             "modAuthor" to modAuthor,
             "modDescription" to modDescription,
             "modId" to modId,

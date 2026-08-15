@@ -1,11 +1,11 @@
 package net.mezzdev.config.gui;
 
-import net.mezzdev.config.api.files.ConfigManagers;
 import net.mezzdev.config.api.files.IConfigManager;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.util.ConfigNameUtil;
 import net.minecraft.network.chat.Component;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -20,14 +20,22 @@ import java.util.Optional;
  * Creates generated config GUI screens from schemas registered with MezzConfig.
  */
 public final class MezzConfigScreenConfigs {
+	private static volatile @Nullable IConfigManager configManager;
+
 	private MezzConfigScreenConfigs() {
 
 	}
 
+	public static void setConfigManager(IConfigManager configManager) {
+		MezzConfigScreenConfigs.configManager = Objects.requireNonNull(configManager, "configManager");
+	}
+
 	public static List<ConfigScreenConfig> getActiveConfigScreens() {
-		return ConfigManagers.getConfigManager()
-			.map(MezzConfigScreenConfigs::getConfigScreens)
-			.orElseGet(List::of);
+		IConfigManager configManager = MezzConfigScreenConfigs.configManager;
+		if (configManager == null) {
+			return List.of();
+		}
+		return getConfigScreens(configManager);
 	}
 
 	public static List<ConfigScreenConfig> getConfigScreens(IConfigManager configManager) {

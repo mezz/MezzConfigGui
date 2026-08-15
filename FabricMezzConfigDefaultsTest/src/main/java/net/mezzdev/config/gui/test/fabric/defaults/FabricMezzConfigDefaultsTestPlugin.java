@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui.test.fabric.defaults;
 
-import net.mezzdev.config.api.plugin.IConfigPlugin;
-import net.mezzdev.config.api.plugin.IConfigRegistration;
+import net.mezzdev.config.api.plugin.client.IClientConfigPlugin;
+import net.mezzdev.config.api.plugin.client.IClientConfigRegistration;
 import net.mezzdev.config.api.schema.IConfigCategoryBuilder;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.schema.IConfigSchemaBuilder;
@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-public final class FabricMezzConfigDefaultsTestPlugin implements IConfigPlugin, IConfigGuiPlugin {
+public final class FabricMezzConfigDefaultsTestPlugin implements IClientConfigPlugin, IConfigGuiPlugin {
 	private static final String MOD_ID = "mezz_config_gui_test_fabric_defaults";
 	private static final String LOCALIZATION_PATH = "mezz_config_gui_test.fabric.defaults";
 	@Nullable
@@ -32,8 +32,8 @@ public final class FabricMezzConfigDefaultsTestPlugin implements IConfigPlugin, 
 	}
 
 	@Override
-	public void registerConfigFiles(IConfigRegistration registration) {
-		IConfigSchemaBuilder schemaBuilder = registration.createSchemaBuilder("config-gui-fabric-defaults-test.ini", LOCALIZATION_PATH);
+	public void registerClientConfigFiles(IClientConfigRegistration registration) {
+		IConfigSchemaBuilder schemaBuilder = registration.createClientSchemaBuilder("config-gui-fabric-defaults-test.ini", LOCALIZATION_PATH);
 		IConfigCategoryBuilder general = schemaBuilder.addCategory("general");
 		general.addBoolean("enabled", true)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)

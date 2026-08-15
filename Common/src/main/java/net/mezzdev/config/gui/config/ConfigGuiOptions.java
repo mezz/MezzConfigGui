@@ -1,6 +1,6 @@
 package net.mezzdev.config.gui.config;
 
-import net.mezzdev.config.api.plugin.IConfigRegistration;
+import net.mezzdev.config.api.plugin.client.IClientConfigRegistration;
 import net.mezzdev.config.api.schema.IConfigCategoryBuilder;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.schema.IConfigSchemaBuilder;
@@ -70,8 +70,8 @@ public final class ConfigGuiOptions {
 
 	}
 
-	public static void register(IConfigRegistration registration) {
-		IConfigSchemaBuilder schemaBuilder = registration.createSchemaBuilder(CONFIG_FILE_NAME, LOCALIZATION_PATH);
+	public static void register(IClientConfigRegistration registration) {
+		IConfigSchemaBuilder schemaBuilder = registration.createClientSchemaBuilder(CONFIG_FILE_NAME, LOCALIZATION_PATH);
 		IConfigCategoryBuilder appearance = schemaBuilder.addCategory("appearance");
 		guiMode = appearance.addEnum("guiMode", GuiMode.WINDOW)
 			.addLegacyValueMigration("appearance", "guiSize", ConfigGuiOptions::migrateGuiMode)

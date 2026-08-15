@@ -20,7 +20,7 @@
     "client": [
       "net.mezzdev.config.gui.fabric.ConfigGuiFabricClient"
     ],
-    "mezz_config_plugin": [
+    "mezz_config_client_plugin": [
       "net.mezzdev.config.gui.config.ConfigGuiOptionsPlugin"
     ],
     "mezz_config_gui_plugin": [
@@ -39,7 +39,7 @@
     "fabricloader": "${fabricLoaderVersionRange}",
     "fabric-api": "${fabricApiVersionRange}",
     "minecraft": "${minecraftVersion}",
-    "${configModId}": "*",
+    "${configModId}": "${mezzConfigFabricVersionRange}",
     "java": ">=${modJavaVersion}"
   },
   "suggests": {
