@@ -37,4 +37,9 @@ public final class ConfigScreenFactoryRegistry {
 	public void setScreenListFactory(IConfigScreenFactory screenListFactory) {
 		navigation.setScreenListFactory(screenListFactory);
 	}
+
+	public void setScreenListFactory(IConfigScreenFactory screenListFactory, List<ConfigScreenListEntry> entries) {
+		navigation.setScreenListFactory(screenListFactory);
+		navigation.setScreenListEntries(entries);
+	}
 }

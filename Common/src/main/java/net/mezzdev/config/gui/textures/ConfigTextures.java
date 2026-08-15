@@ -21,6 +21,8 @@ public class ConfigTextures {
 	private final ConfigScalableDrawable scrollbarBackground;
 	private final ConfigScalableDrawable scrollbarMarker;
 
+	private final ConfigDrawableStatic modTabSelected;
+	private final ConfigDrawableStatic modTabUnselected;
 	private final ConfigDrawableStatic arrowUp;
 	private final ConfigDrawableStatic arrowDown;
 	private final ConfigDrawableStatic checkbox;
@@ -39,6 +41,8 @@ public class ConfigTextures {
 		this.scrollbarBackground = createScalableGuiSprite("scrollbar_background");
 		this.scrollbarMarker = createScalableGuiSprite("scrollbar_marker");
 
+		this.modTabSelected = createGuiSprite("mod_tab_selected", 24, 24);
+		this.modTabUnselected = createGuiSprite("mod_tab_unselected", 24, 24);
 		this.arrowUp = createGuiSprite("icons/arrow_up", 9, 9);
 		this.arrowDown = createGuiSprite("icons/arrow_down", 9, 9);
 		this.checkbox = createGuiSprite("checkbox", 18, 18);
@@ -104,6 +108,13 @@ public class ConfigTextures {
 
 	public ConfigScalableDrawable getScrollbarBackground() {
 		return scrollbarBackground;
+	}
+
+	public ConfigDrawableStatic getModTab(boolean selected) {
+		if (selected) {
+			return modTabSelected;
+		}
+		return modTabUnselected;
 	}
 
 	public ConfigDrawableStatic getArrowUp() {

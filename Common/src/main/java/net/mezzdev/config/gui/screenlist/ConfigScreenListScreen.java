@@ -1,6 +1,5 @@
 package net.mezzdev.config.gui.screenlist;
 
-import com.mojang.blaze3d.platform.NativeImage;
 import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.ConfigScreenResizer;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
@@ -18,30 +17,17 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.Rect2i;
-import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.Blocks;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
  * Screen for choosing one of the config screens discovered for the current mod loader.
  */
 public final class ConfigScreenListScreen extends MezzConfigScreen {
-	private static final Logger LOGGER = LogManager.getLogger();
 	private static final Component TITLE = Component.translatable("mezz_config.config.screen.list.title");
 	private static final Component SEARCH = Component.translatable("mezz_config.config.screen.list.search");
 	private static final int BORDER_PADDING = 6;
@@ -55,16 +41,13 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 	private static final int ROW_GAP = 2;
 	private static final int ROW_PADDING = 5;
 	private static final int ICON_SIZE = 32;
-	private static final int ITEM_ICON_SIZE = 16;
 	private static final int SCROLLBAR_WIDTH = 12;
 	private static final int SCROLLBAR_GAP = 2;
 	private static final int SCROLL_MARKER_TRACK_INSET = 1;
 	private static final int MIN_SCROLL_MARKER_HEIGHT = 10;
 	private static final double SCROLL_LERP = 0.35;
-	private static final String MINECRAFT_MOD_ID = "minecraft";
-	private static final ItemStack MINECRAFT_ICON = new ItemStack(Blocks.GRASS_BLOCK);
 
-	private final List<Entry> entries;
+	private final List<ConfigScreenListEntry> entries;
 	private final EditBox searchBox;
 	private final ConfigTextures textures;
 	private final ConfigScalableDrawable background;
@@ -75,7 +58,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 	@Nullable
 	private final Screen parent;
 
-	private List<Entry> visibleEntries;
+	private List<ConfigScreenListEntry> visibleEntries;
 	private ImmutableRect2i area = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i titleArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i searchArea = ImmutableRect2i.EMPTY;
@@ -87,11 +70,11 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 	private boolean draggingScroll;
 	private double scrollDragOffsetY;
 	@Nullable
-	private Entry pressedEntry;
+	private ConfigScreenListEntry pressedEntry;
 
 	private ConfigScreenListScreen(
 		@Nullable Screen parent,
-		List<Entry> entries
+		List<ConfigScreenListEntry> entries
 	) {
 		super(TITLE);
 		this.parent = parent;
@@ -119,46 +102,11 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 		List<ConfigScreenFactoryEntry> factoryEntries,
 		ConfigScreenOwnerMetadataProvider metadataProvider
 	) {
-		return new ConfigScreenListScreen(parent, createEntries(factoryEntries, metadataProvider));
+		return create(parent, ConfigScreenListEntry.create(factoryEntries, metadataProvider));
 	}
 
-	private static List<Entry> createEntries(
-		List<ConfigScreenFactoryEntry> factoryEntries,
-		ConfigScreenOwnerMetadataProvider metadataProvider
-	) {
-		return factoryEntries.stream()
-			.map(factoryEntry -> createEntry(factoryEntry, metadataProvider))
-			.sorted(Comparator.comparing(Entry::sortName).thenComparing(Entry::modId))
-			.toList();
-	}
-
-	private static Entry createEntry(
-		ConfigScreenFactoryEntry factoryEntry,
-		ConfigScreenOwnerMetadataProvider metadataProvider
-	) {
-		String modId = factoryEntry.modId();
-		ConfigScreenOwnerMetadata metadata = getMetadata(modId, metadataProvider);
-		return new Entry(
-			modId,
-			factoryEntry.title(),
-			factoryEntry.factory(),
-			new EntryIcon(modId, metadata.iconPath())
-		);
-	}
-
-	private static ConfigScreenOwnerMetadata getMetadata(
-		String modId,
-		ConfigScreenOwnerMetadataProvider metadataProvider
-	) {
-		try {
-			ConfigScreenOwnerMetadata metadata = metadataProvider.getMetadata(modId);
-			if (metadata != null) {
-				return metadata;
-			}
-		} catch (RuntimeException | LinkageError e) {
-			LOGGER.warn("Failed to load config screen list metadata for mod id: {}", modId, e);
-		}
-		return new ConfigScreenOwnerMetadata();
+	public static Screen create(@Nullable Screen parent, List<ConfigScreenListEntry> entries) {
+		return new ConfigScreenListScreen(parent, entries);
 	}
 
 	private void updateSearchTextColor(String searchText) {
@@ -315,10 +263,10 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 			draggingScroll = false;
 			return true;
 		}
-		Entry pressedEntry = this.pressedEntry;
+		ConfigScreenListEntry pressedEntry = this.pressedEntry;
 		this.pressedEntry = null;
 		if (button == 0 && pressedEntry != null && listArea.contains(mouseX, mouseY)) {
-			Optional<Entry> clickedEntry = getEntryAt(mouseX, mouseY);
+			Optional<ConfigScreenListEntry> clickedEntry = getEntryAt(mouseX, mouseY);
 			if (clickedEntry.isPresent() && clickedEntry.get() == pressedEntry) {
 				openEntry(pressedEntry);
 				return true;
@@ -327,9 +275,9 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 		return super.mouseReleased(mouseX, mouseY, button);
 	}
 
-	private Optional<Entry> getEntryAt(double mouseX, double mouseY) {
+	private Optional<ConfigScreenListEntry> getEntryAt(double mouseX, double mouseY) {
 		int y = listArea.getY() - (int) currentScrollY;
-		for (Entry entry : visibleEntries) {
+		for (ConfigScreenListEntry entry : visibleEntries) {
 			ImmutableRect2i rowArea = new ImmutableRect2i(listArea.getX(), y, listArea.getWidth(), ROW_HEIGHT);
 			if (rowArea.contains(mouseX, mouseY)) {
 				return Optional.of(entry);
@@ -339,7 +287,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 		return Optional.empty();
 	}
 
-	private void openEntry(Entry entry) {
+	private void openEntry(ConfigScreenListEntry entry) {
 		if (minecraft != null) {
 			minecraft.setScreen(entry.factory().create(this));
 		}
@@ -467,7 +415,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 			listArea.getY() + listArea.getHeight()
 		);
 		int y = listArea.getY() - (int) currentScrollY;
-		for (Entry entry : visibleEntries) {
+		for (ConfigScreenListEntry entry : visibleEntries) {
 			ImmutableRect2i rowArea = new ImmutableRect2i(listArea.getX(), y, listArea.getWidth(), ROW_HEIGHT);
 			if (rowArea.intersects(listArea)) {
 				drawEntry(guiGraphics, font, rowArea, entry, rowArea.contains(mouseX, mouseY) && listArea.contains(mouseX, mouseY));
@@ -493,7 +441,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 		GuiGraphics guiGraphics,
 		Font font,
 		ImmutableRect2i rowArea,
-		Entry entry,
+		ConfigScreenListEntry entry,
 		boolean hovered
 	) {
 		guiGraphics.fill(
@@ -526,7 +474,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 			ICON_SIZE,
 			ICON_SIZE
 		);
-		entry.icon().draw(guiGraphics, font, iconArea, entry.modId(), entry.title());
+		entry.icon().draw(guiGraphics, font, iconArea);
 
 		int textX = iconArea.getX() + iconArea.getWidth() + ROW_PADDING;
 		ImmutableRect2i titleTextArea = new ImmutableRect2i(
@@ -587,193 +535,4 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 		return Math.min(trackArea.getHeight(), markerHeight);
 	}
 
-	private static final class EntryIcon {
-		private final String modId;
-		private final Optional<Path> iconPath;
-		@Nullable
-		private LoadedIcon loadedIcon;
-		private boolean loadAttempted;
-
-		private EntryIcon(String modId, Optional<Path> iconPath) {
-			this.modId = modId;
-			this.iconPath = iconPath;
-		}
-
-		public void draw(
-			GuiGraphics guiGraphics,
-			Font font,
-			ImmutableRect2i iconArea,
-			String modId,
-			Component displayName
-		) {
-			Optional<LoadedIcon> icon = getLoadedIcon();
-			if (icon.isPresent()) {
-				icon.get().draw(guiGraphics, iconArea);
-				return;
-			}
-			drawPlaceholder(guiGraphics, font, iconArea, modId, displayName);
-		}
-
-		private Optional<LoadedIcon> getLoadedIcon() {
-			if (loadedIcon != null) {
-				return Optional.of(loadedIcon);
-			}
-			if (!loadAttempted) {
-				loadAttempted = true;
-				loadedIcon = loadIcon().orElse(null);
-			}
-			return Optional.ofNullable(loadedIcon);
-		}
-
-		private Optional<LoadedIcon> loadIcon() {
-			if (iconPath.isEmpty()) {
-				return Optional.empty();
-			}
-			Path path = iconPath.get();
-			try (InputStream inputStream = Files.newInputStream(path)) {
-				NativeImage image = NativeImage.read(inputStream);
-				int imageWidth = image.getWidth();
-				int imageHeight = image.getHeight();
-				DynamicTexture texture = new DynamicTexture(image);
-				ResourceLocation location = Minecraft.getInstance()
-					.getTextureManager()
-					.register("mezz_config_gui_mod_icon", texture);
-				return Optional.of(new LoadedIcon(location, imageWidth, imageHeight));
-			} catch (IOException | RuntimeException e) {
-				LOGGER.debug("Failed to load config screen list icon for mod id: {}, path: {}", modId, path, e);
-				return Optional.empty();
-			}
-		}
-
-		private static void drawPlaceholder(
-			GuiGraphics guiGraphics,
-			Font font,
-			ImmutableRect2i iconArea,
-			String modId,
-			Component displayName
-		) {
-			if (MINECRAFT_MOD_ID.equals(modId)) {
-				drawMinecraftIcon(guiGraphics, iconArea);
-				return;
-			}
-			int color = getPlaceholderColor(modId);
-			guiGraphics.fill(iconArea.getX(), iconArea.getY(), iconArea.getX() + iconArea.getWidth(), iconArea.getY() + iconArea.getHeight(), color);
-			drawInsetBorder(guiGraphics, iconArea);
-			String initial = getInitial(displayName, modId);
-			guiGraphics.drawCenteredString(
-				font,
-				initial,
-				iconArea.getX() + iconArea.getWidth() / 2,
-				iconArea.getY() + (iconArea.getHeight() - font.lineHeight) / 2,
-				ConfigEntryWidget.getConfiguredTextColor()
-			);
-		}
-
-		private static void drawMinecraftIcon(GuiGraphics guiGraphics, ImmutableRect2i iconArea) {
-			guiGraphics.fill(
-				iconArea.getX() - 1,
-				iconArea.getY() - 1,
-				iconArea.getX() + iconArea.getWidth() + 1,
-				iconArea.getY() + iconArea.getHeight() + 1,
-				ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SCREEN_LIST_ICON_BORDER)
-			);
-			guiGraphics.pose().pushPose();
-			float scale = (float) iconArea.getWidth() / ITEM_ICON_SIZE;
-			guiGraphics.pose().translate(iconArea.getX(), iconArea.getY(), 0);
-			guiGraphics.pose().scale(scale, scale, 1.0F);
-			guiGraphics.renderFakeItem(MINECRAFT_ICON, 0, 0);
-			guiGraphics.pose().popPose();
-		}
-
-		private static int getPlaceholderColor(String modId) {
-			int hash = modId.hashCode();
-			int red = 0x40 + (hash & 0x3F);
-			int green = 0x40 + ((hash >> 8) & 0x3F);
-			int blue = 0x40 + ((hash >> 16) & 0x3F);
-			return 0xFF000000 | red << 16 | green << 8 | blue;
-		}
-
-		private static String getInitial(Component displayName, String modId) {
-			String name = displayName.getString();
-			if (name.isBlank()) {
-				name = modId;
-			}
-			if (name.isBlank()) {
-				return "?";
-			}
-			int codePoint = name.codePointAt(0);
-			return new String(Character.toChars(Character.toUpperCase(codePoint)));
-		}
-	}
-
-	private record LoadedIcon(
-		ResourceLocation location,
-		int width,
-		int height
-	) {
-		private LoadedIcon {
-			Objects.requireNonNull(location, "location");
-		}
-
-		public void draw(GuiGraphics guiGraphics, ImmutableRect2i iconArea) {
-			guiGraphics.fill(
-				iconArea.getX() - 1,
-				iconArea.getY() - 1,
-				iconArea.getX() + iconArea.getWidth() + 1,
-				iconArea.getY() + iconArea.getHeight() + 1,
-				ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SCREEN_LIST_ICON_BORDER)
-			);
-			ImmutableRect2i fittedIconArea = getFittedIconArea(iconArea);
-			guiGraphics.blit(
-				location,
-				fittedIconArea.getX(),
-				fittedIconArea.getY(),
-				fittedIconArea.getWidth(),
-				fittedIconArea.getHeight(),
-				0.0F,
-				0.0F,
-				width,
-				height,
-				width,
-				height
-			);
-		}
-
-		private ImmutableRect2i getFittedIconArea(ImmutableRect2i iconArea) {
-			int fittedWidth = iconArea.getWidth();
-			int fittedHeight = Math.max(1, fittedWidth * height / width);
-			if (fittedHeight > iconArea.getHeight()) {
-				fittedHeight = iconArea.getHeight();
-				fittedWidth = Math.max(1, fittedHeight * width / height);
-			}
-			return new ImmutableRect2i(
-				iconArea.getX() + (iconArea.getWidth() - fittedWidth) / 2,
-				iconArea.getY() + (iconArea.getHeight() - fittedHeight) / 2,
-				fittedWidth,
-				fittedHeight
-			);
-		}
-	}
-
-	private record Entry(
-		String modId,
-		Component title,
-		net.mezzdev.config.gui.api.IConfigScreenFactory factory,
-		EntryIcon icon
-	) {
-		private Entry {
-			Objects.requireNonNull(modId, "modId");
-			Objects.requireNonNull(title, "title");
-			Objects.requireNonNull(factory, "factory");
-			Objects.requireNonNull(icon, "icon");
-		}
-
-		private String sortName() {
-			return ConfigLocale.toLowercase(title.getString());
-		}
-
-		private boolean matches(String searchText) {
-			return ConfigLocale.toLowercase(title.getString()).contains(searchText);
-		}
-	}
 }

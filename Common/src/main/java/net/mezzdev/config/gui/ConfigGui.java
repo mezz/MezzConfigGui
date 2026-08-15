@@ -4,6 +4,7 @@ import net.mezzdev.config.api.files.IConfigManager;
 import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigScreenFactory;
 import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryRegistry;
+import net.mezzdev.config.gui.screenlist.ConfigScreenListEntry;
 import net.mezzdev.config.gui.screenlist.ConfigScreenListScreen;
 import net.mezzdev.config.gui.screenlist.ConfigScreenOwnerMetadataProvider;
 
@@ -84,8 +85,9 @@ public final class ConfigGui {
 		ConfigScreenFactoryRegistry registry,
 		ConfigScreenOwnerMetadataProvider metadataProvider
 	) {
-		IConfigScreenFactory screenListFactory = parent -> ConfigScreenListScreen.create(parent, registry.getEntries(), metadataProvider);
-		registry.setScreenListFactory(screenListFactory);
+		List<ConfigScreenListEntry> entries = ConfigScreenListEntry.create(registry.getEntries(), metadataProvider);
+		IConfigScreenFactory screenListFactory = parent -> ConfigScreenListScreen.create(parent, entries);
+		registry.setScreenListFactory(screenListFactory, entries);
 		return screenListFactory;
 	}
 }

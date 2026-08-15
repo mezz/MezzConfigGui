@@ -18,6 +18,7 @@ import net.mezzdev.config.gui.model.ConfigScreenModel;
 import net.mezzdev.config.gui.model.ConfigValueChange;
 import net.mezzdev.config.gui.popup.ConfigPopupSelector;
 import net.mezzdev.config.gui.popup.ConfigValueSelectorInputHandler;
+import net.mezzdev.config.gui.screenlist.ConfigScreenListEntry;
 import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 
@@ -73,6 +74,7 @@ public class ConfigScreen extends MezzConfigScreen {
 	private final ConfigScreenLayout layout = new ConfigScreenLayout();
 	private final ConfigScreenModel model;
 	private final ConfigScreenController controller;
+	private final ConfigScreenModTabs modTabs;
 	private final ConfigScreenView view;
 	private final ConfigScreenNavigation navigation;
 
@@ -112,7 +114,8 @@ public class ConfigScreen extends MezzConfigScreen {
 				searchBox.setValue("");
 			}
 		}, index -> ConfigScreenHistory.rememberCategory(modId, model.getCategories().get(index)));
-		this.view = new ConfigScreenView(title, searchBox, model, layout, controller, textures);
+		this.modTabs = new ConfigScreenModTabs(modId, navigation.getScreenListEntries());
+		this.view = new ConfigScreenView(title, searchBox, model, layout, controller, modTabs, textures);
 		this.searchBox.setResponder(searchText -> {
 			updateSearchTextColor(searchText);
 			controller.setSearchText(searchText);
@@ -333,6 +336,20 @@ public class ConfigScreen extends MezzConfigScreen {
 	}
 
 	@Nullable
+	public Rect2i getModTabsArea() {
+		ImmutableRect2i area = modTabs.getTabsArea();
+		if (area.isEmpty()) {
+			return null;
+		}
+		return new Rect2i(
+			area.getX(),
+			area.getY(),
+			area.getWidth(),
+			area.getHeight()
+		);
+	}
+
+	@Nullable
 	private static ImmutableRect2i getIntersection(ImmutableRect2i first, ImmutableRect2i second) {
 		int x = Math.max(first.getX(), second.getX());
 		int y = Math.max(first.getY(), second.getY());
@@ -363,6 +380,7 @@ public class ConfigScreen extends MezzConfigScreen {
 	protected void init() {
 		super.init();
 		layout.updateScreenBounds(width, height, searchBox, canOpenScreenList());
+		modTabs.updateLayout(layout.getArea());
 		addWidget(searchBox);
 
 		layout.resetNavScroll();
@@ -398,6 +416,10 @@ public class ConfigScreen extends MezzConfigScreen {
 		requestLeave(this::openScreenListWithoutPrompt);
 	}
 
+	private void requestOpenConfigScreen(ConfigScreenListEntry entry) {
+		requestLeave(() -> openConfigScreenWithoutPrompt(entry));
+	}
+
 	private void requestLeave(Runnable leaveAction) {
 		if (changeRequestPending) {
 			return;
@@ -423,6 +445,12 @@ public class ConfigScreen extends MezzConfigScreen {
 	private void openScreenListWithoutPrompt() {
 		if (minecraft != null) {
 			minecraft.setScreen(navigation.createScreenList(parent));
+		}
+	}
+
+	private void openConfigScreenWithoutPrompt(ConfigScreenListEntry entry) {
+		if (minecraft != null) {
+			minecraft.setScreen(entry.factory().create(parent));
 		}
 	}
 
@@ -497,6 +525,7 @@ public class ConfigScreen extends MezzConfigScreen {
 
 	private void refreshLayout() {
 		layout.updateScreenBounds(width, height, searchBox, canOpenScreenList());
+		modTabs.updateLayout(layout.getArea());
 		controller.updateNavLayout();
 		controller.updateContentLayout();
 		updateValueSelectorBounds();
@@ -585,6 +614,9 @@ public class ConfigScreen extends MezzConfigScreen {
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		if (modTabs.mouseClicked(mouseX, mouseY, button)) {
+			return true;
+		}
 		if (button == 0 && layout.startResizeDrag(mouseX, mouseY)) {
 			flushPendingInput();
 			return true;
@@ -616,6 +648,14 @@ public class ConfigScreen extends MezzConfigScreen {
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		ConfigScreenModTabs.ClickResult modTabResult = modTabs.mouseReleased(mouseX, mouseY, button);
+		if (modTabResult.handled()) {
+			if (modTabResult.playSound()) {
+				Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			}
+			modTabResult.entry().ifPresent(this::requestOpenConfigScreen);
+			return true;
+		}
 		if (button == 0 && layout.isResizing()) {
 			layout.finishResizeDrag()
 				.ifPresent(resizedArea -> ConfigGuiOptions.setWindowSize(resizedArea.getWidth(), resizedArea.getHeight()));
@@ -681,6 +721,9 @@ public class ConfigScreen extends MezzConfigScreen {
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+		if (button == 0 && modTabs.isPressing()) {
+			return true;
+		}
 		if (button == 0 && layout.isResizing()) {
 			if (layout.dragResize(mouseX, mouseY, width, height)) {
 				refreshLayout();
@@ -708,6 +751,9 @@ public class ConfigScreen extends MezzConfigScreen {
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+		if (modTabs.mouseScrolled(mouseX, mouseY, scrollY)) {
+			return true;
+		}
 		if (inputHandler.handleMouseScrolled(mouseX, mouseY, scrollX, scrollY)) {
 			return true;
 		}

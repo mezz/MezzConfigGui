@@ -1,0 +1,206 @@
+package net.mezzdev.config.gui.screenlist;
+
+import com.mojang.blaze3d.platform.NativeImage;
+import net.mezzdev.config.gui.ConfigGuiColors;
+import net.mezzdev.config.gui.entries.ConfigEntryWidget;
+import net.mezzdev.config.gui.util.ImmutableRect2i;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Blocks;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Objects;
+import java.util.Optional;
+
+/**
+ * Lazily loads and draws a config screen owner's mod icon.
+ */
+public final class ConfigScreenOwnerIcon {
+	private static final Logger LOGGER = LogManager.getLogger();
+	private static final String MINECRAFT_MOD_ID = "minecraft";
+	private static final int ITEM_ICON_SIZE = 16;
+
+	private final String modId;
+	private final Component displayName;
+	private final Optional<Path> iconPath;
+	@Nullable
+	private LoadedIcon loadedIcon;
+	private boolean loadAttempted;
+
+	public ConfigScreenOwnerIcon(String modId, Component displayName, Optional<Path> iconPath) {
+		this.modId = Objects.requireNonNull(modId, "modId");
+		this.displayName = Objects.requireNonNull(displayName, "displayName");
+		this.iconPath = Objects.requireNonNull(iconPath, "iconPath");
+	}
+
+	public void draw(GuiGraphics guiGraphics, Font font, ImmutableRect2i iconArea) {
+		Optional<LoadedIcon> icon = getLoadedIcon();
+		if (icon.isPresent()) {
+			icon.get().draw(guiGraphics, iconArea);
+			return;
+		}
+		drawPlaceholder(guiGraphics, font, iconArea);
+	}
+
+	private Optional<LoadedIcon> getLoadedIcon() {
+		if (loadedIcon != null) {
+			return Optional.of(loadedIcon);
+		}
+		if (!loadAttempted) {
+			loadAttempted = true;
+			loadedIcon = loadIcon().orElse(null);
+		}
+		return Optional.ofNullable(loadedIcon);
+	}
+
+	private Optional<LoadedIcon> loadIcon() {
+		if (iconPath.isEmpty()) {
+			return Optional.empty();
+		}
+		Path path = iconPath.get();
+		try (InputStream inputStream = Files.newInputStream(path)) {
+			NativeImage image = NativeImage.read(inputStream);
+			int imageWidth = image.getWidth();
+			int imageHeight = image.getHeight();
+			DynamicTexture texture = new DynamicTexture(image);
+			ResourceLocation location = Minecraft.getInstance()
+				.getTextureManager()
+				.register("mezz_config_gui_mod_icon", texture);
+			return Optional.of(new LoadedIcon(location, imageWidth, imageHeight));
+		} catch (IOException | RuntimeException e) {
+			LOGGER.debug("Failed to load config screen icon for mod id: {}, path: {}", modId, path, e);
+			return Optional.empty();
+		}
+	}
+
+	private void drawPlaceholder(GuiGraphics guiGraphics, Font font, ImmutableRect2i iconArea) {
+		if (MINECRAFT_MOD_ID.equals(modId)) {
+			drawMinecraftIcon(guiGraphics, iconArea);
+			return;
+		}
+		int color = getPlaceholderColor(modId);
+		guiGraphics.fill(iconArea.getX(), iconArea.getY(), iconArea.getX() + iconArea.getWidth(), iconArea.getY() + iconArea.getHeight(), color);
+		drawInsetBorder(guiGraphics, iconArea);
+		String initial = getInitial(displayName, modId);
+		guiGraphics.drawCenteredString(
+			font,
+			initial,
+			iconArea.getX() + iconArea.getWidth() / 2,
+			iconArea.getY() + (iconArea.getHeight() - font.lineHeight) / 2,
+			ConfigEntryWidget.getConfiguredTextColor()
+		);
+	}
+
+	private static void drawMinecraftIcon(GuiGraphics guiGraphics, ImmutableRect2i iconArea) {
+		drawIconBorder(guiGraphics, iconArea);
+		guiGraphics.pose().pushPose();
+		float scale = (float) iconArea.getWidth() / ITEM_ICON_SIZE;
+		guiGraphics.pose().translate(iconArea.getX(), iconArea.getY(), 0);
+		guiGraphics.pose().scale(scale, scale, 1.0F);
+		guiGraphics.renderFakeItem(MinecraftIconHolder.ICON, 0, 0);
+		guiGraphics.pose().popPose();
+	}
+
+	private static final class MinecraftIconHolder {
+		private static final ItemStack ICON = new ItemStack(Blocks.GRASS_BLOCK);
+
+		private MinecraftIconHolder() {
+
+		}
+	}
+
+	private static int getPlaceholderColor(String modId) {
+		int hash = modId.hashCode();
+		int red = 0x40 + (hash & 0x3F);
+		int green = 0x40 + ((hash >> 8) & 0x3F);
+		int blue = 0x40 + ((hash >> 16) & 0x3F);
+		return 0xFF000000 | red << 16 | green << 8 | blue;
+	}
+
+	private static String getInitial(Component displayName, String modId) {
+		String name = displayName.getString();
+		if (name.isBlank()) {
+			name = modId;
+		}
+		if (name.isBlank()) {
+			return "?";
+		}
+		int codePoint = name.codePointAt(0);
+		return new String(Character.toChars(Character.toUpperCase(codePoint)));
+	}
+
+	private static void drawInsetBorder(GuiGraphics guiGraphics, ImmutableRect2i area) {
+		int x = area.getX();
+		int y = area.getY();
+		int right = x + area.getWidth();
+		int bottom = y + area.getHeight();
+		guiGraphics.fill(x, y, right, y + 1, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SCREEN_LIST_INSET_BORDER_DARK));
+		guiGraphics.fill(x, y, x + 1, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SCREEN_LIST_INSET_BORDER_DARK));
+		guiGraphics.fill(x, bottom - 1, right, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SCREEN_LIST_INSET_BORDER_LIGHT));
+		guiGraphics.fill(right - 1, y, right, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SCREEN_LIST_INSET_BORDER_LIGHT));
+	}
+
+	private static void drawIconBorder(GuiGraphics guiGraphics, ImmutableRect2i iconArea) {
+		guiGraphics.fill(
+			iconArea.getX() - 1,
+			iconArea.getY() - 1,
+			iconArea.getX() + iconArea.getWidth() + 1,
+			iconArea.getY() + iconArea.getHeight() + 1,
+			ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SCREEN_LIST_ICON_BORDER)
+		);
+	}
+
+	private record LoadedIcon(
+		ResourceLocation location,
+		int width,
+		int height
+	) {
+		private LoadedIcon {
+			Objects.requireNonNull(location, "location");
+		}
+
+		public void draw(GuiGraphics guiGraphics, ImmutableRect2i iconArea) {
+			drawIconBorder(guiGraphics, iconArea);
+			ImmutableRect2i fittedIconArea = getFittedIconArea(iconArea);
+			guiGraphics.blit(
+				location,
+				fittedIconArea.getX(),
+				fittedIconArea.getY(),
+				fittedIconArea.getWidth(),
+				fittedIconArea.getHeight(),
+				0.0F,
+				0.0F,
+				width,
+				height,
+				width,
+				height
+			);
+		}
+
+		private ImmutableRect2i getFittedIconArea(ImmutableRect2i iconArea) {
+			int fittedWidth = iconArea.getWidth();
+			int fittedHeight = Math.max(1, fittedWidth * height / width);
+			if (fittedHeight > iconArea.getHeight()) {
+				fittedHeight = iconArea.getHeight();
+				fittedWidth = Math.max(1, fittedHeight * width / height);
+			}
+			return new ImmutableRect2i(
+				iconArea.getX() + (iconArea.getWidth() - fittedWidth) / 2,
+				iconArea.getY() + (iconArea.getHeight() - fittedHeight) / 2,
+				fittedWidth,
+				fittedHeight
+			);
+		}
+	}
+}

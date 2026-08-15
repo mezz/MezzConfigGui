@@ -33,6 +33,7 @@ final class ConfigScreenView {
 	private final ConfigScreenModel model;
 	private final ConfigScreenLayout layout;
 	private final ConfigScreenController controller;
+	private final ConfigScreenModTabs modTabs;
 	private final ConfigTextures textures;
 	private final ConfigScalableDrawable background;
 	private final ConfigScalableDrawable scrollbarMarker;
@@ -44,6 +45,7 @@ final class ConfigScreenView {
 		ConfigScreenModel model,
 		ConfigScreenLayout layout,
 		ConfigScreenController controller,
+		ConfigScreenModTabs modTabs,
 		ConfigTextures textures
 	) {
 		this.title = title;
@@ -51,6 +53,7 @@ final class ConfigScreenView {
 		this.model = model;
 		this.layout = layout;
 		this.controller = controller;
+		this.modTabs = modTabs;
 		this.textures = textures;
 		this.background = textures.getConfigScreenBackground();
 		this.scrollbarMarker = textures.getScrollbarMarker();
@@ -100,6 +103,7 @@ final class ConfigScreenView {
 
 		guiGraphics.pose().pushPose();
 		background.draw(guiGraphics, area);
+		modTabs.draw(guiGraphics, font, textures, mouseX, mouseY);
 		ConfigScreenResizer.drawResizeHandles(guiGraphics, area, resizeHandle);
 		drawTitle(guiGraphics, font, titleArea, title);
 		drawActionButtons(guiGraphics, screenListButtonArea, applyPendingChangesButtonArea, undoChangesButtonArea, mouseX, mouseY);
@@ -119,6 +123,7 @@ final class ConfigScreenView {
 		drawContentScrollBar(guiGraphics);
 		drawValueSelector(guiGraphics, valueSelector, valueSelectorClipArea, mouseX, mouseY);
 		drawTooltip(guiGraphics, mouseX, mouseY, tooltipInfo);
+		modTabs.drawTooltip(guiGraphics, mouseX, mouseY);
 	}
 
 	static ImmutableRect2i getValueSelectorClipArea(ImmutableRect2i contentArea) {

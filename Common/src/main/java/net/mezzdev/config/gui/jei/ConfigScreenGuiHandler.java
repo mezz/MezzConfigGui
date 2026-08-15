@@ -6,29 +6,31 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Rect2i;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 /**
- * Reports config screen popup bounds so JEI can keep other UI from drawing over them.
+ * Reports config screen tab and popup bounds so JEI can keep other UI from drawing over them.
  */
 final class ConfigScreenGuiHandler implements IGlobalGuiHandler {
 	@Override
 	public Collection<Rect2i> getGuiExtraAreas() {
 		Minecraft minecraft = Minecraft.getInstance();
-		@Nullable
-		Rect2i selectorArea = getValueSelectorArea(minecraft.screen);
-		if (selectorArea != null) {
-			return List.of(selectorArea);
+		if (minecraft.screen instanceof ConfigScreen configScreen) {
+			List<Rect2i> areas = new ArrayList<>(2);
+			@Nullable
+			Rect2i modTabsArea = configScreen.getModTabsArea();
+			if (modTabsArea != null) {
+				areas.add(modTabsArea);
+			}
+			@Nullable
+			Rect2i selectorArea = configScreen.getValueSelectorArea();
+			if (selectorArea != null) {
+				areas.add(selectorArea);
+			}
+			return areas;
 		}
 		return List.of();
-	}
-
-	@Nullable
-	private static Rect2i getValueSelectorArea(@Nullable Object screen) {
-		if (screen instanceof ConfigScreen configScreen) {
-			return configScreen.getValueSelectorArea();
-		}
-		return null;
 	}
 }
