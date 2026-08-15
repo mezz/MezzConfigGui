@@ -30,12 +30,21 @@ public final class ConfigValueInfoFactory {
 
 	public static ConfigInfo createBooleanToggle(IConfigScreenValue<Boolean> configValue, boolean value, boolean hasPendingChange) {
 		Component description = getValueDescription(configValue, value);
-		Component action = Component.translatableWithFallback(
-			"mezz_config.config.value.boolean.clickTo",
-			"Click to: %s",
-			getValueDescription(configValue, !value)
-		);
+		Component action = getBooleanToggleAction(value);
 		return appendUpdateInfo(configValue, new ConfigInfo(description, action), hasPendingChange);
+	}
+
+	static Component getBooleanToggleAction(boolean value) {
+		if (value) {
+			return Component.translatableWithFallback(
+				"mezz_config.config.value.boolean.action.disable",
+				"Click to disable this setting."
+			);
+		}
+		return Component.translatableWithFallback(
+			"mezz_config.config.value.boolean.action.enable",
+			"Click to enable this setting."
+		);
 	}
 
 	public static ConfigInfo createSharedInfo(IConfigScreenValue<?> configValue, boolean hasPendingChange) {
