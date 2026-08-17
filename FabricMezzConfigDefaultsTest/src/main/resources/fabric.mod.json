@@ -13,7 +13,7 @@
 
   "environment": "client",
   "entrypoints": {
-    "mezz_config_client_plugin": [
+    "client": [
       "net.mezzdev.config.gui.test.fabric.defaults.FabricMezzConfigDefaultsTestPlugin"
     ],
     "mezz_config_gui_plugin": [

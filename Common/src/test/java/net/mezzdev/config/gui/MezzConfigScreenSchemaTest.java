@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui;
 
-import net.mezzdev.config.api.files.IConfigManager;
-import net.mezzdev.config.api.schema.ConfigSchemaType;
+import net.mezzdev.config.api.schema.ConfigOwnership;
+import net.mezzdev.config.api.schema.ConfigScope;
 import net.mezzdev.config.api.schema.IConfigBatchUpdater;
 import net.mezzdev.config.api.schema.IConfigCategory;
 import net.mezzdev.config.api.schema.IConfigEditorCategory;
@@ -10,8 +10,6 @@ import net.mezzdev.config.api.value.ConfigValueEditMode;
 import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IAppliedConfigValueChange;
 import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.api.value.IConfigValueBatchChangeListener;
-import net.mezzdev.config.api.value.IConfigValueChangeListener;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.api.value.IDeserializeResult;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
@@ -20,6 +18,7 @@ import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -68,6 +67,20 @@ class MezzConfigScreenSchemaTest {
 
 		assertEquals(ConfigValueApplyMode.IMMEDIATE, restartValue.getApplyMode());
 		assertEquals(ConfigValueRestartRequirement.GAME_RESTART, restartValue.getRestartRequirement());
+	}
+
+	@Test
+	void configValueUsesMezzConfigPendingValueAndListener() {
+		TestPendingConfigValue backingValue = new TestPendingConfigValue("effective");
+		IConfigScreenValue<String> screenValue = IConfigScreenValue.configValue(backingValue);
+		List<String> listenerValues = new ArrayList<>();
+		screenValue.addListener(listenerValues::add);
+
+		backingValue.set("pending");
+
+		assertEquals("effective", backingValue.getValue());
+		assertEquals("pending", screenValue.getValue());
+		assertEquals(List.of("pending"), listenerValues);
 	}
 
 	@Test
@@ -128,13 +141,13 @@ class MezzConfigScreenSchemaTest {
 			"test.config.client",
 			List.of(new TestConfigValue("other", ConfigValueEditMode.BATCH))
 		);
-		TestConfigManager manager = new TestConfigManager(List.of(
+		List<IConfigSchema> schemas = List.of(
 			new TestConfigSchema("second_mod", Path.of("second.ini"), true, List.of(otherCategory), List.of(otherCategory)),
 			new TestConfigSchema("first_mod", Path.of("b.ini"), true, List.of(secondCategory), List.of(secondCategory)),
 			new TestConfigSchema("first_mod", Path.of("a.ini"), true, List.of(firstCategory), List.of(firstCategory))
-		));
+		);
 
-		List<ConfigScreenConfig> screens = MezzConfigScreenConfigs.getConfigScreens(manager);
+		List<ConfigScreenConfig> screens = MezzConfigScreenConfigs.getConfigScreens(schemas);
 
 		assertEquals(List.of("first_mod", "second_mod"), screenModIds(screens));
 		assertEquals(
@@ -162,12 +175,12 @@ class MezzConfigScreenSchemaTest {
 			"test.config.inactive",
 			List.of(new TestConfigValue("inactive", ConfigValueEditMode.BATCH))
 		);
-		TestConfigManager manager = new TestConfigManager(List.of(
+		List<IConfigSchema> schemas = List.of(
 			new TestConfigSchema("first_mod", Path.of("active.ini"), true, List.of(activeCategory), List.of(activeCategory)),
 			new TestConfigSchema("first_mod", Path.of("inactive.ini"), false, List.of(inactiveCategory), List.of(inactiveCategory))
-		));
+		);
 
-		List<ConfigScreenConfig> screens = MezzConfigScreenConfigs.getConfigScreens(manager);
+		List<ConfigScreenConfig> screens = MezzConfigScreenConfigs.getConfigScreens(schemas);
 		List<? extends ConfigScreenCategory> categories = screens.getFirst().getSchema().getCategories();
 
 		assertEquals(List.of("general"), categoryNames(categories));
@@ -181,18 +194,19 @@ class MezzConfigScreenSchemaTest {
 			"test.config.server",
 			List.of(new TestConfigValue("serverValue", ConfigValueEditMode.BATCH))
 		);
-		TestConfigManager manager = new TestConfigManager(List.of(
+		List<IConfigSchema> schemas = List.of(
 			new TestConfigSchema(
 				"test",
 				Path.of("server.ini"),
 				true,
 				List.of(serverCategory),
 				List.of(serverCategory),
-				ConfigSchemaType.SERVER
+				ConfigOwnership.SERVER,
+				ConfigScope.WORLD
 			)
-		));
+		);
 
-		List<? extends ConfigScreenCategory> categories = MezzConfigScreenConfigs.getConfigScreens(manager)
+		List<? extends ConfigScreenCategory> categories = MezzConfigScreenConfigs.getConfigScreens(schemas)
 			.getFirst()
 			.getSchema()
 			.getCategories();
@@ -254,7 +268,8 @@ class MezzConfigScreenSchemaTest {
 		boolean active,
 		List<TestConfigCategory> categories,
 		List<IConfigEditorCategory> editorCategories,
-		ConfigSchemaType type
+		ConfigOwnership ownership,
+		ConfigScope scope
 	) implements IConfigSchema {
 		private TestConfigSchema(
 			String modId,
@@ -263,14 +278,22 @@ class MezzConfigScreenSchemaTest {
 			List<TestConfigCategory> categories,
 			List<IConfigEditorCategory> editorCategories
 		) {
-			this(modId, path, active, categories, editorCategories, ConfigSchemaType.CLIENT_WORLD);
+			this(modId, path, active, categories, editorCategories, ConfigOwnership.CLIENT, ConfigScope.WORLD);
 		}
 
 		private TestConfigSchema(
 			List<TestConfigCategory> categories,
 			List<IConfigEditorCategory> editorCategories
 		) {
-			this("test", Path.of("test.ini"), true, categories, editorCategories, ConfigSchemaType.CLIENT);
+			this(
+				"test",
+				Path.of("test.ini"),
+				true,
+				categories,
+				editorCategories,
+				ConfigOwnership.CLIENT,
+				ConfigScope.INSTALLATION
+			);
 		}
 
 		private TestConfigSchema {
@@ -286,8 +309,13 @@ class MezzConfigScreenSchemaTest {
 		}
 
 		@Override
-		public ConfigSchemaType getType() {
-			return type;
+		public ConfigOwnership getOwnership() {
+			return ownership;
+		}
+
+		@Override
+		public ConfigScope getScope() {
+			return scope;
 		}
 
 		@Override
@@ -302,7 +330,7 @@ class MezzConfigScreenSchemaTest {
 
 		@Override
 		public Optional<Path> getPath() {
-			if (active && type != ConfigSchemaType.SERVER) {
+			if (active && (ownership != ConfigOwnership.SERVER || scope != ConfigScope.WORLD)) {
 				return Optional.of(path);
 			}
 			return Optional.empty();
@@ -329,22 +357,13 @@ class MezzConfigScreenSchemaTest {
 		}
 
 		@Override
-		public Runnable addListener(IConfigValueBatchChangeListener listener) {
+		public Runnable addListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
 			return () -> {};
 		}
 
-	}
-
-	private record TestConfigManager(
-		Collection<? extends IConfigSchema> schemas
-	) implements IConfigManager {
-		private TestConfigManager {
-			schemas = List.copyOf(schemas);
-		}
-
 		@Override
-		public Collection<? extends IConfigSchema> getSchemas() {
-			return schemas;
+		public Runnable addPendingListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
+			return () -> {};
 		}
 	}
 
@@ -426,6 +445,11 @@ class MezzConfigScreenSchemaTest {
 		}
 
 		@Override
+		public String getPendingValue() {
+			return name;
+		}
+
+		@Override
 		public String getDefaultValue() {
 			return name;
 		}
@@ -451,12 +475,22 @@ class MezzConfigScreenSchemaTest {
 		}
 
 		@Override
-		public Runnable addListener(IConfigValueChangeListener<String> listener) {
+		public Runnable addListener(Consumer<? super IAppliedConfigValueChange<String>> listener) {
 			return () -> {};
 		}
 
 		@Override
-		public Runnable addBatchListener(IConfigValueBatchChangeListener listener) {
+		public Runnable addPendingListener(Consumer<? super IAppliedConfigValueChange<String>> listener) {
+			return () -> {};
+		}
+
+		@Override
+		public Runnable addBatchListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
+			return () -> {};
+		}
+
+		@Override
+		public Runnable addPendingBatchListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
 			return () -> {};
 		}
 
@@ -465,6 +499,100 @@ class MezzConfigScreenSchemaTest {
 			return TestSerializer.INSTANCE;
 		}
 	}
+
+	private static final class TestPendingConfigValue implements IConfigValue<String> {
+		private final String effectiveValue;
+		private String pendingValue;
+		private Consumer<? super IAppliedConfigValueChange<String>> pendingListener = ignored -> {};
+
+		private TestPendingConfigValue(String value) {
+			this.effectiveValue = value;
+			this.pendingValue = value;
+		}
+
+		@Override
+		public String getName() {
+			return "pending";
+		}
+
+		@Override
+		public String getLocalizationKey() {
+			return "test.config.value.pending";
+		}
+
+		@Override
+		public String getValue() {
+			return effectiveValue;
+		}
+
+		@Override
+		public String getPendingValue() {
+			return pendingValue;
+		}
+
+		@Override
+		public String getDefaultValue() {
+			return effectiveValue;
+		}
+
+		@Override
+		public ConfigValueEditMode getEditMode() {
+			return ConfigValueEditMode.BATCH;
+		}
+
+		@Override
+		public ConfigValueRestartRequirement getRestartRequirement() {
+			return ConfigValueRestartRequirement.GAME_RESTART;
+		}
+
+		@Override
+		public List<? extends IConfigEditorCategory> getEditorCategories() {
+			return List.of();
+		}
+
+		@Override
+		public boolean set(String value) {
+			String oldValue = pendingValue;
+			if (Objects.equals(oldValue, value)) {
+				return false;
+			}
+			pendingValue = value;
+			pendingListener.accept(new TestAppliedConfigValueChange(this, oldValue, value));
+			return true;
+		}
+
+		@Override
+		public Runnable addListener(Consumer<? super IAppliedConfigValueChange<String>> listener) {
+			return () -> {};
+		}
+
+		@Override
+		public Runnable addPendingListener(Consumer<? super IAppliedConfigValueChange<String>> listener) {
+			pendingListener = listener;
+			return () -> pendingListener = ignored -> {};
+		}
+
+		@Override
+		public Runnable addBatchListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
+			return () -> {};
+		}
+
+		@Override
+		public Runnable addPendingBatchListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
+			return () -> {};
+		}
+
+		@Override
+		public IConfigValueSerializer<String> getSerializer() {
+			return TestSerializer.INSTANCE;
+		}
+	}
+
+	private record TestAppliedConfigValueChange(
+		IConfigValue<String> configValue,
+		String oldValue,
+		String newValue
+	) implements IAppliedConfigValueChange<String> {}
 
 	private record IdentityOnlyScreenValue(
 		IConfigScreenValue<String> delegate

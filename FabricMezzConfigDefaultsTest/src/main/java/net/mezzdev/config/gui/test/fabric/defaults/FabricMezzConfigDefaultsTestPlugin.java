@@ -1,7 +1,8 @@
 package net.mezzdev.config.gui.test.fabric.defaults;
 
-import net.mezzdev.config.api.plugin.client.IClientConfigPlugin;
-import net.mezzdev.config.api.plugin.client.IClientConfigRegistration;
+import net.fabricmc.api.ClientModInitializer;
+import net.mezzdev.config.api.Configs;
+import net.mezzdev.config.api.IConfigRegistration;
 import net.mezzdev.config.api.schema.IConfigCategoryBuilder;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.schema.IConfigSchemaBuilder;
@@ -20,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-public final class FabricMezzConfigDefaultsTestPlugin implements IClientConfigPlugin, IConfigGuiPlugin {
+public final class FabricMezzConfigDefaultsTestPlugin implements ClientModInitializer, IConfigGuiPlugin {
 	private static final String MOD_ID = "mezz_config_gui_test_fabric_defaults";
 	private static final String LOCALIZATION_PATH = "mezz_config_gui_test.fabric.defaults";
 	@Nullable
@@ -32,7 +33,8 @@ public final class FabricMezzConfigDefaultsTestPlugin implements IClientConfigPl
 	}
 
 	@Override
-	public void registerClientConfigFiles(IClientConfigRegistration registration) {
+	public void onInitializeClient() {
+		IConfigRegistration registration = Configs.forMod(MOD_ID);
 		IConfigSchemaBuilder schemaBuilder = registration.createClientSchemaBuilder("config-gui-fabric-defaults-test.ini", LOCALIZATION_PATH);
 		IConfigCategoryBuilder general = schemaBuilder.addCategory("general");
 		general.addBoolean("enabled", true)
@@ -57,7 +59,7 @@ public final class FabricMezzConfigDefaultsTestPlugin implements IClientConfigPl
 			PackedColor.rgb(0x4477DD),
 			PackedColor.argb(0x80E0AA22)
 		)).build();
-		numbers.addKeyValueList("namedColors", List.of(
+		numbers.addList("namedColors", List.of(
 			new NamedColor("Highlight", PackedColor.rgb(0xF2C94C)),
 			new NamedColor("Success", PackedColor.rgb(0x33AA55)),
 			new NamedColor("Warning", PackedColor.rgb(0xE07030))

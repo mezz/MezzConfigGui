@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui;
 
-import net.mezzdev.config.api.schema.ConfigSchemaType;
+import net.mezzdev.config.api.schema.ConfigOwnership;
+import net.mezzdev.config.api.schema.ConfigScope;
 import net.mezzdev.config.api.schema.IConfigBatchUpdater;
 import net.mezzdev.config.api.schema.IConfigCategory;
 import net.mezzdev.config.api.schema.IConfigEditorCategory;
@@ -9,8 +10,6 @@ import net.mezzdev.config.api.value.ConfigValueEditMode;
 import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IAppliedConfigValueChange;
 import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.api.value.IConfigValueBatchChangeListener;
-import net.mezzdev.config.api.value.IConfigValueChangeListener;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.api.value.IDeserializeResult;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
@@ -86,13 +85,17 @@ class ConfigChangesHandlerTest {
 	}
 
 	@Test
-	void recordsPendingStartupChangesWithoutChangingEffectiveValue() {
-		TestMezzConfigValue startupValue = new TestMezzConfigValue("startup", true);
-		IConfigScreenValue<String> screenValue = IConfigScreenValue.configValue(startupValue);
-		TestConfigSchema schema = new TestConfigSchema(ConfigSchemaType.CLIENT_STARTUP, startupValue);
+	void recordsPendingRestartRequiredChangesWithoutChangingEffectiveValue() {
+		TestMezzConfigValue restartRequiredValue = new TestMezzConfigValue("restartRequired", true);
+		IConfigScreenValue<String> screenValue = IConfigScreenValue.configValue(restartRequiredValue);
+		TestConfigSchema schema = new TestConfigSchema(
+			ConfigOwnership.CLIENT,
+			ConfigScope.INSTALLATION,
+			restartRequiredValue
+		);
 
 		CompletableFuture<ConfigChangesResult> resultFuture = ConfigChangesHandler.applyBySchema(
-			List.of(new ConfigValueChange<>(screenValue, "startup changed")),
+			List.of(new ConfigValueChange<>(screenValue, "restartRequired changed")),
 			ignored -> Optional.of(schema)
 		);
 
@@ -100,13 +103,13 @@ class ConfigChangesHandlerTest {
 		ConfigChangesResult result = resultFuture.join();
 
 		assertTrue(result.succeeded());
-		assertEquals("startup", startupValue.getValue());
-		assertEquals("startup changed", startupValue.getPendingValue());
-		assertEquals("startup changed", screenValue.getValue());
+		assertEquals("restartRequired", restartRequiredValue.getValue());
+		assertEquals("restartRequired changed", restartRequiredValue.getPendingValue());
+		assertEquals("restartRequired changed", screenValue.getValue());
 		assertEquals(ConfigValueRestartRequirement.GAME_RESTART, result.restartRequirement());
 		AppliedConfigValueChange<?> appliedChange = result.appliedChanges().getFirst();
-		assertEquals("startup", appliedChange.oldValue());
-		assertEquals("startup changed", appliedChange.newValue());
+		assertEquals("restartRequired", appliedChange.oldValue());
+		assertEquals("restartRequired changed", appliedChange.newValue());
 	}
 
 	@Test
@@ -209,18 +212,24 @@ class ConfigChangesHandlerTest {
 	}
 
 	private static final class TestConfigSchema implements IConfigSchema {
-		private final ConfigSchemaType type;
+		private final ConfigOwnership ownership;
+		private final ConfigScope scope;
 		private final List<IConfigValue<?>> configValues;
 		private final List<Runnable> pendingUpdates = new ArrayList<>();
 		private CompletableFuture<Void> request = new CompletableFuture<>();
 		private int requestCount;
 
 		private TestConfigSchema(IConfigValue<?>... configValues) {
-			this(ConfigSchemaType.SERVER, configValues);
+			this(ConfigOwnership.SERVER, ConfigScope.WORLD, configValues);
 		}
 
-		private TestConfigSchema(ConfigSchemaType type, IConfigValue<?>... configValues) {
-			this.type = type;
+		private TestConfigSchema(
+			ConfigOwnership ownership,
+			ConfigScope scope,
+			IConfigValue<?>... configValues
+		) {
+			this.ownership = ownership;
+			this.scope = scope;
 			this.configValues = List.of(configValues);
 		}
 
@@ -230,8 +239,13 @@ class ConfigChangesHandlerTest {
 		}
 
 		@Override
-		public ConfigSchemaType getType() {
-			return type;
+		public ConfigOwnership getOwnership() {
+			return ownership;
+		}
+
+		@Override
+		public ConfigScope getScope() {
+			return scope;
 		}
 
 		@Override
@@ -278,7 +292,12 @@ class ConfigChangesHandlerTest {
 		}
 
 		@Override
-		public Runnable addListener(IConfigValueBatchChangeListener listener) {
+		public Runnable addListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
+			return () -> {};
+		}
+
+		@Override
+		public Runnable addPendingListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
 			return () -> {};
 		}
 
@@ -367,7 +386,7 @@ class ConfigChangesHandlerTest {
 
 	private static final class TestMezzConfigValue implements IConfigValue<String> {
 		private final String name;
-		private final boolean startup;
+		private final boolean restartRequired;
 		private String value;
 		private String pendingValue;
 
@@ -375,9 +394,9 @@ class ConfigChangesHandlerTest {
 			this(value, false);
 		}
 
-		private TestMezzConfigValue(String value, boolean startup) {
+		private TestMezzConfigValue(String value, boolean restartRequired) {
 			this.name = value;
-			this.startup = startup;
+			this.restartRequired = restartRequired;
 			this.value = value;
 			this.pendingValue = value;
 		}
@@ -414,7 +433,7 @@ class ConfigChangesHandlerTest {
 
 		@Override
 		public ConfigValueRestartRequirement getRestartRequirement() {
-			if (startup) {
+			if (restartRequired) {
 				return ConfigValueRestartRequirement.GAME_RESTART;
 			}
 			return ConfigValueRestartRequirement.NONE;
@@ -428,13 +447,13 @@ class ConfigChangesHandlerTest {
 		@Override
 		public boolean set(String value) {
 			String storedValue = this.value;
-			if (startup) {
+			if (restartRequired) {
 				storedValue = pendingValue;
 			}
 			if (Objects.equals(storedValue, value)) {
 				return false;
 			}
-			if (startup) {
+			if (restartRequired) {
 				pendingValue = value;
 			} else {
 				this.value = value;
@@ -444,12 +463,22 @@ class ConfigChangesHandlerTest {
 		}
 
 		@Override
-		public Runnable addListener(IConfigValueChangeListener<String> listener) {
+		public Runnable addListener(Consumer<? super IAppliedConfigValueChange<String>> listener) {
 			return () -> {};
 		}
 
 		@Override
-		public Runnable addBatchListener(IConfigValueBatchChangeListener listener) {
+		public Runnable addPendingListener(Consumer<? super IAppliedConfigValueChange<String>> listener) {
+			return () -> {};
+		}
+
+		@Override
+		public Runnable addBatchListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
+			return () -> {};
+		}
+
+		@Override
+		public Runnable addPendingBatchListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
 			return () -> {};
 		}
 

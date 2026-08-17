@@ -29,6 +29,13 @@ Customized native NeoForge config screen test for MezzConfig GUI.
     side="BOTH"
 
 [[dependencies.mezz_config_gui_test_neoforge_custom]]
+    modId="${configModId}"
+    type="required"
+    versionRange="${mezzConfigVersionRange}"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.mezz_config_gui_test_neoforge_custom]]
     modId="${configGuiModId}"
     type="required"
     versionRange="[0,)"

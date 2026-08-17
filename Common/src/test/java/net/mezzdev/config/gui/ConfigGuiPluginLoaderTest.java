@@ -5,10 +5,9 @@ import net.mezzdev.config.api.schema.IConfigEditorCategory;
 import net.mezzdev.config.api.sorting.ISortingConfig;
 import net.mezzdev.config.api.value.ConfigValueEditMode;
 import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.value.IAppliedConfigValueChange;
 import net.mezzdev.config.api.value.IDeserializeResult;
 import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.api.value.IConfigValueBatchChangeListener;
-import net.mezzdev.config.api.value.IConfigValueChangeListener;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.ConfigValueEditorType;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
@@ -392,10 +391,11 @@ class ConfigGuiPluginLoaderTest {
 			}
 		};
 
-		Map<String, IConfigScreenFactory> factories = ConfigGuiPluginLoader.createScreenFactoriesFromInternalConfigs(
+		Map<String, IConfigScreenFactory> factories = ConfigGuiPluginLoader.createScreenFactoryRegistryFromInternalConfigs(
 			List.of(new TestScreenConfig(MOD_ID, Component.literal("Test"), () -> List.of())),
-			List.of(plugin)
-		);
+			List.of(plugin),
+			false
+		).getFactories();
 
 		assertTrue(factories.containsKey(MOD_ID));
 		assertEquals(0, factoryCreationCustomizerCalls.get());
@@ -405,7 +405,8 @@ class ConfigGuiPluginLoaderTest {
 	void screenFactoryRegistryKeepsScreenListEntries() {
 		ConfigScreenFactoryRegistry registry = ConfigGuiPluginLoader.createScreenFactoryRegistryFromInternalConfigs(
 			List.of(new TestScreenConfig(MOD_ID, Component.literal("Test Title"), () -> List.of())),
-			List.of()
+			List.of(),
+			false
 		);
 
 		assertEquals(List.of(MOD_ID), List.copyOf(registry.getFactories().keySet()));
@@ -1163,6 +1164,11 @@ class ConfigGuiPluginLoaderTest {
 		}
 
 		@Override
+		public String getPendingValue() {
+			return name;
+		}
+
+		@Override
 		public String getDefaultValue() {
 			return name;
 		}
@@ -1188,12 +1194,22 @@ class ConfigGuiPluginLoaderTest {
 		}
 
 		@Override
-		public Runnable addListener(IConfigValueChangeListener<String> listener) {
+		public Runnable addListener(Consumer<? super IAppliedConfigValueChange<String>> listener) {
 			return () -> {};
 		}
 
 		@Override
-		public Runnable addBatchListener(IConfigValueBatchChangeListener listener) {
+		public Runnable addPendingListener(Consumer<? super IAppliedConfigValueChange<String>> listener) {
+			return () -> {};
+		}
+
+		@Override
+		public Runnable addBatchListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
+			return () -> {};
+		}
+
+		@Override
+		public Runnable addPendingBatchListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
 			return () -> {};
 		}
 

@@ -99,6 +99,7 @@ public final class NeoForgeNativeCustomTestMod {
 	}
 
 	public NeoForgeNativeCustomTestMod(IEventBus modEventBus, ModContainer modContainer) {
+		NeoForgeNativeCustomTestMezzConfig.register();
 		modEventBus.addListener(NeoForgeNativeCustomTestMod::registerGameTests);
 		modContainer.registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC, CLIENT_FILE_NAME);
 		modContainer.registerConfig(ModConfig.Type.COMMON, COMMON_SPEC, COMMON_FILE_NAME);

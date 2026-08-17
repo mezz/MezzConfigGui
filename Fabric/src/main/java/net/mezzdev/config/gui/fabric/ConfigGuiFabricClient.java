@@ -3,6 +3,7 @@ package net.mezzdev.config.gui.fabric;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.mezzdev.config.gui.ConfigGuiColors;
+import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.minecraft.server.packs.PackType;
 
@@ -12,6 +13,7 @@ import net.minecraft.server.packs.PackType;
 public final class ConfigGuiFabricClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
+		ConfigGuiOptions.register();
 		ResourceManagerHelper.get(PackType.CLIENT_RESOURCES)
 			.registerReloadListener(new ConfigGuiIdentifiableResourceReloadListener(
 				"config_gui_sprite_manager",

@@ -29,6 +29,7 @@ public final class ConfigGuiNeoForgeClient {
 	}
 
 	public static void register(IEventBus modEventBus) {
+		ConfigGuiOptions.register();
 		modEventBus.addListener(ConfigGuiNeoForgeClient::onClientSetup);
 		modEventBus.addListener(ConfigGuiNeoForgeClient::onRegisterClientReloadListeners);
 	}

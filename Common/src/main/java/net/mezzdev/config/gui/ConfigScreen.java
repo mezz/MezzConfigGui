@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui;
 
-import net.mezzdev.config.api.schema.ConfigSchemaType;
+import net.mezzdev.config.api.schema.ConfigOwnership;
+import net.mezzdev.config.api.schema.ConfigScope;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.ConfigValueEditorType;
@@ -218,13 +219,16 @@ public class ConfigScreen extends MezzConfigScreen {
 		Optional<IConfigSchema> backingSchema
 	) {
 		if (backingSchema
-			.map(IConfigSchema::getType)
-			.filter(type -> type == ConfigSchemaType.SERVER)
+			.filter(ConfigScreen::requiresOnApply)
 			.isPresent()
 		) {
 			return withApplyMode(configValue, ConfigValueApplyMode.ON_APPLY);
 		}
 		return configValue;
+	}
+
+	private static boolean requiresOnApply(IConfigSchema schema) {
+		return schema.getOwnership() == ConfigOwnership.SERVER && schema.getScope() == ConfigScope.WORLD;
 	}
 
 	@SuppressWarnings("unchecked")

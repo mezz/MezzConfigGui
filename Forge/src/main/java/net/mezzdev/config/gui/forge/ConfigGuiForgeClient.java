@@ -10,6 +10,7 @@ import net.minecraftforge.client.ConfigScreenHandler;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -24,8 +25,13 @@ public final class ConfigGuiForgeClient {
 	}
 
 	public static void register(IEventBus modEventBus) {
-		registerConfigScreens(ConfigGui.createScreenFactoryRegistry(ConfigGuiForgePluginFinder.getPlugins()));
+		ConfigGuiOptions.register();
+		modEventBus.addListener(ConfigGuiForgeClient::onClientSetup);
 		modEventBus.addListener(ConfigGuiForgeClient::onRegisterClientReloadListeners);
+	}
+
+	private static void onClientSetup(FMLClientSetupEvent event) {
+		event.enqueueWork(() -> registerConfigScreens(ConfigGui.createScreenFactoryRegistry(ConfigGuiForgePluginFinder.getPlugins())));
 	}
 
 	private static void registerConfigScreens(ConfigScreenFactoryRegistry registry) {

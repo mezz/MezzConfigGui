@@ -1,14 +1,14 @@
 package net.mezzdev.config.gui;
 
-import net.mezzdev.config.api.files.IConfigManager;
+import net.mezzdev.config.api.Configs;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.util.ConfigNameUtil;
 import net.minecraft.network.chat.Component;
-import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -20,28 +20,18 @@ import java.util.Optional;
  * Creates generated config GUI screens from schemas registered with MezzConfig.
  */
 public final class MezzConfigScreenConfigs {
-	private static volatile @Nullable IConfigManager configManager;
-
 	private MezzConfigScreenConfigs() {
 
 	}
 
-	public static void setConfigManager(IConfigManager configManager) {
-		MezzConfigScreenConfigs.configManager = Objects.requireNonNull(configManager, "configManager");
-	}
-
 	public static List<ConfigScreenConfig> getActiveConfigScreens() {
-		IConfigManager configManager = MezzConfigScreenConfigs.configManager;
-		if (configManager == null) {
-			return List.of();
-		}
-		return getConfigScreens(configManager);
+		return getConfigScreens(Configs.getSchemas());
 	}
 
-	public static List<ConfigScreenConfig> getConfigScreens(IConfigManager configManager) {
-		Objects.requireNonNull(configManager, "configManager");
+	public static List<ConfigScreenConfig> getConfigScreens(Collection<? extends IConfigSchema> schemas) {
+		Objects.requireNonNull(schemas, "schemas");
 		Map<String, List<IConfigSchema>> schemasByModId = new LinkedHashMap<>();
-		configManager.getSchemas()
+		schemas
 			.stream()
 			.sorted(Comparator
 				.comparing(IConfigSchema::getModId)

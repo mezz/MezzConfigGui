@@ -1,6 +1,6 @@
 package net.mezzdev.config.gui;
 
-import net.mezzdev.config.api.files.IConfigManager;
+import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigScreenFactory;
 import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryRegistry;
@@ -35,24 +35,24 @@ public final class ConfigGui {
 	}
 
 	/**
-	 * Create config screen factories from all schemas registered with a MezzConfig config manager.
+	 * Create config screen factories from the given MezzConfig schemas.
 	 */
 	public static Map<String, IConfigScreenFactory> createScreenFactories(
-		IConfigManager configManager,
+		Collection<? extends IConfigSchema> schemas,
 		List<? extends IConfigGuiPlugin> plugins
 	) {
-		return createScreenFactoryRegistry(configManager, plugins).getFactories();
+		return createScreenFactoryRegistry(schemas, plugins).getFactories();
 	}
 
 	/**
-	 * Create a config screen factory registry from all schemas registered with a MezzConfig config manager.
+	 * Create a config screen factory registry from the given MezzConfig schemas.
 	 */
 	public static ConfigScreenFactoryRegistry createScreenFactoryRegistry(
-		IConfigManager configManager,
+		Collection<? extends IConfigSchema> schemas,
 		List<? extends IConfigGuiPlugin> plugins
 	) {
 		return ConfigGuiPluginLoader.createScreenFactoryRegistryFromInternalConfigs(
-			MezzConfigScreenConfigs.getConfigScreens(configManager),
+			MezzConfigScreenConfigs.getConfigScreens(schemas),
 			plugins,
 			false
 		);
