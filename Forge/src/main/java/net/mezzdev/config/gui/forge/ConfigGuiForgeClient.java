@@ -4,13 +4,24 @@ import net.mezzdev.config.gui.api.IConfigScreenFactory;
 import net.mezzdev.config.gui.ConfigGui;
 import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
+import net.mezzdev.config.gui.remote.RemoteConfigEditor;
+import net.mezzdev.config.gui.remote.RemoteConfigNetworking;
 import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryRegistry;
 import net.mezzdev.config.gui.textures.ConfigTextures;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.Packet;
 import net.minecraftforge.client.ConfigScreenHandler;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraftforge.network.Channel;
+import net.minecraftforge.network.NetworkDirection;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -24,8 +35,33 @@ public final class ConfigGuiForgeClient {
 
 	}
 
-	public static void register(IEventBus modEventBus) {
+	public static void register(IEventBus modEventBus, ConfigGuiForgeNetwork network) {
 		ConfigGuiOptions.register();
+		RemoteConfigNetworking.setClientSender(payload -> {
+			ClientPacketListener listener = Minecraft.getInstance().getConnection();
+			if (listener == null) {
+				return false;
+			}
+			Connection connection = listener.getConnection();
+			Channel<?> channel = network.getChannel();
+			if (!connection.isConnected() || !channel.isRemotePresent(connection)) {
+				return false;
+			}
+			Packet<?> packet = NetworkDirection.PLAY_TO_SERVER.buildPacket(network.getChannel(), payload);
+			listener.send(packet);
+			return true;
+		});
+		MinecraftForge.EVENT_BUS.addListener((TickEvent.ClientTickEvent event) -> {
+			if (event.phase == TickEvent.Phase.END) {
+				RemoteConfigEditor.onClientTick(isChannelAvailable(network));
+			}
+		});
+		MinecraftForge.EVENT_BUS.addListener(
+			(ClientPlayerNetworkEvent.LoggingIn event) -> RemoteConfigEditor.onClientConnected(isChannelAvailable(network))
+		);
+		MinecraftForge.EVENT_BUS.addListener(
+			(ClientPlayerNetworkEvent.LoggingOut event) -> RemoteConfigEditor.onClientDisconnect()
+		);
 		modEventBus.addListener(ConfigGuiForgeClient::onClientSetup);
 		modEventBus.addListener(ConfigGuiForgeClient::onRegisterClientReloadListeners);
 	}
@@ -58,5 +94,14 @@ public final class ConfigGuiForgeClient {
 	private static void onRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {
 		event.registerReloadListener(ConfigTextures.get().getGuiSpriteManager());
 		event.registerReloadListener(ConfigGuiColors.createReloadListener());
+	}
+
+	private static boolean isChannelAvailable(ConfigGuiForgeNetwork network) {
+		ClientPacketListener listener = Minecraft.getInstance().getConnection();
+		if (listener == null) {
+			return false;
+		}
+		Connection connection = listener.getConnection();
+		return connection.isConnected() && network.getChannel().isRemotePresent(connection);
 	}
 }

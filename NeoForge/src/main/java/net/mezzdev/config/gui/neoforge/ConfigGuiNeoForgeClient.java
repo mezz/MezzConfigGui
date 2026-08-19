@@ -5,13 +5,22 @@ import net.mezzdev.config.gui.ConfigGui;
 import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.ConfigScreenConfig;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
+import net.mezzdev.config.gui.remote.RemoteConfigEditor;
+import net.mezzdev.config.gui.remote.RemoteConfigNetworking;
+import net.mezzdev.config.gui.remote.RemoteConfigRequestChunkPayload;
 import net.mezzdev.config.gui.neoforge.config.NeoForgeConfigScreenConfigs;
 import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryRegistry;
 import net.mezzdev.config.gui.textures.ConfigTextures;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -30,6 +39,23 @@ public final class ConfigGuiNeoForgeClient {
 
 	public static void register(IEventBus modEventBus) {
 		ConfigGuiOptions.register();
+		RemoteConfigNetworking.setClientSender(payload -> {
+			ClientPacketListener connection = Minecraft.getInstance().getConnection();
+			if (connection == null || !connection.hasChannel(payload.type())) {
+				return false;
+			}
+			PacketDistributor.sendToServer(payload);
+			return true;
+		});
+		NeoForge.EVENT_BUS.addListener(
+			(ClientTickEvent.Post event) -> RemoteConfigEditor.onClientTick(isChannelAvailable())
+		);
+		NeoForge.EVENT_BUS.addListener(
+			(ClientPlayerNetworkEvent.LoggingIn event) -> RemoteConfigEditor.onClientConnected(isChannelAvailable())
+		);
+		NeoForge.EVENT_BUS.addListener(
+			(ClientPlayerNetworkEvent.LoggingOut event) -> RemoteConfigEditor.onClientDisconnect()
+		);
 		modEventBus.addListener(ConfigGuiNeoForgeClient::onClientSetup);
 		modEventBus.addListener(ConfigGuiNeoForgeClient::onRegisterClientReloadListeners);
 	}
@@ -77,5 +103,10 @@ public final class ConfigGuiNeoForgeClient {
 	private static void onRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {
 		event.registerReloadListener(ConfigTextures.get().getGuiSpriteManager());
 		event.registerReloadListener(ConfigGuiColors.createReloadListener());
+	}
+
+	private static boolean isChannelAvailable() {
+		ClientPacketListener connection = Minecraft.getInstance().getConnection();
+		return connection != null && connection.hasChannel(RemoteConfigRequestChunkPayload.TYPE);
 	}
 }

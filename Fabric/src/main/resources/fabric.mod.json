@@ -15,8 +15,11 @@
   "license": "The MIT License (MIT)",
   "icon": "mezz_config_gui-icon.png",
 
-  "environment": "client",
+  "environment": "*",
   "entrypoints": {
+    "main": [
+      "net.mezzdev.config.gui.fabric.ConfigGuiFabric"
+    ],
     "client": [
       "net.mezzdev.config.gui.fabric.ConfigGuiFabricClient"
     ],
