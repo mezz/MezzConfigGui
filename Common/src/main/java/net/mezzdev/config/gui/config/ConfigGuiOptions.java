@@ -7,7 +7,9 @@ import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.schema.IConfigSchemaBuilder;
 import net.mezzdev.config.api.value.ConfigValueEditMode;
 import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.value.IDeserializeResult;
 import net.mezzdev.config.api.value.IConfigValue;
+import net.mezzdev.config.api.value.IConfigValueSerializer;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -76,18 +78,18 @@ public final class ConfigGuiOptions {
 		IConfigSchemaBuilder schemaBuilder = registration.createClientSchemaBuilder(CONFIG_FILE_NAME, LOCALIZATION_PATH);
 		IConfigCategoryBuilder appearance = schemaBuilder.addCategory("appearance");
 		guiMode = appearance.addEnum("guiMode", GuiMode.WINDOW)
-			.addLegacyValueMigration("appearance", "guiSize", ConfigGuiOptions::migrateGuiMode)
+			.addLegacyValueMigration("appearance", "guiSize", LegacyGuiSizeSerializer.INSTANCE, ConfigGuiOptions::migrateGuiMode)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 		enableWindowResizing = appearance.addBoolean("enableWindowResizing", true)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 		windowWidth = appearance.addInteger("windowWidth", DEFAULT_WINDOW_WIDTH, MIN_WINDOW_WIDTH, MAX_WINDOW_SIZE)
-			.addLegacyValueMigration("appearance", "guiSize", ConfigGuiOptions::migrateWindowWidth)
+			.addLegacyValueMigration("appearance", "guiSize", LegacyGuiSizeSerializer.INSTANCE, ConfigGuiOptions::migrateWindowWidth)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 		windowHeight = appearance.addInteger("windowHeight", DEFAULT_WINDOW_HEIGHT, MIN_WINDOW_HEIGHT, MAX_WINDOW_SIZE)
-			.addLegacyValueMigration("appearance", "guiSize", ConfigGuiOptions::migrateWindowHeight)
+			.addLegacyValueMigration("appearance", "guiSize", LegacyGuiSizeSerializer.INSTANCE, ConfigGuiOptions::migrateWindowHeight)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 		rowDensity = appearance.addEnum("rowDensity", RowDensity.COMFORTABLE)
@@ -318,6 +320,30 @@ public final class ConfigGuiOptions {
 			normalized = normalized.substring(1, normalized.length() - 1);
 		}
 		return normalized;
+	}
+
+	private enum LegacyGuiSizeSerializer implements IConfigValueSerializer<String> {
+		INSTANCE;
+
+		@Override
+		public String serialize(String value) {
+			return value;
+		}
+
+		@Override
+		public IDeserializeResult<String> deserialize(String string) {
+			return IDeserializeResult.success(string);
+		}
+
+		@Override
+		public boolean isValid(String value) {
+			return value != null;
+		}
+
+		@Override
+		public String getValidValuesDescription() {
+			return "Any legacy GUI size";
+		}
 	}
 
 	public enum GuiMode {

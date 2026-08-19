@@ -337,7 +337,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 			if (getValue().equals(valueCopy)) {
 				return false;
 			}
-			return sortingConfig.setSortedValues(valueCopy);
+			return sortingConfig.setSortedValues(values, valueCopy);
 		}
 
 		@Override

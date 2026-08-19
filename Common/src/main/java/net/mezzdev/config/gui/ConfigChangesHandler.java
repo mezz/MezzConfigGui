@@ -117,7 +117,7 @@ interface ConfigChangesHandler {
 			request = Objects.requireNonNull(
 				schema.requestBatchUpdate(updater -> changes.forEach(change -> queueChange(updater, schema, change))),
 				"schema request result"
-			);
+			).toCompletableFuture();
 		} catch (RuntimeException exception) {
 			return CompletableFuture.completedFuture(ConfigChangesResult.failure(changes.getFirst(), exception));
 		}

@@ -1,7 +1,6 @@
 package net.mezzdev.config.gui;
 
-import net.mezzdev.config.api.schema.ConfigOwnership;
-import net.mezzdev.config.api.schema.ConfigScope;
+import net.mezzdev.config.api.schema.ConfigSchemaType;
 import net.mezzdev.config.api.schema.IConfigBatchUpdater;
 import net.mezzdev.config.api.schema.IConfigCategory;
 import net.mezzdev.config.api.schema.IConfigEditorCategory;
@@ -19,7 +18,6 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -201,8 +199,7 @@ class MezzConfigScreenSchemaTest {
 				true,
 				List.of(serverCategory),
 				List.of(serverCategory),
-				ConfigOwnership.SERVER,
-				ConfigScope.WORLD
+				ConfigSchemaType.SERVER
 			)
 		);
 
@@ -268,8 +265,7 @@ class MezzConfigScreenSchemaTest {
 		boolean active,
 		List<TestConfigCategory> categories,
 		List<IConfigEditorCategory> editorCategories,
-		ConfigOwnership ownership,
-		ConfigScope scope
+		ConfigSchemaType type
 	) implements IConfigSchema {
 		private TestConfigSchema(
 			String modId,
@@ -278,7 +274,7 @@ class MezzConfigScreenSchemaTest {
 			List<TestConfigCategory> categories,
 			List<IConfigEditorCategory> editorCategories
 		) {
-			this(modId, path, active, categories, editorCategories, ConfigOwnership.CLIENT, ConfigScope.WORLD);
+			this(modId, path, active, categories, editorCategories, ConfigSchemaType.CLIENT_PER_WORLD);
 		}
 
 		private TestConfigSchema(
@@ -291,8 +287,7 @@ class MezzConfigScreenSchemaTest {
 				true,
 				categories,
 				editorCategories,
-				ConfigOwnership.CLIENT,
-				ConfigScope.INSTALLATION
+				ConfigSchemaType.CLIENT
 			);
 		}
 
@@ -309,13 +304,8 @@ class MezzConfigScreenSchemaTest {
 		}
 
 		@Override
-		public ConfigOwnership getOwnership() {
-			return ownership;
-		}
-
-		@Override
-		public ConfigScope getScope() {
-			return scope;
+		public ConfigSchemaType getType() {
+			return type;
 		}
 
 		@Override
@@ -330,7 +320,7 @@ class MezzConfigScreenSchemaTest {
 
 		@Override
 		public Optional<Path> getPath() {
-			if (active && (ownership != ConfigOwnership.SERVER || scope != ConfigScope.WORLD)) {
+			if (active && type != ConfigSchemaType.SERVER) {
 				return Optional.of(path);
 			}
 			return Optional.empty();
@@ -357,12 +347,12 @@ class MezzConfigScreenSchemaTest {
 		}
 
 		@Override
-		public Runnable addListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
+		public Runnable addBatchListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
 			return () -> {};
 		}
 
 		@Override
-		public Runnable addPendingListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
+		public Runnable addPendingBatchListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
 			return () -> {};
 		}
 	}
@@ -387,7 +377,7 @@ class MezzConfigScreenSchemaTest {
 		}
 
 		@Override
-		public Collection<? extends IConfigValue<?>> getConfigValues() {
+		public List<? extends IConfigValue<?>> getConfigValues() {
 			return values;
 		}
 	}

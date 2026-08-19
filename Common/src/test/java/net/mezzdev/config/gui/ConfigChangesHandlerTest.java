@@ -1,7 +1,6 @@
 package net.mezzdev.config.gui;
 
-import net.mezzdev.config.api.schema.ConfigOwnership;
-import net.mezzdev.config.api.schema.ConfigScope;
+import net.mezzdev.config.api.schema.ConfigSchemaType;
 import net.mezzdev.config.api.schema.IConfigBatchUpdater;
 import net.mezzdev.config.api.schema.IConfigCategory;
 import net.mezzdev.config.api.schema.IConfigEditorCategory;
@@ -23,6 +22,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -89,8 +89,7 @@ class ConfigChangesHandlerTest {
 		TestMezzConfigValue restartRequiredValue = new TestMezzConfigValue("restartRequired", true);
 		IConfigScreenValue<String> screenValue = IConfigScreenValue.configValue(restartRequiredValue);
 		TestConfigSchema schema = new TestConfigSchema(
-			ConfigOwnership.CLIENT,
-			ConfigScope.INSTALLATION,
+			ConfigSchemaType.CLIENT,
 			restartRequiredValue
 		);
 
@@ -212,24 +211,21 @@ class ConfigChangesHandlerTest {
 	}
 
 	private static final class TestConfigSchema implements IConfigSchema {
-		private final ConfigOwnership ownership;
-		private final ConfigScope scope;
+		private final ConfigSchemaType type;
 		private final List<IConfigValue<?>> configValues;
 		private final List<Runnable> pendingUpdates = new ArrayList<>();
 		private CompletableFuture<Void> request = new CompletableFuture<>();
 		private int requestCount;
 
 		private TestConfigSchema(IConfigValue<?>... configValues) {
-			this(ConfigOwnership.SERVER, ConfigScope.WORLD, configValues);
+			this(ConfigSchemaType.SERVER, configValues);
 		}
 
 		private TestConfigSchema(
-			ConfigOwnership ownership,
-			ConfigScope scope,
+			ConfigSchemaType type,
 			IConfigValue<?>... configValues
 		) {
-			this.ownership = ownership;
-			this.scope = scope;
+			this.type = type;
 			this.configValues = List.of(configValues);
 		}
 
@@ -239,13 +235,8 @@ class ConfigChangesHandlerTest {
 		}
 
 		@Override
-		public ConfigOwnership getOwnership() {
-			return ownership;
-		}
-
-		@Override
-		public ConfigScope getScope() {
-			return scope;
+		public ConfigSchemaType getType() {
+			return type;
 		}
 
 		@Override
@@ -279,7 +270,7 @@ class ConfigChangesHandlerTest {
 		}
 
 		@Override
-		public CompletableFuture<Void> requestBatchUpdate(Consumer<IConfigBatchUpdater> updateBatch) {
+		public CompletionStage<Void> requestBatchUpdate(Consumer<IConfigBatchUpdater> updateBatch) {
 			requestCount++;
 			updateBatch.accept(new IConfigBatchUpdater() {
 				@Override
@@ -288,16 +279,16 @@ class ConfigChangesHandlerTest {
 					return this;
 				}
 			});
-			return request;
+			return request.minimalCompletionStage();
 		}
 
 		@Override
-		public Runnable addListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
+		public Runnable addBatchListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
 			return () -> {};
 		}
 
 		@Override
-		public Runnable addPendingListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
+		public Runnable addPendingBatchListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
 			return () -> {};
 		}
 

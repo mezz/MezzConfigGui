@@ -1117,7 +1117,7 @@ class ConfigGuiPluginLoaderTest {
 		}
 
 		@Override
-		public boolean setSortedValues(List<String> sortedValues) {
+		public boolean setSortedValues(Collection<String> allValues, List<String> sortedValues) {
 			this.sortedValues = List.copyOf(sortedValues);
 			this.savedValues.add(this.sortedValues);
 			this.hasSortedValues = true;

@@ -135,6 +135,7 @@ class SortableConfigValueFactoryTest {
 		assertTrue(configValue.set(List.of("second", "first")));
 		assertFalse(configValue.set(List.of("second", "first")));
 
+		assertEquals(List.of(List.of("first", "second")), sortingConfig.savedAllValues);
 		assertEquals(List.of(List.of("second", "first")), sortingConfig.savedValues);
 		assertEquals(List.of(List.of("second", "first")), listenerValues);
 	}
@@ -154,12 +155,12 @@ class SortableConfigValueFactoryTest {
 		List<List<String>> listenerValues = new ArrayList<>();
 		Runnable removeListener = configValue.addListener(listenerValues::add);
 
-		sortingConfig.setSortedValues(List.of("second", "first"));
+		sortingConfig.setSortedValues(List.of("first", "second"), List.of("second", "first"));
 		assertEquals(List.of(List.of("second", "first")), listenerValues);
 
 		removeListener.run();
 		assertEquals(0, sortingConfig.listeners.size());
-		sortingConfig.setSortedValues(List.of("first", "second"));
+		sortingConfig.setSortedValues(List.of("first", "second"), List.of("first", "second"));
 		assertEquals(List.of(List.of("second", "first")), listenerValues);
 	}
 
@@ -219,6 +220,7 @@ class SortableConfigValueFactoryTest {
 
 	private static final class TestSortingConfig implements ISortingConfig<String> {
 		private final boolean allowsRemovingValues;
+		private final List<List<String>> savedAllValues = new ArrayList<>();
 		private final List<List<String>> savedValues = new ArrayList<>();
 		private final List<Runnable> listeners = new ArrayList<>();
 		@Nullable
@@ -245,7 +247,8 @@ class SortableConfigValueFactoryTest {
 		}
 
 		@Override
-		public boolean setSortedValues(List<String> sortedValues) {
+		public boolean setSortedValues(Collection<String> allValues, List<String> sortedValues) {
+			savedAllValues.add(List.copyOf(allValues));
 			this.sortedValues = List.copyOf(sortedValues);
 			savedValues.add(this.sortedValues);
 			for (Runnable listener : List.copyOf(listeners)) {
