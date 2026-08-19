@@ -13,6 +13,7 @@ import net.mezzdev.config.api.value.IConfigValueBatchChangeListener;
 import net.mezzdev.config.api.value.IConfigValueChangeListener;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.model.ConfigValueChange;
 import org.junit.jupiter.api.AfterEach;
@@ -59,11 +60,39 @@ class RemoteConfigEditorTest {
 	}
 
 	@Test
-	void acceptedUpdateUsesServerPendingOverlayWithoutMutatingRemoteMirror() {
+	void readOnlySnapshotUsesTheEffectiveMirrorWithoutAnOverlay() {
 		RequestCapture capture = connectAndCapture();
 		TestConfigValue value = new TestConfigValue("effective");
 		TestConfigSchema schema = new TestConfigSchema(value);
 		IConfigScreenValue<String> screenValue = editor.createScreenValue(schema, value);
+		RemoteConfigMessage.SnapshotRequest snapshotRequest = (RemoteConfigMessage.SnapshotRequest) capture.take();
+
+		sendResponse(new RemoteConfigMessage.SnapshotResponse(
+			snapshotRequest.requestId(),
+			SCHEMA_KEY,
+			true,
+			false,
+			"Server operator permission is required.",
+			0,
+			List.of()
+		));
+
+		assertFalse(editor.isEditable(schema));
+		assertEquals("effective", screenValue.getValue());
+		assertEquals(0, schema.batchCount());
+		assertEquals(0, value.setCount());
+	}
+
+	@Test
+	void acceptedUpdateUsesServerPendingOverlayWithoutMutatingRemoteMirror() {
+		RequestCapture capture = connectAndCapture();
+		TestConfigValue value = new TestConfigValue("effective");
+		TestConfigSchema schema = new TestConfigSchema(value);
+		IConfigScreenValue<String> customizedValue = IConfigScreenValue.withApplyMode(
+			IConfigScreenValue.configValue(value),
+			ConfigValueApplyMode.IMMEDIATE
+		);
+		IConfigScreenValue<String> screenValue = editor.createScreenValue(schema, customizedValue);
 		RemoteConfigMessage.SnapshotRequest snapshotRequest = (RemoteConfigMessage.SnapshotRequest) capture.take();
 		sendResponse(new RemoteConfigMessage.SnapshotResponse(
 			snapshotRequest.requestId(),
@@ -77,6 +106,9 @@ class RemoteConfigEditorTest {
 
 		assertTrue(editor.isEditable(schema));
 		assertEquals("saved-before", screenValue.getValue());
+		assertEquals(ConfigValueApplyMode.IMMEDIATE, screenValue.getApplyMode());
+		assertEquals(ConfigValueRestartRequirement.GAME_RESTART, screenValue.getRestartRequirement());
+		assertTrue(screenValue.getConfigValue().filter(configValue -> configValue == value).isPresent());
 		CompletableFuture<Void> updateFuture = editor.requestUpdate(
 			schema,
 			List.of(new ConfigValueChange<>(screenValue, "saved-after"))

@@ -1,10 +1,15 @@
 package net.mezzdev.config.gui;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import net.mezzdev.config.api.schema.ConfigSchemaType;
+import net.mezzdev.config.api.schema.IConfigBatchUpdater;
+import net.mezzdev.config.api.schema.IConfigCategory;
 import net.mezzdev.config.api.schema.IConfigEditorCategory;
+import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.sorting.ISortingConfig;
 import net.mezzdev.config.api.value.ConfigValueEditMode;
 import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.value.IAppliedConfigValueChange;
 import net.mezzdev.config.api.value.IDeserializeResult;
 import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.api.value.IConfigValueBatchChangeListener;
@@ -26,6 +31,7 @@ import net.mezzdev.config.gui.api.IConfigValueIcon;
 import net.mezzdev.config.gui.api.IConfigValueIconProvider;
 import net.mezzdev.config.gui.config.ConfigGuiOptionsTestUtil;
 import net.mezzdev.config.gui.model.ConfigValueChange;
+import net.mezzdev.config.gui.remote.RemoteConfigEditor;
 import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryRegistry;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.network.chat.Component;
@@ -33,6 +39,7 @@ import org.junit.jupiter.api.Test;
 import org.lwjgl.glfw.GLFW;
 
 import java.lang.reflect.Field;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -46,6 +53,7 @@ import java.util.function.Consumer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -272,6 +280,40 @@ class ConfigGuiPluginLoaderTest {
 
 		assertEquals(List.of("controls"), categoryNames(categories));
 		assertEquals(List.of("mode"), valueNames(categories.getFirst()));
+	}
+
+	@Test
+	void customizedMezzConfigValuesReceiveRemoteWrappingAfterComposition() {
+		TestBackingConfigValue backingValue = new TestBackingConfigValue("restartRequiredValue");
+		TestRemoteConfigSchema backingSchema = new TestRemoteConfigSchema(backingValue);
+		IConfigScreenValue<String> customizedValue = IConfigScreenValue.withApplyMode(
+			IConfigScreenValue.configValue(backingValue),
+			ConfigValueApplyMode.IMMEDIATE
+		);
+		RemoteConfigEditor.onClientConnected(false);
+		try {
+			ConfigScreenSchema customizedSchema = ConfigGuiPluginLoader.createCustomizedScreenSchemaForTests(
+				MOD_ID,
+				() -> ConfigScreenSchema.from(backingSchema),
+				List.of(screenBuilder -> screenBuilder.configureCategory("general")
+					.clearDefaultValues()
+					.addScreenValue(customizedValue)),
+				lookup -> List.of()
+			);
+
+			IConfigScreenValue<?> result = customizedSchema.getCategories()
+				.getFirst()
+				.getConfigValues()
+				.iterator()
+				.next();
+
+			assertNotSame(customizedValue, result);
+			assertSame(backingValue, result.getIdentityKey());
+			assertEquals(ConfigValueApplyMode.IMMEDIATE, result.getApplyMode());
+			assertSame(backingSchema, customizedSchema.findBackingSchema(result).orElseThrow());
+		} finally {
+			RemoteConfigEditor.onClientDisconnect();
+		}
 	}
 
 	@Test
@@ -1217,6 +1259,83 @@ class ConfigGuiPluginLoaderTest {
 		@Override
 		public IConfigValueEditorSerializer<String> getSerializer() {
 			return TestSerializer.INSTANCE;
+		}
+	}
+
+	private static final class TestRemoteConfigSchema implements IConfigSchema {
+		private final TestRemoteConfigCategory category;
+
+		private TestRemoteConfigSchema(IConfigValue<String> value) {
+			this.category = new TestRemoteConfigCategory(value);
+		}
+
+		@Override
+		public String getId() {
+			return "server.ini";
+		}
+
+		@Override
+		public String getModId() {
+			return MOD_ID;
+		}
+
+		@Override
+		public ConfigSchemaType getType() {
+			return ConfigSchemaType.SERVER;
+		}
+
+		@Override
+		public boolean isActive() {
+			return true;
+		}
+
+		@Override
+		public Optional<Path> getPath() {
+			return Optional.empty();
+		}
+
+		@Override
+		public List<? extends IConfigCategory> getCategories() {
+			return List.of(category);
+		}
+
+		@Override
+		public List<? extends IConfigEditorCategory> getEditorCategories() {
+			return List.of(category);
+		}
+
+		@Override
+		public List<? extends IAppliedConfigValueChange<?>> batchUpdate(Consumer<IConfigBatchUpdater> updateBatch) {
+			throw new AssertionError("A remote schema must not be updated locally.");
+		}
+
+		@Override
+		public Runnable addBatchListener(IConfigValueBatchChangeListener listener) {
+			return () -> {};
+		}
+
+		@Override
+		public Runnable addPendingBatchListener(IConfigValueBatchChangeListener listener) {
+			return () -> {};
+		}
+	}
+
+	private record TestRemoteConfigCategory(
+		IConfigValue<String> value
+	) implements IConfigCategory, IConfigEditorCategory {
+		@Override
+		public String getName() {
+			return "general";
+		}
+
+		@Override
+		public String getLocalizationKey() {
+			return "test.general";
+		}
+
+		@Override
+		public List<? extends IConfigValue<?>> getConfigValues() {
+			return List.of(value);
 		}
 	}
 

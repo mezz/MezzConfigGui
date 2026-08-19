@@ -41,6 +41,9 @@ final class RemoteConfigRequestHandler implements AutoCloseable {
 	) {
 		try {
 			IConfigSchema schema = resolveSchema(request.schemaKey());
+			if (!canEdit) {
+				return readOnlySnapshot(request);
+			}
 			RevisionState revision = getRevisionState(schema);
 			return new RemoteConfigMessage.SnapshotResponse(
 				request.requestId(),
@@ -75,12 +78,12 @@ final class RemoteConfigRequestHandler implements AutoCloseable {
 			return unavailableUpdate(request, SCHEMA_UNAVAILABLE);
 		}
 
-		RevisionState revision = getRevisionState(schema);
 		if (!canEdit) {
-			return rejectedUpdate(request, schema, revision, false, PERMISSION_REQUIRED);
+			return permissionDeniedUpdate(request);
 		}
+		RevisionState revision = getRevisionState(schema);
 		if (request.expectedRevision() != revision.revision()) {
-			return rejectedUpdate(request, schema, revision, true, STALE_REVISION);
+			return rejectedUpdate(request, schema, revision, STALE_REVISION);
 		}
 
 		List<ResolvedUpdate<?>> updates;
@@ -99,14 +102,14 @@ final class RemoteConfigRequestHandler implements AutoCloseable {
 			));
 		} catch (RuntimeException exception) {
 			LOGGER.debug("Rejected remote config update validation for {}.", request.schemaKey(), exception);
-			return rejectedUpdate(request, schema, revision, true, INVALID_UPDATE);
+			return rejectedUpdate(request, schema, revision, INVALID_UPDATE);
 		}
 
 		try {
 			schema.batchUpdate(updater -> updates.forEach(update -> queueUpdate(updater, update)));
 		} catch (RuntimeException exception) {
 			LOGGER.debug("Rejected remote config update for {}.", request.schemaKey(), exception);
-			return rejectedUpdate(request, schema, revision, true, INVALID_UPDATE);
+			return rejectedUpdate(request, schema, revision, INVALID_UPDATE);
 		}
 
 		List<RemoteValueData> appliedSnapshot;
@@ -131,7 +134,6 @@ final class RemoteConfigRequestHandler implements AutoCloseable {
 		RemoteConfigMessage.UpdateRequest request,
 		IConfigSchema schema,
 		RevisionState revision,
-		boolean canEdit,
 		String error
 	) {
 		try {
@@ -139,7 +141,7 @@ final class RemoteConfigRequestHandler implements AutoCloseable {
 				request.requestId(),
 				request.schemaKey(),
 				false,
-				canEdit,
+				true,
 				error,
 				revision.revision(),
 				serializeSnapshot(schema)
@@ -148,6 +150,34 @@ final class RemoteConfigRequestHandler implements AutoCloseable {
 			LOGGER.error("Failed to serialize rejected remote config update response for {}.", request.schemaKey(), exception);
 			return unavailableUpdate(request, error);
 		}
+	}
+
+	private static RemoteConfigMessage.SnapshotResponse readOnlySnapshot(
+		RemoteConfigMessage.SnapshotRequest request
+	) {
+		return new RemoteConfigMessage.SnapshotResponse(
+			request.requestId(),
+			request.schemaKey(),
+			true,
+			false,
+			PERMISSION_REQUIRED,
+			0,
+			List.of()
+		);
+	}
+
+	private static RemoteConfigMessage.UpdateResponse permissionDeniedUpdate(
+		RemoteConfigMessage.UpdateRequest request
+	) {
+		return new RemoteConfigMessage.UpdateResponse(
+			request.requestId(),
+			request.schemaKey(),
+			false,
+			false,
+			PERMISSION_REQUIRED,
+			0,
+			List.of()
+		);
 	}
 
 	private static RemoteConfigMessage.SnapshotResponse unavailableSnapshot(

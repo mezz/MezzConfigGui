@@ -55,6 +55,29 @@ class RemoteConfigPayloadTest {
 			List.of(new RemoteValueData(new RemoteValueKey("general", "value"), oversized))
 		);
 		assertThrows(IllegalArgumentException.class, () -> RemoteConfigPayloadCodec.encode(request));
+
+		String oversizedMultibyte = "\u0800".repeat(RemoteConfigPayloadCodec.MAX_SERIALIZED_VALUE_BYTES / 3 + 1);
+		RemoteConfigMessage.UpdateRequest multibyteRequest = new RemoteConfigMessage.UpdateRequest(
+			2,
+			SCHEMA_KEY,
+			0,
+			List.of(new RemoteValueData(new RemoteValueKey("general", "value"), oversizedMultibyte))
+		);
+		assertThrows(IllegalArgumentException.class, () -> RemoteConfigPayloadCodec.encode(multibyteRequest));
+	}
+
+	@Test
+	void boundsEncodingAcrossIndividuallyValidValues() {
+		String maximumValue = "x".repeat(RemoteConfigPayloadCodec.MAX_SERIALIZED_VALUE_BYTES);
+		List<RemoteValueData> values = List.of(
+			new RemoteValueData(new RemoteValueKey("general", "first"), maximumValue),
+			new RemoteValueData(new RemoteValueKey("general", "second"), maximumValue),
+			new RemoteValueData(new RemoteValueKey("general", "third"), maximumValue),
+			new RemoteValueData(new RemoteValueKey("general", "fourth"), maximumValue)
+		);
+		RemoteConfigMessage.UpdateRequest request = new RemoteConfigMessage.UpdateRequest(1, SCHEMA_KEY, 0, values);
+
+		assertThrows(IllegalArgumentException.class, () -> RemoteConfigPayloadCodec.encode(request));
 	}
 
 	@Test

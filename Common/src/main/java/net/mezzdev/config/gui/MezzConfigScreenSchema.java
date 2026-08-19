@@ -6,7 +6,6 @@ import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
-import net.mezzdev.config.gui.remote.RemoteConfigEditor;
 import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
@@ -66,7 +65,7 @@ final class MezzConfigScreenSchema implements ConfigScreenSchema {
 				() -> "Storage category is not in this schema's editor categories: " + category.getName()
 			);
 			for (IConfigValue<?> value : category.getConfigValues()) {
-				IConfigScreenValue<?> screenValue = RemoteConfigEditor.getInstance().createScreenValue(schema, value);
+				IConfigScreenValue<?> screenValue = IConfigScreenValue.configValue(value);
 				List<? extends IConfigEditorCategory> valueEditorCategories = value.getEditorCategories();
 				if (valueEditorCategories.isEmpty()) {
 					storageCategory.addValue(screenValue);

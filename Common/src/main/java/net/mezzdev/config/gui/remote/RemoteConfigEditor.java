@@ -76,12 +76,18 @@ public final class RemoteConfigEditor {
 	public <T> IConfigScreenValue<T> createScreenValue(IConfigSchema schema, IConfigValue<T> value) {
 		Objects.requireNonNull(schema, "schema");
 		Objects.requireNonNull(value, "value");
-		IConfigScreenValue<T> delegate = IConfigScreenValue.configValue(value);
+		return createScreenValue(schema, IConfigScreenValue.configValue(value));
+	}
+
+	public <T> IConfigScreenValue<T> createScreenValue(IConfigSchema schema, IConfigScreenValue<T> value) {
+		Objects.requireNonNull(schema, "schema");
+		IConfigScreenValue<T> delegate = Objects.requireNonNull(value, "value");
 		if (!isRemoteSchema(schema)) {
 			return delegate;
 		}
+		IConfigValue<T> backingValue = findBackingValue(schema, delegate);
 		ensureSnapshot(schema);
-		return new RemoteConfigScreenValue<>(this, schema, value, delegate);
+		return new RemoteConfigScreenValue<>(this, schema, backingValue, delegate);
 	}
 
 	public void ensureSnapshot(IConfigSchema schema) {
@@ -319,8 +325,11 @@ public final class RemoteConfigEditor {
 		List<RemoteValueData> pendingValues
 	) {
 		SchemaState oldState = states.get(schema);
-		if (!available) {
-			states.put(schema, new SchemaState(false, false, revision, new IdentityHashMap<>()));
+		if (!available || !canEdit) {
+			if (!pendingValues.isEmpty()) {
+				throw new IllegalArgumentException("A read-only remote config response must not contain pending values.");
+			}
+			states.put(schema, new SchemaState(available, false, revision, new IdentityHashMap<>()));
 			return createNotifications(schema, oldState, states.get(schema));
 		}
 		Map<IConfigValue<?>, Object> values = deserializeSnapshot(schema, pendingValues);
@@ -421,6 +430,24 @@ public final class RemoteConfigEditor {
 			.orElseThrow(() -> new IllegalArgumentException(
 				"Config value does not have a MezzConfig backing value in this schema: " + screenValue.getName()
 			));
+	}
+
+	@SuppressWarnings("unchecked")
+	private static <T> IConfigValue<T> findBackingValue(
+		IConfigSchema schema,
+		IConfigScreenValue<T> screenValue
+	) {
+		Object identityKey = screenValue.getIdentityKey();
+		for (IConfigCategory category : schema.getCategories()) {
+			for (IConfigValue<?> value : category.getConfigValues()) {
+				if (value == identityKey) {
+					return (IConfigValue<T>) value;
+				}
+			}
+		}
+		throw new IllegalArgumentException(
+			"Config value does not have a MezzConfig backing value in this schema: " + screenValue.getName()
+		);
 	}
 
 	@SuppressWarnings("unchecked")

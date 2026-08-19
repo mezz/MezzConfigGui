@@ -79,7 +79,31 @@ class RemoteConfigRequestHandlerTest {
 			assertFalse(response.canEdit());
 			assertEquals(0, schema.batchCount());
 			assertEquals("old", value.getValue());
-			assertEquals(List.of(value("value", "old")), response.pendingValues());
+			assertEquals(List.of(), response.pendingValues());
+		}
+	}
+
+	@Test
+	void permissionDenialDoesNotSerializePendingValues() {
+		TestConfigValue value = new TestConfigValue("value", "secret", true, RejectingSerializeSerializer.INSTANCE);
+		TestConfigSchema schema = TestConfigSchema.create(value);
+		try (RemoteConfigRequestHandler handler = new RemoteConfigRequestHandler(() -> List.of(schema))) {
+			RemoteConfigMessage.SnapshotResponse snapshot = handler.handleSnapshot(
+				new RemoteConfigMessage.SnapshotRequest(1, SCHEMA_KEY),
+				false
+			);
+			RemoteConfigMessage.UpdateResponse update = handler.handleUpdate(
+				new RemoteConfigMessage.UpdateRequest(2, SCHEMA_KEY, 0, List.of(value("value", "new"))),
+				false
+			);
+
+			assertTrue(snapshot.available());
+			assertFalse(snapshot.canEdit());
+			assertEquals(List.of(), snapshot.pendingValues());
+			assertFalse(update.accepted());
+			assertFalse(update.canEdit());
+			assertEquals(List.of(), update.pendingValues());
+			assertEquals(0, schema.batchCount());
 		}
 	}
 
@@ -296,13 +320,24 @@ class RemoteConfigRequestHandlerTest {
 		private final String name;
 		private final String defaultValue;
 		private final boolean restartRequired;
+		private final IConfigValueSerializer<String> serializer;
 		private String effectiveValue;
 		private String pendingValue;
 
 		private TestConfigValue(String name, String value, boolean restartRequired) {
+			this(name, value, restartRequired, TestSerializer.INSTANCE);
+		}
+
+		private TestConfigValue(
+			String name,
+			String value,
+			boolean restartRequired,
+			IConfigValueSerializer<String> serializer
+		) {
 			this.name = name;
 			this.defaultValue = value;
 			this.restartRequired = restartRequired;
+			this.serializer = serializer;
 			this.effectiveValue = value;
 			this.pendingValue = value;
 		}
@@ -389,7 +424,7 @@ class RemoteConfigRequestHandlerTest {
 
 		@Override
 		public IConfigValueSerializer<String> getSerializer() {
-			return TestSerializer.INSTANCE;
+			return serializer;
 		}
 	}
 
@@ -433,6 +468,30 @@ class RemoteConfigRequestHandlerTest {
 		@Override
 		public String getValidValuesDescription() {
 			return "any string except invalid";
+		}
+	}
+
+	private enum RejectingSerializeSerializer implements IConfigValueSerializer<String> {
+		INSTANCE;
+
+		@Override
+		public String serialize(String value) {
+			throw new AssertionError("Unauthorized requests must not serialize pending server values.");
+		}
+
+		@Override
+		public IDeserializeResult<String> deserialize(String string) {
+			return IDeserializeResult.success(string);
+		}
+
+		@Override
+		public boolean isValid(String value) {
+			return true;
+		}
+
+		@Override
+		public String getValidValuesDescription() {
+			return "any string";
 		}
 	}
 }

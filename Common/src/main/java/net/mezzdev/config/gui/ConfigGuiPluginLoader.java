@@ -21,6 +21,7 @@ import net.mezzdev.config.gui.api.ISortingConfigGuiBuilder;
 import net.mezzdev.config.gui.api.ISortableConfigValueFactory;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.keybindings.KeyMappingConfigValues;
+import net.mezzdev.config.gui.remote.RemoteConfigEditor;
 import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryEntry;
 import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryRegistry;
 import net.mezzdev.config.gui.util.ConfigNameUtil;
@@ -894,6 +895,7 @@ final class ConfigGuiPluginLoader {
 		private final ConfigScreenSchema schema;
 		private final List<ConfiguredScreenCategory> configuredCategories;
 		private final boolean clearDefaultCategories;
+		private final ConfigScreenValueProvider defaultKeyMappingsProvider;
 
 		public CustomizedConfigScreenSchema(
 			String modId,
@@ -901,20 +903,100 @@ final class ConfigGuiPluginLoader {
 			List<ConfiguredScreenCategory> configuredCategories,
 			boolean clearDefaultCategories
 		) {
+			this(modId, schema, configuredCategories, clearDefaultCategories, DEFAULT_KEY_MAPPINGS_PROVIDER);
+		}
+
+		private CustomizedConfigScreenSchema(
+			String modId,
+			ConfigScreenSchema schema,
+			List<ConfiguredScreenCategory> configuredCategories,
+			boolean clearDefaultCategories,
+			ConfigScreenValueProvider defaultKeyMappingsProvider
+		) {
 			this.modId = modId;
 			this.schema = schema;
 			this.configuredCategories = List.copyOf(configuredCategories);
 			this.clearDefaultCategories = clearDefaultCategories;
+			this.defaultKeyMappingsProvider = defaultKeyMappingsProvider;
 		}
 
 		@Override
 		public List<? extends ConfigScreenCategory> getCategories() {
-			return createScreenCategories(modId, schema.getCategories(), configuredCategories, clearDefaultCategories);
+			List<ConfigScreenCategory> categories = createScreenCategories(
+				modId,
+				schema.getCategories(),
+				configuredCategories,
+				clearDefaultCategories,
+				defaultKeyMappingsProvider
+			);
+			return categories.stream()
+				.map(this::wrapRemoteValues)
+				.toList();
 		}
 
 		@Override
 		public Optional<IConfigSchema> findBackingSchema(IConfigScreenValue<?> value) {
 			return schema.findBackingSchema(value);
+		}
+
+		private ConfigScreenCategory wrapRemoteValues(ConfigScreenCategory category) {
+			List<IConfigScreenValue<?>> values = new ArrayList<>();
+			boolean wrapped = false;
+			for (IConfigScreenValue<?> value : category.getConfigValues()) {
+				IConfigScreenValue<?> resolvedValue = wrapRemoteValue(value);
+				values.add(resolvedValue);
+				wrapped |= resolvedValue != value;
+			}
+			if (!wrapped) {
+				return category;
+			}
+			return new ConfigScreenCategoryWithValues(category, values);
+		}
+
+		private <T> IConfigScreenValue<T> wrapRemoteValue(IConfigScreenValue<T> value) {
+			return schema.findBackingSchema(value)
+				.filter(RemoteConfigEditor::isRemoteSchema)
+				.map(backingSchema -> RemoteConfigEditor.getInstance().createScreenValue(backingSchema, value))
+				.orElse(value);
+		}
+	}
+
+	private record ConfigScreenCategoryWithValues(
+		ConfigScreenCategory delegate,
+		List<IConfigScreenValue<?>> values
+	) implements ConfigScreenCategory {
+		private ConfigScreenCategoryWithValues {
+			values = List.copyOf(values);
+		}
+
+		@Override
+		public ConfigScreenCategoryGroup getGroup() {
+			return delegate.getGroup();
+		}
+
+		@Override
+		public String getName() {
+			return delegate.getName();
+		}
+
+		@Override
+		public String getLocalizationKey() {
+			return delegate.getLocalizationKey();
+		}
+
+		@Override
+		public Component getLocalizedName() {
+			return delegate.getLocalizedName();
+		}
+
+		@Override
+		public Component getLocalizedDescription() {
+			return delegate.getLocalizedDescription();
+		}
+
+		@Override
+		public Collection<? extends IConfigScreenValue<?>> getConfigValues() {
+			return values;
 		}
 	}
 
@@ -980,9 +1062,9 @@ final class ConfigGuiPluginLoader {
 		}
 		List<ConfiguredScreenCategory> configuredCategories = screenBuilder.getCategories();
 		boolean clearDefaultCategories = screenBuilder.isClearDefaultCategories();
-		return () -> createScreenCategories(
+		return new CustomizedConfigScreenSchema(
 			modId,
-			schema.getCategories(),
+			schema,
 			configuredCategories,
 			clearDefaultCategories,
 			defaultKeyMappingsProvider
