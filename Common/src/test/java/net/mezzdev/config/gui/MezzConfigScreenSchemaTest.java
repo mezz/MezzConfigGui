@@ -9,6 +9,8 @@ import net.mezzdev.config.api.value.ConfigValueEditMode;
 import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IAppliedConfigValueChange;
 import net.mezzdev.config.api.value.IConfigValue;
+import net.mezzdev.config.api.value.IConfigValueBatchChangeListener;
+import net.mezzdev.config.api.value.IConfigValueChangeListener;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.api.value.IDeserializeResult;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
@@ -21,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -299,6 +300,11 @@ class MezzConfigScreenSchemaTest {
 		}
 
 		@Override
+		public String getId() {
+			return path.toString();
+		}
+
+		@Override
 		public String getModId() {
 			return modId;
 		}
@@ -310,11 +316,6 @@ class MezzConfigScreenSchemaTest {
 
 		@Override
 		public boolean isActive() {
-			return active;
-		}
-
-		@Override
-		public boolean canEdit() {
 			return active;
 		}
 
@@ -342,17 +343,12 @@ class MezzConfigScreenSchemaTest {
 		}
 
 		@Override
-		public CompletableFuture<Void> requestBatchUpdate(Consumer<IConfigBatchUpdater> updateBatch) {
-			return CompletableFuture.completedFuture(null);
-		}
-
-		@Override
-		public Runnable addBatchListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
+		public Runnable addBatchListener(IConfigValueBatchChangeListener listener) {
 			return () -> {};
 		}
 
 		@Override
-		public Runnable addPendingBatchListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
+		public Runnable addPendingBatchListener(IConfigValueBatchChangeListener listener) {
 			return () -> {};
 		}
 	}
@@ -465,22 +461,22 @@ class MezzConfigScreenSchemaTest {
 		}
 
 		@Override
-		public Runnable addListener(Consumer<? super IAppliedConfigValueChange<String>> listener) {
+		public Runnable addListener(IConfigValueChangeListener<String> listener) {
 			return () -> {};
 		}
 
 		@Override
-		public Runnable addPendingListener(Consumer<? super IAppliedConfigValueChange<String>> listener) {
+		public Runnable addPendingListener(IConfigValueChangeListener<String> listener) {
 			return () -> {};
 		}
 
 		@Override
-		public Runnable addBatchListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
+		public Runnable addBatchListener(IConfigValueBatchChangeListener listener) {
 			return () -> {};
 		}
 
 		@Override
-		public Runnable addPendingBatchListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
+		public Runnable addPendingBatchListener(IConfigValueBatchChangeListener listener) {
 			return () -> {};
 		}
 
@@ -493,7 +489,7 @@ class MezzConfigScreenSchemaTest {
 	private static final class TestPendingConfigValue implements IConfigValue<String> {
 		private final String effectiveValue;
 		private String pendingValue;
-		private Consumer<? super IAppliedConfigValueChange<String>> pendingListener = ignored -> {};
+		private IConfigValueChangeListener<String> pendingListener = ignored -> {};
 
 		private TestPendingConfigValue(String value) {
 			this.effectiveValue = value;
@@ -547,28 +543,28 @@ class MezzConfigScreenSchemaTest {
 				return false;
 			}
 			pendingValue = value;
-			pendingListener.accept(new TestAppliedConfigValueChange(this, oldValue, value));
+			pendingListener.onConfigValueChanged(new TestAppliedConfigValueChange(this, oldValue, value));
 			return true;
 		}
 
 		@Override
-		public Runnable addListener(Consumer<? super IAppliedConfigValueChange<String>> listener) {
+		public Runnable addListener(IConfigValueChangeListener<String> listener) {
 			return () -> {};
 		}
 
 		@Override
-		public Runnable addPendingListener(Consumer<? super IAppliedConfigValueChange<String>> listener) {
+		public Runnable addPendingListener(IConfigValueChangeListener<String> listener) {
 			pendingListener = listener;
 			return () -> pendingListener = ignored -> {};
 		}
 
 		@Override
-		public Runnable addBatchListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
+		public Runnable addBatchListener(IConfigValueBatchChangeListener listener) {
 			return () -> {};
 		}
 
 		@Override
-		public Runnable addPendingBatchListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
+		public Runnable addPendingBatchListener(IConfigValueBatchChangeListener listener) {
 			return () -> {};
 		}
 

@@ -9,6 +9,8 @@ import net.mezzdev.config.api.value.ConfigValueEditMode;
 import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IAppliedConfigValueChange;
 import net.mezzdev.config.api.value.IConfigValue;
+import net.mezzdev.config.api.value.IConfigValueBatchChangeListener;
+import net.mezzdev.config.api.value.IConfigValueChangeListener;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.api.value.IDeserializeResult;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
@@ -17,12 +19,12 @@ import net.mezzdev.config.gui.model.AppliedConfigValueChange;
 import net.mezzdev.config.gui.model.ConfigValueChange;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -55,12 +57,12 @@ class ConfigChangesHandlerTest {
 	}
 
 	@Test
-	void batchesSchemaChangesAndWaitsForAuthoritativeCompletion() {
+	void batchesLocalClientSchemaChangesSynchronously() {
 		TestMezzConfigValue first = new TestMezzConfigValue("first");
 		TestMezzConfigValue second = new TestMezzConfigValue("second");
 		IConfigScreenValue<String> firstScreenValue = new IdentityOnlyScreenValue(IConfigScreenValue.configValue(first));
 		IConfigScreenValue<String> secondScreenValue = IConfigScreenValue.configValue(second);
-		TestConfigSchema schema = new TestConfigSchema(first, second);
+		TestConfigSchema schema = new TestConfigSchema(ConfigSchemaType.CLIENT, Optional.of(Path.of("client.ini")), first, second);
 
 		CompletableFuture<ConfigChangesResult> resultFuture = ConfigChangesHandler.applyBySchema(
 			List.of(
@@ -70,12 +72,8 @@ class ConfigChangesHandlerTest {
 			ignored -> Optional.of(schema)
 		);
 
-		assertFalse(resultFuture.isDone());
-		assertEquals(1, schema.getRequestCount());
-		assertEquals("first", first.getValue());
-		assertEquals("second", second.getValue());
-
-		schema.completeRequest();
+		assertTrue(resultFuture.isDone());
+		assertEquals(1, schema.getBatchCount());
 		ConfigChangesResult result = resultFuture.join();
 
 		assertTrue(result.succeeded());
@@ -85,11 +83,32 @@ class ConfigChangesHandlerTest {
 	}
 
 	@Test
+	void batchesLocallyAuthoritativeServerSchemaChangesSynchronously() {
+		TestMezzConfigValue value = new TestMezzConfigValue("server");
+		IConfigScreenValue<String> screenValue = IConfigScreenValue.configValue(value);
+		TestConfigSchema schema = new TestConfigSchema(
+			ConfigSchemaType.SERVER,
+			Optional.of(Path.of("serverconfig/server.ini")),
+			value
+		);
+
+		ConfigChangesResult result = ConfigChangesHandler.applyBySchema(
+			List.of(new ConfigValueChange<>(screenValue, "changed")),
+			ignored -> Optional.of(schema)
+		).join();
+
+		assertTrue(result.succeeded());
+		assertEquals(1, schema.getBatchCount());
+		assertEquals("changed", value.getValue());
+	}
+
+	@Test
 	void recordsPendingRestartRequiredChangesWithoutChangingEffectiveValue() {
 		TestMezzConfigValue restartRequiredValue = new TestMezzConfigValue("restartRequired", true);
 		IConfigScreenValue<String> screenValue = IConfigScreenValue.configValue(restartRequiredValue);
 		TestConfigSchema schema = new TestConfigSchema(
 			ConfigSchemaType.CLIENT,
+			Optional.of(Path.of("client.ini")),
 			restartRequiredValue
 		);
 
@@ -98,7 +117,6 @@ class ConfigChangesHandlerTest {
 			ignored -> Optional.of(schema)
 		);
 
-		schema.completeRequest();
 		ConfigChangesResult result = resultFuture.join();
 
 		assertTrue(result.succeeded());
@@ -120,8 +138,9 @@ class ConfigChangesHandlerTest {
 			ConfigValueRestartRequirement.NONE,
 			false
 		);
-		TestConfigSchema schema = new TestConfigSchema(remote);
+		TestConfigSchema schema = new TestConfigSchema(ConfigSchemaType.SERVER, Optional.empty(), remote);
 		List<Runnable> continuationTasks = new ArrayList<>();
+		CompletableFuture<Void> remoteRequest = new CompletableFuture<>();
 
 		CompletableFuture<ConfigChangesResult> resultFuture = ConfigChangesHandler.applyBySchema(
 			List.of(
@@ -134,10 +153,13 @@ class ConfigChangesHandlerTest {
 				}
 				return Optional.empty();
 			},
-			continuationTasks::add
+			continuationTasks::add,
+			(ignoredSchema, ignoredChanges) -> remoteRequest
 		);
 
-		schema.completeRequest();
+		assertEquals(0, schema.getBatchCount());
+		assertEquals(0, remote.getSetCount());
+		remoteRequest.complete(null);
 
 		assertFalse(resultFuture.isDone());
 		assertEquals("local", localScreenValue.getValue());
@@ -212,21 +234,23 @@ class ConfigChangesHandlerTest {
 
 	private static final class TestConfigSchema implements IConfigSchema {
 		private final ConfigSchemaType type;
+		private final Optional<Path> path;
 		private final List<IConfigValue<?>> configValues;
-		private final List<Runnable> pendingUpdates = new ArrayList<>();
-		private CompletableFuture<Void> request = new CompletableFuture<>();
-		private int requestCount;
-
-		private TestConfigSchema(IConfigValue<?>... configValues) {
-			this(ConfigSchemaType.SERVER, configValues);
-		}
+		private int batchCount;
 
 		private TestConfigSchema(
 			ConfigSchemaType type,
+			Optional<Path> path,
 			IConfigValue<?>... configValues
 		) {
 			this.type = type;
+			this.path = path;
 			this.configValues = List.of(configValues);
+		}
+
+		@Override
+		public String getId() {
+			return "test.ini";
 		}
 
 		@Override
@@ -245,13 +269,8 @@ class ConfigChangesHandlerTest {
 		}
 
 		@Override
-		public boolean canEdit() {
-			return true;
-		}
-
-		@Override
-		public Optional<java.nio.file.Path> getPath() {
-			return Optional.empty();
+		public Optional<Path> getPath() {
+			return path;
 		}
 
 		@Override
@@ -266,39 +285,29 @@ class ConfigChangesHandlerTest {
 
 		@Override
 		public List<? extends IAppliedConfigValueChange<?>> batchUpdate(Consumer<IConfigBatchUpdater> updateBatch) {
-			throw new UnsupportedOperationException();
-		}
-
-		@Override
-		public CompletionStage<Void> requestBatchUpdate(Consumer<IConfigBatchUpdater> updateBatch) {
-			requestCount++;
+			batchCount++;
 			updateBatch.accept(new IConfigBatchUpdater() {
 				@Override
 				public <T> IConfigBatchUpdater set(IConfigValue<T> configValue, T value) {
-					pendingUpdates.add(() -> configValue.set(value));
+					configValue.set(value);
 					return this;
 				}
 			});
-			return request.minimalCompletionStage();
+			return List.of();
 		}
 
 		@Override
-		public Runnable addBatchListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
+		public Runnable addBatchListener(IConfigValueBatchChangeListener listener) {
 			return () -> {};
 		}
 
 		@Override
-		public Runnable addPendingBatchListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
+		public Runnable addPendingBatchListener(IConfigValueBatchChangeListener listener) {
 			return () -> {};
 		}
 
-		private int getRequestCount() {
-			return requestCount;
-		}
-
-		private void completeRequest() {
-			pendingUpdates.forEach(Runnable::run);
-			request.complete(null);
+		private int getBatchCount() {
+			return batchCount;
 		}
 	}
 
@@ -380,6 +389,7 @@ class ConfigChangesHandlerTest {
 		private final boolean restartRequired;
 		private String value;
 		private String pendingValue;
+		private int setCount;
 
 		private TestMezzConfigValue(String value) {
 			this(value, false);
@@ -437,6 +447,7 @@ class ConfigChangesHandlerTest {
 
 		@Override
 		public boolean set(String value) {
+			setCount++;
 			String storedValue = this.value;
 			if (restartRequired) {
 				storedValue = pendingValue;
@@ -454,28 +465,32 @@ class ConfigChangesHandlerTest {
 		}
 
 		@Override
-		public Runnable addListener(Consumer<? super IAppliedConfigValueChange<String>> listener) {
+		public Runnable addListener(IConfigValueChangeListener<String> listener) {
 			return () -> {};
 		}
 
 		@Override
-		public Runnable addPendingListener(Consumer<? super IAppliedConfigValueChange<String>> listener) {
+		public Runnable addPendingListener(IConfigValueChangeListener<String> listener) {
 			return () -> {};
 		}
 
 		@Override
-		public Runnable addBatchListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
+		public Runnable addBatchListener(IConfigValueBatchChangeListener listener) {
 			return () -> {};
 		}
 
 		@Override
-		public Runnable addPendingBatchListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
+		public Runnable addPendingBatchListener(IConfigValueBatchChangeListener listener) {
 			return () -> {};
 		}
 
 		@Override
 		public IConfigValueSerializer<String> getSerializer() {
 			return TestSerializer.INSTANCE;
+		}
+
+		private int getSetCount() {
+			return setCount;
 		}
 	}
 

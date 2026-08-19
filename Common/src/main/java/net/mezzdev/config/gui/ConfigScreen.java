@@ -18,6 +18,7 @@ import net.mezzdev.config.gui.model.ConfigScreenModel;
 import net.mezzdev.config.gui.model.ConfigValueChange;
 import net.mezzdev.config.gui.popup.ConfigPopupSelector;
 import net.mezzdev.config.gui.popup.ConfigValueSelectorInputHandler;
+import net.mezzdev.config.gui.remote.RemoteConfigEditor;
 import net.mezzdev.config.gui.screenlist.ConfigScreenListEntry;
 import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
@@ -205,7 +206,7 @@ public class ConfigScreen extends MezzConfigScreen {
 			entryWidget = entryWidgetFactory.create(configValue);
 			entryWidget.setImmediateChangeHandler(this::applyImmediateChange);
 			entryWidget.setEditableSupplier(() -> !changeRequestPending && backingSchema
-				.map(IConfigSchema::canEdit)
+				.map(RemoteConfigEditor.getInstance()::isEditable)
 				.orElse(true));
 			entryWidgetsByValueKey.put(identityKey, entryWidget);
 			allEntryWidgets.add(entryWidget);

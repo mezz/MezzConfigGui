@@ -2,11 +2,13 @@ package net.mezzdev.config.gui;
 
 import net.mezzdev.config.api.schema.IConfigBatchUpdater;
 import net.mezzdev.config.api.schema.IConfigSchema;
+import net.mezzdev.config.api.schema.ConfigSchemaType;
 import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.model.AppliedConfigValueChange;
 import net.mezzdev.config.gui.model.ConfigValueChange;
+import net.mezzdev.config.gui.remote.RemoteConfigEditor;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -34,9 +36,24 @@ interface ConfigChangesHandler {
 		Function<IConfigScreenValue<?>, Optional<IConfigSchema>> schemaResolver,
 		Executor continuationExecutor
 	) {
+		return applyBySchema(
+			changes,
+			schemaResolver,
+			continuationExecutor,
+			RemoteConfigEditor.getInstance()::requestUpdate
+		);
+	}
+
+	static CompletableFuture<ConfigChangesResult> applyBySchema(
+		List<ConfigValueChange<?>> changes,
+		Function<IConfigScreenValue<?>, Optional<IConfigSchema>> schemaResolver,
+		Executor continuationExecutor,
+		RemoteChangesHandler remoteChangesHandler
+	) {
 		Objects.requireNonNull(changes, "changes");
 		Objects.requireNonNull(schemaResolver, "schemaResolver");
 		Objects.requireNonNull(continuationExecutor, "continuationExecutor");
+		Objects.requireNonNull(remoteChangesHandler, "remoteChangesHandler");
 		List<ConfigChangeBatch> batches = createBatches(changes, schemaResolver);
 		CompletableFuture<ConfigChangesResult> result = CompletableFuture.completedFuture(ConfigChangesResult.success());
 		for (ConfigChangeBatch batch : batches) {
@@ -44,7 +61,7 @@ interface ConfigChangesHandler {
 				if (!previousResult.succeeded()) {
 					return CompletableFuture.completedFuture(previousResult);
 				}
-				return batch.apply()
+				return batch.apply(remoteChangesHandler)
 					.thenApply(previousResult::append);
 			};
 			if (result.isDone()) {
@@ -106,7 +123,8 @@ interface ConfigChangesHandler {
 
 	private static CompletableFuture<ConfigChangesResult> applySchemaChanges(
 		IConfigSchema schema,
-		List<ConfigValueChange<?>> changes
+		List<ConfigValueChange<?>> changes,
+		RemoteChangesHandler remoteChangesHandler
 	) {
 		List<AppliedChangeCandidate<?>> candidates = new ArrayList<>();
 		CompletableFuture<Void> request;
@@ -114,10 +132,18 @@ interface ConfigChangesHandler {
 			for (ConfigValueChange<?> change : changes) {
 				candidates.add(createCandidate(change));
 			}
-			request = Objects.requireNonNull(
-				schema.requestBatchUpdate(updater -> changes.forEach(change -> queueChange(updater, schema, change))),
-				"schema request result"
-			).toCompletableFuture();
+			if (!schema.isActive()) {
+				throw new IllegalStateException("This config schema is not active.");
+			}
+			if (schema.getType() != ConfigSchemaType.SERVER || schema.getPath().isPresent()) {
+				schema.batchUpdate(updater -> changes.forEach(change -> queueChange(updater, schema, change)));
+				request = CompletableFuture.completedFuture(null);
+			} else {
+				request = Objects.requireNonNull(
+					remoteChangesHandler.requestUpdate(schema, changes),
+					"remote config request result"
+				);
+			}
 		} catch (RuntimeException exception) {
 			return CompletableFuture.completedFuture(ConfigChangesResult.failure(changes.getFirst(), exception));
 		}
@@ -202,12 +228,17 @@ interface ConfigChangesHandler {
 		IConfigSchema schema,
 		List<ConfigValueChange<?>> changes
 	) {
-		private CompletableFuture<ConfigChangesResult> apply() {
+		private CompletableFuture<ConfigChangesResult> apply(RemoteChangesHandler remoteChangesHandler) {
 			if (schema == null) {
 				return CompletableFuture.completedFuture(applySequentially(changes));
 			}
-			return applySchemaChanges(schema, changes);
+			return applySchemaChanges(schema, changes, remoteChangesHandler);
 		}
+	}
+
+	@FunctionalInterface
+	interface RemoteChangesHandler {
+		CompletableFuture<Void> requestUpdate(IConfigSchema schema, List<ConfigValueChange<?>> changes);
 	}
 
 	record AppliedChangeCandidate<T>(

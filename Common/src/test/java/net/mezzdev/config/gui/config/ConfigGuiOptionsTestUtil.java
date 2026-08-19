@@ -3,16 +3,16 @@ package net.mezzdev.config.gui.config;
 import net.mezzdev.config.api.schema.IConfigEditorCategory;
 import net.mezzdev.config.api.value.ConfigValueEditMode;
 import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
-import net.mezzdev.config.api.value.IAppliedConfigValueChange;
 import net.mezzdev.config.api.value.IDeserializeResult;
 import net.mezzdev.config.api.value.IConfigValue;
+import net.mezzdev.config.api.value.IConfigValueBatchChangeListener;
+import net.mezzdev.config.api.value.IConfigValueChangeListener;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 public final class ConfigGuiOptionsTestUtil {
 	private ConfigGuiOptionsTestUtil() {
@@ -115,22 +115,22 @@ public final class ConfigGuiOptionsTestUtil {
 		}
 
 		@Override
-		public Runnable addListener(Consumer<? super IAppliedConfigValueChange<T>> listener) {
+		public Runnable addListener(IConfigValueChangeListener<T> listener) {
 			return () -> {};
 		}
 
 		@Override
-		public Runnable addPendingListener(Consumer<? super IAppliedConfigValueChange<T>> listener) {
+		public Runnable addPendingListener(IConfigValueChangeListener<T> listener) {
 			return () -> {};
 		}
 
 		@Override
-		public Runnable addBatchListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
+		public Runnable addBatchListener(IConfigValueBatchChangeListener listener) {
 			return () -> {};
 		}
 
 		@Override
-		public Runnable addPendingBatchListener(Consumer<? super List<? extends IAppliedConfigValueChange<?>>> listener) {
+		public Runnable addPendingBatchListener(IConfigValueBatchChangeListener listener) {
 			return () -> {};
 		}
 
