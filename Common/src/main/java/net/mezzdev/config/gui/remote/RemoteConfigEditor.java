@@ -7,8 +7,10 @@ import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.api.value.IDeserializeResult;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
+import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.model.ConfigValueChange;
+import net.minecraft.network.chat.Component;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -87,6 +89,9 @@ public final class RemoteConfigEditor {
 		}
 		IConfigValue<T> backingValue = findBackingValue(schema, delegate);
 		ensureSnapshot(schema);
+		if (delegate instanceof IConfigLocalizedValue localizedValue) {
+			return new LocalizedRemoteValue<>(this, schema, backingValue, delegate, localizedValue);
+		}
 		return new RemoteConfigScreenValue<>(this, schema, backingValue, delegate);
 	}
 
@@ -692,7 +697,7 @@ public final class RemoteConfigEditor {
 
 	private record ValueNotification(Consumer<Object> listener, Object value) {}
 
-	private static final class RemoteConfigScreenValue<T> implements IConfigScreenValue<T> {
+	private static class RemoteConfigScreenValue<T> implements IConfigScreenValue<T> {
 		private final RemoteConfigEditor editor;
 		private final IConfigSchema schema;
 		private final IConfigValue<T> backingValue;
@@ -788,6 +793,31 @@ public final class RemoteConfigEditor {
 		@Override
 		public String toString() {
 			return delegate.toString();
+		}
+	}
+
+	private static final class LocalizedRemoteValue<T> extends RemoteConfigScreenValue<T> implements IConfigLocalizedValue {
+		private final IConfigLocalizedValue localizedValue;
+
+		private LocalizedRemoteValue(
+			RemoteConfigEditor editor,
+			IConfigSchema schema,
+			IConfigValue<T> backingValue,
+			IConfigScreenValue<T> delegate,
+			IConfigLocalizedValue localizedValue
+		) {
+			super(editor, schema, backingValue, delegate);
+			this.localizedValue = Objects.requireNonNull(localizedValue, "localizedValue");
+		}
+
+		@Override
+		public Component getLocalizedName() {
+			return localizedValue.getLocalizedName();
+		}
+
+		@Override
+		public Component getLocalizedDescription() {
+			return localizedValue.getLocalizedDescription();
 		}
 	}
 }

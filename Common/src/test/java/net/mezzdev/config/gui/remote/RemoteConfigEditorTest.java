@@ -14,8 +14,11 @@ import net.mezzdev.config.api.value.IConfigValueChangeListener;
 import net.mezzdev.config.api.value.IConfigValueSerializer;
 import net.mezzdev.config.api.value.IDeserializeResult;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
+import net.mezzdev.config.gui.api.ConfigValueLocalization;
+import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.model.ConfigValueChange;
+import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -88,9 +91,15 @@ class RemoteConfigEditorTest {
 		RequestCapture capture = connectAndCapture();
 		TestConfigValue value = new TestConfigValue("effective");
 		TestConfigSchema schema = new TestConfigSchema(value);
-		IConfigScreenValue<String> customizedValue = IConfigScreenValue.withApplyMode(
-			IConfigScreenValue.configValue(value),
-			ConfigValueApplyMode.IMMEDIATE
+		Component customName = Component.literal("View Distance");
+		Component customDescription = Component.literal("Server rendering radius");
+		IConfigScreenValue<String> customizedValue = new LocalizedScreenValue<>(
+			IConfigScreenValue.withApplyMode(
+				IConfigScreenValue.configValue(value),
+				ConfigValueApplyMode.IMMEDIATE
+			),
+			customName,
+			customDescription
 		);
 		IConfigScreenValue<String> screenValue = editor.createScreenValue(schema, customizedValue);
 		RemoteConfigMessage.SnapshotRequest snapshotRequest = (RemoteConfigMessage.SnapshotRequest) capture.take();
@@ -108,6 +117,8 @@ class RemoteConfigEditorTest {
 		assertEquals("saved-before", screenValue.getValue());
 		assertEquals(ConfigValueApplyMode.IMMEDIATE, screenValue.getApplyMode());
 		assertEquals(ConfigValueRestartRequirement.GAME_RESTART, screenValue.getRestartRequirement());
+		assertEquals(customName, ConfigValueLocalization.getName(screenValue));
+		assertEquals(customDescription, ConfigValueLocalization.getDescription(screenValue));
 		assertTrue(screenValue.getConfigValue().filter(configValue -> configValue == value).isPresent());
 		CompletableFuture<Void> updateFuture = editor.requestUpdate(
 			schema,
@@ -423,6 +434,77 @@ class RemoteConfigEditorTest {
 		String oldValue,
 		String newValue
 	) implements IAppliedConfigValueChange<String> {}
+
+	private record LocalizedScreenValue<T>(
+		IConfigScreenValue<T> delegate,
+		Component localizedName,
+		Component localizedDescription
+	) implements IConfigScreenValue<T>, IConfigLocalizedValue {
+		@Override
+		public String getName() {
+			return delegate.getName();
+		}
+
+		@Override
+		public String getLocalizationKey() {
+			return delegate.getLocalizationKey();
+		}
+
+		@Override
+		public T getValue() {
+			return delegate.getValue();
+		}
+
+		@Override
+		public T getDefaultValue() {
+			return delegate.getDefaultValue();
+		}
+
+		@Override
+		public boolean set(T value) {
+			return delegate.set(value);
+		}
+
+		@Override
+		public Runnable addListener(Consumer<T> listener) {
+			return delegate.addListener(listener);
+		}
+
+		@Override
+		public ConfigValueApplyMode getApplyMode() {
+			return delegate.getApplyMode();
+		}
+
+		@Override
+		public ConfigValueRestartRequirement getRestartRequirement() {
+			return delegate.getRestartRequirement();
+		}
+
+		@Override
+		public Object getIdentityKey() {
+			return delegate.getIdentityKey();
+		}
+
+		@Override
+		public IConfigValueSerializer<T> getSerializer() {
+			return delegate.getSerializer();
+		}
+
+		@Override
+		public Optional<IConfigValue<T>> getConfigValue() {
+			return delegate.getConfigValue();
+		}
+
+		@Override
+		public Component getLocalizedName() {
+			return localizedName;
+		}
+
+		@Override
+		public Component getLocalizedDescription() {
+			return localizedDescription;
+		}
+	}
 
 	private enum TestSerializer implements IConfigValueSerializer<String> {
 		INSTANCE;
