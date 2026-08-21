@@ -38,6 +38,14 @@ val dependencyProjects: List<Project> = listOf(
 	configGuiApiProject,
 	configGuiProject,
 )
+val loaderRuntimeOnly = configurations.create("loaderRuntimeOnly") {
+	isCanBeConsumed = false
+	isCanBeResolved = false
+	description = "Runtime loader dependencies for Forge development runs."
+}
+configurations.runtimeClasspath {
+	extendsFrom(loaderRuntimeOnly)
+}
 
 (dependencyProjects).forEach {
 	project.evaluationDependsOn(it.path)
@@ -112,7 +120,7 @@ dependencies {
 	compileOnly("com.google.code.findbugs:jsr305:$jsr305Version")
 	compileOnly(jeiApiDependency)
 	compileOnly(mezzConfigApiDependency)
-	runtimeOnly(mezzConfigForgeDependency)
+	add(loaderRuntimeOnly.name, mezzConfigForgeDependency)
 	dependencyProjects.forEach {
 		compileOnly(it)
 	}
