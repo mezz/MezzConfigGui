@@ -21,7 +21,10 @@ val jetbrainsAnnotationsVersion: String by extra
 val log4jVersion: String by extra
 val fastutilVersion: String by extra
 val jsr305Version: String by extra
-val mezzConfigApiDependency: String by rootProject.extra
+val useMezzConfigCompositeBuild = providers.gradleProperty("useMezzConfigCompositeBuild")
+	.map(String::toBoolean)
+	.getOrElse(true)
+val mezzConfigApiCompileDependency: Any by rootProject.extra
 val mezzConfigForgeDependency: String by rootProject.extra
 val jeiApiDependency: Any by rootProject.extra
 val configGuiApiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui-api")
@@ -119,8 +122,10 @@ dependencies {
 	compileOnly("it.unimi.dsi:fastutil:$fastutilVersion")
 	compileOnly("com.google.code.findbugs:jsr305:$jsr305Version")
 	compileOnly(jeiApiDependency)
-	compileOnly(mezzConfigApiDependency)
-	add(loaderRuntimeOnly.name, mezzConfigForgeDependency)
+	compileOnly(mezzConfigApiCompileDependency)
+	add(loaderRuntimeOnly.name, mezzConfigForgeDependency) {
+		isTransitive = !useMezzConfigCompositeBuild
+	}
 	dependencyProjects.forEach {
 		compileOnly(it)
 	}

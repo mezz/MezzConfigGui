@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui.neoforge.config;
 
-import net.mezzdev.config.api.value.ConfigValueRange;
-import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.api.value.serializer.ConfigValueRange;
+import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.Optional;

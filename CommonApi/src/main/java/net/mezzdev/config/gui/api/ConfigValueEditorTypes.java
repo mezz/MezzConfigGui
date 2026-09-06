@@ -1,6 +1,6 @@
 package net.mezzdev.config.gui.api;
 
-import net.mezzdev.config.api.value.PackedColor;
+import net.mezzdev.config.api.value.color.PackedColor;
 
 import java.util.List;
 

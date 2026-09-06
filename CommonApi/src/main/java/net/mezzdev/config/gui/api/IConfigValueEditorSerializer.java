@@ -1,6 +1,6 @@
 package net.mezzdev.config.gui.api;
 
-import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 
 /**
  * Serialization, validation, and editor metadata for config values that need a specific config screen editor.

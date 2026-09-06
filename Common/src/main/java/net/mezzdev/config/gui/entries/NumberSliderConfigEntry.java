@@ -1,6 +1,6 @@
 package net.mezzdev.config.gui.entries;
 
-import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.ConfigInputHandler;
 import net.mezzdev.config.gui.ConfigInputUtil;
 import net.mezzdev.config.gui.api.ConfigInfo;

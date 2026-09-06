@@ -2,14 +2,14 @@ package net.mezzdev.config.gui.config;
 
 import net.mezzdev.config.api.Configs;
 import net.mezzdev.config.api.IConfigRegistration;
-import net.mezzdev.config.api.schema.IConfigCategoryBuilder;
+import net.mezzdev.config.api.schema.builder.IConfigCategoryBuilder;
 import net.mezzdev.config.api.schema.IConfigSchema;
-import net.mezzdev.config.api.schema.IConfigSchemaBuilder;
-import net.mezzdev.config.api.value.ConfigValueEditMode;
-import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
-import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.api.schema.builder.IConfigSchemaBuilder;
+import net.mezzdev.config.api.value.editor.ConfigValueEditMode;
+import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -283,7 +283,7 @@ public final class ConfigGuiOptions {
 		if (configValue == null) {
 			return defaultValue;
 		}
-		return configValue.getValue();
+		return configValue.get();
 	}
 
 	private static <T> void setValue(@Nullable IConfigValue<T> configValue, T value) {

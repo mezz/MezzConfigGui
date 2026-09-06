@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui.api;
 
-import net.mezzdev.config.api.value.IConfigListValueSerializer;
-import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.api.value.serializer.IConfigListValueSerializer;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 
 import java.util.List;
 

@@ -1,6 +1,6 @@
 package net.mezzdev.config.gui.info;
 
-import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;

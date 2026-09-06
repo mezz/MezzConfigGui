@@ -1,9 +1,10 @@
 package net.mezzdev.config.gui.api;
 
-import net.mezzdev.config.api.value.ConfigValueEditMode;
-import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.value.editor.ConfigValueEditMode;
+import net.mezzdev.config.api.value.editor.IConfigValueEditorInfo;
+import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -35,8 +36,9 @@ public interface IConfigScreenValue<T> {
 	 */
 	static <T> IConfigScreenValue<T> configValue(IConfigValue<T> configValue) {
 		IConfigValue<T> checkedConfigValue = Objects.requireNonNull(configValue, "configValue");
-		ConfigValueEditMode editMode = Objects.requireNonNull(checkedConfigValue.getEditMode(), "configValue editMode");
-		ConfigValueRestartRequirement restartRequirement = Objects.requireNonNull(checkedConfigValue.getRestartRequirement(), "configValue restartRequirement");
+		IConfigValueEditorInfo<T> editorInfo = Objects.requireNonNull(checkedConfigValue.getEditorInfo(), "configValue editorInfo");
+		ConfigValueEditMode editMode = Objects.requireNonNull(editorInfo.getEditMode(), "configValue editMode");
+		ConfigValueRestartRequirement restartRequirement = Objects.requireNonNull(editorInfo.getRestartRequirement(), "configValue restartRequirement");
 		return configValue(checkedConfigValue, getApplyMode(editMode), restartRequirement);
 	}
 
@@ -47,7 +49,8 @@ public interface IConfigScreenValue<T> {
 	 */
 	static <T> IConfigScreenValue<T> configValue(IConfigValue<T> configValue, ConfigValueApplyMode applyMode) {
 		IConfigValue<T> checkedConfigValue = Objects.requireNonNull(configValue, "configValue");
-		ConfigValueRestartRequirement restartRequirement = Objects.requireNonNull(checkedConfigValue.getRestartRequirement(), "configValue restartRequirement");
+		IConfigValueEditorInfo<T> editorInfo = Objects.requireNonNull(checkedConfigValue.getEditorInfo(), "configValue editorInfo");
+		ConfigValueRestartRequirement restartRequirement = Objects.requireNonNull(editorInfo.getRestartRequirement(), "configValue restartRequirement");
 		return configValue(checkedConfigValue, applyMode, restartRequirement);
 	}
 
@@ -69,27 +72,28 @@ public interface IConfigScreenValue<T> {
 		ConfigValueRestartRequirement restartRequirement
 	) {
 		IConfigValue<T> checkedConfigValue = Objects.requireNonNull(configValue, "configValue");
+		IConfigValueEditorInfo<T> editorInfo = Objects.requireNonNull(checkedConfigValue.getEditorInfo(), "configValue editorInfo");
 		ConfigValueApplyMode checkedApplyMode = Objects.requireNonNull(applyMode, "applyMode");
 		ConfigValueRestartRequirement checkedRestartRequirement = Objects.requireNonNull(restartRequirement, "restartRequirement");
 		return new IConfigScreenValue<>() {
 			@Override
 			public String getName() {
-				return checkedConfigValue.getName();
+				return editorInfo.getName();
 			}
 
 			@Override
 			public String getLocalizationKey() {
-				return checkedConfigValue.getLocalizationKey();
+				return editorInfo.getLocalizationKey();
 			}
 
 			@Override
 			public T getValue() {
-				return checkedConfigValue.getPendingValue();
+				return editorInfo.getPendingValue();
 			}
 
 			@Override
 			public T getDefaultValue() {
-				return checkedConfigValue.getDefaultValue();
+				return editorInfo.getDefaultValue();
 			}
 
 			@Override
@@ -99,7 +103,7 @@ public interface IConfigScreenValue<T> {
 
 			@Override
 			public Runnable addListener(Consumer<T> listener) {
-				return checkedConfigValue.addPendingListener(change -> listener.accept(change.newValue()));
+				return editorInfo.addPendingListener(change -> listener.accept(change.newValue()));
 			}
 
 			@Override
@@ -114,7 +118,7 @@ public interface IConfigScreenValue<T> {
 
 			@Override
 			public IConfigValueSerializer<T> getSerializer() {
-				return checkedConfigValue.getSerializer();
+				return editorInfo.getSerializer();
 			}
 
 			@Override

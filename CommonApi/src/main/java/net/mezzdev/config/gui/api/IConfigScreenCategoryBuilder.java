@@ -1,9 +1,9 @@
 package net.mezzdev.config.gui.api;
 
 import net.mezzdev.config.api.sorting.ISortingConfig;
-import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.ApiStatus;

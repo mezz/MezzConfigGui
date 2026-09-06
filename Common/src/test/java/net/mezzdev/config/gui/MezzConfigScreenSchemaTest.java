@@ -1,18 +1,19 @@
 package net.mezzdev.config.gui;
 
 import net.mezzdev.config.api.schema.ConfigSchemaType;
-import net.mezzdev.config.api.schema.IConfigBatchUpdater;
-import net.mezzdev.config.api.schema.IConfigCategory;
-import net.mezzdev.config.api.schema.IConfigEditorCategory;
+import net.mezzdev.config.api.schema.update.IConfigBatchUpdater;
+import net.mezzdev.config.api.schema.category.IConfigCategory;
+import net.mezzdev.config.api.schema.category.IConfigEditorCategory;
 import net.mezzdev.config.api.schema.IConfigSchema;
-import net.mezzdev.config.api.value.ConfigValueEditMode;
-import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
-import net.mezzdev.config.api.value.IAppliedConfigValueChange;
+import net.mezzdev.config.api.value.editor.ConfigValueEditMode;
+import net.mezzdev.config.api.value.editor.IConfigValueEditorInfo;
+import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.value.change.IAppliedConfigValueChange;
 import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.api.value.IConfigValueBatchChangeListener;
-import net.mezzdev.config.api.value.IConfigValueChangeListener;
-import net.mezzdev.config.api.value.IConfigValueSerializer;
-import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.api.value.change.IConfigValueBatchChangeListener;
+import net.mezzdev.config.api.value.change.IConfigValueChangeListener;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
+import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.minecraft.network.chat.Component;
@@ -77,7 +78,7 @@ class MezzConfigScreenSchemaTest {
 
 		backingValue.set("pending");
 
-		assertEquals("effective", backingValue.getValue());
+		assertEquals("effective", backingValue.get());
 		assertEquals("pending", screenValue.getValue());
 		assertEquals(List.of("pending"), listenerValues);
 	}
@@ -398,7 +399,7 @@ class MezzConfigScreenSchemaTest {
 		ConfigValueEditMode editMode,
 		ConfigValueRestartRequirement restartRequirement,
 		List<IConfigEditorCategory> editorCategories
-	) implements IConfigValue<String> {
+	) implements IConfigValue<String>, IConfigValueEditorInfo<String> {
 		private TestConfigValue(String name, ConfigValueEditMode editMode) {
 			this(name, editMode, ConfigValueRestartRequirement.NONE, List.of());
 		}
@@ -426,8 +427,13 @@ class MezzConfigScreenSchemaTest {
 		}
 
 		@Override
-		public String getValue() {
+		public String get() {
 			return name;
+		}
+
+		@Override
+		public IConfigValueEditorInfo<String> getEditorInfo() {
+			return this;
 		}
 
 		@Override
@@ -486,7 +492,7 @@ class MezzConfigScreenSchemaTest {
 		}
 	}
 
-	private static final class TestPendingConfigValue implements IConfigValue<String> {
+	private static final class TestPendingConfigValue implements IConfigValue<String>, IConfigValueEditorInfo<String> {
 		private final String effectiveValue;
 		private String pendingValue;
 		private IConfigValueChangeListener<String> pendingListener = ignored -> {};
@@ -507,8 +513,13 @@ class MezzConfigScreenSchemaTest {
 		}
 
 		@Override
-		public String getValue() {
+		public String get() {
 			return effectiveValue;
+		}
+
+		@Override
+		public IConfigValueEditorInfo<String> getEditorInfo() {
+			return this;
 		}
 
 		@Override

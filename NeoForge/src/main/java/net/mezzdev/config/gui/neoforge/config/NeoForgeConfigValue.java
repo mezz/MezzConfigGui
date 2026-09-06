@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui.neoforge.config;
 
-import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
-import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenValue;

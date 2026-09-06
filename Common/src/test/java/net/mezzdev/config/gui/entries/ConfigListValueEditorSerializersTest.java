@@ -1,9 +1,9 @@
 package net.mezzdev.config.gui.entries;
 
-import net.mezzdev.config.api.value.IDeserializeResult;
-import net.mezzdev.config.api.value.ConfigListOrdering;
-import net.mezzdev.config.api.value.IConfigListValueSerializer;
-import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.api.value.serializer.IDeserializeResult;
+import net.mezzdev.config.api.value.serializer.ConfigListOrdering;
+import net.mezzdev.config.api.value.serializer.IConfigListValueSerializer;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
 import org.junit.jupiter.api.Test;
 

@@ -1,9 +1,9 @@
 package net.mezzdev.config.gui;
 
 import net.mezzdev.config.api.sorting.ISortingConfig;
-import net.mezzdev.config.api.value.IDeserializeResult;
-import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
-import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.api.value.serializer.IDeserializeResult;
+import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.ConfigValueEditorType;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;

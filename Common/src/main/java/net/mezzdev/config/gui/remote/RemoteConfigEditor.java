@@ -1,11 +1,11 @@
 package net.mezzdev.config.gui.remote;
 
 import net.mezzdev.config.api.schema.ConfigSchemaType;
-import net.mezzdev.config.api.schema.IConfigCategory;
+import net.mezzdev.config.api.schema.category.IConfigCategory;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.api.value.IConfigValueSerializer;
-import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
+import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
@@ -370,7 +370,7 @@ public final class RemoteConfigEditor {
 		Map<RemoteValueKey, IConfigValue<?>> values = new LinkedHashMap<>();
 		for (IConfigCategory category : schema.getCategories()) {
 			for (IConfigValue<?> value : category.getConfigValues()) {
-				RemoteValueKey key = new RemoteValueKey(category.getName(), value.getName());
+				RemoteValueKey key = new RemoteValueKey(category.getName(), value.getEditorInfo().getName());
 				if (values.putIfAbsent(key, value) != null) {
 					throw new IllegalArgumentException("The local schema has a duplicate config value storage key.");
 				}
@@ -382,7 +382,7 @@ public final class RemoteConfigEditor {
 	@SuppressWarnings("unchecked")
 	private static <T> T deserializeValue(IConfigValue<?> unresolvedValue, String serializedValue) {
 		IConfigValue<T> value = (IConfigValue<T>) unresolvedValue;
-		IDeserializeResult<T> result = value.getSerializer().deserialize(serializedValue);
+		IDeserializeResult<T> result = value.getEditorInfo().getSerializer().deserialize(serializedValue);
 		if (!result.getDiagnostics().isEmpty() || result.getResult().isEmpty()) {
 			throw new IllegalArgumentException("The server sent an invalid pending config value.");
 		}
@@ -415,7 +415,7 @@ public final class RemoteConfigEditor {
 		Set<RemoteValueKey> keys = new HashSet<>();
 		for (IConfigCategory category : schema.getCategories()) {
 			for (IConfigValue<?> value : category.getConfigValues()) {
-				RemoteValueKey key = new RemoteValueKey(category.getName(), value.getName());
+				RemoteValueKey key = new RemoteValueKey(category.getName(), value.getEditorInfo().getName());
 				if (!keys.add(key) || values.put(value, key) != null) {
 					throw new IllegalArgumentException("The local schema has duplicate config values.");
 				}
@@ -458,7 +458,7 @@ public final class RemoteConfigEditor {
 	@SuppressWarnings("unchecked")
 	private static <T> String serializeProposedValue(IConfigValue<?> unresolvedValue, Object proposedValue) {
 		IConfigValue<T> value = (IConfigValue<T>) unresolvedValue;
-		IConfigValueSerializer<T> serializer = value.getSerializer();
+		IConfigValueSerializer<T> serializer = value.getEditorInfo().getSerializer();
 		return serializer.serialize((T) proposedValue);
 	}
 
@@ -545,7 +545,7 @@ public final class RemoteConfigEditor {
 		if (state != null && state.available() && state.values().containsKey(value)) {
 			return state.values().get(value);
 		}
-		return value.getPendingValue();
+		return value.getEditorInfo().getPendingValue();
 	}
 
 	private static void notifyValues(List<ValueNotification> notifications) {
@@ -771,7 +771,7 @@ public final class RemoteConfigEditor {
 		}
 
 		@Override
-		public net.mezzdev.config.api.value.ConfigValueRestartRequirement getRestartRequirement() {
+		public net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement getRestartRequirement() {
 			return delegate.getRestartRequirement();
 		}
 

@@ -1,6 +1,6 @@
 package net.mezzdev.config.gui;
 
-import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.model.ConfigValueChange;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.mezzdev.config.gui.entries.ConfigEntryWidget;

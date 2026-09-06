@@ -39,26 +39,27 @@ repositories {
 }
 
 // gradle.properties
-val minecraftVersion: String by extra
+val targetMinecraftVersion = providers.gradleProperty("minecraftVersion").get()
 val neoformTimestamp: String by extra
 val configGuiModId: String by extra
 val configModGroup: String by extra
 val modJavaVersion: String by extra
 val jetbrainsAnnotationsVersion: String by extra
 val mezzConfigApiDependency: String by rootProject.extra
+val mezzConfigApiCompileDependency: Any by rootProject.extra
 val apiBaselineVersion: String by extra
 val apiBaselineRequired: String by extra
 val requireApiBaseline = apiBaselineRequired.toBooleanStrict()
 
 group = configModGroup
 
-val baseArchivesName = "${configGuiModId}-${minecraftVersion}-config-gui-api"
+val baseArchivesName = "${configGuiModId}-${targetMinecraftVersion}-config-gui-api"
 base {
     archivesName.set(baseArchivesName)
 }
 
 neoForge {
-	neoFormVersion = "$minecraftVersion-$neoformTimestamp"
+	neoFormVersion = "$targetMinecraftVersion-$neoformTimestamp"
 }
 
 sourceSets {
@@ -74,7 +75,7 @@ sourceSets {
 
 dependencies {
 	implementation("org.jetbrains:annotations:$jetbrainsAnnotationsVersion")
-	compileOnly(mezzConfigApiDependency)
+	compileOnly(mezzConfigApiCompileDependency)
 }
 
 val apiBaseline by configurations.creating {

@@ -1,18 +1,19 @@
 package net.mezzdev.config.gui.remote;
 
 import net.mezzdev.config.api.schema.ConfigSchemaType;
-import net.mezzdev.config.api.schema.IConfigBatchUpdater;
-import net.mezzdev.config.api.schema.IConfigCategory;
-import net.mezzdev.config.api.schema.IConfigEditorCategory;
+import net.mezzdev.config.api.schema.update.IConfigBatchUpdater;
+import net.mezzdev.config.api.schema.category.IConfigCategory;
+import net.mezzdev.config.api.schema.category.IConfigEditorCategory;
 import net.mezzdev.config.api.schema.IConfigSchema;
-import net.mezzdev.config.api.value.ConfigValueEditMode;
-import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
-import net.mezzdev.config.api.value.IAppliedConfigValueChange;
+import net.mezzdev.config.api.value.editor.ConfigValueEditMode;
+import net.mezzdev.config.api.value.editor.IConfigValueEditorInfo;
+import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.value.change.IAppliedConfigValueChange;
 import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.api.value.IConfigValueBatchChangeListener;
-import net.mezzdev.config.api.value.IConfigValueChangeListener;
-import net.mezzdev.config.api.value.IConfigValueSerializer;
-import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.api.value.change.IConfigValueBatchChangeListener;
+import net.mezzdev.config.api.value.change.IConfigValueChangeListener;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
+import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
@@ -143,7 +144,7 @@ class RemoteConfigEditorTest {
 		assertTrue(updateFuture.isDone());
 		assertFalse(updateFuture.isCompletedExceptionally());
 		assertEquals("saved-after", screenValue.getValue());
-		assertEquals("effective", value.getValue());
+		assertEquals("effective", value.get());
 		assertEquals("effective", value.getPendingValue());
 		assertEquals(0, schema.batchCount());
 		assertEquals(0, value.setCount());
@@ -337,7 +338,7 @@ class RemoteConfigEditorTest {
 		}
 	}
 
-	private static final class TestConfigValue implements IConfigValue<String> {
+	private static final class TestConfigValue implements IConfigValue<String>, IConfigValueEditorInfo<String> {
 		private String effectiveValue;
 		private IConfigValueChangeListener<String> pendingListener = ignored -> {};
 		private int setCount;
@@ -357,8 +358,13 @@ class RemoteConfigEditorTest {
 		}
 
 		@Override
-		public String getValue() {
+		public String get() {
 			return effectiveValue;
+		}
+
+		@Override
+		public IConfigValueEditorInfo<String> getEditorInfo() {
+			return this;
 		}
 
 		@Override

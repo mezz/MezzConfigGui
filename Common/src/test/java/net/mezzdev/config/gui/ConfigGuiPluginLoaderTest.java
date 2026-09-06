@@ -2,18 +2,20 @@ package net.mezzdev.config.gui;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.api.schema.ConfigSchemaType;
-import net.mezzdev.config.api.schema.IConfigBatchUpdater;
-import net.mezzdev.config.api.schema.IConfigCategory;
-import net.mezzdev.config.api.schema.IConfigEditorCategory;
+import net.mezzdev.config.api.schema.update.IConfigBatchUpdater;
+import net.mezzdev.config.api.schema.category.IConfigCategory;
+import net.mezzdev.config.api.schema.category.IConfigEditorCategory;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.sorting.ISortingConfig;
-import net.mezzdev.config.api.value.ConfigValueEditMode;
-import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
-import net.mezzdev.config.api.value.IAppliedConfigValueChange;
-import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.api.migration.ISortingConfigMigrator;
+import net.mezzdev.config.api.value.editor.ConfigValueEditMode;
+import net.mezzdev.config.api.value.editor.IConfigValueEditorInfo;
+import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.value.change.IAppliedConfigValueChange;
+import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.api.value.IConfigValueBatchChangeListener;
-import net.mezzdev.config.api.value.IConfigValueChangeListener;
+import net.mezzdev.config.api.value.change.IConfigValueBatchChangeListener;
+import net.mezzdev.config.api.value.change.IConfigValueChangeListener;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.ConfigValueEditorType;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
@@ -435,10 +437,11 @@ class ConfigGuiPluginLoaderTest {
 		};
 
 		Map<String, IConfigScreenFactory> factories = ConfigGuiPluginLoader.createScreenFactoryRegistryFromInternalConfigs(
-			List.of(new TestScreenConfig(MOD_ID, Component.literal("Test"), () -> List.of())),
-			List.of(plugin),
-			false
-		).getFactories();
+				List.of(new TestScreenConfig(MOD_ID, Component.literal("Test"), () -> List.of())),
+				List.of(plugin),
+				false
+			)
+			.getFactories();
 
 		assertTrue(factories.containsKey(MOD_ID));
 		assertEquals(0, factoryCreationCustomizerCalls.get());
@@ -1186,11 +1189,16 @@ class ConfigGuiPluginLoaderTest {
 		public Runnable addChangeListener(Runnable listener) {
 			return () -> {};
 		}
+
+		@Override
+		public ISortingConfig<String> setLegacyMigration(List<Path> legacyPaths, ISortingConfigMigrator<String> migrator) {
+			return this;
+		}
 	}
 
 	private record TestBackingConfigValue(
 		String name
-	) implements IConfigValue<String> {
+	) implements IConfigValue<String>, IConfigValueEditorInfo<String> {
 		@Override
 		public String getName() {
 			return name;
@@ -1202,8 +1210,13 @@ class ConfigGuiPluginLoaderTest {
 		}
 
 		@Override
-		public String getValue() {
+		public String get() {
 			return name;
+		}
+
+		@Override
+		public IConfigValueEditorInfo<String> getEditorInfo() {
+			return this;
 		}
 
 		@Override

@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui.info;
 
-import net.mezzdev.config.api.value.IConfigValueSerializer;
-import net.mezzdev.config.api.value.PackedColor;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
+import net.mezzdev.config.api.value.color.PackedColor;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueIcon;
 import net.mezzdev.config.gui.api.IConfigValueIconProvider;

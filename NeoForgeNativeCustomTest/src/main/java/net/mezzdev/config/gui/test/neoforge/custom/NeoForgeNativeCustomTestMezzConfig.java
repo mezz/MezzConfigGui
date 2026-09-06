@@ -2,8 +2,8 @@ package net.mezzdev.config.gui.test.neoforge.custom;
 
 import net.mezzdev.config.api.Configs;
 import net.mezzdev.config.api.IConfigRegistration;
-import net.mezzdev.config.api.schema.IConfigCategoryBuilder;
-import net.mezzdev.config.api.schema.IConfigSchemaBuilder;
+import net.mezzdev.config.api.schema.builder.IConfigCategoryBuilder;
+import net.mezzdev.config.api.schema.builder.IConfigSchemaBuilder;
 
 /**
  * Registers a MezzConfig schema alongside this mod's native NeoForge configs.

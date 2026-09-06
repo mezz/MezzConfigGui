@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui;
 
-import net.mezzdev.config.api.schema.IConfigCategory;
-import net.mezzdev.config.api.schema.IConfigEditorCategory;
+import net.mezzdev.config.api.schema.category.IConfigCategory;
+import net.mezzdev.config.api.schema.category.IConfigEditorCategory;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;
@@ -66,7 +66,7 @@ final class MezzConfigScreenSchema implements ConfigScreenSchema {
 			);
 			for (IConfigValue<?> value : category.getConfigValues()) {
 				IConfigScreenValue<?> screenValue = IConfigScreenValue.configValue(value);
-				List<? extends IConfigEditorCategory> valueEditorCategories = value.getEditorCategories();
+				List<? extends IConfigEditorCategory> valueEditorCategories = value.getEditorInfo().getEditorCategories();
 				if (valueEditorCategories.isEmpty()) {
 					storageCategory.addValue(screenValue);
 					continue;

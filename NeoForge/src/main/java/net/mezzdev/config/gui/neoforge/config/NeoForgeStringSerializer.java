@@ -1,6 +1,6 @@
 package net.mezzdev.config.gui.neoforge.config;
 
-import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 final class NeoForgeStringSerializer extends NeoForgeTextSerializer<String> {

@@ -1,9 +1,9 @@
 package net.mezzdev.config.gui;
 
-import net.mezzdev.config.api.schema.IConfigBatchUpdater;
+import net.mezzdev.config.api.schema.update.IConfigBatchUpdater;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.schema.ConfigSchemaType;
-import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.model.AppliedConfigValueChange;

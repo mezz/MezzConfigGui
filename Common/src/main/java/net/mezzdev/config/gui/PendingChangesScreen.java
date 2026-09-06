@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui;
 
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
-import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.model.PendingConfigChange;

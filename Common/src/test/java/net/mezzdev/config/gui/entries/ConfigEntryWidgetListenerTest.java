@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui.entries;
 
-import net.mezzdev.config.api.value.IDeserializeResult;
-import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.api.value.serializer.IDeserializeResult;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.minecraft.client.gui.GuiGraphics;
 import org.junit.jupiter.api.Test;

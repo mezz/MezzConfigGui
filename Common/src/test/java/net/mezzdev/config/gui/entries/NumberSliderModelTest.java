@@ -1,8 +1,8 @@
 package net.mezzdev.config.gui.entries;
 
-import net.mezzdev.config.api.value.IDeserializeResult;
-import net.mezzdev.config.api.value.ConfigValueRange;
-import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.api.value.serializer.IDeserializeResult;
+import net.mezzdev.config.api.value.serializer.ConfigValueRange;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.config.ConfigGuiOptionsTestUtil;
@@ -35,8 +35,9 @@ class NumberSliderModelTest {
 	@Test
 	void mapsLargeLongRangeWithoutOverflow() {
 		NumberSliderModel<Long> model = NumberSliderModel.create(
-			new ConfigValueRange<>(-8_000_000_000_000_000_000L, 8_000_000_000_000_000_000L)
-		).orElseThrow();
+				new ConfigValueRange<>(-8_000_000_000_000_000_000L, 8_000_000_000_000_000_000L)
+			)
+			.orElseThrow();
 
 		assertEquals(0.0, model.getPosition(-8_000_000_000_000_000_000L));
 		assertEquals(0.5, model.getPosition(0L));

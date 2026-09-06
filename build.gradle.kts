@@ -1,5 +1,7 @@
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.attributes.LibraryElements
+import org.gradle.api.attributes.Usage
 import org.gradle.api.provider.Property
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
@@ -9,19 +11,19 @@ import org.gradle.api.tasks.TaskAction
 
 plugins {
 	// https://github.com/mezz/JavaFormatting
-	id("net.mezzdev.java-formatting") version("0.2.4")
+	id("net.mezzdev.java-formatting") version("0.4.0")
 
     // https://plugins.gradle.org/plugin/com.dorongold.task-tree
-    id("com.dorongold.task-tree") version("4.0.0")
+    id("com.dorongold.task-tree") version("4.0.2")
 
     // https://plugins.gradle.org/plugin/me.champeau.gradle.japicmp
     id("me.champeau.gradle.japicmp") version("0.4.6") apply(false)
 
     // https://maven.fabricmc.net/fabric-loom/fabric-loom.gradle.plugin/maven-metadata.xml
-    id("fabric-loom") version("1.11.0-alpha.26") apply(false)
+    id("fabric-loom") version("1.13.6") apply(false)
 
     // https://projects.neoforged.net/neoforged/moddevgradle
-    id("net.neoforged.moddev") version("2.0.26-beta") apply(false)
+    id("net.neoforged.moddev") version("2.0.146") apply(false)
 
     // https://files.minecraftforge.net/net/minecraftforge/gradle/ForgeGradle/index.html
     id("net.minecraftforge.gradle") version("6.0.54") apply(false)
@@ -33,7 +35,25 @@ apply {
 	from("buildtools/ColoredOutput.gradle")
 }
 repositories {
+    val deployDir = findProperty("DEPLOY_DIR")
+    if (deployDir != null) {
+        maven(deployDir) {
+            content {
+                includeGroup("net.mezzdev.config")
+            }
+        }
+    }
     mavenCentral()
+    maven("https://maven.blamejared.com") {
+        content {
+            includeGroup("net.mezzdev.config")
+        }
+    }
+    mavenLocal {
+        content {
+            includeGroup("net.mezzdev.config")
+        }
+    }
 }
 
 // gradle.properties
@@ -104,7 +124,23 @@ val buildNumber = providers.gradleProperty("BUILD_NUMBER")
     .get()
 val projectVersion = configuredReleaseVersion ?: "${releaseSpecificationVersion}.${buildNumber}"
 
-extra["mezzConfigApiDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-config-api:$mezzConfigVersion"
+val mezzConfigApiDependency = "$configModGroup:${configModId}-${minecraftVersion}-config-api:$mezzConfigVersion"
+// MezzConfig's API now lives in Common's custom api source set. Its composite-build Java API variant does not expose
+// those classes, but the runtime jar does. Resolve that jar without its runtime dependencies for compile classpaths.
+val mezzConfigApiCompileConfiguration = configurations.detachedConfiguration(
+    dependencies.create(mezzConfigApiDependency)
+).apply {
+    isTransitive = false
+    attributes {
+        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage::class.java, Usage.JAVA_RUNTIME))
+        attribute(
+            LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
+            objects.named(LibraryElements::class.java, LibraryElements.JAR)
+        )
+    }
+}
+extra["mezzConfigApiDependency"] = mezzConfigApiDependency
+extra["mezzConfigApiCompileDependency"] = files(mezzConfigApiCompileConfiguration)
 extra["mezzConfigFabricDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-fabric:$mezzConfigVersion"
 extra["mezzConfigForgeDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-forge:$mezzConfigVersion"
 extra["mezzConfigNeoForgeDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-neoforge:$mezzConfigVersion"

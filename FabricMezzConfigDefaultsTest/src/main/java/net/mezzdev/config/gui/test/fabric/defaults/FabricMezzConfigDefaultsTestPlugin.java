@@ -3,16 +3,16 @@ package net.mezzdev.config.gui.test.fabric.defaults;
 import net.fabricmc.api.ClientModInitializer;
 import net.mezzdev.config.api.Configs;
 import net.mezzdev.config.api.IConfigRegistration;
-import net.mezzdev.config.api.schema.IConfigCategoryBuilder;
+import net.mezzdev.config.api.schema.builder.IConfigCategoryBuilder;
 import net.mezzdev.config.api.schema.IConfigSchema;
-import net.mezzdev.config.api.schema.IConfigSchemaBuilder;
-import net.mezzdev.config.api.value.ConfigColorFormat;
-import net.mezzdev.config.api.value.ConfigValueEditMode;
-import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
-import net.mezzdev.config.api.value.IDeserializeResult;
-import net.mezzdev.config.api.value.IConfigKeyValueSerializer;
-import net.mezzdev.config.api.value.IConfigValueSerializer;
-import net.mezzdev.config.api.value.PackedColor;
+import net.mezzdev.config.api.schema.builder.IConfigSchemaBuilder;
+import net.mezzdev.config.api.value.color.ConfigColorFormat;
+import net.mezzdev.config.api.value.editor.ConfigValueEditMode;
+import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.value.serializer.IDeserializeResult;
+import net.mezzdev.config.api.value.serializer.IConfigKeyValueSerializer;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
+import net.mezzdev.config.api.value.color.PackedColor;
 import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigGuiRegistration;
 import net.minecraft.network.chat.Component;
@@ -54,16 +54,25 @@ public final class FabricMezzConfigDefaultsTestPlugin implements ClientModInitia
 			.build();
 		numbers.addIntegerList("favoriteNumbers", List.of(1, 2, 3), 0, 16).build();
 		numbers.addColor("accentColor", PackedColor.argb(0xFF33AA55)).build();
-		numbers.addColorList("palette", List.of(
-			PackedColor.argb(0xFF33AA55),
-			PackedColor.rgb(0x4477DD),
-			PackedColor.argb(0x80E0AA22)
-		)).build();
-		numbers.addList("namedColors", List.of(
-			new NamedColor("Highlight", PackedColor.rgb(0xF2C94C)),
-			new NamedColor("Success", PackedColor.rgb(0x33AA55)),
-			new NamedColor("Warning", PackedColor.rgb(0xE07030))
-		), NamedColorSerializer.INSTANCE).build();
+		numbers.addColorList(
+				"palette",
+				List.of(
+					PackedColor.argb(0xFF33AA55),
+					PackedColor.rgb(0x4477DD),
+					PackedColor.argb(0x80E0AA22)
+				)
+			)
+			.build();
+		numbers.addList(
+				"namedColors",
+				List.of(
+					new NamedColor("Highlight", PackedColor.rgb(0xF2C94C)),
+					new NamedColor("Success", PackedColor.rgb(0x33AA55)),
+					new NamedColor("Warning", PackedColor.rgb(0xE07030))
+				),
+				NamedColorSerializer.INSTANCE
+			)
+			.build();
 		numbers.addLong("maxEnergy", 10_000_000_000L).build();
 		numbers.addLong("boundedLong", 64L, 0L, 1024L).build();
 		numbers.addLongList("longBreakpoints", List.of(128L, 256L, 512L), 0L, 1024L).build();

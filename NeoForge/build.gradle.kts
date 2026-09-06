@@ -35,7 +35,10 @@ val minecraftVersion: String by extra
 val configGuiModId: String by extra
 val configModGroup: String by extra
 val modJavaVersion: String by extra
-val mezzConfigApiDependency: String by rootProject.extra
+val useMezzConfigCompositeBuild = providers.gradleProperty("useMezzConfigCompositeBuild")
+    .map(String::toBoolean)
+    .getOrElse(true)
+val mezzConfigApiCompileDependency: Any by rootProject.extra
 val mezzConfigNeoForgeDependency: String by rootProject.extra
 val configGuiApiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui-api")
 val configGuiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui")
@@ -100,7 +103,7 @@ neoForge {
         val neoForgeNativeCustomTestMod = mods.named(neoForgeNativeCustomTestModId)
 
         configureEach {
-            getMods().set(setOf(
+            getLoadedMods().set(setOf(
                 configGuiMod.get(),
                 neoForgeNativeDefaultsTestMod.get(),
                 neoForgeNativeCustomTestMod.get()
@@ -143,8 +146,10 @@ sourceSets {
 }
 
 dependencies {
-    compileOnly(mezzConfigApiDependency)
-    runtimeOnly(mezzConfigNeoForgeDependency)
+    compileOnly(mezzConfigApiCompileDependency)
+    runtimeOnly(mezzConfigNeoForgeDependency) {
+        isTransitive = !useMezzConfigCompositeBuild
+    }
     dependencyProjects.forEach {
         implementation(it)
     }

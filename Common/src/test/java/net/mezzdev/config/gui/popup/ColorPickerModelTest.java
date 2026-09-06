@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui.popup;
 
-import net.mezzdev.config.api.value.ConfigColorFormat;
-import net.mezzdev.config.api.value.PackedColor;
+import net.mezzdev.config.api.value.color.ConfigColorFormat;
+import net.mezzdev.config.api.value.color.PackedColor;
 import net.mezzdev.config.gui.api.IConfigValuePopup;
 import net.mezzdev.config.gui.info.ColorSwatch;
 import net.minecraft.client.renderer.Rect2i;

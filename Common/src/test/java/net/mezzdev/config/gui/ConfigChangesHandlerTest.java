@@ -1,18 +1,19 @@
 package net.mezzdev.config.gui;
 
 import net.mezzdev.config.api.schema.ConfigSchemaType;
-import net.mezzdev.config.api.schema.IConfigBatchUpdater;
-import net.mezzdev.config.api.schema.IConfigCategory;
-import net.mezzdev.config.api.schema.IConfigEditorCategory;
+import net.mezzdev.config.api.schema.update.IConfigBatchUpdater;
+import net.mezzdev.config.api.schema.category.IConfigCategory;
+import net.mezzdev.config.api.schema.category.IConfigEditorCategory;
 import net.mezzdev.config.api.schema.IConfigSchema;
-import net.mezzdev.config.api.value.ConfigValueEditMode;
-import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
-import net.mezzdev.config.api.value.IAppliedConfigValueChange;
+import net.mezzdev.config.api.value.editor.ConfigValueEditMode;
+import net.mezzdev.config.api.value.editor.IConfigValueEditorInfo;
+import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.value.change.IAppliedConfigValueChange;
 import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.api.value.IConfigValueBatchChangeListener;
-import net.mezzdev.config.api.value.IConfigValueChangeListener;
-import net.mezzdev.config.api.value.IConfigValueSerializer;
-import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.api.value.change.IConfigValueBatchChangeListener;
+import net.mezzdev.config.api.value.change.IConfigValueChangeListener;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
+import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.model.AppliedConfigValueChange;
@@ -77,8 +78,8 @@ class ConfigChangesHandlerTest {
 		ConfigChangesResult result = resultFuture.join();
 
 		assertTrue(result.succeeded());
-		assertEquals("first changed", first.getValue());
-		assertEquals("second changed", second.getValue());
+		assertEquals("first changed", first.get());
+		assertEquals("second changed", second.get());
 		assertEquals(2, result.appliedChanges().size());
 	}
 
@@ -93,13 +94,14 @@ class ConfigChangesHandlerTest {
 		);
 
 		ConfigChangesResult result = ConfigChangesHandler.applyBySchema(
-			List.of(new ConfigValueChange<>(screenValue, "changed")),
-			ignored -> Optional.of(schema)
-		).join();
+				List.of(new ConfigValueChange<>(screenValue, "changed")),
+				ignored -> Optional.of(schema)
+			)
+			.join();
 
 		assertTrue(result.succeeded());
 		assertEquals(1, schema.getBatchCount());
-		assertEquals("changed", value.getValue());
+		assertEquals("changed", value.get());
 	}
 
 	@Test
@@ -120,7 +122,7 @@ class ConfigChangesHandlerTest {
 		ConfigChangesResult result = resultFuture.join();
 
 		assertTrue(result.succeeded());
-		assertEquals("restartRequired", restartRequiredValue.getValue());
+		assertEquals("restartRequired", restartRequiredValue.get());
 		assertEquals("restartRequired changed", restartRequiredValue.getPendingValue());
 		assertEquals("restartRequired changed", screenValue.getValue());
 		assertEquals(ConfigValueRestartRequirement.GAME_RESTART, result.restartRequirement());
@@ -384,7 +386,7 @@ class ConfigChangesHandlerTest {
 		}
 	}
 
-	private static final class TestMezzConfigValue implements IConfigValue<String> {
+	private static final class TestMezzConfigValue implements IConfigValue<String>, IConfigValueEditorInfo<String> {
 		private final String name;
 		private final boolean restartRequired;
 		private String value;
@@ -413,8 +415,13 @@ class ConfigChangesHandlerTest {
 		}
 
 		@Override
-		public String getValue() {
+		public String get() {
 			return value;
+		}
+
+		@Override
+		public IConfigValueEditorInfo<String> getEditorInfo() {
+			return this;
 		}
 
 		@Override

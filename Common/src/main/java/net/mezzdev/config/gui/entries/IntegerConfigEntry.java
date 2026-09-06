@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui.entries;
 
-import net.mezzdev.config.api.value.ConfigValueRange;
-import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.api.value.serializer.ConfigValueRange;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.api.IConfigScreenValue;

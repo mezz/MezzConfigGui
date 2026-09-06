@@ -1,8 +1,8 @@
 package net.mezzdev.config.gui.api;
 
-import net.mezzdev.config.api.schema.IConfigEditorCategory;
+import net.mezzdev.config.api.schema.category.IConfigEditorCategory;
 import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 

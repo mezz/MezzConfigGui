@@ -1,6 +1,6 @@
 package net.mezzdev.config.gui;
 
-import net.mezzdev.config.api.schema.IConfigCategory;
+import net.mezzdev.config.api.schema.category.IConfigCategory;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.minecraft.network.chat.Component;

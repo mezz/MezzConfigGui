@@ -1,6 +1,6 @@
 package net.mezzdev.config.gui.api;
 
-import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IConfigValue;
 import org.jetbrains.annotations.ApiStatus;
 

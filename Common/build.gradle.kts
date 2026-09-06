@@ -35,7 +35,7 @@ repositories {
 
 // gradle.properties
 val jUnitVersion: String by extra
-val minecraftVersion: String by extra
+val targetMinecraftVersion = providers.gradleProperty("minecraftVersion").get()
 val neoformTimestamp: String by extra
 val configGuiModId: String by extra
 val configModGroup: String by extra
@@ -44,12 +44,13 @@ val mixinVersion: String by extra
 val jetbrainsAnnotationsVersion: String by extra
 val fastutilVersion: String by extra
 val mezzConfigApiDependency: String by rootProject.extra
+val mezzConfigApiCompileDependency: Any by rootProject.extra
 val jeiApiDependency: Any by rootProject.extra
-val configGuiApiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui-api")
+val configGuiApiProject: Project = project(":${configGuiModId}-${targetMinecraftVersion}-config-gui-api")
 
 group = configModGroup
 
-val baseArchivesName = "${configGuiModId}-${minecraftVersion}-config-gui"
+val baseArchivesName = "${configGuiModId}-${targetMinecraftVersion}-config-gui"
 base {
     archivesName.set(baseArchivesName)
 }
@@ -63,7 +64,7 @@ val dependencyProjects: List<Project> = listOf(
 }
 
 neoForge {
-    neoFormVersion = "$minecraftVersion-$neoformTimestamp"
+    neoFormVersion = "$targetMinecraftVersion-$neoformTimestamp"
     accessTransformers {
         from("src/main/accesstransformer.cfg")
     }
@@ -80,14 +81,14 @@ sourceSets {
 dependencies {
     compileOnly("org.spongepowered:mixin:$mixinVersion")
     compileOnly(jeiApiDependency)
-    compileOnly(mezzConfigApiDependency)
+    compileOnly(mezzConfigApiCompileDependency)
     implementation("org.jetbrains:annotations:$jetbrainsAnnotationsVersion")
     implementation("it.unimi.dsi:fastutil:$fastutilVersion")
     dependencyProjects.forEach {
         implementation(it)
     }
     testImplementation("org.junit.jupiter:junit-jupiter:$jUnitVersion")
-    testImplementation(mezzConfigApiDependency)
+    testImplementation(mezzConfigApiCompileDependency)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

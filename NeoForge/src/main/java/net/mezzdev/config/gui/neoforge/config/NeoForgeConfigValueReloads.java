@@ -32,9 +32,10 @@ final class NeoForgeConfigValueReloads {
 	public static void register(ModConfig modConfig, NeoForgeConfigValue<?> value) {
 		synchronized (VALUES_BY_CONFIG) {
 			VALUES_BY_CONFIG.computeIfAbsent(
-				modConfig,
-				ignored -> Collections.newSetFromMap(new IdentityHashMap<>())
-			).add(value);
+					modConfig,
+					ignored -> Collections.newSetFromMap(new IdentityHashMap<>())
+				)
+				.add(value);
 		}
 	}
 

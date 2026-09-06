@@ -1,13 +1,14 @@
 package net.mezzdev.config.gui.config;
 
-import net.mezzdev.config.api.schema.IConfigEditorCategory;
-import net.mezzdev.config.api.value.ConfigValueEditMode;
-import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
-import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.api.schema.category.IConfigEditorCategory;
+import net.mezzdev.config.api.value.editor.ConfigValueEditMode;
+import net.mezzdev.config.api.value.editor.IConfigValueEditorInfo;
+import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.api.value.IConfigValueBatchChangeListener;
-import net.mezzdev.config.api.value.IConfigValueChangeListener;
-import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.api.value.change.IConfigValueBatchChangeListener;
+import net.mezzdev.config.api.value.change.IConfigValueChangeListener;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -55,7 +56,7 @@ public final class ConfigGuiOptionsTestUtil {
 		}
 	}
 
-	private static final class TestConfigValue<T> implements IConfigValue<T> {
+	private static final class TestConfigValue<T> implements IConfigValue<T>, IConfigValueEditorInfo<T> {
 		private final String name;
 		private final T defaultValue;
 		private final IConfigValueSerializer<T> serializer = new TestConfigValueSerializer<>();
@@ -78,8 +79,13 @@ public final class ConfigGuiOptionsTestUtil {
 		}
 
 		@Override
-		public T getValue() {
+		public T get() {
 			return value;
+		}
+
+		@Override
+		public IConfigValueEditorInfo<T> getEditorInfo() {
+			return this;
 		}
 
 		@Override

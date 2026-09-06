@@ -4,16 +4,16 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.mezzdev.config.api.Configs;
 import net.mezzdev.config.api.IConfigRegistration;
-import net.mezzdev.config.api.schema.IConfigCategoryBuilder;
+import net.mezzdev.config.api.schema.builder.IConfigCategoryBuilder;
 import net.mezzdev.config.api.schema.IConfigSchema;
-import net.mezzdev.config.api.schema.IConfigSchemaBuilder;
-import net.mezzdev.config.api.value.IDeserializeResult;
-import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.schema.builder.IConfigSchemaBuilder;
+import net.mezzdev.config.api.value.serializer.IDeserializeResult;
+import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.api.ConfigValueEditorType;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
-import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.ConfigGuiPlugin;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
@@ -88,10 +88,11 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 		IConfigCategoryBuilder advanced = schemaBuilder.addCategory("advanced");
 		advanced.addValue("displayName", "Fabric Custom", TextSerializer.INSTANCE).build();
 		advanced.addValue(
-			"favoriteModes",
-			List.of(TestMode.BALANCED, TestMode.FAST),
-			ModeListSerializer.INSTANCE
-		).build();
+				"favoriteModes",
+				List.of(TestMode.BALANCED, TestMode.FAST),
+				ModeListSerializer.INSTANCE
+			)
+			.build();
 		advanced.addInteger("refreshTicks", 20, 1, 200).build();
 		schema = schemaBuilder.build();
 	}
@@ -448,12 +449,15 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 
 		@Override
 		public CombinedEnabled getValue() {
-			return CombinedEnabled.from(primary.getValue(), secondary.getValue());
+			return CombinedEnabled.from(primary.get(), secondary.get());
 		}
 
 		@Override
 		public CombinedEnabled getDefaultValue() {
-			return CombinedEnabled.from(primary.getDefaultValue(), secondary.getDefaultValue());
+			return CombinedEnabled.from(
+				primary.getEditorInfo().getDefaultValue(),
+				secondary.getEditorInfo().getDefaultValue()
+			);
 		}
 
 		@Override

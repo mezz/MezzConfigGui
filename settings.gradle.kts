@@ -14,7 +14,7 @@ pluginManagement {
 			includeGroupByRegex("org\\.parchmentmc.*")
 		}
 		exclusiveMaven("https://maven.fabricmc.net/") {
-			includeGroup("net.fabricmc")
+			includeGroupByRegex("net\\.fabricmc.*")
 			includeGroup("fabric-loom")
 		}
 		exclusiveMaven("https://maven.neoforged.net/releases") {
@@ -48,9 +48,9 @@ rootProject.name = "MezzConfigGui"
 if (useMezzConfigCompositeBuild) {
 	includeBuild(mezzConfigLocalPath) {
 		dependencySubstitution {
-			substitute(module("net.mezzdev.config:CommonApi")).using(project(":CommonApi"))
+			substitute(module("net.mezzdev.config:CommonApi")).using(project(":Common"))
 			substitute(module("net.mezzdev.config:Common")).using(project(":Common"))
-			substitute(module("net.mezzdev.config:mezz_config-${minecraftVersion}-config-api")).using(project(":CommonApi"))
+			substitute(module("net.mezzdev.config:mezz_config-${minecraftVersion}-config-api")).using(project(":Common"))
 			substitute(module("net.mezzdev.config:mezz_config-${minecraftVersion}-config")).using(project(":Common"))
 			substitute(module("net.mezzdev.config:mezz_config-${minecraftVersion}-fabric")).using(project(":Fabric"))
 			substitute(module("net.mezzdev.config:mezz_config-${minecraftVersion}-forge")).using(project(":Forge"))

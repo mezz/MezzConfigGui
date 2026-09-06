@@ -1,8 +1,9 @@
 package net.mezzdev.config.gui;
 
 import net.mezzdev.config.api.sorting.ISortingConfig;
-import net.mezzdev.config.api.value.IDeserializeResult;
-import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.api.migration.ISortingConfigMigrator;
+import net.mezzdev.config.api.value.serializer.IDeserializeResult;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;
@@ -18,6 +19,7 @@ import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -276,6 +278,11 @@ class SortableConfigValueFactoryTest {
 		public Runnable addChangeListener(Runnable listener) {
 			listeners.add(listener);
 			return () -> listeners.remove(listener);
+		}
+
+		@Override
+		public ISortingConfig<String> setLegacyMigration(List<Path> legacyPaths, ISortingConfigMigrator<String> migrator) {
+			return this;
 		}
 	}
 

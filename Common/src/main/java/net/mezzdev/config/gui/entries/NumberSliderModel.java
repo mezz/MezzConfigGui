@@ -1,6 +1,6 @@
 package net.mezzdev.config.gui.entries;
 
-import net.mezzdev.config.api.value.ConfigValueRange;
+import net.mezzdev.config.api.value.serializer.ConfigValueRange;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

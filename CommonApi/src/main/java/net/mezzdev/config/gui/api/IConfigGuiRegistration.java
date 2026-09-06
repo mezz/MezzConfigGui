@@ -29,7 +29,7 @@ public interface IConfigGuiRegistration {
 	 * Get helper factories for config values backed by sortable runtime lists.
 	 * <p>
 	 * Prefer adding sorting configs directly with
-	 * {@link IConfigScreenCategoryBuilder#addSortingConfig(String, String, net.mezzdev.config.api.sorting.ISortingConfig, java.util.Collection, net.mezzdev.config.api.value.IConfigValueSerializer)}
+	 * {@link IConfigScreenCategoryBuilder#addSortingConfig(String, String, net.mezzdev.config.api.sorting.ISortingConfig, java.util.Collection, net.mezzdev.config.api.value.serializer.IConfigValueSerializer)}
 	 * or
 	 * {@link IConfigScreenCategoryBuilder#addStringSortingConfig(String, String, net.mezzdev.config.api.sorting.ISortingConfig, java.util.Collection)}
 	 * when customizing a screen category. This helper remains for callers that still need to create a screen value

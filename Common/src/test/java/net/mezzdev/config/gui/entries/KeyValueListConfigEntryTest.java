@@ -1,8 +1,8 @@
 package net.mezzdev.config.gui.entries;
 
-import net.mezzdev.config.api.value.IDeserializeResult;
-import net.mezzdev.config.api.value.IConfigKeyValueSerializer;
-import net.mezzdev.config.api.value.IConfigValueSerializer;
+import net.mezzdev.config.api.value.serializer.IDeserializeResult;
+import net.mezzdev.config.api.value.serializer.IConfigKeyValueSerializer;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.IConfigListValueEditorOptions;
 import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigScreenValue;

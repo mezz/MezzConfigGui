@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui.test.neoforge.custom;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.gui.api.ConfigGuiPlugin;

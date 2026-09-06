@@ -1,12 +1,12 @@
 package net.mezzdev.config.gui.remote;
 
 import net.mezzdev.config.api.schema.ConfigSchemaType;
-import net.mezzdev.config.api.schema.IConfigBatchUpdater;
-import net.mezzdev.config.api.schema.IConfigCategory;
+import net.mezzdev.config.api.schema.update.IConfigBatchUpdater;
+import net.mezzdev.config.api.schema.category.IConfigCategory;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.api.value.IConfigValueSerializer;
-import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
+import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -243,7 +243,7 @@ final class RemoteConfigRequestHandler implements AutoCloseable {
 		Set<RemoteValueKey> keys = new HashSet<>();
 		for (IConfigCategory category : schema.getCategories()) {
 			for (IConfigValue<?> value : category.getConfigValues()) {
-				RemoteValueKey key = new RemoteValueKey(category.getName(), value.getName());
+				RemoteValueKey key = new RemoteValueKey(category.getName(), value.getEditorInfo().getName());
 				if (!keys.add(key)) {
 					throw new IllegalStateException("Duplicate config value storage key: " + key);
 				}
@@ -257,7 +257,7 @@ final class RemoteConfigRequestHandler implements AutoCloseable {
 	}
 
 	private static <T> String serializePendingValue(IConfigValue<T> value) {
-		return value.getSerializer().serialize(value.getPendingValue());
+		return value.getEditorInfo().getSerializer().serialize(value.getEditorInfo().getPendingValue());
 	}
 
 	private static List<RemoteValueData> serializeProjectedSnapshot(
@@ -270,7 +270,7 @@ final class RemoteConfigRequestHandler implements AutoCloseable {
 		Set<RemoteValueKey> keys = new HashSet<>();
 		for (IConfigCategory category : schema.getCategories()) {
 			for (IConfigValue<?> value : category.getConfigValues()) {
-				RemoteValueKey key = new RemoteValueKey(category.getName(), value.getName());
+				RemoteValueKey key = new RemoteValueKey(category.getName(), value.getEditorInfo().getName());
 				if (!keys.add(key)) {
 					throw new IllegalStateException("Duplicate config value storage key: " + key);
 				}
@@ -288,7 +288,7 @@ final class RemoteConfigRequestHandler implements AutoCloseable {
 	}
 
 	private static <T> String serializeProposedValue(ResolvedUpdate<T> update) {
-		return update.value().getSerializer().serialize(update.proposedValue());
+		return update.value().getEditorInfo().getSerializer().serialize(update.proposedValue());
 	}
 
 	private static List<ResolvedUpdate<?>> resolveUpdates(
@@ -321,7 +321,7 @@ final class RemoteConfigRequestHandler implements AutoCloseable {
 		List<? extends IConfigValue<?>> values = categories.getFirst()
 			.getConfigValues()
 			.stream()
-			.filter(value -> value.getName().equals(key.valueName()))
+			.filter(value -> value.getEditorInfo().getName().equals(key.valueName()))
 			.toList();
 		if (values.size() != 1) {
 			throw new IllegalArgumentException("Unknown or duplicate config value: " + key.valueName());
@@ -332,10 +332,10 @@ final class RemoteConfigRequestHandler implements AutoCloseable {
 	@SuppressWarnings("unchecked")
 	private static <T> ResolvedUpdate<T> deserializeUpdate(IConfigValue<?> unresolvedValue, String serializedValue) {
 		IConfigValue<T> value = (IConfigValue<T>) unresolvedValue;
-		IConfigValueSerializer<T> serializer = value.getSerializer();
+		IConfigValueSerializer<T> serializer = value.getEditorInfo().getSerializer();
 		IDeserializeResult<T> result = serializer.deserialize(serializedValue);
 		if (!result.getDiagnostics().isEmpty() || result.getResult().isEmpty()) {
-			throw new IllegalArgumentException("Invalid serialized config value: " + value.getName());
+			throw new IllegalArgumentException("Invalid serialized config value: " + value.getEditorInfo().getName());
 		}
 		return new ResolvedUpdate<>(value, result.getResult().orElseThrow());
 	}

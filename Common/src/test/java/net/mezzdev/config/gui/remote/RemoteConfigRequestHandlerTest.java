@@ -1,18 +1,19 @@
 package net.mezzdev.config.gui.remote;
 
 import net.mezzdev.config.api.schema.ConfigSchemaType;
-import net.mezzdev.config.api.schema.IConfigBatchUpdater;
-import net.mezzdev.config.api.schema.IConfigCategory;
-import net.mezzdev.config.api.schema.IConfigEditorCategory;
+import net.mezzdev.config.api.schema.update.IConfigBatchUpdater;
+import net.mezzdev.config.api.schema.category.IConfigCategory;
+import net.mezzdev.config.api.schema.category.IConfigEditorCategory;
 import net.mezzdev.config.api.schema.IConfigSchema;
-import net.mezzdev.config.api.value.ConfigValueEditMode;
-import net.mezzdev.config.api.value.ConfigValueRestartRequirement;
-import net.mezzdev.config.api.value.IAppliedConfigValueChange;
+import net.mezzdev.config.api.value.editor.ConfigValueEditMode;
+import net.mezzdev.config.api.value.editor.IConfigValueEditorInfo;
+import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
+import net.mezzdev.config.api.value.change.IAppliedConfigValueChange;
 import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.api.value.IConfigValueBatchChangeListener;
-import net.mezzdev.config.api.value.IConfigValueChangeListener;
-import net.mezzdev.config.api.value.IConfigValueSerializer;
-import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.api.value.change.IConfigValueBatchChangeListener;
+import net.mezzdev.config.api.value.change.IConfigValueChangeListener;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
+import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
@@ -52,9 +53,9 @@ class RemoteConfigRequestHandlerTest {
 			assertTrue(response.accepted());
 			assertEquals(1, response.revision());
 			assertEquals(1, schema.batchCount());
-			assertEquals("new", immediate.getValue());
+			assertEquals("new", immediate.get());
 			assertEquals("new", immediate.getPendingValue());
-			assertEquals("effective", restart.getValue());
+			assertEquals("effective", restart.get());
 			assertEquals("pending", restart.getPendingValue());
 			assertEquals(List.of(value("immediate", "new"), value("restart", "pending")), response.pendingValues());
 		}
@@ -78,7 +79,7 @@ class RemoteConfigRequestHandlerTest {
 			assertFalse(response.accepted());
 			assertFalse(response.canEdit());
 			assertEquals(0, schema.batchCount());
-			assertEquals("old", value.getValue());
+			assertEquals("old", value.get());
 			assertEquals(List.of(), response.pendingValues());
 		}
 	}
@@ -113,9 +114,10 @@ class RemoteConfigRequestHandlerTest {
 		TestConfigSchema schema = TestConfigSchema.create(value);
 		try (RemoteConfigRequestHandler handler = new RemoteConfigRequestHandler(() -> List.of(schema))) {
 			long sharedRevision = handler.handleSnapshot(
-				new RemoteConfigMessage.SnapshotRequest(1, SCHEMA_KEY),
-				true
-			).revision();
+					new RemoteConfigMessage.SnapshotRequest(1, SCHEMA_KEY),
+					true
+				)
+				.revision();
 			RemoteConfigMessage.UpdateResponse first = handler.handleUpdate(
 				new RemoteConfigMessage.UpdateRequest(2, SCHEMA_KEY, sharedRevision, List.of(value("value", "first"))),
 				true
@@ -129,7 +131,7 @@ class RemoteConfigRequestHandlerTest {
 			assertFalse(second.accepted());
 			assertEquals(first.revision(), second.revision());
 			assertEquals(List.of(value("value", "first")), second.pendingValues());
-			assertEquals("first", value.getValue());
+			assertEquals("first", value.get());
 			assertEquals(1, schema.batchCount());
 		}
 	}
@@ -170,8 +172,8 @@ class RemoteConfigRequestHandlerTest {
 			}
 
 			assertEquals(0, schema.batchCount());
-			assertEquals("old", valid.getValue());
-			assertEquals("old", invalid.getValue());
+			assertEquals("old", valid.get());
+			assertEquals("old", invalid.get());
 		}
 	}
 
@@ -316,7 +318,7 @@ class RemoteConfigRequestHandlerTest {
 		}
 	}
 
-	private static final class TestConfigValue implements IConfigValue<String> {
+	private static final class TestConfigValue implements IConfigValue<String>, IConfigValueEditorInfo<String> {
 		private final String name;
 		private final String defaultValue;
 		private final boolean restartRequired;
@@ -353,8 +355,13 @@ class RemoteConfigRequestHandlerTest {
 		}
 
 		@Override
-		public String getValue() {
+		public String get() {
 			return effectiveValue;
+		}
+
+		@Override
+		public IConfigValueEditorInfo<String> getEditorInfo() {
+			return this;
 		}
 
 		@Override

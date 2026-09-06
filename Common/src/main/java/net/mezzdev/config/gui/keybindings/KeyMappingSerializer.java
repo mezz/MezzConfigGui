@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui.keybindings;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import net.mezzdev.config.api.value.IDeserializeResult;
+import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.gui.api.ConfigValueEditorType;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;

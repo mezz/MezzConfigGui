@@ -34,7 +34,7 @@ val minecraftVersion: String by extra
 val configGuiModId: String by extra
 val modJavaVersion: String by extra
 val jsr305Version: String by extra
-val mezzConfigApiDependency: String by rootProject.extra
+val mezzConfigApiCompileDependency: Any by rootProject.extra
 val configGuiApiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui-api")
 val testModId = "mezz_config_gui_test_neoforge_custom"
 
@@ -59,7 +59,7 @@ neoForge {
         val testMod = mods.named(testModId)
 
         configureEach {
-            getMods().set(setOf(testMod.get()))
+            getLoadedMods().set(setOf(testMod.get()))
         }
         create("client") {
             client()
@@ -77,7 +77,7 @@ sourceSets {
 
 dependencies {
     compileOnly("com.google.code.findbugs:jsr305:$jsr305Version")
-    compileOnly(mezzConfigApiDependency)
+    compileOnly(mezzConfigApiCompileDependency)
     compileOnly(configGuiApiProject)
 }
 

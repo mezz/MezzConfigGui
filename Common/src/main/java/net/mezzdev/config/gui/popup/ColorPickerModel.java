@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui.popup;
 
-import net.mezzdev.config.api.value.ConfigColorFormat;
-import net.mezzdev.config.api.value.PackedColor;
+import net.mezzdev.config.api.value.color.ConfigColorFormat;
+import net.mezzdev.config.api.value.color.PackedColor;
 
 /**
  * Mutable HSV representation used by the color picker.

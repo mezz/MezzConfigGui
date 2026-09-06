@@ -31,7 +31,7 @@ neoForge {
         val testMod = mods.named(testModId)
 
         configureEach {
-            getMods().set(setOf(testMod.get()))
+            getLoadedMods().set(setOf(testMod.get()))
         }
         create("client") {
             client()
