@@ -44,7 +44,6 @@ val mixinVersion: String by extra
 val jetbrainsAnnotationsVersion: String by extra
 val fastutilVersion: String by extra
 val mezzConfigApiDependency: String by rootProject.extra
-val mezzConfigApiCompileDependency: Any by rootProject.extra
 val jeiApiDependency: Any by rootProject.extra
 val configGuiApiProject: Project = project(":${configGuiModId}-${targetMinecraftVersion}-config-gui-api")
 
@@ -81,14 +80,14 @@ sourceSets {
 dependencies {
     compileOnly("org.spongepowered:mixin:$mixinVersion")
     compileOnly(jeiApiDependency)
-    compileOnly(mezzConfigApiCompileDependency)
+    compileOnly(mezzConfigApiDependency)
     implementation("org.jetbrains:annotations:$jetbrainsAnnotationsVersion")
     implementation("it.unimi.dsi:fastutil:$fastutilVersion")
     dependencyProjects.forEach {
         implementation(it)
     }
     testImplementation("org.junit.jupiter:junit-jupiter:$jUnitVersion")
-    testImplementation(mezzConfigApiCompileDependency)
+    testImplementation(mezzConfigApiDependency)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

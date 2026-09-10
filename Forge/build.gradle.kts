@@ -21,10 +21,7 @@ val jetbrainsAnnotationsVersion: String by extra
 val log4jVersion: String by extra
 val fastutilVersion: String by extra
 val jsr305Version: String by extra
-val useMezzConfigCompositeBuild = providers.gradleProperty("useMezzConfigCompositeBuild")
-	.map(String::toBoolean)
-	.getOrElse(true)
-val mezzConfigApiCompileDependency: Any by rootProject.extra
+val mezzConfigApiDependency: String by rootProject.extra
 val mezzConfigForgeDependency: String by rootProject.extra
 val jeiApiDependency: Any by rootProject.extra
 val configGuiApiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui-api")
@@ -41,14 +38,6 @@ val dependencyProjects: List<Project> = listOf(
 	configGuiApiProject,
 	configGuiProject,
 )
-val loaderRuntimeOnly = configurations.create("loaderRuntimeOnly") {
-	isCanBeConsumed = false
-	isCanBeResolved = false
-	description = "Runtime loader dependencies for Forge development runs."
-}
-configurations.runtimeClasspath {
-	extendsFrom(loaderRuntimeOnly)
-}
 
 (dependencyProjects).forEach {
 	project.evaluationDependsOn(it.path)
@@ -122,10 +111,8 @@ dependencies {
 	compileOnly("it.unimi.dsi:fastutil:$fastutilVersion")
 	compileOnly("com.google.code.findbugs:jsr305:$jsr305Version")
 	compileOnly(jeiApiDependency)
-	compileOnly(mezzConfigApiCompileDependency)
-	add(loaderRuntimeOnly.name, mezzConfigForgeDependency) {
-		isTransitive = !useMezzConfigCompositeBuild
-	}
+	compileOnly(mezzConfigApiDependency)
+	runtimeOnly(mezzConfigForgeDependency)
 	dependencyProjects.forEach {
 		compileOnly(it)
 	}

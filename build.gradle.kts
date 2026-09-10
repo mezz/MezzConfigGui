@@ -1,7 +1,5 @@
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
-import org.gradle.api.attributes.LibraryElements
-import org.gradle.api.attributes.Usage
 import org.gradle.api.provider.Property
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
@@ -124,23 +122,7 @@ val buildNumber = providers.gradleProperty("BUILD_NUMBER")
     .get()
 val projectVersion = configuredReleaseVersion ?: "${releaseSpecificationVersion}.${buildNumber}"
 
-val mezzConfigApiDependency = "$configModGroup:${configModId}-${minecraftVersion}-config-api:$mezzConfigVersion"
-// MezzConfig's API now lives in Common's custom api source set. Its composite-build Java API variant does not expose
-// those classes, but the runtime jar does. Resolve that jar without its runtime dependencies for compile classpaths.
-val mezzConfigApiCompileConfiguration = configurations.detachedConfiguration(
-    dependencies.create(mezzConfigApiDependency)
-).apply {
-    isTransitive = false
-    attributes {
-        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage::class.java, Usage.JAVA_RUNTIME))
-        attribute(
-            LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
-            objects.named(LibraryElements::class.java, LibraryElements.JAR)
-        )
-    }
-}
-extra["mezzConfigApiDependency"] = mezzConfigApiDependency
-extra["mezzConfigApiCompileDependency"] = files(mezzConfigApiCompileConfiguration)
+extra["mezzConfigApiDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-config-api:$mezzConfigVersion"
 extra["mezzConfigFabricDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-fabric:$mezzConfigVersion"
 extra["mezzConfigForgeDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-forge:$mezzConfigVersion"
 extra["mezzConfigNeoForgeDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-neoforge:$mezzConfigVersion"

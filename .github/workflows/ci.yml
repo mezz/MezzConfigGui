@@ -19,13 +19,6 @@ jobs:
         with:
           path: MezzConfigGui
 
-      - name: Check out MezzConfig
-        uses: actions/checkout@v7
-        with:
-          repository: mezz/MezzConfig
-          ref: 1.21.1
-          path: MezzConfig
-
       - name: Check out JEI API baseline
         uses: actions/checkout@v7
         with:
@@ -46,16 +39,10 @@ jobs:
         working-directory: justenoughitems1.21.1
         run: ./gradlew --stacktrace :CommonApi:jar
 
-      - name: Build MezzConfig dependency publications
-        working-directory: MezzConfig
-        run: ./gradlew --stacktrace validatePublishing
-
       - name: Validate builds, API, documentation, and publications
         working-directory: MezzConfigGui
         run: >-
           ./gradlew --stacktrace
-          -PuseMezzConfigCompositeBuild=false
-          -PDEPLOY_DIR=${{ github.workspace }}/MezzConfig/build/publication-validation
           spotlessCheck
           :mezz_config_gui-1.21.1-config-gui-api:build
           :mezz_config_gui-1.21.1-config-gui:build

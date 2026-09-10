@@ -63,11 +63,7 @@ val modMenuVersionFabric: String by extra
 val parchmentMinecraftVersion: String by extra
 val parchmentVersionFabric: String by extra
 val jsr305Version: String by extra
-val mezzConfigVersion: String by extra
-val useMezzConfigCompositeBuild = providers.gradleProperty("useMezzConfigCompositeBuild")
-    .map(String::toBoolean)
-    .getOrElse(true)
-val mezzConfigApiCompileDependency: Any by rootProject.extra
+val mezzConfigApiDependency: String by rootProject.extra
 val mezzConfigFabricDependency: String by rootProject.extra
 val configGuiApiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui-api")
 val configGuiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui")
@@ -130,16 +126,8 @@ dependencies {
     modCompileOnly("de.siphalor:amecsapi-${amecsMinecraftVersion}:$amecsVersionFabric")
     modCompileOnly("com.terraformersmc:modmenu:$modMenuVersionFabric")
     compileOnly("com.google.code.findbugs:jsr305:$jsr305Version")
-    compileOnly(mezzConfigApiCompileDependency)
-    if (useMezzConfigCompositeBuild) {
-        // The composite project jar is already mapped and bundles Common. Let Gradle build it without Loom trying to
-        // inspect Common's custom api source-set directories as mod jars.
-        runtimeOnly(mezzConfigFabricDependency) {
-            isTransitive = false
-        }
-    } else {
-        modRuntimeOnly(mezzConfigFabricDependency)
-    }
+    compileOnly(mezzConfigApiDependency)
+    modRuntimeOnly(mezzConfigFabricDependency)
     modLocalRuntime("com.terraformersmc:modmenu:$modMenuVersionFabric")
     dependencyProjects.forEach {
         implementation(it)

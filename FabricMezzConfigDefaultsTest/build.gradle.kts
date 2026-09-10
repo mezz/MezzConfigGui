@@ -45,11 +45,7 @@ val modJavaVersion: String by extra
 val parchmentMinecraftVersion: String by extra
 val parchmentVersionFabric: String by extra
 val jsr305Version: String by extra
-val mezzConfigVersion: String by extra
-val useMezzConfigCompositeBuild = providers.gradleProperty("useMezzConfigCompositeBuild")
-    .map(String::toBoolean)
-    .getOrElse(true)
-val mezzConfigApiCompileDependency: Any by rootProject.extra
+val mezzConfigApiDependency: String by rootProject.extra
 val mezzConfigFabricDependency: String by rootProject.extra
 val configGuiApiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui-api")
 val testModId = "mezz_config_gui_test_fabric_defaults"
@@ -87,15 +83,9 @@ dependencies {
     modImplementation("net.fabricmc:fabric-loader:$fabricLoaderVersion")
     modImplementation("net.fabricmc.fabric-api:fabric-api:$fabricApiVersion")
     compileOnly("com.google.code.findbugs:jsr305:$jsr305Version")
-    compileOnly(mezzConfigApiCompileDependency)
+    compileOnly(mezzConfigApiDependency)
     compileOnly(configGuiApiProject)
-    if (useMezzConfigCompositeBuild) {
-        runtimeOnly(mezzConfigFabricDependency) {
-            isTransitive = false
-        }
-    } else {
-        modRuntimeOnly(mezzConfigFabricDependency)
-    }
+    modRuntimeOnly(mezzConfigFabricDependency)
 }
 
 loom {

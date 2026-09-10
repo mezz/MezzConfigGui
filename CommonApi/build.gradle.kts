@@ -46,7 +46,6 @@ val configModGroup: String by extra
 val modJavaVersion: String by extra
 val jetbrainsAnnotationsVersion: String by extra
 val mezzConfigApiDependency: String by rootProject.extra
-val mezzConfigApiCompileDependency: Any by rootProject.extra
 val apiBaselineVersion: String by extra
 val apiBaselineRequired: String by extra
 val requireApiBaseline = apiBaselineRequired.toBooleanStrict()
@@ -75,7 +74,7 @@ sourceSets {
 
 dependencies {
 	implementation("org.jetbrains:annotations:$jetbrainsAnnotationsVersion")
-	compileOnly(mezzConfigApiCompileDependency)
+	compileOnly(mezzConfigApiDependency)
 }
 
 val apiBaseline by configurations.creating {
