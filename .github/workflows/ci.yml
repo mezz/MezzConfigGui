@@ -14,17 +14,8 @@ jobs:
     timeout-minutes: 45
 
     steps:
-      - name: Check out MezzConfigGui
+      - name: Check out repository
         uses: actions/checkout@v7
-        with:
-          path: MezzConfigGui
-
-      - name: Check out JEI API baseline
-        uses: actions/checkout@v7
-        with:
-          repository: mezz/JustEnoughItems
-          ref: v19.39.0
-          path: justenoughitems1.21.1
 
       - name: Set up Java 21
         uses: actions/setup-java@v6
@@ -35,22 +26,5 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
 
-      - name: Build JEI API baseline
-        working-directory: justenoughitems1.21.1
-        run: ./gradlew --stacktrace :CommonApi:jar
-
-      - name: Validate builds, API, documentation, and publications
-        working-directory: MezzConfigGui
-        run: >-
-          ./gradlew --stacktrace
-          spotlessCheck
-          :mezz_config_gui-1.21.1-config-gui-api:build
-          :mezz_config_gui-1.21.1-config-gui:build
-          :mezz_config_gui-1.21.1-fabric:build
-          :mezz_config_gui-1.21.1-forge:build
-          :mezz_config_gui-1.21.1-neoforge:build
-          :FabricMezzConfigDefaultsTest:build
-          :FabricMezzConfigCustomTest:build
-          :NeoForgeNativeDefaultsTest:build
-          :NeoForgeNativeCustomTest:build
-          validatePublishing
+      - name: Build and check
+        run: ./gradlew --stacktrace build -PpublishDryRun=true
