@@ -1,4 +1,25 @@
 import org.slf4j.event.Level
+import org.gradle.api.GradleException
+import org.gradle.api.DefaultTask
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.TaskAction
+
+abstract class ValidateGameTestResult : DefaultTask() {
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val logFile: RegularFileProperty
+
+    @TaskAction
+    fun validate() {
+        val file = logFile.get().asFile
+        if (!Regex("All [1-9][0-9]* required tests passed").containsMatchIn(file.readText())) {
+            throw GradleException("GameTest server did not report that all required tests passed; see ${file.path}")
+        }
+    }
+}
 
 plugins {
     id("java")
@@ -6,6 +27,11 @@ plugins {
     id("eclipse")
     id("maven-publish")
     id("net.neoforged.moddev")
+    id("me.modmuss50.mod-publish-plugin")
+}
+
+publishMods {
+    file.set(tasks.jar.flatMap { it.archiveFile })
 }
 
 repositories {
@@ -33,16 +59,15 @@ repositories {
 val neoforgeVersion: String by extra
 val minecraftVersion: String by extra
 val configGuiModId: String by extra
+val configModId: String by extra
 val configModGroup: String by extra
 val modJavaVersion: String by extra
+val jsr305Version: String by extra
 val mezzConfigApiDependency: String by rootProject.extra
+val mezzConfigCommonDependency: String by rootProject.extra
 val mezzConfigNeoForgeDependency: String by rootProject.extra
-val configGuiApiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui-api")
-val configGuiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui")
 val neoForgeNativeDefaultsTestModId = "mezz_config_gui_test_neoforge_defaults"
 val neoForgeNativeCustomTestModId = "mezz_config_gui_test_neoforge_custom"
-val neoForgeNativeDefaultsTestModProject: Project = project(":NeoForgeNativeDefaultsTest")
-val neoForgeNativeCustomTestModProject: Project = project(":NeoForgeNativeCustomTest")
 
 group = configModGroup
 
@@ -51,27 +76,63 @@ base {
     archivesName.set(baseArchivesName)
 }
 
-val dependencyProjects: List<Project> = listOf(
-    configGuiApiProject,
-    configGuiProject,
-)
-val testModProjects: List<Project> = listOf(
-    neoForgeNativeDefaultsTestModProject,
-    neoForgeNativeCustomTestModProject,
-)
-
-(dependencyProjects + testModProjects).forEach {
+val commonProject: Project = project(":Common")
+val dependencyProjects: List<Project> = listOf(commonProject)
+dependencyProjects.forEach {
     project.evaluationDependsOn(it.path)
 }
-val testModSourceSets = testModProjects.map {
-    it.sourceSets.main.get()
+val commonApiSourceSet = commonProject.sourceSets["api"]
+val dependencySourceSets = listOf(commonProject.sourceSets.main.get(), commonApiSourceSet)
+val mezzConfigRun by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+    isTransitive = false
+}
+val mezzConfigRunOutput = layout.buildDirectory.dir("sourceSets/mezzConfigRun")
+val mezzConfigRunSourceSet = sourceSets.create("mezzConfigRun") {
+    java.setSrcDirs(emptyList<String>())
+    resources.setSrcDirs(emptyList<String>())
+    java.destinationDirectory.set(mezzConfigRunOutput)
+    output.setResourcesDir(mezzConfigRunOutput)
+}
+val prepareMezzConfigRun = tasks.register<Sync>("prepareMezzConfigRun") {
+    from(mezzConfigRun.map { zipTree(it) })
+    into(mezzConfigRunOutput)
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+tasks.named(mezzConfigRunSourceSet.compileJavaTaskName) {
+    enabled = false
+}
+tasks.named(mezzConfigRunSourceSet.processResourcesTaskName) {
+    enabled = false
+}
+val mezzConfigRunClassesTask = tasks.named(mezzConfigRunSourceSet.classesTaskName) {
+    dependsOn(prepareMezzConfigRun)
+}
+val defaultsTestModSourceSet = sourceSets.create("defaultsTestMod") {
+    compileClasspath += sourceSets.main.get().output
+    runtimeClasspath += sourceSets.main.get().output
+}
+val customTestModSourceSet = sourceSets.create("customTestMod") {
+    compileClasspath += sourceSets.main.get().output
+    runtimeClasspath += sourceSets.main.get().output
+}
+val testModSourceSets = listOf(defaultsTestModSourceSet, customTestModSourceSet)
+
+for (testModSourceSet in testModSourceSets) {
+    configurations.named(testModSourceSet.implementationConfigurationName) {
+        extendsFrom(configurations.implementation.get())
+    }
+    configurations.named(testModSourceSet.compileOnlyConfigurationName) {
+        extendsFrom(configurations.compileOnly.get())
+    }
 }
 
 extra["configLanguageDependencyProjects"] = dependencyProjects
 apply(from = rootProject.file("buildtools/ConfigLanguageResources.gradle.kts"))
 
 val mergedConfigLanguageResources = tasks.named("mergeConfigLanguageResources")
-val configGuiAccessTransformer = configGuiProject.layout.projectDirectory.file("src/main/accesstransformer.cfg")
+val configGuiAccessTransformer = commonProject.layout.projectDirectory.file("src/main/accesstransformer.cfg")
 
 neoForge {
     version = neoforgeVersion
@@ -79,28 +140,37 @@ neoForge {
         from(configGuiAccessTransformer)
     }
 
+    for (testModSourceSet in testModSourceSets) {
+        addModdingDependenciesTo(testModSourceSet)
+    }
+
     mods {
+        create(configModId) {
+            sourceSet(mezzConfigRunSourceSet)
+        }
         create(configGuiModId) {
             sourceSet(sourceSets.main.get())
-            for (dependencyProject in dependencyProjects) {
-                sourceSet(dependencyProject.sourceSets.main.get())
+            for (dependencySourceSet in dependencySourceSets) {
+                sourceSet(dependencySourceSet)
             }
         }
         create(neoForgeNativeDefaultsTestModId) {
-            sourceSet(testModSourceSets[0])
+            sourceSet(defaultsTestModSourceSet)
         }
         create(neoForgeNativeCustomTestModId) {
-            sourceSet(testModSourceSets[1])
+            sourceSet(customTestModSourceSet)
         }
     }
 
     runs {
+        val configMod = mods.named(configModId)
         val configGuiMod = mods.named(configGuiModId)
         val neoForgeNativeDefaultsTestMod = mods.named(neoForgeNativeDefaultsTestModId)
         val neoForgeNativeCustomTestMod = mods.named(neoForgeNativeCustomTestModId)
 
         configureEach {
             getLoadedMods().set(setOf(
+                configMod.get(),
                 configGuiMod.get(),
                 neoForgeNativeDefaultsTestMod.get(),
                 neoForgeNativeCustomTestMod.get()
@@ -125,14 +195,25 @@ neoForge {
     }
 }
 
-val testModClassesTasks = testModProjects.mapIndexed { index, testModProject ->
-    testModProject.tasks.named(testModSourceSets[index].classesTaskName)
+val testModClassesTasks = testModSourceSets.map {
+    tasks.named(it.classesTaskName)
+}
+val validateGameTestResult = tasks.register<ValidateGameTestResult>("validateGameTestResult") {
+    group = "verification"
+    description = "Checks that the NeoForge GameTest server ran and passed at least one required test."
+    logFile.set(layout.projectDirectory.file("run/gameTestServer/logs/latest.log"))
 }
 tasks.matching { it.name == "runClient" }.configureEach {
-    dependsOn(testModClassesTasks)
+    dependsOn(mezzConfigRunClassesTask, testModClassesTasks)
 }
-tasks.matching { it.name == "runGameTestServer" }.configureEach {
-    dependsOn(testModClassesTasks)
+val runGameTestServerTasks = tasks.matching { it.name == "runGameTestServer" }
+runGameTestServerTasks.configureEach {
+    dependsOn(mezzConfigRunClassesTask, testModClassesTasks)
+    finalizedBy(validateGameTestResult)
+}
+
+tasks.check {
+    dependsOn(testModClassesTasks, runGameTestServerTasks)
 }
 
 sourceSets {
@@ -144,9 +225,14 @@ sourceSets {
 
 dependencies {
     compileOnly(mezzConfigApiDependency)
-    runtimeOnly(mezzConfigNeoForgeDependency)
+    mezzConfigRun(mezzConfigCommonDependency)
+    mezzConfigRun(mezzConfigNeoForgeDependency)
     dependencyProjects.forEach {
         implementation(it)
+    }
+    compileOnly(commonApiSourceSet.output)
+    for (testModSourceSet in testModSourceSets) {
+        add(testModSourceSet.compileOnlyConfigurationName, "com.google.code.findbugs:jsr305:$jsr305Version")
     }
 }
 
@@ -176,8 +262,8 @@ tasks.named<ProcessResources>(sourceSets.main.get().processResourcesTaskName) {
 tasks.jar {
     dependsOn(mergedConfigLanguageResources)
     from(sourceSets.main.get().output)
-    for (p in dependencyProjects) {
-        from(p.sourceSets.main.get().output) {
+    for (dependencySourceSet in dependencySourceSets) {
+        from(dependencySourceSet.output) {
             exclude("assets/mezz_config/lang/*.json")
         }
     }
@@ -191,8 +277,8 @@ tasks.jar {
 
 val sourcesJarTask = tasks.named<Jar>("sourcesJar") {
     from(sourceSets.main.get().allJava)
-    for (p in dependencyProjects) {
-        from(p.sourceSets.main.get().allJava)
+    for (dependencySourceSet in dependencySourceSets) {
+        from(dependencySourceSet.allJava)
     }
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     archiveClassifier.set("sources")

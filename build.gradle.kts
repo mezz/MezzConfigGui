@@ -1,3 +1,5 @@
+import me.modmuss50.mpp.ModPublishExtension
+import me.modmuss50.mpp.PublishModTask
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.provider.Property
@@ -7,15 +9,22 @@ import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
 
+import java.util.Locale
+
 plugins {
+	base
+
+	// https://github.com/modmuss50/mod-publish-plugin
+	id("me.modmuss50.mod-publish-plugin") version("1.1.0") apply(false)
+
 	// https://github.com/mezz/JavaFormatting
 	id("net.mezzdev.java-formatting") version("0.4.0")
 
     // https://plugins.gradle.org/plugin/com.dorongold.task-tree
     id("com.dorongold.task-tree") version("4.0.2")
 
-    // https://plugins.gradle.org/plugin/me.champeau.gradle.japicmp
-    id("me.champeau.gradle.japicmp") version("0.4.6") apply(false)
+    // https://github.com/neoforged/JarCompatibilityChecker
+    id("net.neoforged.jarcompatibilitychecker") version("0.1.19") apply(false)
 
     // https://maven.fabricmc.net/fabric-loom/fabric-loom.gradle.plugin/maven-metadata.xml
     id("fabric-loom") version("1.13.6") apply(false)
@@ -80,10 +89,11 @@ val modJavaVersion: String by extra
 val modName: String by extra
 val neoforgeVersionRange: String by extra
 val neoforgeLoaderVersionRange: String by extra
-val jeiLocalPath: String by extra
 val jeiVersion: String by extra
 val specificationVersion: String by extra
 val releaseSpecificationVersion = specificationVersion
+val modPublishDryRun = providers.gradleProperty("publishDryRun").orElse("true")
+    .map { it.toBooleanStrict() }.get()
 
 abstract class ValidateReleaseVersion : DefaultTask() {
     @get:Input
@@ -112,6 +122,9 @@ fun normalizeReleaseVersion(value: String): String {
     return tagName.removePrefix("v")
 }
 
+fun Configuration.singleFileContents(): Provider<String> =
+    incoming.files.elements.map { elements -> elements.single().asFile.readText() }
+
 val configuredReleaseVersion = providers.gradleProperty("RELEASE_VERSION")
     .orElse(providers.environmentVariable("TAG_NAME"))
     .orNull
@@ -123,10 +136,11 @@ val buildNumber = providers.gradleProperty("BUILD_NUMBER")
 val projectVersion = configuredReleaseVersion ?: "${releaseSpecificationVersion}.${buildNumber}"
 
 extra["mezzConfigApiDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-config-api:$mezzConfigVersion"
+extra["mezzConfigCommonDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-config:$mezzConfigVersion"
 extra["mezzConfigFabricDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-fabric:$mezzConfigVersion"
 extra["mezzConfigForgeDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-forge:$mezzConfigVersion"
 extra["mezzConfigNeoForgeDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-neoforge:$mezzConfigVersion"
-extra["jeiApiDependency"] = files("${jeiLocalPath}/CommonApi/build/libs/jei-${minecraftVersion}-common-api-${jeiVersion}.jar")
+extra["jeiApiDependency"] = "mezz.jei:jei-${minecraftVersion}-common-api:$jeiVersion"
 
 javaFormatting {
 	target("*/src/*/java/net/mezzdev/**/*.java")
@@ -146,9 +160,94 @@ val validatePublishing = tasks.register("validatePublishing") {
     description = "Publishes every Maven publication to a local validation repository."
 }
 
+tasks.assemble {
+    dependsOn(subprojects.map { "${it.path}:assemble" })
+}
+
+tasks.check {
+    description = "Runs all project and release verification."
+    dependsOn(subprojects.map { "${it.path}:check" })
+    dependsOn(validatePublishing)
+    if (modPublishDryRun) {
+        dependsOn(":Fabric:publishMods", ":Forge:publishMods", ":NeoForge:publishMods")
+    }
+}
+
 subprojects {
     version = projectVersion
     group = modGroup
+
+    plugins.withId("me.modmuss50.mod-publish-plugin") {
+        val loaderName = project.name
+        val curseProjectId = providers.gradleProperty("curseProjectId")
+        val modrinthId = providers.gradleProperty("modrinthId")
+        val changelogHtml = configurations.create("changelogHtml") {
+            isCanBeConsumed = false
+            isCanBeResolved = true
+            isVisible = false
+            attributes {
+                attribute(Usage.USAGE_ATTRIBUTE, objects.named<Usage>("changelogHtml"))
+            }
+        }
+        val changelogMarkdown = configurations.create("changelogMarkdown") {
+            isCanBeConsumed = false
+            isCanBeResolved = true
+            isVisible = false
+            attributes {
+                attribute(Usage.USAGE_ATTRIBUTE, objects.named<Usage>("changelogMarkdown"))
+            }
+        }
+        dependencies {
+            add(changelogHtml.name, project(":Changelog"))
+            add(changelogMarkdown.name, project(":Changelog"))
+        }
+        extensions.configure<ModPublishExtension> {
+            dryRun.set(modPublishDryRun)
+            version.set(projectVersion)
+            displayName.set("$modName $projectVersion for $loaderName $minecraftVersion")
+            type.set(BETA)
+            modLoaders.add(loaderName.lowercase(Locale.ROOT))
+            changelog.set(changelogMarkdown.singleFileContents())
+
+            curseforge {
+                projectId.set(curseProjectId.orElse("0"))
+                projectSlug.set("mezzconfig-gui")
+                accessToken.set(providers.gradleProperty("curseforgeApikey"))
+                changelog.set(changelogHtml.singleFileContents())
+                changelogType.set("html")
+                minecraftVersions.add(minecraftVersion)
+                javaVersions.add(JavaVersion.toVersion(modJavaVersion))
+                clientRequired.set(true)
+                serverRequired.set(false)
+                requires("mezzconfig")
+                if (loaderName == "Fabric") {
+                    requires("fabric-api")
+                }
+            }
+
+            modrinth {
+                projectId.set(modrinthId.orElse("00000000"))
+                accessToken.set(providers.gradleProperty("modrinthToken"))
+                minecraftVersions.add(minecraftVersion)
+                requires("7tEfOcA7")
+                if (loaderName == "Fabric") {
+                    requires("fabric-api")
+                }
+            }
+        }
+        tasks.withType<PublishModTask>().configureEach {
+            if (!modPublishDryRun) {
+                dependsOn(rootProject.tasks.named("validateReleaseVersion"))
+                doFirst {
+                    if (!curseProjectId.isPresent || !modrinthId.isPresent) {
+                        throw GradleException(
+                            "Real platform publishing requires the curseProjectId and modrinthId Gradle properties."
+                        )
+                    }
+                }
+            }
+        }
+    }
 
     plugins.withId("maven-publish") {
         extensions.configure<PublishingExtension> {
@@ -190,6 +289,12 @@ subprojects {
         validatePublishing.configure {
             dependsOn(validationPublicationTaskPath)
         }
+    }
+
+    tasks.withType<PublishToMavenRepository>().configureEach {
+        // The compatibility baseline may come from the same local validation repository.
+        // Finish reading it before any publication task can replace the artifact.
+        dependsOn(":Common:checkJarCompatibility")
     }
 
     if (configuredReleaseVersion != null) {
@@ -253,6 +358,7 @@ subprojects {
             "modId" to modId,
             "modJavaVersion" to modJavaVersion,
             "modName" to modName,
+            "specificationVersion" to specificationVersion,
             "version" to version,
         )
         inputs.properties(properties)

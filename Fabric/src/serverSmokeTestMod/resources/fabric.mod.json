@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "mezz_config_gui_test_fabric_smoke",
+  "version": "${version}",
+
+  "name": "MezzConfig GUI Fabric Server Smoke Test",
+  "description": "Dedicated-server loader smoke test for MezzConfig GUI on Fabric.",
+  "authors": [
+    "${modAuthor}"
+  ],
+
+  "license": "The MIT License (MIT)",
+  "environment": "server",
+  "entrypoints": {
+    "main": [
+      "net.mezzdev.config.gui.test.fabric.smoke.FabricServerSmokeTestMod"
+    ]
+  },
+
+  "depends": {
+    "fabricloader": "${fabricLoaderVersionRange}",
+    "fabric-api": "${fabricApiVersionRange}",
+    "minecraft": "${minecraftVersion}",
+    "${configModId}": "${mezzConfigFabricVersionRange}",
+    "${configGuiModId}": "*",
+    "java": ">=${modJavaVersion}"
+  }
+}

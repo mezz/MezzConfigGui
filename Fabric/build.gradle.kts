@@ -6,6 +6,11 @@ plugins {
     idea
     `maven-publish`
     id("fabric-loom")
+    id("me.modmuss50.mod-publish-plugin")
+}
+
+publishMods {
+    file.set(tasks.named<RemapJarTask>("remapJar").flatMap { it.archiveFile })
 }
 
 repositories {
@@ -65,10 +70,9 @@ val parchmentVersionFabric: String by extra
 val jsr305Version: String by extra
 val mezzConfigApiDependency: String by rootProject.extra
 val mezzConfigFabricDependency: String by rootProject.extra
-val configGuiApiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui-api")
-val configGuiProject: Project = project(":${configGuiModId}-${minecraftVersion}-config-gui")
-val fabricDefaultsTestModProject: Project = project(":FabricMezzConfigDefaultsTest")
-val fabricCustomTestModProject: Project = project(":FabricMezzConfigCustomTest")
+val fabricDefaultsTestModId = "mezz_config_gui_test_fabric_defaults"
+val fabricCustomTestModId = "mezz_config_gui_test_fabric_custom"
+val fabricServerSmokeTestModId = "mezz_config_gui_test_fabric_smoke"
 
 group = configModGroup
 
@@ -77,21 +81,28 @@ base {
     archivesName.set(baseArchivesName)
 }
 
-val dependencyProjects: List<Project> = listOf(
-    configGuiApiProject,
-    configGuiProject,
-)
-val testModProjects: List<Project> = listOf(
-    fabricDefaultsTestModProject,
-    fabricCustomTestModProject,
-)
-
-(dependencyProjects + testModProjects).forEach {
+val commonProject: Project = project(":Common")
+val dependencyProjects: List<Project> = listOf(commonProject)
+dependencyProjects.forEach {
     project.evaluationDependsOn(it.path)
 }
-val testModSourceSets = testModProjects.map {
-    it.sourceSets.main.get()
+val commonApiSourceSet = commonProject.sourceSets["api"]
+val dependencySourceSets = listOf(commonProject.sourceSets.main.get(), commonApiSourceSet)
+val defaultsTestModSourceSet = sourceSets.create("defaultsTestMod") {
+    compileClasspath += sourceSets.main.get().output
+    compileClasspath += sourceSets.main.get().compileClasspath
 }
+val customTestModSourceSet = sourceSets.create("customTestMod") {
+    compileClasspath += sourceSets.main.get().output
+    compileClasspath += sourceSets.main.get().compileClasspath
+}
+val testModSourceSets = listOf(defaultsTestModSourceSet, customTestModSourceSet)
+val serverSmokeTestModSourceSet = sourceSets.create("serverSmokeTestMod") {
+    compileClasspath += sourceSets.main.get().output
+    compileClasspath += sourceSets.main.get().compileClasspath
+}
+val serverSmokeTestRunDir = layout.buildDirectory.dir("run/server-smoke")
+val serverSmokeTestSuccessFile = serverSmokeTestRunDir.map { it.file("smoke-test-passed") }
 
 extra["configLanguageDependencyProjects"] = dependencyProjects
 apply(from = rootProject.file("buildtools/ConfigLanguageResources.gradle.kts"))
@@ -132,15 +143,25 @@ dependencies {
     dependencyProjects.forEach {
         implementation(it)
     }
+    compileOnly(commonApiSourceSet.output)
 }
 
 loom {
     mods {
         create(configGuiModId) {
             sourceSet(sourceSets.main.get())
-            for (dependencyProject in dependencyProjects) {
-                sourceSet(dependencyProject.sourceSets.main.get())
+            for (dependencySourceSet in dependencySourceSets) {
+                sourceSet(dependencySourceSet)
             }
+        }
+        create(fabricDefaultsTestModId) {
+            sourceSet(defaultsTestModSourceSet)
+        }
+        create(fabricCustomTestModId) {
+            sourceSet(customTestModSourceSet)
+        }
+        create(fabricServerSmokeTestModId) {
+            sourceSet(serverSmokeTestModSourceSet)
         }
     }
     runs {
@@ -180,6 +201,17 @@ loom {
                 "-Dfabric.log.level=info"
             )
         }
+        create("serverSmokeTest") {
+            server()
+            configName = "MezzConfig GUI Fabric Server Smoke Test"
+            runDir("build/run/server-smoke")
+            programArgs("--nogui")
+            vmArgs(
+                "-Dfabric.classPathGroups=${classPathGroupsString}",
+                "-Dfabric.log.level=info",
+                "-DmezzConfigGui.loaderSmokeTest.successFile=${serverSmokeTestSuccessFile.get().asFile.absolutePath}"
+            )
+        }
     }
 
     accessWidenerPath.set(file("src/main/resources/mezz_config.accesswidener"))
@@ -188,8 +220,8 @@ loom {
 tasks.jar {
     dependsOn(mergedConfigLanguageResources)
     from(sourceSets.main.get().output)
-    for (p in dependencyProjects) {
-        from(p.sourceSets.main.get().output) {
+    for (dependencySourceSet in dependencySourceSets) {
+        from(dependencySourceSet.output) {
             exclude("fabric.mod.json")
             exclude("assets/mezz_config/lang/*.json")
         }
@@ -200,8 +232,8 @@ tasks.jar {
 
 tasks.named<Jar>("sourcesJar") {
     from(sourceSets.main.get().allJava)
-    for (p in dependencyProjects) {
-        from(p.sourceSets.main.get().allJava)
+    for (dependencySourceSet in dependencySourceSets) {
+        from(dependencySourceSet.allJava)
     }
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     archiveClassifier.set("sources")
@@ -239,11 +271,12 @@ tasks.assemble {
     dependsOn(tasks.remapJar, tasks.remapSourcesJar)
 }
 
-val testModClassesTasks = testModProjects.mapIndexed { index, testModProject ->
-    testModProject.tasks.named(testModSourceSets[index].classesTaskName)
+val testModClassesTasks = testModSourceSets.map {
+    tasks.named(it.classesTaskName)
 }
-val testModPaths = testModProjects.joinToString(separator = File.pathSeparator) {
-    it.layout.buildDirectory.dir("resources/main")
+val serverSmokeTestModClassesTask = tasks.named(serverSmokeTestModSourceSet.classesTaskName)
+val testModPaths = testModSourceSets.joinToString(separator = File.pathSeparator) {
+    layout.buildDirectory.dir("resources/${it.name}")
         .get()
         .asFile
         .absolutePath
@@ -256,6 +289,37 @@ tasks.matching { it.name == "runClient" }.configureEach {
         }
         jvmArgs("-Dfabric.addMods=$testModPaths")
     }
+}
+
+val runServerSmokeTestTasks = tasks.matching { it.name == "runServerSmokeTest" }
+runServerSmokeTestTasks.configureEach {
+    dependsOn(serverSmokeTestModClassesTask)
+    if (this is JavaExec) {
+        classpath(serverSmokeTestModSourceSet.output)
+        val smokeTestModPath = layout.buildDirectory.dir("resources/${serverSmokeTestModSourceSet.name}")
+            .get()
+            .asFile
+            .absolutePath
+        jvmArgs("-Dfabric.addMods=$smokeTestModPath")
+    }
+    outputs.file(serverSmokeTestSuccessFile)
+    outputs.upToDateWhen { false }
+    doFirst {
+        val successFile = outputs.files.singleFile
+        successFile.parentFile.mkdirs()
+        successFile.resolveSibling("eula.txt").writeText("eula=true\n")
+        successFile.resolveSibling("server.properties").writeText("online-mode=false\nserver-port=0\n")
+        successFile.delete()
+    }
+    doLast {
+        if (!outputs.files.singleFile.isFile) {
+            throw GradleException("The Fabric loader smoke test did not report success.")
+        }
+    }
+}
+
+tasks.check {
+    dependsOn(testModClassesTasks, runServerSmokeTestTasks)
 }
 
 publishing {

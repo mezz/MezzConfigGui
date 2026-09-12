@@ -37,21 +37,10 @@ pluginManagement {
 	}
 }
 
-val minecraftVersion: String by settings
-
 rootProject.name = "MezzConfigGui"
 
 include(
-	"Common", "CommonApi",
-	"Fabric", "Forge", "NeoForge",
-	"FabricMezzConfigDefaultsTest",
-	"FabricMezzConfigCustomTest",
-	"NeoForgeNativeDefaultsTest",
-	"NeoForgeNativeCustomTest"
+	"Changelog",
+	"Common",
+	"Fabric", "Forge", "NeoForge"
 )
-
-project(":CommonApi").name = "mezz_config_gui-${minecraftVersion}-config-gui-api"
-project(":Common").name = "mezz_config_gui-${minecraftVersion}-config-gui"
-project(":Fabric").name = "mezz_config_gui-${minecraftVersion}-fabric"
-project(":Forge").name = "mezz_config_gui-${minecraftVersion}-forge"
-project(":NeoForge").name = "mezz_config_gui-${minecraftVersion}-neoforge"
