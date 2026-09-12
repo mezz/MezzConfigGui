@@ -14,3 +14,13 @@ See [Dependency Setup for Minecraft 1.21.1](docs/DEPENDENCY_SETUP.md) for Fabric
 ```console
 ./gradlew build
 ```
+
+`build` assembles every artifact and runs the complete release verification used
+by CI. Run the verification lifecycle directly with:
+
+```console
+./gradlew check
+```
+
+CurseForge and Modrinth publishing also require the `curseProjectId` and
+`modrinthId` Gradle properties after the project listings have been created.
