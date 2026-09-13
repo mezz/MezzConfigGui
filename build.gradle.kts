@@ -136,7 +136,6 @@ val buildNumber = providers.gradleProperty("BUILD_NUMBER")
 val projectVersion = configuredReleaseVersion ?: "${releaseSpecificationVersion}.${buildNumber}"
 
 extra["mezzConfigApiDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-config-api:$mezzConfigVersion"
-extra["mezzConfigCommonDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-config:$mezzConfigVersion"
 extra["mezzConfigFabricDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-fabric:$mezzConfigVersion"
 extra["mezzConfigForgeDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-forge:$mezzConfigVersion"
 extra["mezzConfigNeoForgeDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-neoforge:$mezzConfigVersion"

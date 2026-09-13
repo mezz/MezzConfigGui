@@ -28,7 +28,6 @@ val log4jVersion: String by extra
 val fastutilVersion: String by extra
 val jsr305Version: String by extra
 val mezzConfigApiDependency: String by rootProject.extra
-val mezzConfigCommonDependency: String by rootProject.extra
 val mezzConfigForgeDependency: String by rootProject.extra
 val jeiApiDependency: String by rootProject.extra
 val forgeServerSmokeTestModId = "mezz_config_gui_test_forge_smoke"
@@ -159,7 +158,6 @@ dependencies {
 	compileOnly("com.google.code.findbugs:jsr305:$jsr305Version")
 	compileOnly(jeiApiDependency)
 	compileOnly(mezzConfigApiDependency)
-	mezzConfigRun(mezzConfigCommonDependency)
 	mezzConfigRun(mezzConfigForgeDependency)
 	dependencyProjects.forEach {
 		compileOnly(it)
