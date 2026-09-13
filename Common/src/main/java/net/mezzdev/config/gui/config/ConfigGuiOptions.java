@@ -7,9 +7,7 @@ import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.schema.builder.IConfigSchemaBuilder;
 import net.mezzdev.config.api.value.editor.ConfigValueEditMode;
 import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
-import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -78,30 +76,26 @@ public final class ConfigGuiOptions {
 		IConfigSchemaBuilder schemaBuilder = registration.createClientSchemaBuilder(CONFIG_FILE_NAME, LOCALIZATION_PATH);
 		IConfigCategoryBuilder appearance = schemaBuilder.addCategory("appearance");
 		guiMode = appearance.addEnum("guiMode", GuiMode.WINDOW)
-			.addLegacyValueMigration("appearance", "guiSize", LegacyGuiSizeSerializer.INSTANCE, ConfigGuiOptions::migrateGuiMode)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 		enableWindowResizing = appearance.addBoolean("enableWindowResizing", true)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 		windowWidth = appearance.addInteger("windowWidth", DEFAULT_WINDOW_WIDTH, MIN_WINDOW_WIDTH, MAX_WINDOW_SIZE)
-			.addLegacyValueMigration("appearance", "guiSize", LegacyGuiSizeSerializer.INSTANCE, ConfigGuiOptions::migrateWindowWidth)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 		windowHeight = appearance.addInteger("windowHeight", DEFAULT_WINDOW_HEIGHT, MIN_WINDOW_HEIGHT, MAX_WINDOW_SIZE)
-			.addLegacyValueMigration("appearance", "guiSize", LegacyGuiSizeSerializer.INSTANCE, ConfigGuiOptions::migrateWindowHeight)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
-		rowDensity = appearance.addEnum("rowDensity", RowDensity.COMFORTABLE)
+
+		IConfigCategoryBuilder valueDisplay = schemaBuilder.addCategory("valueDisplay");
+		rowDensity = valueDisplay.addEnum("rowDensity", RowDensity.COMFORTABLE)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
-		numberDisplayMode = appearance.addEnum("numberDisplayMode", NumberDisplayMode.SLIDER)
+		numberDisplayMode = valueDisplay.addEnum("numberDisplayMode", NumberDisplayMode.SLIDER)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
-		showRowStriping = appearance.addBoolean("showRowStriping", true)
-			.setEditMode(ConfigValueEditMode.IMMEDIATE)
-			.build();
-		showAdvancedValueDetails = appearance.addBoolean("showAdvancedValueDetails", false)
+		showRowStriping = valueDisplay.addBoolean("showRowStriping", true)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 
@@ -115,15 +109,13 @@ public final class ConfigGuiOptions {
 		focusSearchOnOpen = navigation.addBoolean("focusSearchOnOpen", false)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
-
-		IConfigCategoryBuilder scrolling = schemaBuilder.addCategory("scrolling");
-		smoothScrolling = scrolling.addBoolean("smoothScrolling", true)
+		smoothScrolling = navigation.addBoolean("smoothScrolling", true)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
-		scrollSpeed = scrolling.addInteger("scrollSpeed", 10, 1, 50)
+		scrollSpeed = navigation.addInteger("scrollSpeed", 10, 1, 50)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
-		dragAutoScrollSpeed = scrolling.addInteger("dragAutoScrollSpeed", 6, 1, 50)
+		dragAutoScrollSpeed = navigation.addInteger("dragAutoScrollSpeed", 6, 1, 50)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 
@@ -142,13 +134,16 @@ public final class ConfigGuiOptions {
 		showKeyConflictDetails = integrations.addBoolean("showKeyConflictDetails", true)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
-
-		IConfigCategoryBuilder advanced = schemaBuilder.addCategory("advanced");
-		enableNativeConfigDiscovery = advanced.addBoolean("enableNativeConfigDiscovery", true)
+		enableNativeConfigDiscovery = integrations.addBoolean("enableNativeConfigDiscovery", true)
 			.setEditMode(ConfigValueEditMode.BATCH)
 			.setRestartRequirement(ConfigValueRestartRequirement.GAME_RESTART)
 			.build();
-		discoveryLogging = advanced.addEnum("discoveryLogging", DiscoveryLogging.WARNINGS)
+
+		IConfigCategoryBuilder diagnostics = schemaBuilder.addCategory("advanced");
+		showAdvancedValueDetails = diagnostics.addBoolean("showAdvancedValueDetails", false)
+			.setEditMode(ConfigValueEditMode.IMMEDIATE)
+			.build();
+		discoveryLogging = diagnostics.addEnum("discoveryLogging", DiscoveryLogging.WARNINGS)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 
@@ -289,60 +284,6 @@ public final class ConfigGuiOptions {
 	private static <T> void setValue(@Nullable IConfigValue<T> configValue, T value) {
 		if (configValue != null) {
 			configValue.set(value);
-		}
-	}
-
-	private static GuiMode migrateGuiMode(String legacyGuiSize) {
-		if (normalizeLegacyGuiSize(legacyGuiSize).equals("FULLSCREEN")) {
-			return GuiMode.FULLSCREEN;
-		}
-		return GuiMode.WINDOW;
-	}
-
-	private static int migrateWindowWidth(String legacyGuiSize) {
-		if (normalizeLegacyGuiSize(legacyGuiSize).equals("SMALL")) {
-			return 340;
-		}
-		return DEFAULT_WINDOW_WIDTH;
-	}
-
-	private static int migrateWindowHeight(String legacyGuiSize) {
-		String normalized = normalizeLegacyGuiSize(legacyGuiSize);
-		if (normalized.equals("SMALL")) {
-			return 260;
-		}
-		return DEFAULT_WINDOW_HEIGHT;
-	}
-
-	private static String normalizeLegacyGuiSize(String legacyGuiSize) {
-		String normalized = legacyGuiSize.trim();
-		if (normalized.startsWith("\"") && normalized.endsWith("\"") && normalized.length() >= 2) {
-			normalized = normalized.substring(1, normalized.length() - 1);
-		}
-		return normalized;
-	}
-
-	private enum LegacyGuiSizeSerializer implements IConfigValueSerializer<String> {
-		INSTANCE;
-
-		@Override
-		public String serialize(String value) {
-			return value;
-		}
-
-		@Override
-		public IDeserializeResult<String> deserialize(String string) {
-			return IDeserializeResult.success(string);
-		}
-
-		@Override
-		public boolean isValid(String value) {
-			return value != null;
-		}
-
-		@Override
-		public String getValidValuesDescription() {
-			return "Any legacy GUI size";
 		}
 	}
 
