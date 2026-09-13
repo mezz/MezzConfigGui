@@ -65,7 +65,18 @@ public final class ConfigScreenLayout {
 	}
 
 	public void updateScreenBounds(int screenWidth, int screenHeight, EditBox searchBox, boolean hasScreenListButton) {
-		area = resizer.updateScreenBounds(screenWidth, screenHeight);
+		updateScreenBounds(screenWidth, screenHeight, searchBox, hasScreenListButton, 0, 0);
+	}
+
+	void updateScreenBounds(
+		int screenWidth,
+		int screenHeight,
+		EditBox searchBox,
+		boolean hasScreenListButton,
+		int screenLeftInset,
+		int screenRightInset
+	) {
+		area = resizer.updateScreenBounds(screenWidth, screenHeight, screenLeftInset, screenRightInset);
 
 		ImmutableRect2i innerArea = area.insetBy(BORDER_PADDING);
 		titleArea = innerArea.keepTop(TITLE_HEIGHT);
@@ -150,12 +161,24 @@ public final class ConfigScreenLayout {
 		return resizer.getResizeHandle(mouseX, mouseY);
 	}
 
+	ResizeHandle getResizeHandle(double mouseX, double mouseY, ImmutableRect2i excludedArea) {
+		return resizer.getResizeHandle(mouseX, mouseY, excludedArea);
+	}
+
 	public ResizeHandle getActiveResizeHandle(double mouseX, double mouseY) {
 		return resizer.getActiveResizeHandle(mouseX, mouseY);
 	}
 
+	ResizeHandle getActiveResizeHandle(double mouseX, double mouseY, ImmutableRect2i excludedArea) {
+		return resizer.getActiveResizeHandle(mouseX, mouseY, excludedArea);
+	}
+
 	public boolean startResizeDrag(double mouseX, double mouseY) {
 		return resizer.startResizeDrag(mouseX, mouseY);
+	}
+
+	boolean startResizeDrag(double mouseX, double mouseY, ImmutableRect2i excludedArea) {
+		return resizer.startResizeDrag(mouseX, mouseY, excludedArea);
 	}
 
 	public boolean dragResize(double mouseX, double mouseY, int screenWidth, int screenHeight) {

@@ -25,18 +25,13 @@ final class SelectionConfigValueEditor<T> implements IConfigValueEditor<T> {
 	private static final int ARROW_PADDING = 3;
 	private static final int VALUE_TEXT_PADDING = 4;
 	private static final int VALUE_BUTTON_HEIGHT = 18;
-	private static final int MAX_VALUE_BUTTON_WIDTH = 140;
 
 	SelectionConfigValueEditor() {
 	}
 
 	@Override
 	public int getControlWidth(IConfigScreenValue<T> configValue, T value) {
-		Font font = Minecraft.getInstance().font;
-		Component valueName = getValueName(configValue, value);
-		int textWidth = (int) (font.width(valueName) * ConfigEntryWidget.TEXT_SCALE);
-		int preferredWidth = textWidth + ARROW_SIZE + ARROW_PADDING * 2 + VALUE_TEXT_PADDING * 2;
-		return Math.min(preferredWidth, MAX_VALUE_BUTTON_WIDTH);
+		return ConfigEntryWidget.PREFERRED_VALUE_CONTROL_WIDTH;
 	}
 
 	@Override

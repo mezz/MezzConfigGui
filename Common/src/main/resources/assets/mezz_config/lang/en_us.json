@@ -101,7 +101,7 @@
   "mezz_config_gui.config.appearance.rowDensity.compact": "Compact",
   "mezz_config_gui.config.appearance.rowDensity.compact.description": "Use shorter rows where possible.",
   "mezz_config_gui.config.appearance.numberDisplayMode": "Number Display",
-  "mezz_config_gui.config.appearance.numberDisplayMode.description": "Choose how bounded number values are displayed on newly opened config screens.",
+  "mezz_config_gui.config.appearance.numberDisplayMode.description": "Choose how bounded number values are displayed on config screens.",
   "mezz_config_gui.config.appearance.numberDisplayMode.slider": "Sliders",
   "mezz_config_gui.config.appearance.numberDisplayMode.slider.description": "Use Minecraft-style slider bars for bounded integer and decimal values.",
   "mezz_config_gui.config.appearance.numberDisplayMode.text_and_buttons": "Text and Buttons",

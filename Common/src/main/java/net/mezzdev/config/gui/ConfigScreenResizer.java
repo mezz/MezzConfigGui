@@ -25,24 +25,47 @@ public final class ConfigScreenResizer {
 	@Nullable
 	private ResizeDragSession resizeDragSession;
 	private boolean resizeDragChanged;
+	private int screenLeftInset;
+	private int screenRightInset;
 
 	public ImmutableRect2i updateScreenBounds(int screenWidth, int screenHeight) {
+		return updateScreenBounds(screenWidth, screenHeight, 0, 0);
+	}
+
+	ImmutableRect2i updateScreenBounds(int screenWidth, int screenHeight, int screenLeftInset, int screenRightInset) {
+		this.screenLeftInset = Math.max(0, screenLeftInset);
+		this.screenRightInset = Math.max(0, screenRightInset);
 		ImmutableRect2i customArea = this.customArea;
 		if (customArea != null) {
-			area = centerResizableArea(customArea.getWidth(), customArea.getHeight(), screenWidth, screenHeight);
+			area = centerResizableArea(
+				customArea.getWidth(),
+				customArea.getHeight(),
+				screenWidth,
+				screenHeight,
+				this.screenLeftInset,
+				this.screenRightInset
+			);
 			this.customArea = area;
 			return area;
 		}
-		int guiWidth = ConfigGuiOptions.getGuiWidth(screenWidth);
+		HorizontalBounds horizontalBounds = getHorizontalBounds(screenWidth, this.screenLeftInset, this.screenRightInset);
+		int guiWidth = ConfigGuiOptions.getGuiWidth(horizontalBounds.availableWidth());
 		int guiHeight = ConfigGuiOptions.getGuiHeight(screenHeight);
-		int guiLeft = (screenWidth - guiWidth) / 2;
+		int guiLeft = horizontalBounds.left() + (horizontalBounds.availableWidth() - guiWidth) / 2;
 		int guiTop = (screenHeight - guiHeight) / 2;
 		area = new ImmutableRect2i(guiLeft, guiTop, guiWidth, guiHeight);
 		return area;
 	}
 
 	public ConfigScreenLayout.ResizeHandle getResizeHandle(double mouseX, double mouseY) {
+		return getResizeHandle(mouseX, mouseY, ImmutableRect2i.EMPTY);
+	}
+
+	ConfigScreenLayout.ResizeHandle getResizeHandle(double mouseX, double mouseY, ImmutableRect2i excludedArea) {
 		if (!ConfigGuiOptions.enableWindowResizing() || area.isEmpty() || !isInResizeArea(mouseX, mouseY)) {
+			return ConfigScreenLayout.ResizeHandle.NONE;
+		}
+		if (excludedArea.contains(mouseX, mouseY)) {
 			return ConfigScreenLayout.ResizeHandle.NONE;
 		}
 		boolean left = mouseX < area.getX() + RESIZE_HANDLE_SIZE;
@@ -53,11 +76,15 @@ public final class ConfigScreenResizer {
 	}
 
 	public ConfigScreenLayout.ResizeHandle getActiveResizeHandle(double mouseX, double mouseY) {
+		return getActiveResizeHandle(mouseX, mouseY, ImmutableRect2i.EMPTY);
+	}
+
+	ConfigScreenLayout.ResizeHandle getActiveResizeHandle(double mouseX, double mouseY, ImmutableRect2i excludedArea) {
 		ResizeDragSession resizeDragSession = this.resizeDragSession;
 		if (resizeDragSession != null) {
 			return resizeDragSession.resizeHandle();
 		}
-		return getResizeHandle(mouseX, mouseY);
+		return getResizeHandle(mouseX, mouseY, excludedArea);
 	}
 
 	private boolean isInResizeArea(double mouseX, double mouseY) {
@@ -68,7 +95,11 @@ public final class ConfigScreenResizer {
 	}
 
 	public boolean startResizeDrag(double mouseX, double mouseY) {
-		ConfigScreenLayout.ResizeHandle resizeHandle = getResizeHandle(mouseX, mouseY);
+		return startResizeDrag(mouseX, mouseY, ImmutableRect2i.EMPTY);
+	}
+
+	boolean startResizeDrag(double mouseX, double mouseY, ImmutableRect2i excludedArea) {
+		ConfigScreenLayout.ResizeHandle resizeHandle = getResizeHandle(mouseX, mouseY, excludedArea);
 		if (resizeHandle == ConfigScreenLayout.ResizeHandle.NONE) {
 			return false;
 		}
@@ -82,7 +113,14 @@ public final class ConfigScreenResizer {
 		if (session == null) {
 			return false;
 		}
-		ImmutableRect2i resizedArea = session.resize(mouseX, mouseY, screenWidth, screenHeight);
+		ImmutableRect2i resizedArea = session.resize(
+			mouseX,
+			mouseY,
+			screenWidth,
+			screenHeight,
+			screenLeftInset,
+			screenRightInset
+		);
 		if (resizedArea.equals(area)) {
 			return false;
 		}
@@ -174,40 +212,72 @@ public final class ConfigScreenResizer {
 		}
 	}
 
-	private static ImmutableRect2i centerResizableArea(int areaWidth, int areaHeight, int screenWidth, int screenHeight) {
-		int maxWidth = Math.max(1, screenWidth);
+	private static ImmutableRect2i centerResizableArea(
+		int areaWidth,
+		int areaHeight,
+		int screenWidth,
+		int screenHeight,
+		int screenLeftInset,
+		int screenRightInset
+	) {
+		HorizontalBounds horizontalBounds = getHorizontalBounds(screenWidth, screenLeftInset, screenRightInset);
+		int maxWidth = horizontalBounds.availableWidth();
 		int maxHeight = Math.max(1, screenHeight);
 		int minWidth = Math.min(MIN_RESIZABLE_WIDTH, maxWidth);
 		int minHeight = Math.min(MIN_RESIZABLE_HEIGHT, maxHeight);
 		int width = Math.clamp(areaWidth, minWidth, maxWidth);
 		int height = Math.clamp(areaHeight, minHeight, maxHeight);
-		int x = (maxWidth - width) / 2;
+		int x = horizontalBounds.left() + (maxWidth - width) / 2;
 		int y = (maxHeight - height) / 2;
 		return new ImmutableRect2i(x, y, width, height);
+	}
+
+	private static HorizontalBounds getHorizontalBounds(int screenWidth, int screenLeftInset, int screenRightInset) {
+		int width = Math.max(1, screenWidth);
+		int left = Math.clamp(screenLeftInset, 0, width - 1);
+		int right = Math.clamp(screenRightInset, 0, width - left - 1);
+		return new HorizontalBounds(left, width - left - right);
 	}
 
 	private record ResizeDragSession(
 		ConfigScreenLayout.ResizeHandle resizeHandle,
 		ImmutableRect2i startArea
 	) {
-		private ImmutableRect2i resize(double mouseX, double mouseY, int screenWidth, int screenHeight) {
+		private ImmutableRect2i resize(
+			double mouseX,
+			double mouseY,
+			int screenWidth,
+			int screenHeight,
+			int screenLeftInset,
+			int screenRightInset
+		) {
 			int width = startArea.getWidth();
 			int height = startArea.getHeight();
 			if (resizeHandle.left() || resizeHandle.right()) {
-				width = getCenteredWidth(mouseX, screenWidth, resizeHandle);
+				width = getCenteredWidth(mouseX, screenWidth, screenLeftInset, screenRightInset, resizeHandle);
 			}
 			if (resizeHandle.top() || resizeHandle.bottom()) {
 				height = getCenteredHeight(mouseY, screenHeight, resizeHandle);
 			}
-			return centerResizableArea(width, height, screenWidth, screenHeight);
+			return centerResizableArea(
+				width,
+				height,
+				screenWidth,
+				screenHeight,
+				screenLeftInset,
+				screenRightInset
+			);
 		}
 
 		private static int getCenteredWidth(
 			double mouseX,
 			int screenWidth,
+			int screenLeftInset,
+			int screenRightInset,
 			ConfigScreenLayout.ResizeHandle resizeHandle
 		) {
-			double centerX = screenWidth / 2.0;
+			HorizontalBounds horizontalBounds = getHorizontalBounds(screenWidth, screenLeftInset, screenRightInset);
+			double centerX = horizontalBounds.left() + horizontalBounds.availableWidth() / 2.0;
 			if (resizeHandle.left()) {
 				return (int) Math.round((centerX - mouseX) * 2.0);
 			}
@@ -225,5 +295,9 @@ public final class ConfigScreenResizer {
 			}
 			return (int) Math.round((mouseY - centerY) * 2.0);
 		}
+	}
+
+	private record HorizontalBounds(int left, int availableWidth) {
+
 	}
 }

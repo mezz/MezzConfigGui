@@ -25,7 +25,7 @@ import java.util.List;
  * Config entry widget for editing key mappings and showing binding conflicts.
  */
 public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingValue> {
-	private static final int BUTTON_WIDTH = 86;
+	private static final int MIN_BUTTON_WIDTH = 40;
 	private static final int BUTTON_HEIGHT = 22;
 	private static final int BUTTON_TEXT_PADDING = 4;
 	private final IConfigKeyMapping configKeyMapping;
@@ -44,13 +44,14 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 	@Override
 	public void updateBounds(ImmutableRect2i area) {
 		super.updateBounds(area);
+		int buttonWidth = getValueColumnWidth(area, MIN_BUTTON_WIDTH);
 		buttonArea = new ImmutableRect2i(
-			area.getX() + area.getWidth() - BUTTON_WIDTH - VALUE_CONTROL_RIGHT_RESERVE,
+			area.getX() + area.getWidth() - buttonWidth - VALUE_CONTROL_RIGHT_RESERVE,
 			area.getY() + (area.getHeight() - BUTTON_HEIGHT) / 2,
-			BUTTON_WIDTH,
+			buttonWidth,
 			BUTTON_HEIGHT
 		);
-		recomputeNameArea(area, Math.max(NAME_RIGHT_RESERVE, BUTTON_WIDTH + VALUE_CONTROL_RIGHT_RESERVE + 4));
+		recomputeNameArea(area, getValueColumnNameRightReserve(area, MIN_BUTTON_WIDTH));
 	}
 
 	@Override

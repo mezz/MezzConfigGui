@@ -10,7 +10,6 @@ import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueEditor;
 import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigValueEditorFactory;
-import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.keybindings.KeyMappingConfigEntry;
 import net.mezzdev.config.gui.keybindings.KeyMappingValue;
 import net.mezzdev.config.gui.popup.ConfigPopupSelector;
@@ -68,18 +67,23 @@ public final class ConfigEntryWidgetFactory {
 	}
 
 	public ConfigEntryWidget<?> create(IConfigScreenValue<?> value) {
-		if (ConfigGuiOptions.getNumberDisplayMode() == ConfigGuiOptions.NumberDisplayMode.SLIDER && allowsNumberSlider(value)) {
-			Optional<? extends ConfigEntryWidget<?>> sliderEntry = NumberSliderConfigEntry.create(value, textures);
-			if (sliderEntry.isPresent()) {
-				return sliderEntry.get();
-			}
-		}
+		return createTyped(value);
+	}
+
+	private <T> ConfigEntryWidget<T> createTyped(IConfigScreenValue<T> value) {
 		ConfigValueEditorType<?> editorType = getEditorType(value);
 		ConfigEntryWidgetCreator<?> creator = creators.get(editorType);
 		if (creator == null) {
 			throw new UnsupportedOperationException("Unsupported config value editor type: " + editorType);
 		}
-		return create(creator, value);
+		ConfigEntryWidget<T> standardEntry = create(creator, value);
+		if (!allowsNumberSlider(value)) {
+			return standardEntry;
+		}
+		Optional<ConfigEntryWidget<T>> sliderEntry = NumberSliderConfigEntry.create(value, textures);
+		return sliderEntry
+			.<ConfigEntryWidget<T>>map(entry -> new NumberDisplayConfigEntry<>(value, entry, standardEntry, textures))
+			.orElse(standardEntry);
 	}
 
 	private static boolean allowsNumberSlider(IConfigScreenValue<?> value) {

@@ -24,7 +24,6 @@ import java.util.function.Consumer;
 final class CustomConfigEntry<T> extends ConfigEntryWidget<T> {
 	private static final int MIN_CONTROL_WIDTH = 18;
 	private static final int MIN_CONTROL_HEIGHT = 18;
-	private static final int MIN_NAME_WIDTH = 68;
 
 	private final IConfigValueEditor<T> editor;
 	private final Consumer<ConfigPopupSelector> valueSelectorOpener;
@@ -59,8 +58,8 @@ final class CustomConfigEntry<T> extends ConfigEntryWidget<T> {
 		T value = getValue();
 		int preferredWidth = Math.max(MIN_CONTROL_WIDTH, editor.getControlWidth(configValue, value));
 		int preferredHeight = Math.max(MIN_CONTROL_HEIGHT, editor.getControlHeight(configValue, value));
-		int availableWidth = Math.max(MIN_CONTROL_WIDTH, area.getWidth() - VALUE_CONTROL_RIGHT_RESERVE - MIN_NAME_WIDTH);
-		int totalWidth = Math.min(preferredWidth, availableWidth);
+		int valueColumnWidth = getValueColumnWidth(area, MIN_CONTROL_WIDTH);
+		int totalWidth = Math.min(preferredWidth, valueColumnWidth);
 		int totalHeight = Math.min(preferredHeight, area.getHeight());
 		valueArea = new ImmutableRect2i(
 			area.getX() + area.getWidth() - totalWidth - VALUE_CONTROL_RIGHT_RESERVE,
@@ -68,7 +67,7 @@ final class CustomConfigEntry<T> extends ConfigEntryWidget<T> {
 			totalWidth,
 			totalHeight
 		);
-		recomputeNameArea(area, Math.max(NAME_RIGHT_RESERVE, totalWidth + VALUE_CONTROL_RIGHT_RESERVE + 4));
+		recomputeNameArea(area, getValueColumnNameRightReserve(area, MIN_CONTROL_WIDTH));
 	}
 
 	@Override

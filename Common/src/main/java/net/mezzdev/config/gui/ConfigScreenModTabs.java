@@ -20,6 +20,7 @@ final class ConfigScreenModTabs {
 	static final int TAB_WIDTH = 24;
 	static final int TAB_HEIGHT = 24;
 	private static final int TAB_GUI_OVERLAP = 3;
+	private static final int TAB_SCREEN_MARGIN = 2;
 	private static final int TAB_VERTICAL_MARGIN = 4;
 	private static final int ICON_SIZE = 16;
 
@@ -41,6 +42,20 @@ final class ConfigScreenModTabs {
 	public ConfigScreenModTabs(String activeModId, List<ConfigScreenListEntry> entries) {
 		this.activeModId = Objects.requireNonNull(activeModId, "activeModId");
 		this.entries = List.copyOf(entries);
+	}
+
+	int getRequiredScreenLeftInset() {
+		if (entries.isEmpty()) {
+			return 0;
+		}
+		return TAB_WIDTH - TAB_GUI_OVERLAP + TAB_SCREEN_MARGIN;
+	}
+
+	int getRequiredScreenRightInset() {
+		if (entries.isEmpty()) {
+			return 0;
+		}
+		return TAB_SCREEN_MARGIN;
 	}
 
 	public void updateLayout(ImmutableRect2i screenArea) {

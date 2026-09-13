@@ -28,10 +28,11 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 
 	private static final int BUTTON_SIZE = 18;
 	private static final int BUTTON_GAP = 2;
-	private static final int VALUE_BOX_WIDTH = 42;
+	private static final int MIN_VALUE_BOX_WIDTH = 38;
 	private static final int VALUE_BOX_HEIGHT = BUTTON_SIZE;
 	private static final int VALUE_TEXT_PADDING = 3;
-	private static final int CONTROL_WIDTH = VALUE_BOX_WIDTH + BUTTON_GAP + BUTTON_SIZE + BUTTON_GAP + BUTTON_SIZE;
+	private static final int STEPPER_BUTTONS_WIDTH = BUTTON_GAP + BUTTON_SIZE + BUTTON_GAP + BUTTON_SIZE;
+	private static final int MIN_CONTROL_WIDTH = MIN_VALUE_BOX_WIDTH + STEPPER_BUTTONS_WIDTH;
 	private static final int NORMAL_STEP = 1;
 	private static final int SHIFT_STEP = 10;
 
@@ -61,12 +62,14 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 	public void updateBounds(ImmutableRect2i area) {
 		super.updateBounds(area);
 		int cy = area.getY() + (area.getHeight() - VALUE_BOX_HEIGHT) / 2;
-		int controlX = area.getX() + area.getWidth() - CONTROL_WIDTH - VALUE_CONTROL_RIGHT_RESERVE;
+		int controlWidth = getValueColumnWidth(area, MIN_CONTROL_WIDTH);
+		int valueBoxWidth = controlWidth - STEPPER_BUTTONS_WIDTH;
+		int controlX = area.getX() + area.getWidth() - controlWidth - VALUE_CONTROL_RIGHT_RESERVE;
 
 		valueBoxArea = new ImmutableRect2i(
 			controlX,
 			cy,
-			VALUE_BOX_WIDTH,
+			valueBoxWidth,
 			VALUE_BOX_HEIGHT
 		);
 		upArea = new ImmutableRect2i(
@@ -81,7 +84,7 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 			BUTTON_SIZE,
 			BUTTON_SIZE
 		);
-		recomputeNameArea(area, Math.max(NAME_RIGHT_RESERVE, CONTROL_WIDTH + VALUE_CONTROL_RIGHT_RESERVE + 4));
+		recomputeNameArea(area, getValueColumnNameRightReserve(area, MIN_CONTROL_WIDTH));
 	}
 
 	@Override

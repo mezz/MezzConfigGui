@@ -2,6 +2,7 @@ package net.mezzdev.config.gui.entries;
 
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
+import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.minecraft.client.gui.GuiGraphics;
 import org.junit.jupiter.api.Test;
@@ -43,6 +44,20 @@ class ConfigEntryWidgetListenerTest {
 
 		assertEquals("staged", widget.getDisplayedValue());
 		assertTrue(widget.hasPendingChange());
+	}
+
+	@Test
+	void displayedStateTransfersBetweenEquivalentWidgets() {
+		TestConfigValue configValue = new TestConfigValue("initial");
+		TestConfigEntryWidget source = new TestConfigEntryWidget(configValue);
+		TestConfigEntryWidget target = new TestConfigEntryWidget(configValue);
+		source.setDisplayedValue("staged");
+
+		target.copyDisplayedStateFrom(source);
+
+		assertEquals("staged", target.getDisplayedValue());
+		assertTrue(target.hasPendingChange());
+		assertEquals("initial", configValue.getValue());
 	}
 
 	@Test
@@ -93,6 +108,36 @@ class ConfigEntryWidgetListenerTest {
 		clientTasks.removeFirst().run();
 
 		assertEquals("initial", widget.getDisplayedValue());
+	}
+
+	@Test
+	void queuedOlderListenerChangeDoesNotOverwriteNewerImmediateWrite() {
+		TestConfigValue configValue = new TestConfigValue("initial");
+		Deque<Runnable> clientTasks = new ArrayDeque<>();
+		boolean[] dispatchImmediately = {false};
+		IConfigScreenValue<String> immediateConfigValue = IConfigScreenValue.withApplyMode(
+			configValue,
+			ConfigValueApplyMode.IMMEDIATE
+		);
+		TestConfigEntryWidget widget = new TestConfigEntryWidget(immediateConfigValue, task -> {
+			if (dispatchImmediately[0]) {
+				task.run();
+			} else {
+				clientTasks.addLast(task);
+			}
+		});
+		widget.setImmediateChangeHandler(change -> change.apply());
+		widget.subscribeToConfigValue();
+
+		configValue.setExternalValue("reloaded");
+		dispatchImmediately[0] = true;
+		assertTrue(widget.setDisplayedValue("clicked"));
+		assertEquals("clicked", widget.getDisplayedValue());
+
+		clientTasks.removeFirst().run();
+
+		assertEquals("clicked", configValue.getValue());
+		assertEquals("clicked", widget.getDisplayedValue());
 	}
 
 	private static final class TestConfigEntryWidget extends ConfigEntryWidget<String> {

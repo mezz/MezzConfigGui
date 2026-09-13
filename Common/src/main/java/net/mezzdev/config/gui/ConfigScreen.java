@@ -383,7 +383,7 @@ public class ConfigScreen extends MezzConfigScreen {
 	@Override
 	protected void init() {
 		super.init();
-		layout.updateScreenBounds(width, height, searchBox, canOpenScreenList());
+		updateScreenBounds();
 		modTabs.updateLayout(layout.getArea());
 		addWidget(searchBox);
 
@@ -528,11 +528,22 @@ public class ConfigScreen extends MezzConfigScreen {
 	}
 
 	private void refreshLayout() {
-		layout.updateScreenBounds(width, height, searchBox, canOpenScreenList());
+		updateScreenBounds();
 		modTabs.updateLayout(layout.getArea());
 		controller.updateNavLayout();
 		controller.updateContentLayout();
 		updateValueSelectorBounds();
+	}
+
+	private void updateScreenBounds() {
+		layout.updateScreenBounds(
+			width,
+			height,
+			searchBox,
+			canOpenScreenList(),
+			modTabs.getRequiredScreenLeftInset(),
+			modTabs.getRequiredScreenRightInset()
+		);
 	}
 
 	@Override
@@ -621,7 +632,7 @@ public class ConfigScreen extends MezzConfigScreen {
 		if (modTabs.mouseClicked(mouseX, mouseY, button)) {
 			return true;
 		}
-		if (button == 0 && layout.startResizeDrag(mouseX, mouseY)) {
+		if (button == 0 && layout.startResizeDrag(mouseX, mouseY, modTabs.getTabsArea())) {
 			flushPendingInput();
 			return true;
 		}

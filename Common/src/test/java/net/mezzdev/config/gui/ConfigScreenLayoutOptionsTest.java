@@ -67,6 +67,22 @@ class ConfigScreenLayoutOptionsTest {
 	}
 
 	@Test
+	void screenInsetsReserveSpaceForTabsOnSmallScreens() {
+		ConfigScreenLayout layout = new ConfigScreenLayout();
+		EditBox searchBox = createSearchBox();
+
+		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("guiMode", ConfigGuiOptions.GuiMode.FULLSCREEN)) {
+			layout.updateScreenBounds(320, 240, searchBox, true, 23, 2);
+		}
+
+		ImmutableRect2i area = layout.getArea();
+		assertEquals(295, area.getWidth());
+		assertEquals(240, area.getHeight());
+		assertEquals(23, area.getX());
+		assertEquals(0, area.getY());
+	}
+
+	@Test
 	void draggingResizeHandleKeepsScreenCentered() {
 		ConfigScreenLayout layout = new ConfigScreenLayout();
 		EditBox searchBox = createSearchBox();
@@ -120,6 +136,23 @@ class ConfigScreenLayoutOptionsTest {
 		assertEquals(area.getHeight(), resizedArea.getHeight());
 		assertCentered(resizedArea, 1000, 800);
 		assertEquals(resizedArea, layout.finishResizeDrag().orElseThrow());
+	}
+
+	@Test
+	void overlappingModTabPreventsResizeHoverAndDrag() {
+		ConfigScreenLayout layout = new ConfigScreenLayout();
+		EditBox searchBox = createSearchBox();
+		layout.updateScreenBounds(1000, 800, searchBox);
+
+		ImmutableRect2i area = layout.getArea();
+		double resizeX = area.getX();
+		double resizeY = area.getY() + 10;
+		ImmutableRect2i modTabArea = new ImmutableRect2i(area.getX() - 21, area.getY() + 4, 24, 24);
+
+		assertEquals(ConfigScreenLayout.ResizeHandle.LEFT, layout.getResizeHandle(resizeX, resizeY));
+		assertEquals(ConfigScreenLayout.ResizeHandle.NONE, layout.getResizeHandle(resizeX, resizeY, modTabArea));
+		assertFalse(layout.startResizeDrag(resizeX, resizeY, modTabArea));
+		assertFalse(layout.isResizing());
 	}
 
 	@Test

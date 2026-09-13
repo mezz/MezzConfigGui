@@ -30,6 +30,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -47,10 +48,14 @@ public abstract class ConfigEntryWidget<T> {
 	protected static final int NAME_RIGHT_RESERVE = 95;
 	private static final int NAME_LEFT_PADDING = 5;
 	public static final float TEXT_SCALE = 1.0f;
+	static final int PREFERRED_VALUE_CONTROL_WIDTH = 110;
+	private static final int MIN_VALUE_NAME_WIDTH = 80;
+	private static final int VALUE_CONTROL_GAP = 4;
 	private static final int RESET_BUTTON_SIZE = 18;
 	private static final int RESET_BUTTON_RIGHT_PADDING = 2;
 	protected static final int VALUE_CONTROL_RIGHT_RESERVE = RESET_BUTTON_SIZE + RESET_BUTTON_RIGHT_PADDING + 2;
 	private static final int BUTTON_TEXT_PADDING = 3;
+	private static final int FITTED_TEXT_VERTICAL_PADDING = 2;
 
 	public static int getConfiguredTextColor() {
 		return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_TEXT);
@@ -97,7 +102,8 @@ public abstract class ConfigEntryWidget<T> {
 		int color,
 		boolean centered
 	) {
-		int maxLines = Math.max(1, area.getHeight() / font.lineHeight);
+		int fittedTextHeight = area.getHeight() - FITTED_TEXT_VERTICAL_PADDING * 2;
+		int maxLines = Math.max(1, (fittedTextHeight + 1) / font.lineHeight);
 		Pair<List<FormattedText>, Boolean> splitLines = StringUtil.splitLines(font, List.of(text), area.getWidth(), maxLines);
 		List<FormattedCharSequence> visibleLines = Language.getInstance().getVisualOrder(splitLines.first());
 		int textHeight = getTextBlockHeight(font, visibleLines.size());
@@ -160,6 +166,7 @@ public abstract class ConfigEntryWidget<T> {
 	private T lastKnownConfigValue;
 	private boolean subscribedToConfigValue;
 	private long configValueListenerGeneration;
+	private final AtomicLong configValueChangeSequence = new AtomicLong();
 	@Nullable
 	private Runnable removeConfigValueListener;
 	private Function<ConfigValueChange<?>, Boolean> immediateChangeHandler = change -> false;
@@ -194,7 +201,7 @@ public abstract class ConfigEntryWidget<T> {
 		}
 		subscribedToConfigValue = true;
 		long listenerGeneration = ++configValueListenerGeneration;
-		onConfigValueChanged(configValue.getValue());
+		syncFromConfigValue();
 		try {
 			removeConfigValueListener = Objects.requireNonNull(
 				configValue.addListener(newValue -> dispatchConfigValueChanged(listenerGeneration, newValue)),
@@ -205,7 +212,7 @@ public abstract class ConfigEntryWidget<T> {
 			configValueListenerGeneration++;
 			throw exception;
 		}
-		onConfigValueChanged(configValue.getValue());
+		syncFromConfigValue();
 	}
 
 	public void unsubscribeFromConfigValue() {
@@ -222,11 +229,20 @@ public abstract class ConfigEntryWidget<T> {
 	}
 
 	private void dispatchConfigValueChanged(long listenerGeneration, T newValue) {
+		long changeSequence = configValueChangeSequence.incrementAndGet();
 		clientThreadDispatcher.accept(() -> {
-			if (subscribedToConfigValue && configValueListenerGeneration == listenerGeneration) {
+			if (subscribedToConfigValue &&
+				configValueListenerGeneration == listenerGeneration &&
+				configValueChangeSequence.get() == changeSequence
+			) {
 				onConfigValueChanged(newValue);
 			}
 		});
+	}
+
+	private void syncFromConfigValue() {
+		configValueChangeSequence.incrementAndGet();
+		onConfigValueChanged(configValue.getValue());
 	}
 
 	private static void runOnClientThread(Runnable task) {
@@ -266,6 +282,20 @@ public abstract class ConfigEntryWidget<T> {
 			RESET_BUTTON_SIZE,
 			RESET_BUTTON_SIZE
 		);
+	}
+
+	protected static int getValueColumnWidth(ImmutableRect2i area, int minimumControlWidth) {
+		return getValueColumnWidth(area.getWidth(), minimumControlWidth);
+	}
+
+	static int getValueColumnWidth(int areaWidth, int minimumControlWidth) {
+		int availableWidth = areaWidth - VALUE_CONTROL_RIGHT_RESERVE - VALUE_CONTROL_GAP - NAME_LEFT_PADDING - MIN_VALUE_NAME_WIDTH;
+		return Math.min(PREFERRED_VALUE_CONTROL_WIDTH, Math.max(minimumControlWidth, availableWidth));
+	}
+
+	protected static int getValueColumnNameRightReserve(ImmutableRect2i area, int minimumControlWidth) {
+		int valueColumnWidth = getValueColumnWidth(area, minimumControlWidth);
+		return valueColumnWidth + VALUE_CONTROL_RIGHT_RESERVE + VALUE_CONTROL_GAP;
 	}
 
 	protected void recomputeNameArea(ImmutableRect2i area, int rightReserve) {
@@ -532,6 +562,15 @@ public abstract class ConfigEntryWidget<T> {
 		return value;
 	}
 
+	final void copyDisplayedStateFrom(ConfigEntryWidget<T> source) {
+		boolean valueChanged = !Objects.equals(value, source.value);
+		value = source.value;
+		lastKnownConfigValue = source.lastKnownConfigValue;
+		if (valueChanged) {
+			onValueChanged();
+		}
+	}
+
 	protected boolean setValue(T value) {
 		if (!isEditable() || !configValue.getSerializer().isValid(value) || this.value.equals(value)) {
 			return false;
@@ -548,6 +587,7 @@ public abstract class ConfigEntryWidget<T> {
 				}
 				return false;
 			}
+			configValueChangeSequence.incrementAndGet();
 			T storedValue = configValue.getValue();
 			this.lastKnownConfigValue = storedValue;
 			boolean displayedValueChanged = !Objects.equals(this.value, storedValue);

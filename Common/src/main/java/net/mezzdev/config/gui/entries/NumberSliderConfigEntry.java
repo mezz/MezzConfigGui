@@ -28,8 +28,6 @@ final class NumberSliderConfigEntry<T> extends ConfigEntryWidget<T> {
 	private static final ResourceLocation SLIDER_SPRITE = ResourceLocation.withDefaultNamespace("widget/slider");
 	private static final ResourceLocation SLIDER_HANDLE_SPRITE = ResourceLocation.withDefaultNamespace("widget/slider_handle");
 	private static final ResourceLocation SLIDER_HANDLE_HIGHLIGHTED_SPRITE = ResourceLocation.withDefaultNamespace("widget/slider_handle_highlighted");
-	private static final int MAX_SLIDER_WIDTH = 150;
-	private static final int MIN_NAME_WIDTH = 48;
 	private static final int SLIDER_HEIGHT = 20;
 	private static final int HANDLE_WIDTH = 8;
 
@@ -63,12 +61,11 @@ final class NumberSliderConfigEntry<T> extends ConfigEntryWidget<T> {
 	@Override
 	public void updateBounds(ImmutableRect2i area) {
 		super.updateBounds(area);
-		int availableWidth = Math.max(HANDLE_WIDTH, area.getWidth() - VALUE_CONTROL_RIGHT_RESERVE - MIN_NAME_WIDTH);
-		int sliderWidth = Math.min(MAX_SLIDER_WIDTH, availableWidth);
+		int sliderWidth = getValueColumnWidth(area, HANDLE_WIDTH);
 		int sliderX = area.getX() + area.getWidth() - sliderWidth - VALUE_CONTROL_RIGHT_RESERVE;
 		int sliderY = area.getY() + (area.getHeight() - SLIDER_HEIGHT) / 2;
 		sliderArea = new ImmutableRect2i(sliderX, sliderY, sliderWidth, SLIDER_HEIGHT);
-		recomputeNameArea(area, Math.max(NAME_RIGHT_RESERVE, sliderWidth + VALUE_CONTROL_RIGHT_RESERVE + 4));
+		recomputeNameArea(area, getValueColumnNameRightReserve(area, HANDLE_WIDTH));
 	}
 
 	@Override

@@ -26,10 +26,9 @@ import java.util.Optional;
  * Config entry widget for values edited directly as serialized text.
  */
 final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
-	private static final int VALUE_BOX_WIDTH = 140;
 	private static final int VALUE_BOX_HEIGHT = 18;
 	private static final int VALUE_TEXT_PADDING = 4;
-	private static final int MIN_NAME_WIDTH = 68;
+	private static final int MIN_VALUE_BOX_WIDTH = 40;
 	private static final int MAX_EDIT_TEXT_LENGTH = 512;
 	private final IConfigValueSerializer<T> serializer;
 	private ImmutableRect2i valueArea = ImmutableRect2i.EMPTY;
@@ -45,15 +44,14 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 	@Override
 	public void updateBounds(ImmutableRect2i area) {
 		super.updateBounds(area);
-		int availableWidth = Math.max(40, area.getWidth() - VALUE_CONTROL_RIGHT_RESERVE - MIN_NAME_WIDTH);
-		int width = Math.min(VALUE_BOX_WIDTH, availableWidth);
+		int width = getValueColumnWidth(area, MIN_VALUE_BOX_WIDTH);
 		valueArea = new ImmutableRect2i(
 			area.getX() + area.getWidth() - width - VALUE_CONTROL_RIGHT_RESERVE,
 			area.getY() + (area.getHeight() - VALUE_BOX_HEIGHT) / 2,
 			width,
 			VALUE_BOX_HEIGHT
 		);
-		recomputeNameArea(area, Math.max(NAME_RIGHT_RESERVE, width + VALUE_CONTROL_RIGHT_RESERVE + 4));
+		recomputeNameArea(area, getValueColumnNameRightReserve(area, MIN_VALUE_BOX_WIDTH));
 	}
 
 	@Override

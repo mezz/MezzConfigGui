@@ -27,12 +27,12 @@ import java.util.function.Consumer;
  * Config entry for packed integer colors with a standalone swatch and hexadecimal input control.
  */
 final class ColorConfigEntry extends ConfigEntryWidget<PackedColor> {
-	private static final int HEX_FIELD_WIDTH = 94;
 	private static final int CONTROL_HEIGHT = 18;
 	private static final int SWATCH_SIZE = 18;
 	private static final int CONTROL_GAP = 3;
 	private static final int HEX_TEXT_PADDING = 4;
-	private static final int MIN_NAME_WIDTH = 68;
+	private static final int MIN_HEX_FIELD_WIDTH = 39;
+	private static final int MIN_CONTROL_WIDTH = SWATCH_SIZE + CONTROL_GAP + MIN_HEX_FIELD_WIDTH;
 
 	private final IConfigValueSerializer<PackedColor> serializer;
 	private final Consumer<ConfigPopupSelector> valueSelectorOpener;
@@ -53,15 +53,13 @@ final class ColorConfigEntry extends ConfigEntryWidget<PackedColor> {
 	@Override
 	public void updateBounds(ImmutableRect2i area) {
 		super.updateBounds(area);
-		int preferredWidth = SWATCH_SIZE + CONTROL_GAP + HEX_FIELD_WIDTH;
-		int availableWidth = Math.max(60, area.getWidth() - VALUE_CONTROL_RIGHT_RESERVE - MIN_NAME_WIDTH);
-		int controlWidth = Math.min(preferredWidth, availableWidth);
-		int hexWidth = Math.max(39, controlWidth - SWATCH_SIZE - CONTROL_GAP);
+		int controlWidth = getValueColumnWidth(area, MIN_CONTROL_WIDTH);
+		int hexWidth = controlWidth - SWATCH_SIZE - CONTROL_GAP;
 		int y = area.getY() + (area.getHeight() - CONTROL_HEIGHT) / 2;
 		int x = area.getX() + area.getWidth() - controlWidth - VALUE_CONTROL_RIGHT_RESERVE;
 		swatchArea = new ImmutableRect2i(x, y, SWATCH_SIZE, SWATCH_SIZE);
 		hexArea = new ImmutableRect2i(x + SWATCH_SIZE + CONTROL_GAP, y, hexWidth, CONTROL_HEIGHT);
-		recomputeNameArea(area, Math.max(NAME_RIGHT_RESERVE, controlWidth + VALUE_CONTROL_RIGHT_RESERVE + 4));
+		recomputeNameArea(area, getValueColumnNameRightReserve(area, MIN_CONTROL_WIDTH));
 	}
 
 	@Override

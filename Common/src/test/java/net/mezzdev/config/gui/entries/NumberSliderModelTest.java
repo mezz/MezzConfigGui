@@ -83,12 +83,19 @@ class NumberSliderModelTest {
 		ConfigEntryWidgetFactory factory = new ConfigEntryWidgetFactory(ignored -> {}, () -> {}, null, Map.of());
 		TestIntegerConfigValue value = new TestIntegerConfigValue();
 
-		assertInstanceOf(NumberSliderConfigEntry.class, factory.create(value));
 		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue(
 			"numberDisplayMode",
-			ConfigGuiOptions.NumberDisplayMode.TEXT_AND_BUTTONS
+			ConfigGuiOptions.NumberDisplayMode.SLIDER
 		)) {
-			assertInstanceOf(IntegerConfigEntry.class, factory.create(value));
+			NumberDisplayConfigEntry<?> entry = assertInstanceOf(NumberDisplayConfigEntry.class, factory.create(value));
+			assertEquals(NumberSliderConfigEntry.class, entry.getActiveEntryType());
+			try (ConfigGuiOptionsTestUtil.OptionOverride textAndButtons = ConfigGuiOptionsTestUtil.setValue(
+				"numberDisplayMode",
+				ConfigGuiOptions.NumberDisplayMode.TEXT_AND_BUTTONS
+			)) {
+				assertEquals(IntegerConfigEntry.class, entry.getActiveEntryType());
+			}
+			assertEquals(NumberSliderConfigEntry.class, entry.getActiveEntryType());
 		}
 	}
 
