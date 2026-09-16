@@ -1,9 +1,7 @@
 # MezzConfig GUI
 
-MezzConfig GUI is a shared, client-side config screen for Minecraft mods.
-It can discover installation- and world-scoped client and server schemas registered with [MezzConfig](https://github.com/mezz/MezzConfig), supplies editors for common value types, and supports additional screen customization through its API.
-
-This branch targets Minecraft 1.21.1 on Fabric, Forge, and NeoForge. Java 21 is required.
+MezzConfig GUI is a client-side config screen for Minecraft mods.
+It can discover config schemas registered with [MezzConfig](https://github.com/mezz/MezzConfig), supplies editors for common value types, and supports additional screen customization through its API.
 
 ## Developing with MezzConfig GUI
 
@@ -21,6 +19,3 @@ by CI. Run the verification lifecycle directly with:
 ```console
 ./gradlew check
 ```
-
-CurseForge and Modrinth publishing also require the `curseProjectId` and
-`modrinthId` Gradle properties after the project listings have been created.
