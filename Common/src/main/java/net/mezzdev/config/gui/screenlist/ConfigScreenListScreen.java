@@ -119,6 +119,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 
 	private void updateVisibleEntries() {
 		String searchText = ConfigLocale.toLowercase(searchBox.getValue());
+		List<ConfigScreenListEntry> entries = ConfigScreenListEntry.applyPreferences(this.entries);
 		if (searchText.isEmpty()) {
 			visibleEntries = entries;
 		} else {
@@ -134,7 +135,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 	@Override
 	protected void init() {
 		super.init();
-		updateLayout();
+		updateVisibleEntries();
 		addWidget(searchBox);
 	}
 

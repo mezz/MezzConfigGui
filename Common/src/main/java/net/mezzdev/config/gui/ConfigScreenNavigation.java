@@ -26,7 +26,7 @@ public final class ConfigScreenNavigation {
 	}
 
 	public List<ConfigScreenListEntry> getScreenListEntries() {
-		return screenListEntries;
+		return ConfigScreenListEntry.applyPreferences(screenListEntries);
 	}
 
 	public boolean canOpenScreenList(@Nullable Screen parent) {

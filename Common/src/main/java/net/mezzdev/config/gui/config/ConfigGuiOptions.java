@@ -10,6 +10,8 @@ import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IConfigValue;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+
 /**
  * User-configurable options for MezzConfig GUI's own screen behavior.
  */
@@ -66,6 +68,10 @@ public final class ConfigGuiOptions {
 	private static IConfigValue<Boolean> showAdvancedValueDetails;
 	@Nullable
 	private static IConfigValue<DiscoveryLogging> discoveryLogging;
+	@Nullable
+	private static IConfigValue<List<String>> modOrder;
+	@Nullable
+	private static IConfigValue<List<String>> hiddenMods;
 
 	private ConfigGuiOptions() {
 
@@ -126,6 +132,10 @@ public final class ConfigGuiOptions {
 		enableDragReordering = editing.addBoolean("enableDragReordering", true)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
+
+		IConfigCategoryBuilder modList = schemaBuilder.addCategory("modList");
+		modOrder = modList.addStringList("modOrder", List.of()).build();
+		hiddenMods = modList.addStringList("hiddenMods", List.of()).build();
 
 		IConfigCategoryBuilder integrations = schemaBuilder.addCategory("integrations");
 		showKeyMappings = integrations.addBoolean("showKeyMappings", true)
@@ -224,6 +234,14 @@ public final class ConfigGuiOptions {
 
 	public static boolean rememberLastCategory() {
 		return getValue(rememberLastCategory, true);
+	}
+
+	public static List<String> getModOrder() {
+		return getValue(modOrder, List.of());
+	}
+
+	public static List<String> getHiddenMods() {
+		return getValue(hiddenMods, List.of());
 	}
 
 	public static boolean searchDescriptions() {

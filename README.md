@@ -5,6 +5,8 @@ It can discover config schemas registered with [MezzConfig](https://github.com/m
 
 ## Developing with MezzConfig GUI
 
+Pack authors can [customize mod order and visibility](docs/PACK_CONFIGURATION.md).
+
 See [Dependency Setup for Minecraft 1.21.1](docs/DEPENDENCY_SETUP.md) for Fabric, Forge, and NeoForge Gradle examples.
 
 ## Building
