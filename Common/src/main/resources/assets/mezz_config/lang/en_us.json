@@ -88,7 +88,6 @@
   "mezz_config.config.keyMapping.conflict.category": "Category: %s",
   "mezz_config.config.keyMapping.conflict.more": "And %s more...",
   "mezz_config.config.native.local.title": "%s (local)",
-  "mezz_config.config.native.restart.unknown": "This mod does not declare a restart requirement. A game restart may be needed for changes to take effect.",
   "mezz_config.config.native.section.title": "%s · %s",
   "mezz_config.config.native.numbered.title": "%s (%s)",
   "mezz_config.config.native.description.common": "You are editing this installation's local config. These settings may affect client or server behavior, depending on the mod. They are not synchronized: changing them here does not change a multiplayer server's config. File: %s",

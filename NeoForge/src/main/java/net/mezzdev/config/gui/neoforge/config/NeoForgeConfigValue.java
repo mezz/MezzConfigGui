@@ -53,8 +53,8 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 		this.localizationKey = NeoForgeConfigLocalization.getValueLocalizationKey(modId, path, valueSpec.getTranslationKey());
 		this.localizedName = NeoForgeConfigLocalization.getValueName(localizationKey, path);
 		this.sections = NeoForgeConfigLocalization.getSections(modId, modConfigSpec, path);
-		this.restartRequirement = getRestartRequirement(modConfig, valueSpec);
-		this.localizedDescription = NeoForgeConfigLocalization.getValueDescription(localizationKey, valueSpec.getComment(), restartRequirement);
+		this.restartRequirement = getRestartRequirement(modConfig.getType(), valueSpec);
+		this.localizedDescription = NeoForgeConfigLocalization.getValueDescription(localizationKey, valueSpec.getComment());
 		this.modConfig = modConfig;
 		this.modConfigSpec = modConfigSpec;
 		this.configValue = configValue;
@@ -62,11 +62,11 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 		this.serializer = serializer;
 	}
 
-	private static ConfigValueRestartRequirement getRestartRequirement(
-		ModConfig modConfig,
+	static ConfigValueRestartRequirement getRestartRequirement(
+		ModConfig.Type configType,
 		ModConfigSpec.ValueSpec valueSpec
 	) {
-		if (modConfig.getType() == ModConfig.Type.STARTUP) {
+		if (configType == ModConfig.Type.STARTUP) {
 			return ConfigValueRestartRequirement.GAME_RESTART;
 		}
 		return switch (valueSpec.restartType()) {
