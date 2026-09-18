@@ -112,8 +112,16 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 	@Override
 	public ConfigInfo getInfo() {
 		ConfigInfo info = super.getInfo();
-		List<Component> lines = new ArrayList<>(info.lines());
-		lines.add(Component.translatable("mezz_config.config.keyMapping.context.info", getValue().context()));
+		List<Component> lines = new ArrayList<>();
+		for (Component line : info.lines()) {
+			if (!line.getString().isBlank()) {
+				lines.add(line);
+			}
+		}
+		Component context = getValue().context();
+		if (!context.getString().isBlank()) {
+			lines.add(Component.translatable("mezz_config.config.keyMapping.context.info", context));
+		}
 		List<ConfigKeyMappingConflict> conflicts = getConflicts();
 		if (!conflicts.isEmpty()) {
 			lines.add(withColor(getConflictInfo(conflicts), ConfigGuiColors.GuiColor.KEY_MAPPING_CONFLICT_INFO_TEXT));

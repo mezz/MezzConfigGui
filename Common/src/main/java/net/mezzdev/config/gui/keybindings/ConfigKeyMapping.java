@@ -33,12 +33,12 @@ record ConfigKeyMapping(
 
 	@Override
 	public Component getLocalizedContext() {
-		return getLocalized(keyMapping.getName() + ".context", "context");
+		return Component.translatableWithFallback(keyMapping.getName() + ".context", "");
 	}
 
 	@Override
 	public Component getLocalizedDescription() {
-		return getLocalized(keyMapping.getName() + ".description", "description");
+		return Component.translatableWithFallback(keyMapping.getName() + ".description", "");
 	}
 
 	@Override
