@@ -20,6 +20,7 @@ final class ConfigScreenModTabs {
 	static final int TAB_WIDTH = 24;
 	static final int TAB_HEIGHT = 24;
 	private static final int TAB_GUI_OVERLAP = 3;
+	private static final int INACTIVE_TAB_INSET = 4;
 	private static final int TAB_SCREEN_MARGIN = 2;
 	private static final int TAB_VERTICAL_MARGIN = 4;
 	private static final int ICON_SIZE = 16;
@@ -117,7 +118,11 @@ final class ConfigScreenModTabs {
 		int endIndex = Math.min(entries.size(), startIndex + entriesPerPage);
 		for (int i = startIndex; i < endIndex; i++) {
 			ConfigScreenListEntry entry = entries.get(i);
-			visibleTabs.add(new ModTab(entry, new ImmutableRect2i(x, y, TAB_WIDTH, TAB_HEIGHT)));
+			int inset = INACTIVE_TAB_INSET;
+			if (entry.modId().equals(activeModId)) {
+				inset = 0;
+			}
+			visibleTabs.add(new ModTab(entry, new ImmutableRect2i(x + inset, y, TAB_WIDTH - inset, TAB_HEIGHT)));
 			y += TAB_HEIGHT;
 		}
 
@@ -156,9 +161,9 @@ final class ConfigScreenModTabs {
 		ModTab tab
 	) {
 		boolean selected = tab.entry().modId().equals(activeModId);
-		textures.getModTab(selected).draw(guiGraphics, tab.area().getX(), tab.area().getY());
+		textures.getModTab(selected).draw(guiGraphics, tab.area().getX(), tab.area().getY(), 0, 0, 0, TAB_WIDTH - tab.area().getWidth());
 		ImmutableRect2i iconArea = new ImmutableRect2i(
-			tab.area().getX() + (TAB_WIDTH - ICON_SIZE) / 2,
+			tab.area().getX() + (tab.area().getWidth() - ICON_SIZE) / 2,
 			tab.area().getY() + (TAB_HEIGHT - ICON_SIZE) / 2,
 			ICON_SIZE,
 			ICON_SIZE

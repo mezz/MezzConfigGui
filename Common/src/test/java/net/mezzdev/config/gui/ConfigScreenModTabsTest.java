@@ -61,12 +61,25 @@ class ConfigScreenModTabsTest {
 		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod1", createEntries(4));
 		tabs.updateLayout(new ImmutableRect2i(100, 0, 500, 176));
 
-		assertTrue(tabs.mouseClicked(80, 5, 0));
-		ConfigScreenModTabs.ClickResult result = tabs.mouseReleased(80, 5, 0);
+		assertTrue(tabs.mouseClicked(84, 5, 0));
+		ConfigScreenModTabs.ClickResult result = tabs.mouseReleased(84, 5, 0);
 
 		assertTrue(result.handled());
 		assertTrue(result.playSound());
 		assertEquals("mod0", result.entry().orElseThrow().modId());
+	}
+
+	@Test
+	void selectedTabProtrudesBeyondInactiveTabsAndUsesItsWholeHitArea() {
+		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod1", createEntries(3));
+		tabs.updateLayout(SCREEN_AREA);
+
+		assertFalse(tabs.mouseClicked(80, 25, 0));
+		assertTrue(tabs.mouseClicked(80, 49, 0));
+		assertTrue(tabs.mouseReleased(80, 49, 0).handled());
+		assertFalse(tabs.mouseClicked(80, 73, 0));
+		assertTrue(tabs.mouseClicked(84, 73, 0));
+		assertEquals("mod2", tabs.mouseReleased(84, 73, 0).entry().orElseThrow().modId());
 	}
 
 	private static List<ConfigScreenListEntry> createEntries(int count) {
