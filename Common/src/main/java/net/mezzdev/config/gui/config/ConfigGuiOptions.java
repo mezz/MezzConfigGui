@@ -27,6 +27,7 @@ public final class ConfigGuiOptions {
 	private static final int DEFAULT_WINDOW_WIDTH = 380;
 	private static final int DEFAULT_WINDOW_HEIGHT = 300;
 	private static final int DEFAULT_NAVIGATION_WIDTH = 110;
+	private static final int DEFAULT_INLINE_SUBSECTION_LIMIT = 10;
 
 	@Nullable
 	private static IConfigSchema schema;
@@ -48,6 +49,8 @@ public final class ConfigGuiOptions {
 	private static IConfigValue<Boolean> showRowStriping;
 	@Nullable
 	private static IConfigValue<Boolean> rememberLastCategory;
+	@Nullable
+	private static IConfigValue<Integer> inlineSubsectionLimit;
 	@Nullable
 	private static IConfigValue<Boolean> searchDescriptions;
 	@Nullable
@@ -113,6 +116,9 @@ public final class ConfigGuiOptions {
 			.build();
 
 		IConfigCategoryBuilder navigation = schemaBuilder.addCategory("navigation");
+		inlineSubsectionLimit = navigation.addInteger("inlineSubsectionLimit", DEFAULT_INLINE_SUBSECTION_LIMIT, 0, Integer.MAX_VALUE)
+			.setEditMode(ConfigValueEditMode.IMMEDIATE)
+			.build();
 		rememberLastCategory = navigation.addBoolean("rememberLastCategory", true)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
@@ -249,6 +255,10 @@ public final class ConfigGuiOptions {
 
 	public static boolean rememberLastCategory() {
 		return getValue(rememberLastCategory, true);
+	}
+
+	public static int getInlineSubsectionLimit() {
+		return getValue(inlineSubsectionLimit, DEFAULT_INLINE_SUBSECTION_LIMIT);
 	}
 
 	public static List<String> getModOrder() {

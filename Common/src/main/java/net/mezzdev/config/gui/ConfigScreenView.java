@@ -332,6 +332,14 @@ final class ConfigScreenView {
 				hoveredEntryInfo = entryWidget.getInfo(mouseX, mouseY);
 			}
 		}
+		if (!model.isSearching() && model.hasActiveCategory()) {
+			for (var header : model.getActiveCategoryWidget().getSectionHeaders()) {
+				header.draw(guiGraphics);
+				if (allowHoverAtMouse && header.isMouseOver(mouseX, mouseY)) {
+					hoveredEntryInfo = header.getInfo();
+				}
+			}
+		}
 		if (rowIndex == 0 && !model.isSearching() && model.hasActiveCategory() && model.hasSubcategories(model.getActiveCategoryIndex())) {
 			guiGraphics.drawWordWrap(
 				Minecraft.getInstance().font,

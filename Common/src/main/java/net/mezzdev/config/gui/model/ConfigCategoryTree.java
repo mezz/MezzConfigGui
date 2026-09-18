@@ -20,7 +20,7 @@ final class ConfigCategoryTree {
 
 	}
 
-	static List<Node> create(List<ConfigScreenCategory> categories) {
+	static List<Node> create(List<ConfigScreenCategory> categories, int inlineSubsectionLimit) {
 		List<Node> result = new ArrayList<>();
 		for (ConfigScreenCategory category : categories) {
 			MutableNode root = new MutableNode(category.getName(), category.getLocalizedName(), category.getLocalizedDescription());
@@ -36,21 +36,32 @@ final class ConfigCategoryTree {
 				}
 				node.values.add(value);
 			}
-			appendNodes(result, root, category.getGroup(), -1, 0);
+			appendNodes(result, root, category.getGroup(), -1, 0, inlineSubsectionLimit);
 		}
 		return List.copyOf(result);
 	}
 
-	private static void appendNodes(List<Node> result, MutableNode node, ConfigScreenCategoryGroup group, int parentIndex, int depth) {
+	private static void appendNodes(List<Node> result, MutableNode node, ConfigScreenCategoryGroup group, int parentIndex, int depth, int inlineSubsectionLimit) {
 		int index = result.size();
-		ConfigScreenCategory category = new SectionCategory(node.name, node.title, node.description, group, List.copyOf(node.values));
-		result.add(new Node(category, parentIndex, depth, !node.children.isEmpty()));
+		List<IConfigScreenValue<?>> values = new ArrayList<>(node.values);
+		List<ConfigCategoryWidget.Section> inlineSections = new ArrayList<>();
+		List<MutableNode> navigationChildren = new ArrayList<>();
 		for (MutableNode child : node.children.values()) {
-			appendNodes(result, child, group, index, depth + 1);
+			if (inlineSubsectionLimit > 0 && child.children.isEmpty() && child.values.size() <= inlineSubsectionLimit) {
+				inlineSections.add(new ConfigCategoryWidget.Section(values.size(), child.title, child.description));
+				values.addAll(child.values);
+			} else {
+				navigationChildren.add(child);
+			}
+		}
+		ConfigScreenCategory category = new SectionCategory(node.name, node.title, node.description, group, List.copyOf(values));
+		result.add(new Node(category, parentIndex, depth, !navigationChildren.isEmpty(), List.copyOf(inlineSections)));
+		for (MutableNode child : navigationChildren) {
+			appendNodes(result, child, group, index, depth + 1, inlineSubsectionLimit);
 		}
 	}
 
-	record Node(ConfigScreenCategory category, int parentIndex, int depth, boolean hasChildren) {
+	record Node(ConfigScreenCategory category, int parentIndex, int depth, boolean hasChildren, List<ConfigCategoryWidget.Section> inlineSections) {
 	}
 
 	private static final class MutableNode {

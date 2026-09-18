@@ -143,7 +143,8 @@ public class ConfigScreen extends MezzConfigScreen {
 			);
 			ConfigCategoryWidget widget = new ConfigCategoryWidget(
 				category,
-				entryWidgets
+				entryWidgets,
+				model.getInlineSections(i)
 			);
 			model.addCategoryWidget(widget);
 

@@ -8,6 +8,7 @@ import net.mezzdev.config.gui.ConfigValueSections;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
+import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.config.ConfigGuiOptionsTestUtil;
 import net.mezzdev.config.gui.entries.ConfigEntryWidget;
 import net.mezzdev.config.gui.input.InputType;
@@ -17,7 +18,10 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -28,12 +32,111 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigCategoryTreeTest {
 	@Test
+	void defaultLimitGroupsTenOptionsButKeepsElevenInNavigationWithoutLosingValues() {
+		List<IConfigScreenValue<?>> values = new ArrayList<>();
+		TestValue direct = value("common.toml");
+		values.add(direct);
+		values.addAll(values(11, "common.toml", "Large"));
+		values.addAll(values(10, "common.toml", "Small"));
+		values.add(value("common.toml", "Tiny"));
+		ConfigScreenModel model = new ConfigScreenModel(List.of(new TestCategory("common.toml", values)));
+
+		assertEquals(10, ConfigGuiOptions.getInlineSubsectionLimit());
+		assertEquals(List.of("common.toml", "Large"), model.getCategories().stream().map(category -> category.getLocalizedName().getString()).toList());
+		assertEquals(12, model.getCategories().getFirst().getConfigValues().size());
+		assertEquals(11, model.getCategories().getLast().getConfigValues().size());
+		assertEquals(List.of("Small", "Tiny"), model.getInlineSections(0).stream().map(section -> section.title().getString()).toList());
+		assertEquals(List.of(1, 11), model.getInlineSections(0).stream().map(ConfigCategoryWidget.Section::firstEntryIndex).toList());
+		assertEquals(direct, model.getCategories().getFirst().getConfigValues().iterator().next());
+		var displayedValues = Collections.newSetFromMap(new IdentityHashMap<IConfigScreenValue<?>, Boolean>());
+		model.getCategories().forEach(category -> category.getConfigValues().forEach(value -> assertTrue(displayedValues.add(value))));
+		assertEquals(values.size(), displayedValues.size());
+		assertTrue(displayedValues.containsAll(values));
+	}
+
+	@Test
+	void branchesRemainInNavigationEvenWhenAllTheirChildrenBecomeInlineGroups() {
+		List<ConfigCategoryTree.Node> tree = ConfigCategoryTree.create(List.of(category("common.toml",
+			value("common.toml", "Animals"), value("common.toml", "Animals", "Cow"), value("common.toml", "Animals", "Pig")
+		)), 10);
+
+		assertEquals(List.of("common.toml", "Animals"), tree.stream().map(node -> node.category().getLocalizedName().getString()).toList());
+		assertEquals(List.of(-1, 0), tree.stream().map(ConfigCategoryTree.Node::parentIndex).toList());
+		assertEquals(List.of(0, 1), tree.stream().map(ConfigCategoryTree.Node::depth).toList());
+		assertTrue(tree.getFirst().hasChildren());
+		assertFalse(tree.getLast().hasChildren());
+		assertTrue(tree.getFirst().inlineSections().isEmpty());
+		assertEquals(List.of("Cow", "Pig"), tree.getLast().inlineSections().stream().map(section -> section.title().getString()).toList());
+		assertEquals(List.of(1, 2), tree.getLast().inlineSections().stream().map(ConfigCategoryWidget.Section::firstEntryIndex).toList());
+	}
+
+	@Test
+	void configuredLimitAndZeroControlGroupingWithoutMergingFilesOrCustomCategories() {
+		List<ConfigScreenCategory> categories = List.of(
+			new TestCategory("first.toml", values(3, "first.toml", "Shared")),
+			category("second.toml", value("second.toml", "Shared")),
+			category("quick", value("first.toml", "Shared"))
+		);
+		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("inlineSubsectionLimit", 2)) {
+			ConfigScreenModel model = new ConfigScreenModel(categories);
+			assertEquals(List.of("first.toml", "Shared", "second.toml", "quick"), model.getCategories().stream().map(category -> category.getLocalizedName().getString()).toList());
+			assertTrue(model.getInlineSections(0).isEmpty());
+			assertEquals("Shared", model.getInlineSections(2).getFirst().title().getString());
+			assertTrue(model.getInlineSections(3).isEmpty());
+		}
+		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("inlineSubsectionLimit", 0)) {
+			ConfigScreenModel model = new ConfigScreenModel(categories);
+			assertEquals(5, model.getCategories().size());
+			for (int i = 0; i < model.getCategories().size(); i++) {
+				assertTrue(model.getInlineSections(i).isEmpty());
+			}
+		}
+	}
+
+	@Test
+	void inlineGroupsPreserveDescriptionsAndSearchContextForWrappedValues() {
+		Component title = Component.literal("Cows");
+		Component description = Component.literal("Settings that only affect cows.");
+		TestValue nativeValue = new TestValue("common.toml", List.of(new ConfigValueSections.Section("cow", title, description)));
+		IConfigScreenValue<Boolean> wrapped = IConfigScreenValue.withApplyMode(nativeValue, ConfigValueApplyMode.IMMEDIATE);
+		ConfigScreenModel model = new ConfigScreenModel(List.of(category("common.toml", wrapped)));
+		TestEntry entry = new TestEntry(wrapped);
+		ConfigCategoryWidget widget = new ConfigCategoryWidget(model.getCategories().getFirst(), List.of(entry), model.getInlineSections(0));
+		model.addCategoryWidget(widget);
+
+		assertFalse(model.hasSubcategories(0));
+		assertEquals(0, model.getFirstContentCategory(0));
+		ConfigSectionHeader header = widget.getSectionHeader(0);
+		assertEquals(title, header.getInfo().title());
+		assertEquals(List.of(description), header.getInfo().lines());
+		assertEquals(List.of(wrapped), model.getCategories().getFirst().getConfigValues());
+		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("searchDescriptions", false)) {
+			model.setSearchText("cows");
+			assertEquals(List.of(entry), model.getVisibleEntryWidgets());
+			entry.setShowSectionPath(true);
+			assertEquals("Cows › Remove AI", entry.getDisplayName().getString());
+			model.setSearchText("");
+			entry.setShowSectionPath(false);
+			assertEquals(List.of(entry), model.getVisibleEntryWidgets());
+			assertEquals("Remove AI", entry.getDisplayName().getString());
+		}
+	}
+
+	private static List<IConfigScreenValue<?>> values(int count, String category, String... sections) {
+		List<IConfigScreenValue<?>> values = new ArrayList<>();
+		for (int i = 0; i < count; i++) {
+			values.add(value(category, sections));
+		}
+		return values;
+	}
+
+	@Test
 	void settingsAppearOnceUnderTheirOwnSectionAndDirectSettingsStayAtTheParent() {
 		TestValue root = value("common.toml");
 		TestValue animals = value("common.toml", "Animals");
 		TestValue cow = value("common.toml", "Animals", "Cow");
 		TestValue pig = value("common.toml", "Animals", "Pig");
-		List<ConfigCategoryTree.Node> tree = ConfigCategoryTree.create(List.of(category("common.toml", root, animals, cow, pig)));
+		List<ConfigCategoryTree.Node> tree = ConfigCategoryTree.create(List.of(category("common.toml", root, animals, cow, pig)), 0);
 
 		assertEquals(List.of("common.toml", "Animals", "Cow", "Pig"), tree.stream().map(node -> node.category().getLocalizedName().getString()).toList());
 		assertEquals(List.of(-1, 0, 1, 1), tree.stream().map(ConfigCategoryTree.Node::parentIndex).toList());
@@ -47,7 +150,7 @@ class ConfigCategoryTreeTest {
 		List<ConfigCategoryTree.Node> tree = ConfigCategoryTree.create(List.of(
 			category("first.toml", value("first.toml", "Animals", "Cow"), value("first.toml", "Animals/3:Cow")),
 			category("second.toml", value("second.toml", "Animals", "Cow"))
-		));
+		), 0);
 
 		assertEquals(7, tree.size());
 		assertEquals(7, tree.stream().map(node -> node.category().getName()).distinct().count());
@@ -61,8 +164,8 @@ class ConfigCategoryTreeTest {
 			IConfigScreenValue.withApplyMode(value("common.toml", "Animals", "Cow"), ConfigValueApplyMode.IMMEDIATE),
 			ConfigValueRestartRequirement.GAME_RESTART
 		);
-		List<ConfigCategoryTree.Node> nativeTree = ConfigCategoryTree.create(List.of(category("common.toml", wrapped)));
-		List<ConfigCategoryTree.Node> customTree = ConfigCategoryTree.create(List.of(category("quick", wrapped)));
+		List<ConfigCategoryTree.Node> nativeTree = ConfigCategoryTree.create(List.of(category("common.toml", wrapped)), 0);
+		List<ConfigCategoryTree.Node> customTree = ConfigCategoryTree.create(List.of(category("quick", wrapped)), 0);
 
 		assertEquals(3, nativeTree.size());
 		assertEquals(List.of(wrapped), nativeTree.getLast().category().getConfigValues());
@@ -95,7 +198,7 @@ class ConfigCategoryTreeTest {
 		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("rememberLastCategory", true)) {
 			ConfigScreenModel original = animalModel();
 			ConfigScreenHistory.rememberCategory("nested_test", original.getCategories().get(3));
-			ConfigScreenModel changed = new ConfigScreenModel(List.of(category("common.toml",
+			ConfigScreenModel changed = navigationModel(List.of(category("common.toml",
 				value("common.toml", "General"), value("common.toml", "Animals", "Cow"), value("common.toml", "Animals", "Pig")
 			)));
 
@@ -195,7 +298,13 @@ class ConfigCategoryTreeTest {
 	}
 
 	private static ConfigScreenModel animalModel() {
-		return new ConfigScreenModel(List.of(category("common.toml", value("common.toml", "Animals", "Cow"), value("common.toml", "Animals", "Pig"))));
+		return navigationModel(List.of(category("common.toml", value("common.toml", "Animals", "Cow"), value("common.toml", "Animals", "Pig"))));
+	}
+
+	private static ConfigScreenModel navigationModel(List<ConfigScreenCategory> categories) {
+		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("inlineSubsectionLimit", 0)) {
+			return new ConfigScreenModel(categories);
+		}
 	}
 
 	private static TestCategory category(String name, IConfigScreenValue<?>... values) {

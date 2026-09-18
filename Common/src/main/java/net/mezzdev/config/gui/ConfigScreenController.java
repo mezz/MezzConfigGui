@@ -7,6 +7,7 @@ import net.mezzdev.config.gui.entries.ConfigEntryWidget;
 import net.mezzdev.config.gui.model.ConfigCategoryWidget;
 import net.mezzdev.config.gui.model.ConfigNavItem;
 import net.mezzdev.config.gui.model.ConfigScreenModel;
+import net.mezzdev.config.gui.model.ConfigSectionHeader;
 import net.mezzdev.config.gui.model.PendingConfigChange;
 import net.mezzdev.config.gui.model.AppliedConfigValueChange;
 
@@ -266,7 +267,15 @@ final class ConfigScreenController {
 			}
 
 			ConfigCategoryWidget activeWidget = model.getActiveCategoryWidget();
-			for (ConfigEntryWidget<?> entryWidget : activeWidget.getEntryWidgets()) {
+			List<ConfigEntryWidget<?>> entries = activeWidget.getEntryWidgets();
+			for (int i = 0; i < entries.size(); i++) {
+				ConfigSectionHeader header = activeWidget.getSectionHeader(i);
+				if (header != null) {
+					int height = header.updateBounds(contentArea.getX() + 2, currentY, contentArea.getWidth() - 4);
+					currentY += height;
+					totalContentHeight += height;
+				}
+				ConfigEntryWidget<?> entryWidget = entries.get(i);
 				int height = updateEntryBounds(entryWidget, currentY);
 				currentY += height;
 				totalContentHeight += height;

@@ -27,12 +27,16 @@ public final class ConfigScreenModel {
 	private String searchText = "";
 
 	public ConfigScreenModel(List<ConfigScreenCategory> categories) {
-		this.categoryTree = ConfigCategoryTree.create(categories);
+		this.categoryTree = ConfigCategoryTree.create(categories, ConfigGuiOptions.getInlineSubsectionLimit());
 		this.categories = categoryTree.stream().map(ConfigCategoryTree.Node::category).toList();
 	}
 
 	public List<ConfigScreenCategory> getCategories() {
 		return categories;
+	}
+
+	public List<ConfigCategoryWidget.Section> getInlineSections(int index) {
+		return categoryTree.get(index).inlineSections();
 	}
 
 	public void addCategoryWidget(ConfigCategoryWidget categoryWidget) {
