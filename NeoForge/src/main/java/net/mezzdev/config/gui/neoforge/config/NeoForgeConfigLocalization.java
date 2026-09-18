@@ -4,8 +4,10 @@ import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.util.ConfigNameUtil;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.config.ModConfig;
+import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.logging.log4j.util.Strings;
 import org.jetbrains.annotations.Nullable;
 
@@ -66,12 +68,19 @@ final class NeoForgeConfigLocalization {
 		return modId + ".configuration." + String.join(".", path);
 	}
 
-	public static Component getValueName(String localizationKey, List<String> path) {
+	public static Component getValueName(String modId, ModConfigSpec modConfigSpec, String localizationKey, List<String> path) {
+		MutableComponent result = Component.empty();
+		for (int level = 1; level < path.size(); level++) {
+			List<String> sectionPath = path.subList(0, level);
+			String sectionKey = getValueLocalizationKey(modId, sectionPath, modConfigSpec.getLevelTranslationKey(sectionPath));
+			result.append(Component.translatableWithFallback(sectionKey, getDisplayNameFallback(sectionPath.getLast())));
+			result.append(" › ");
+		}
 		String name = localizationKey;
 		if (!path.isEmpty()) {
 			name = path.getLast();
 		}
-		return Component.translatableWithFallback(localizationKey, getDisplayNameFallback(name));
+		return result.append(Component.translatableWithFallback(localizationKey, getDisplayNameFallback(name)));
 	}
 
 	public static Component getValueDescription(String localizationKey, @Nullable String comment, ConfigValueRestartRequirement restartRequirement) {
