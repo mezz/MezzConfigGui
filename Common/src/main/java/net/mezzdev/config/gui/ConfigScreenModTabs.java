@@ -23,9 +23,8 @@ final class ConfigScreenModTabs {
 	private static final int INACTIVE_TAB_INSET = 4;
 	private static final int TAB_SCREEN_MARGIN = 2;
 	private static final int TAB_VERTICAL_MARGIN = 4;
-	private static final int SCROLL_BUTTON_HEIGHT = 12;
 	private static final int SCROLL_BUTTON_GAP = 2;
-	private static final int SCROLL_BUTTON_WIDTH = TAB_WIDTH - TAB_GUI_OVERLAP - 1;
+	private static final int SCROLL_BUTTON_SIZE = TAB_WIDTH - TAB_GUI_OVERLAP - 1;
 	private static final int ICON_SIZE = 24;
 
 	private final String activeModId;
@@ -81,7 +80,7 @@ final class ConfigScreenModTabs {
 		}
 
 		boolean overflowing = entries.size() > availableSlots;
-		int scrollableSlots = (availableHeight - 2 * (SCROLL_BUTTON_HEIGHT + SCROLL_BUTTON_GAP)) / TAB_HEIGHT;
+		int scrollableSlots = (availableHeight - 2 * (SCROLL_BUTTON_SIZE + SCROLL_BUTTON_GAP)) / TAB_HEIGHT;
 		showScrollButtons = overflowing && scrollableSlots > 0;
 		if (showScrollButtons) {
 			visibleTabCount = scrollableSlots;
@@ -114,8 +113,8 @@ final class ConfigScreenModTabs {
 		int y = screenArea.getY() + TAB_VERTICAL_MARGIN;
 		int firstY = y;
 		if (showScrollButtons) {
-			scrollUpArea = new ImmutableRect2i(x, y, SCROLL_BUTTON_WIDTH, SCROLL_BUTTON_HEIGHT);
-			y += SCROLL_BUTTON_HEIGHT + SCROLL_BUTTON_GAP;
+			scrollUpArea = new ImmutableRect2i(x, y, SCROLL_BUTTON_SIZE, SCROLL_BUTTON_SIZE);
+			y += SCROLL_BUTTON_SIZE + SCROLL_BUTTON_GAP;
 		}
 
 		int startIndex = firstVisibleIndex;
@@ -132,7 +131,7 @@ final class ConfigScreenModTabs {
 
 		if (showScrollButtons) {
 			y = screenArea.getY() + screenArea.getHeight() - TAB_VERTICAL_MARGIN;
-			scrollDownArea = new ImmutableRect2i(x, y - SCROLL_BUTTON_HEIGHT, SCROLL_BUTTON_WIDTH, SCROLL_BUTTON_HEIGHT);
+			scrollDownArea = new ImmutableRect2i(x, y - SCROLL_BUTTON_SIZE, SCROLL_BUTTON_SIZE, SCROLL_BUTTON_SIZE);
 		}
 		tabsArea = new ImmutableRect2i(x, firstY, TAB_WIDTH, y - firstY);
 	}

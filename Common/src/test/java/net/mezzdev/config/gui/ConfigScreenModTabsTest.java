@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigScreenModTabsTest {
-	private static final ImmutableRect2i SCREEN_AREA = new ImmutableRect2i(100, 20, 500, 156);
+	private static final ImmutableRect2i SCREEN_AREA = new ImmutableRect2i(100, 20, 500, 188);
 
 	@Test
 	void initiallyShowsTheActiveMod() {
@@ -24,7 +24,7 @@ class ConfigScreenModTabsTest {
 		tabs.updateLayout(SCREEN_AREA);
 
 		assertEquals(List.of("mod6", "mod7", "mod8"), tabs.getVisibleModIds());
-		assertEquals(new ImmutableRect2i(67, 24, 36, 148), tabs.getTabsArea());
+		assertEquals(new ImmutableRect2i(67, 24, 36, 180), tabs.getTabsArea());
 	}
 
 	@Test
@@ -76,10 +76,10 @@ class ConfigScreenModTabsTest {
 		tabs.updateLayout(SCREEN_AREA);
 
 		assertFalse(tabs.mouseClicked(SCREEN_AREA.getX(), 25, 0));
-		assertFalse(tabs.mouseClicked(SCREEN_AREA.getX(), 165, 0));
+		assertFalse(tabs.mouseClicked(SCREEN_AREA.getX(), 180, 0));
 		for (int firstIndex = 1; firstIndex <= 8; firstIndex++) {
-			assertTrue(tabs.mouseClicked(90, 165, 0));
-			assertTrue(tabs.mouseReleased(90, 165, 0).handled());
+			assertTrue(tabs.mouseClicked(90, 180, 0));
+			assertTrue(tabs.mouseReleased(90, 180, 0).handled());
 			assertEquals("mod" + Math.min(firstIndex, 7), tabs.getVisibleModIds().getFirst());
 		}
 		assertTrue(tabs.mouseClicked(90, 25, 0));
@@ -118,12 +118,27 @@ class ConfigScreenModTabsTest {
 		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod0", createEntries(10));
 		tabs.updateLayout(SCREEN_AREA);
 
-		assertFalse(tabs.getResizeExclusionArea(40).isEmpty());
-		assertTrue(tabs.getResizeExclusionArea(37).isEmpty());
-		assertTrue(tabs.getResizeExclusionArea(150).isEmpty());
+		assertFalse(tabs.getResizeExclusionArea(60).isEmpty());
+		assertTrue(tabs.getResizeExclusionArea(57).isEmpty());
+		assertTrue(tabs.getResizeExclusionArea(165).isEmpty());
 		tabs.mouseScrolled(90, 25, -100);
-		assertFalse(tabs.getResizeExclusionArea(40).isEmpty());
-		assertTrue(tabs.getResizeExclusionArea(150).isEmpty());
+		assertFalse(tabs.getResizeExclusionArea(60).isEmpty());
+		assertTrue(tabs.getResizeExclusionArea(165).isEmpty());
+	}
+
+	@Test
+	void scrollButtonsHaveFullSquareHitAreas() {
+		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod0", createEntries(10));
+		tabs.updateLayout(SCREEN_AREA);
+
+		assertTrue(tabs.mouseClicked(98, 203, 0));
+		assertTrue(tabs.mouseReleased(98, 203, 0).playSound());
+		assertEquals("mod1", tabs.getVisibleModIds().getFirst());
+		assertTrue(tabs.mouseClicked(98, 55, 0));
+		assertTrue(tabs.mouseReleased(98, 55, 0).playSound());
+		assertEquals("mod0", tabs.getVisibleModIds().getFirst());
+		assertFalse(tabs.mouseClicked(98, 56, 0));
+		assertFalse(tabs.mouseClicked(98, 171, 0));
 	}
 
 	private static List<ConfigScreenListEntry> createEntries(int count) {
