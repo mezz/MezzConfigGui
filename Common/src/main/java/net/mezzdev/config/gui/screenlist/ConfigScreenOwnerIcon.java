@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -92,7 +94,7 @@ public final class ConfigScreenOwnerIcon {
 		int color = getPlaceholderColor(modId);
 		guiGraphics.fill(iconArea.getX(), iconArea.getY(), iconArea.getX() + iconArea.getWidth(), iconArea.getY() + iconArea.getHeight(), color);
 		drawInsetBorder(guiGraphics, iconArea);
-		String initial = getInitial(displayName, modId);
+		String initial = getInitials(displayName, modId);
 		guiGraphics.drawCenteredString(
 			font,
 			initial,
@@ -128,16 +130,31 @@ public final class ConfigScreenOwnerIcon {
 		return 0xFF000000 | red << 16 | green << 8 | blue;
 	}
 
-	private static String getInitial(Component displayName, String modId) {
-		String name = displayName.getString();
-		if (name.isBlank()) {
-			name = modId;
+	static String getInitials(Component displayName, String modId) {
+		List<String> words = getNameWords(displayName.getString());
+		if (words.isEmpty()) {
+			words = getNameWords(modId);
 		}
-		if (name.isBlank()) {
+		if (words.isEmpty()) {
 			return "?";
 		}
-		int codePoint = name.codePointAt(0);
-		return new String(Character.toChars(Character.toUpperCase(codePoint)));
+		StringBuilder initials = new StringBuilder();
+		if (words.size() > 1) {
+			initials.appendCodePoint(Character.toUpperCase(words.getFirst().codePointAt(0)));
+			initials.appendCodePoint(Character.toUpperCase(words.get(1).codePointAt(0)));
+		} else {
+			words.getFirst().codePoints().limit(2)
+				.map(Character::toUpperCase)
+				.forEach(initials::appendCodePoint);
+		}
+		return initials.toString();
+	}
+
+	private static List<String> getNameWords(String name) {
+		String spacedName = name.replaceAll("([\\p{Ll}\\p{N}])(\\p{Lu})", "$1 $2");
+		return Arrays.stream(spacedName.split("[^\\p{L}\\p{N}]+"))
+			.filter(word -> !word.isEmpty())
+			.toList();
 	}
 
 	private static void drawInsetBorder(GuiGraphics guiGraphics, ImmutableRect2i area) {
