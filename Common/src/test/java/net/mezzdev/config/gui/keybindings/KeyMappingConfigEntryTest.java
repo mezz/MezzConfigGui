@@ -23,6 +23,26 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class KeyMappingConfigEntryTest {
 	@Test
+	void conflictTooltipsSeparateEachBindingAndKeepItsDetailsTogether() {
+		ConfigKeyMappingConflict first = new ConfigKeyMappingConflict(
+			Component.literal("First action"), Component.literal("K"), Component.literal("First mod"), Component.literal("First category")
+		);
+		ConfigKeyMappingConflict second = new ConfigKeyMappingConflict(
+			Component.literal("Second action"), Component.literal("K"), Component.literal("Second mod"), Component.literal("Second category")
+		);
+		List<Component> lines = KeyMappingConfigEntry.getConflictTooltipInfo(List.of(first, second)).lines();
+
+		assertEquals(7, lines.size());
+		assertTrue(lines.get(0).getString().startsWith("• "));
+		assertTrue(lines.get(0).getStyle().isBold());
+		assertTrue(lines.get(1).getString().startsWith("  "));
+		assertTrue(lines.get(2).getString().startsWith("  "));
+		assertTrue(lines.get(3).getString().isEmpty());
+		assertTrue(lines.get(4).getString().startsWith("• "));
+		assertTrue(lines.get(4).getStyle().isBold());
+	}
+
+	@Test
 	void missingOptionalTranslationsDoNotLeakIntoInfo() {
 		ConfigKeyMapping keyMapping = new ConfigKeyMapping(new KeyMapping("key.test_mod.without_details", -1, "key.categories.misc"));
 		KeyMappingConfigEntry entry = new KeyMappingConfigEntry(new KeyMappingConfigValue(keyMapping), null);

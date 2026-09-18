@@ -249,24 +249,29 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 		return configKeyMapping.getConflicts(value);
 	}
 
-	private ConfigInfo getConflictTooltipInfo(List<ConfigKeyMappingConflict> conflicts) {
+	static ConfigInfo getConflictTooltipInfo(List<ConfigKeyMappingConflict> conflicts) {
 		List<Component> lines = new ArrayList<>();
 		for (ConfigKeyMappingConflict conflict : conflicts.stream().limit(3).toList()) {
-			lines.add(Component.translatable(
+			if (!lines.isEmpty()) {
+				lines.add(Component.empty());
+			}
+			lines.add(Component.literal("• ").append(Component.translatable(
 				"mezz_config.config.keyMapping.conflict.binding",
 				conflict.name(),
 				conflict.binding()
-			));
-			lines.add(Component.translatable(
+			))
+				.withStyle(ChatFormatting.BOLD));
+			lines.add(Component.literal("  ").append(Component.translatable(
 				"mezz_config.config.keyMapping.conflict.mod",
 				conflict.modName()
-			));
-			lines.add(Component.translatable(
+			)));
+			lines.add(Component.literal("  ").append(Component.translatable(
 				"mezz_config.config.keyMapping.conflict.category",
 				conflict.category()
-			));
+			)));
 		}
 		if (conflicts.size() > 3) {
+			lines.add(Component.empty());
 			lines.add(Component.translatable(
 				"mezz_config.config.keyMapping.conflict.more",
 				conflicts.size() - 3
