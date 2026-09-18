@@ -8,8 +8,14 @@ import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.info.ConfigValueInfoFactory;
 import net.mezzdev.config.gui.info.ConfigNumberInfo;
+import net.mezzdev.config.gui.info.ColorSwatch;
 import net.mezzdev.config.gui.input.UserInput;
+import net.mezzdev.config.gui.popup.ColorPickerPopup;
+import net.mezzdev.config.gui.popup.ConfigPopupSelector;
+import net.mezzdev.config.gui.popup.ConfigValuePopupSelector;
+import net.mezzdev.config.gui.popup.MappedConfigValuePopup;
 import net.mezzdev.config.gui.textures.ConfigTextures;
+import net.mezzdev.config.gui.util.HexColorString;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -23,6 +29,7 @@ import org.lwjgl.glfw.GLFW;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * Config entry widget for values edited directly as serialized text.
@@ -32,28 +39,35 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 	private static final int VALUE_TEXT_PADDING = 4;
 	private static final int MIN_VALUE_BOX_WIDTH = 40;
 	private static final int MAX_EDIT_TEXT_LENGTH = 512;
+	private static final int COLOR_SWATCH_GAP = 3;
 	private final IConfigValueSerializer<T> serializer;
+	private final Consumer<ConfigPopupSelector> valueSelectorOpener;
 	private ImmutableRect2i valueArea = ImmutableRect2i.EMPTY;
 
 	private boolean editing;
 	private String editText = "";
 
-	TextConfigEntry(IConfigScreenValue<T> value, IConfigValueSerializer<T> serializer, ConfigTextures textures) {
+	TextConfigEntry(IConfigScreenValue<T> value, IConfigValueSerializer<T> serializer, Consumer<ConfigPopupSelector> valueSelectorOpener, ConfigTextures textures) {
 		super(value, textures);
 		this.serializer = serializer;
+		this.valueSelectorOpener = valueSelectorOpener;
 	}
 
 	@Override
 	public void updateBounds(ImmutableRect2i area) {
 		super.updateBounds(area);
-		int width = getValueColumnWidth(area, MIN_VALUE_BOX_WIDTH);
+		int minimumWidth = MIN_VALUE_BOX_WIDTH;
+		if (HexColorString.parse(getValue()).isPresent()) {
+			minimumWidth += VALUE_BOX_HEIGHT + COLOR_SWATCH_GAP;
+		}
+		int width = getValueColumnWidth(area, minimumWidth);
 		valueArea = new ImmutableRect2i(
 			area.getX() + area.getWidth() - width - VALUE_CONTROL_RIGHT_RESERVE,
 			area.getY() + (area.getHeight() - VALUE_BOX_HEIGHT) / 2,
 			width,
 			VALUE_BOX_HEIGHT
 		);
-		recomputeNameArea(area, getValueColumnNameRightReserve(area, MIN_VALUE_BOX_WIDTH));
+		recomputeNameArea(area, getValueColumnNameRightReserve(area, minimumWidth));
 	}
 
 	@Override
@@ -64,6 +78,7 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 
 		boolean hovered = valueArea.contains(mouseX, mouseY);
 		drawButtonBackground(guiGraphics, textures, valueArea, true, hovered);
+		HexColorString.parse(getValue()).ifPresent(color -> ColorSwatch.draw(guiGraphics, getColorSwatchArea(), color.color()));
 
 		String displayText = getDisplayText();
 		int textColor = getTextColor();
@@ -86,6 +101,9 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 
 	private void drawValueText(GuiGraphics guiGraphics, Font font, String text, int color) {
 		ImmutableRect2i textArea = valueArea.cropLeft(VALUE_TEXT_PADDING).cropRight(VALUE_TEXT_PADDING);
+		if (HexColorString.parse(getValue()).isPresent()) {
+			textArea = textArea.cropLeft(VALUE_BOX_HEIGHT + COLOR_SWATCH_GAP);
+		}
 		if (!editing && getValue() instanceof Number) {
 			drawFittedText(guiGraphics, font, Component.literal(text), textArea, color, false);
 			return;
@@ -153,11 +171,31 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 		}
 		if (valueArea.contains(input.getMouseX(), input.getMouseY())) {
 			if (!input.isSimulate()) {
-				startEditing();
+				if (HexColorString.parse(getValue()).isPresent() && getColorSwatchArea().contains(input.getMouseX(), input.getMouseY())) {
+					commitEdit();
+					HexColorString.parse(getValue()).ifPresent(this::openColorPicker);
+				} else {
+					startEditing();
+				}
 			}
 			return true;
 		}
 		return false;
+	}
+
+	private ImmutableRect2i getColorSwatchArea() {
+		return new ImmutableRect2i(valueArea.getX(), valueArea.getY(), Math.min(VALUE_BOX_HEIGHT, valueArea.getWidth()), VALUE_BOX_HEIGHT);
+	}
+
+	private void openColorPicker(HexColorString color) {
+		T original = getValue();
+		valueSelectorOpener.accept(new ConfigValuePopupSelector<>(
+			configValue,
+			new MappedConfigValuePopup<>(new ColorPickerPopup(color.color()), updated -> color.update(original, updated, serializer)),
+			this::getColorSwatchArea,
+			this::hasPendingChange,
+			this::setValue
+		));
 	}
 
 	private void startEditing() {

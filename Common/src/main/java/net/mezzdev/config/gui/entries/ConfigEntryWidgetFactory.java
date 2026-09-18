@@ -142,7 +142,7 @@ public final class ConfigEntryWidgetFactory {
 	}
 
 	private <T> ConfigEntryWidget<T> createTextEntry(IConfigScreenValue<T> value) {
-		return new TextConfigEntry<>(value, value.getSerializer(), textures);
+		return new TextConfigEntry<>(value, value.getSerializer(), valueSelectorOpener, textures);
 	}
 
 	@SuppressWarnings("unchecked")

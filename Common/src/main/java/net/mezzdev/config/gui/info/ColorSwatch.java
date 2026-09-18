@@ -3,6 +3,7 @@ package net.mezzdev.config.gui.info;
 import net.mezzdev.config.api.value.color.ConfigColorFormat;
 import net.mezzdev.config.api.value.color.PackedColor;
 import net.mezzdev.config.gui.ConfigGuiColors;
+import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
 
@@ -18,6 +19,10 @@ public final class ColorSwatch {
 
 	public static void draw(GuiGraphics guiGraphics, Rect2i area, PackedColor color) {
 		draw(guiGraphics, area, color.packedValue(), color.format());
+	}
+
+	public static void draw(GuiGraphics guiGraphics, ImmutableRect2i area, PackedColor color) {
+		draw(guiGraphics, new Rect2i(area.getX(), area.getY(), area.getWidth(), area.getHeight()), color);
 	}
 
 	public static String formatHex(PackedColor color) {
