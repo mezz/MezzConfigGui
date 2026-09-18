@@ -2,10 +2,12 @@ package net.mezzdev.config.gui.neoforge.config;
 
 import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
+import net.mezzdev.config.gui.ConfigValueAccess;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.minecraft.network.chat.Component;
+import net.minecraft.client.Minecraft;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.logging.log4j.LogManager;
@@ -17,7 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLocalizedValue {
+final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLocalizedValue, ConfigValueAccess {
 	private static final Logger LOGGER = LogManager.getLogger();
 
 	private final String name;
@@ -87,7 +89,21 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 
 	@Override
 	public Component getLocalizedDescription() {
+		if (!isEditable()) {
+			return localizedDescription.copy().append("\n\n").append(Component.translatableWithFallback(
+				"mezz_config.config.native.server.readOnly",
+				"These settings are supplied by the multiplayer server and are read-only here. Ask the server administrator to edit the server's config file."
+			));
+		}
 		return localizedDescription;
+	}
+
+	@Override
+	public boolean isEditable() {
+		if (modConfig.getType() != ModConfig.Type.SERVER) {
+			return true;
+		}
+		return Minecraft.getInstance().getSingleplayerServer() != null;
 	}
 
 	@Override
@@ -102,6 +118,9 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 
 	@Override
 	public boolean set(T value) {
+		if (!isEditable()) {
+			throw new IllegalStateException("Native NeoForge multiplayer server configs cannot be edited from this client.");
+		}
 		if (value == null || !serializer.isValid(value)) {
 			throw new IllegalArgumentException(
 				"Invalid NeoForge config value '%s'. %s".formatted(value, serializer.getValidValuesDescription())

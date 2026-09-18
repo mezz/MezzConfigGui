@@ -2,6 +2,7 @@ package net.mezzdev.config.gui.entries;
 
 import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.ConfigGuiColors;
+import net.mezzdev.config.gui.ConfigValueAccess;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.model.ConfigValueChange;
@@ -340,7 +341,7 @@ public abstract class ConfigEntryWidget<T> {
 	}
 
 	public boolean isEditable() {
-		return editableSupplier.getAsBoolean();
+		return editableSupplier.getAsBoolean() && ConfigValueAccess.isEditable(configValue);
 	}
 
 	protected boolean onMouseClicked(UserInput input) {

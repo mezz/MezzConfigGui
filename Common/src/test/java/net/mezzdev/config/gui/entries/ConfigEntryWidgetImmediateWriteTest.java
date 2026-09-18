@@ -2,6 +2,8 @@ package net.mezzdev.config.gui.entries;
 
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
+import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
+import net.mezzdev.config.gui.ConfigValueAccess;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.minecraft.client.gui.GuiGraphics;
@@ -17,6 +19,23 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigEntryWidgetImmediateWriteTest {
+	@Test
+	void nativeReadOnlyPolicySurvivesApplyModeAndRestartWrappers() {
+		TestConfigValue configValue = new TestConfigValue("initial", false);
+		configValue.editable = false;
+		IConfigScreenValue<String> wrapped = IConfigScreenValue.withRestartRequirement(
+			IConfigScreenValue.withApplyMode(configValue, ConfigValueApplyMode.ON_APPLY),
+			ConfigValueRestartRequirement.GAME_RESTART
+		);
+		TestConfigEntryWidget widget = new TestConfigEntryWidget(wrapped);
+
+		assertFalse(widget.isEditable());
+		assertFalse(widget.setDisplayedValue("changed"));
+		assertEquals("initial", configValue.getStoredValue());
+		assertTrue(widget.getPendingChange().isEmpty());
+		configValue.editable = true;
+		assertTrue(widget.isEditable());
+	}
 
 	@Test
 	void commitsDisplayedValueOnlyAfterImmediateWriteSucceeds() {
@@ -99,7 +118,8 @@ class ConfigEntryWidgetImmediateWriteTest {
 		}
 	}
 
-	private static final class TestConfigValue implements IConfigScreenValue<String> {
+	private static final class TestConfigValue implements IConfigScreenValue<String>, ConfigValueAccess {
+		private boolean editable = true;
 		private final boolean fails;
 		private final List<Consumer<String>> listeners = new ArrayList<>();
 		private String value;
@@ -109,6 +129,11 @@ class ConfigEntryWidgetImmediateWriteTest {
 		private TestConfigValue(String value, boolean fails) {
 			this.value = value;
 			this.fails = fails;
+		}
+
+		@Override
+		public boolean isEditable() {
+			return editable;
 		}
 
 		private void setBeforeWrite(Runnable beforeWrite) {
