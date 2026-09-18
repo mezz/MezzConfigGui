@@ -33,21 +33,26 @@ final class NeoForgeConfigLocalization {
 
 	public static Component getCategoryName(String localizationKey, ModConfig modConfig) {
 		String fallback = getDisplayNameFallback(modConfig.getType().extension());
-		return Component.translatableWithFallback(localizationKey + ".title", fallback);
+		Component title = Component.translatableWithFallback(localizationKey + ".title", fallback);
+		if (modConfig.getType() == ModConfig.Type.COMMON) {
+			return Component.translatableWithFallback("mezz_config.config.native.local.title", "%s (local)", title);
+		}
+		return title;
 	}
 
 	public static Component getCategoryDescription(String localizationKey, ModConfig modConfig) {
 		String tooltipKey = localizationKey + ".tooltip";
-		if (I18n.exists(tooltipKey)) {
-			return Component.translatable(tooltipKey);
-		}
 		String fallbackKey = switch (modConfig.getType()) {
 			case COMMON -> "mezz_config.config.native.description.common";
 			case CLIENT -> "mezz_config.config.native.description.client";
 			case SERVER -> "mezz_config.config.native.description.server";
 			case STARTUP -> "mezz_config.config.native.description.startup";
 		};
-		return Component.translatable(fallbackKey, modConfig.getFileName());
+		Component scope = Component.translatable(fallbackKey, modConfig.getFileName());
+		if (I18n.exists(tooltipKey)) {
+			return Component.translatable(tooltipKey).append("\n\n").append(scope);
+		}
+		return scope;
 	}
 
 	public static String getValueLocalizationKey(String modId, List<String> path, @Nullable String configuredTranslationKey) {
