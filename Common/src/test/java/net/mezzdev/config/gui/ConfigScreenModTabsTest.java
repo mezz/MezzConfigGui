@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigScreenModTabsTest {
-	private static final ImmutableRect2i SCREEN_AREA = new ImmutableRect2i(100, 20, 500, 128);
+	private static final ImmutableRect2i SCREEN_AREA = new ImmutableRect2i(100, 20, 500, 156);
 
 	@Test
 	void initiallyShowsTheActiveMod() {
@@ -24,13 +24,13 @@ class ConfigScreenModTabsTest {
 		tabs.updateLayout(SCREEN_AREA);
 
 		assertEquals(List.of("mod6", "mod7", "mod8"), tabs.getVisibleModIds());
-		assertEquals(new ImmutableRect2i(79, 24, 24, 120), tabs.getTabsArea());
+		assertEquals(new ImmutableRect2i(67, 24, 36, 148), tabs.getTabsArea());
 	}
 
 	@Test
 	void resizingKeepsTheActiveModVisible() {
 		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod7", createEntries(10));
-		tabs.updateLayout(new ImmutableRect2i(100, 20, 500, 320));
+		tabs.updateLayout(new ImmutableRect2i(100, 20, 500, 400));
 		assertEquals(10, tabs.getVisibleModIds().size());
 
 		tabs.updateLayout(SCREEN_AREA);
@@ -76,10 +76,10 @@ class ConfigScreenModTabsTest {
 		tabs.updateLayout(SCREEN_AREA);
 
 		assertFalse(tabs.mouseClicked(SCREEN_AREA.getX(), 25, 0));
-		assertFalse(tabs.mouseClicked(SCREEN_AREA.getX(), 138, 0));
+		assertFalse(tabs.mouseClicked(SCREEN_AREA.getX(), 165, 0));
 		for (int firstIndex = 1; firstIndex <= 8; firstIndex++) {
-			assertTrue(tabs.mouseClicked(90, 138, 0));
-			assertTrue(tabs.mouseReleased(90, 138, 0).handled());
+			assertTrue(tabs.mouseClicked(90, 165, 0));
+			assertTrue(tabs.mouseReleased(90, 165, 0).handled());
 			assertEquals("mod" + Math.min(firstIndex, 7), tabs.getVisibleModIds().getFirst());
 		}
 		assertTrue(tabs.mouseClicked(90, 25, 0));
@@ -105,12 +105,12 @@ class ConfigScreenModTabsTest {
 		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod1", createEntries(3));
 		tabs.updateLayout(SCREEN_AREA);
 
-		assertFalse(tabs.mouseClicked(80, 25, 0));
-		assertTrue(tabs.mouseClicked(80, 49, 0));
-		assertTrue(tabs.mouseReleased(80, 49, 0).handled());
-		assertFalse(tabs.mouseClicked(80, 73, 0));
-		assertTrue(tabs.mouseClicked(84, 73, 0));
-		assertEquals("mod2", tabs.mouseReleased(84, 73, 0).entry().orElseThrow().modId());
+		assertFalse(tabs.mouseClicked(68, 25, 0));
+		assertTrue(tabs.mouseClicked(68, 57, 0));
+		assertTrue(tabs.mouseReleased(68, 57, 0).handled());
+		assertFalse(tabs.mouseClicked(68, 89, 0));
+		assertTrue(tabs.mouseClicked(72, 89, 0));
+		assertEquals("mod2", tabs.mouseReleased(72, 89, 0).entry().orElseThrow().modId());
 	}
 
 	@Test
@@ -120,10 +120,10 @@ class ConfigScreenModTabsTest {
 
 		assertFalse(tabs.getResizeExclusionArea(40).isEmpty());
 		assertTrue(tabs.getResizeExclusionArea(37).isEmpty());
-		assertTrue(tabs.getResizeExclusionArea(120).isEmpty());
+		assertTrue(tabs.getResizeExclusionArea(150).isEmpty());
 		tabs.mouseScrolled(90, 25, -100);
 		assertFalse(tabs.getResizeExclusionArea(40).isEmpty());
-		assertTrue(tabs.getResizeExclusionArea(120).isEmpty());
+		assertTrue(tabs.getResizeExclusionArea(150).isEmpty());
 	}
 
 	private static List<ConfigScreenListEntry> createEntries(int count) {

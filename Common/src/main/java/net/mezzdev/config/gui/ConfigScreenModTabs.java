@@ -17,8 +17,8 @@ import java.util.Optional;
  * Lays out and draws a scrollable strip of mod-icon tabs along the left side of a config screen.
  */
 final class ConfigScreenModTabs {
-	static final int TAB_WIDTH = 24;
-	static final int TAB_HEIGHT = 24;
+	static final int TAB_WIDTH = 36;
+	static final int TAB_HEIGHT = 32;
 	private static final int TAB_GUI_OVERLAP = 3;
 	private static final int INACTIVE_TAB_INSET = 4;
 	private static final int TAB_SCREEN_MARGIN = 2;
@@ -26,7 +26,7 @@ final class ConfigScreenModTabs {
 	private static final int SCROLL_BUTTON_HEIGHT = 12;
 	private static final int SCROLL_BUTTON_GAP = 2;
 	private static final int SCROLL_BUTTON_WIDTH = TAB_WIDTH - TAB_GUI_OVERLAP - 1;
-	private static final int ICON_SIZE = 16;
+	private static final int ICON_SIZE = 24;
 
 	private final String activeModId;
 	private final List<ConfigScreenListEntry> entries;
@@ -165,7 +165,7 @@ final class ConfigScreenModTabs {
 		ModTab tab
 	) {
 		boolean selected = tab.entry().modId().equals(activeModId);
-		textures.getModTab(selected).draw(guiGraphics, tab.area().getX(), tab.area().getY(), 0, 0, 0, TAB_WIDTH - tab.area().getWidth());
+		textures.getModTab(selected).draw(guiGraphics, tab.area());
 		ImmutableRect2i iconArea = new ImmutableRect2i(
 			tab.area().getX() + (tab.area().getWidth() - ICON_SIZE) / 2,
 			tab.area().getY() + (TAB_HEIGHT - ICON_SIZE) / 2,
