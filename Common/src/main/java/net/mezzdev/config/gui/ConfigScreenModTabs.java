@@ -23,6 +23,9 @@ final class ConfigScreenModTabs {
 	private static final int INACTIVE_TAB_INSET = 4;
 	private static final int TAB_SCREEN_MARGIN = 2;
 	private static final int TAB_VERTICAL_MARGIN = 4;
+	private static final int PAGE_BUTTON_HEIGHT = 12;
+	private static final int PAGE_BUTTON_GAP = 2;
+	private static final int PAGE_BUTTON_WIDTH = TAB_WIDTH - TAB_GUI_OVERLAP - 1;
 	private static final int ICON_SIZE = 16;
 
 	private final String activeModId;
@@ -77,8 +80,9 @@ final class ConfigScreenModTabs {
 		}
 
 		boolean paged = entries.size() > availableSlots;
-		if (paged && availableSlots >= 3) {
-			entriesPerPage = availableSlots - 2;
+		int pagedSlots = (availableHeight - 2 * (PAGE_BUTTON_HEIGHT + PAGE_BUTTON_GAP)) / TAB_HEIGHT;
+		if (paged && pagedSlots > 0) {
+			entriesPerPage = pagedSlots;
 			pageCount = divideCeil(entries.size(), entriesPerPage);
 		} else {
 			entriesPerPage = Math.min(entries.size(), availableSlots);
@@ -110,8 +114,8 @@ final class ConfigScreenModTabs {
 		int y = screenArea.getY() + TAB_VERTICAL_MARGIN;
 		int firstY = y;
 		if (pageCount > 1) {
-			previousPageArea = new ImmutableRect2i(x, y, TAB_WIDTH, TAB_HEIGHT);
-			y += TAB_HEIGHT;
+			previousPageArea = new ImmutableRect2i(x, y, PAGE_BUTTON_WIDTH, PAGE_BUTTON_HEIGHT);
+			y += PAGE_BUTTON_HEIGHT + PAGE_BUTTON_GAP;
 		}
 
 		int startIndex = pageNumber * entriesPerPage;
@@ -127,8 +131,8 @@ final class ConfigScreenModTabs {
 		}
 
 		if (pageCount > 1) {
-			nextPageArea = new ImmutableRect2i(x, y, TAB_WIDTH, TAB_HEIGHT);
-			y += TAB_HEIGHT;
+			y = screenArea.getY() + screenArea.getHeight() - TAB_VERTICAL_MARGIN;
+			nextPageArea = new ImmutableRect2i(x, y - PAGE_BUTTON_HEIGHT, PAGE_BUTTON_WIDTH, PAGE_BUTTON_HEIGHT);
 		}
 		tabsArea = new ImmutableRect2i(x, firstY, TAB_WIDTH, y - firstY);
 	}

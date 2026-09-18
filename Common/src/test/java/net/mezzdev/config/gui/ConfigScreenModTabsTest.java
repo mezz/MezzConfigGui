@@ -57,6 +57,23 @@ class ConfigScreenModTabsTest {
 	}
 
 	@Test
+	void pagingButtonsStayOutsideTheWindowAndKeepTheirPositionOnShortPages() {
+		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod0", createEntries(10));
+		tabs.updateLayout(SCREEN_AREA);
+
+		assertFalse(tabs.mouseClicked(SCREEN_AREA.getX(), 25, 0));
+		assertFalse(tabs.mouseClicked(SCREEN_AREA.getX(), 138, 0));
+		for (int page = 1; page <= 4; page++) {
+			assertTrue(tabs.mouseClicked(90, 138, 0));
+			assertTrue(tabs.mouseReleased(90, 138, 0).handled());
+			assertEquals(page % 4, tabs.getPageNumber());
+		}
+		assertTrue(tabs.mouseClicked(90, 25, 0));
+		tabs.mouseReleased(90, 25, 0);
+		assertEquals(3, tabs.getPageNumber());
+	}
+
+	@Test
 	void clickingAnotherModReturnsItsNavigationEntry() {
 		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod1", createEntries(4));
 		tabs.updateLayout(new ImmutableRect2i(100, 0, 500, 176));
