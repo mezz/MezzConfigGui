@@ -264,19 +264,21 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 
 	@Override
 	protected void drawContent(GuiGraphics guiGraphics, double mouseX, double mouseY) {
-		drawName(guiGraphics);
+		if (isVisible(headerArea)) {
+			drawName(guiGraphics);
+		}
 
 		drawValueGroup(guiGraphics, valueGroupArea);
 		@Nullable
 		DragSession dragSession = this.dragSession;
 		if (dragSession == null) {
-			for (ListValueRow row : valueRows) {
+			for (ListValueRow row : getVisibleRows(valueRows, 0)) {
 				row.draw(guiGraphics, mouseX, mouseY, false, isRecentlyMoved(row));
 			}
 		} else {
 			dragSession.drawReorderedRows(guiGraphics);
 		}
-		for (ListValueRow row : unusedValueRows) {
+		for (ListValueRow row : getVisibleRows(unusedValueRows, 0)) {
 			row.draw(guiGraphics, mouseX, mouseY, false, false);
 		}
 		drawAddValueRow(guiGraphics, mouseX, mouseY);
@@ -290,8 +292,29 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		}
 	}
 
+	private List<ListValueRow> getVisibleRows(List<ListValueRow> rows, int overscan) {
+		ImmutableRect2i viewport = getViewport();
+		if (viewport == null || rows.isEmpty()) {
+			return rows;
+		}
+		RowRange range = getVisibleRowRange(rows.getFirst().area.getY(), getEntryRowHeight(), rows.size(), viewport, overscan);
+		return rows.subList(range.first(), range.end());
+	}
+
+	static RowRange getVisibleRowRange(int firstY, int rowHeight, int rowCount, ImmutableRect2i viewport, int overscan) {
+		if (viewport.isEmpty()) {
+			return new RowRange(0, 0);
+		}
+		long first = Math.floorDiv((long) viewport.getY() - firstY, rowHeight) - overscan;
+		long end = -Math.floorDiv((long) firstY - viewport.getY() - viewport.getHeight(), rowHeight) + overscan;
+		return new RowRange(Math.clamp(first, 0, rowCount), Math.clamp(end, 0, rowCount));
+	}
+
+	record RowRange(int first, int end) {
+	}
+
 	private void drawAddValueRow(GuiGraphics guiGraphics, double mouseX, double mouseY) {
-		if (!allowsTypedInput || addValueRowArea.isEmpty()) {
+		if (!allowsTypedInput || !isVisible(addValueRowArea)) {
 			return;
 		}
 		Font font = Minecraft.getInstance().font;
@@ -1248,7 +1271,8 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		}
 
 		public void drawReorderedRows(GuiGraphics guiGraphics) {
-			for (ListValueRow row : valueRows) {
+			// Reordering shifts neighboring rows by one row height, so include that margin.
+			for (ListValueRow row : getVisibleRows(valueRows, 1)) {
 				if (!isDragging(row)) {
 					row.drawDuringDrag(guiGraphics, getVisualArea(row));
 				}
@@ -1461,6 +1485,9 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		}
 
 		void drawDragGap(GuiGraphics guiGraphics, boolean dropTarget) {
+			if (!isVisible(area)) {
+				return;
+			}
 			int x = area.getX();
 			int y = area.getY();
 			int right = x + area.getWidth();
@@ -1477,6 +1504,9 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 
 		void drawFloating(GuiGraphics guiGraphics, int x, int y) {
 			ImmutableRect2i floatingArea = new ImmutableRect2i(x, y, area.getWidth(), area.getHeight());
+			if (!isVisible(new ImmutableRect2i(x, y, area.getWidth(), area.getHeight() + 2))) {
+				return;
+			}
 			int floatingX = floatingArea.getX();
 			int bottom = floatingArea.getY() + floatingArea.getHeight();
 			guiGraphics.fill(
@@ -1499,6 +1529,9 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			boolean dropTarget,
 			boolean recentlyMoved
 		) {
+			if (!isVisible(rowArea)) {
+				return;
+			}
 			Font font = Minecraft.getInstance().font;
 			ConfigTextures textures = getTextures();
 

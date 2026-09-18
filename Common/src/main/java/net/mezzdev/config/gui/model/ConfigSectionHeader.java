@@ -50,8 +50,8 @@ public final class ConfigSectionHeader {
 		return info;
 	}
 
-	public void draw(GuiGraphics guiGraphics) {
-		if (area.equals(ImmutableRect2i.EMPTY)) {
+	public void draw(GuiGraphics guiGraphics, ImmutableRect2i viewport) {
+		if (!area.intersects(viewport)) {
 			return;
 		}
 		Font font = Minecraft.getInstance().font;

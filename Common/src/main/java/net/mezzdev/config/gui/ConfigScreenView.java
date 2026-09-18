@@ -326,7 +326,7 @@ final class ConfigScreenView {
 			if (entryWidget.getArea().equals(ImmutableRect2i.EMPTY)) {
 				continue;
 			}
-			entryWidget.draw(guiGraphics, mouseX, mouseY, allowHoverAtMouse, rowIndex);
+			entryWidget.draw(guiGraphics, mouseX, mouseY, allowHoverAtMouse, rowIndex, contentArea);
 			rowIndex++;
 			if (allowHoverAtMouse && entryWidget.isMouseOver(mouseX, mouseY)) {
 				hoveredEntryInfo = entryWidget.getInfo(mouseX, mouseY);
@@ -334,7 +334,7 @@ final class ConfigScreenView {
 		}
 		if (!model.isSearching() && model.hasActiveCategory()) {
 			for (var header : model.getActiveCategoryWidget().getSectionHeaders()) {
-				header.draw(guiGraphics);
+				header.draw(guiGraphics, contentArea);
 				if (allowHoverAtMouse && header.isMouseOver(mouseX, mouseY)) {
 					hoveredEntryInfo = header.getInfo();
 				}

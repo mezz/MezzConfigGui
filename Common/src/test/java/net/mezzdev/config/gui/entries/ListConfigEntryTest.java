@@ -6,6 +6,7 @@ import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.IConfigListValueEditorOptions;
 import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
+import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
@@ -19,6 +20,45 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ListConfigEntryTest {
+	@Test
+	void onlyVisibleRowsAreVisitedEvenInVeryLargeSortingLists() {
+		ImmutableRect2i viewport = new ImmutableRect2i(0, 0, 200, 240);
+		assertEquals(new ListConfigEntry.RowRange(25000, 25010), ListConfigEntry.getVisibleRowRange(-600000, 24, 50000, viewport, 0));
+		assertEquals(new ListConfigEntry.RowRange(25000, 25011), ListConfigEntry.getVisibleRowRange(-600001, 24, 50000, viewport, 0));
+		assertEquals(new ListConfigEntry.RowRange(0, 0), ListConfigEntry.getVisibleRowRange(240, 24, 50000, viewport, 0));
+		assertEquals(new ListConfigEntry.RowRange(10, 10), ListConfigEntry.getVisibleRowRange(-240, 24, 10, viewport, 0));
+		assertEquals(new ListConfigEntry.RowRange(0, 0), ListConfigEntry.getVisibleRowRange(0, 24, 10, ImmutableRect2i.EMPTY, 0));
+	}
+
+	@Test
+	void visibleRangesIncludePartiallyVisibleAndShiftedDragRowsAtEitherEdge() {
+		ImmutableRect2i viewport = new ImmutableRect2i(10, 70, 200, 91);
+		for (int firstY = -400; firstY <= 200; firstY++) {
+			for (int source = 0; source < 30; source += 5) {
+				for (int target = 0; target < 30; target += 5) {
+					ListConfigEntry.RowRange range = ListConfigEntry.getVisibleRowRange(firstY, 24, 30, viewport, 1);
+					for (int row = 0; row < 30; row++) {
+						int shiftedY = firstY + row * 24 + ListConfigEntry.getDragRowOffset(row, source, target, 24);
+						if (new ImmutableRect2i(10, shiftedY, 200, 24).intersects(viewport)) {
+							assertTrue(row >= range.first() && row < range.end(), "Visible drag row was culled");
+						}
+					}
+				}
+			}
+		}
+	}
+
+	@Test
+	void stationaryRangesMatchTheViewportExactlyForPartialRowsAndScrolledLists() {
+		ImmutableRect2i viewport = new ImmutableRect2i(10, 70, 200, 91);
+		for (int firstY = -400; firstY <= 200; firstY++) {
+			ListConfigEntry.RowRange range = ListConfigEntry.getVisibleRowRange(firstY, 24, 30, viewport, 0);
+			for (int row = 0; row < 30; row++) {
+				boolean visible = new ImmutableRect2i(10, firstY + row * 24, 200, 24).intersects(viewport);
+				assertEquals(visible, row >= range.first() && row < range.end());
+			}
+		}
+	}
 
 	@Test
 	void hidesTypedInputWhenElementSerializerHasFiniteValidValues() {

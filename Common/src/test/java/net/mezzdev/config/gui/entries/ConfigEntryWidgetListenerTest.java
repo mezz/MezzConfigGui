@@ -4,6 +4,7 @@ import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
+import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.gui.GuiGraphics;
 import org.junit.jupiter.api.Test;
 
@@ -19,6 +20,44 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigEntryWidgetListenerTest {
+	@Test
+	void offscreenEntriesSkipRenderingAndVisibleEntriesReceiveTheViewport() {
+		ImmutableRect2i viewport = new ImmutableRect2i(10, 20, 100, 100);
+		RenderCountingWidget widget = new RenderCountingWidget(new TestConfigValue("value"));
+		widget.area = new ImmutableRect2i(10, 120, 100, 24);
+		widget.draw(null, 0, 0, false, 7, viewport);
+		assertEquals(0, widget.renderCount);
+		widget.area = new ImmutableRect2i(10, 119, 100, 24);
+		widget.draw(null, 0, 0, false, 7, viewport);
+		assertEquals(1, widget.renderCount);
+		assertEquals(viewport, widget.lastViewport);
+		assertEquals(7, widget.lastRowIndex);
+		widget.draw(null, 0, 0, false, 7);
+		assertEquals(2, widget.renderCount);
+		assertEquals(null, widget.lastViewport);
+	}
+
+	private static final class RenderCountingWidget extends ConfigEntryWidget<String> {
+		private int renderCount;
+		private ImmutableRect2i lastViewport;
+		private int lastRowIndex;
+
+		private RenderCountingWidget(IConfigScreenValue<String> value) {
+			super(value, null);
+		}
+
+		@Override
+		public void draw(GuiGraphics graphics, double mouseX, double mouseY, boolean allowHover, int rowIndex) {
+			renderCount++;
+			lastViewport = getViewport();
+			lastRowIndex = rowIndex;
+		}
+
+		@Override
+		protected void drawContent(GuiGraphics graphics, double mouseX, double mouseY) {
+			throw new AssertionError("Unexpected drawContent call");
+		}
+	}
 
 	@Test
 	void untouchedWidgetFollowsLiveValueChanges() {

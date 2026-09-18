@@ -180,6 +180,8 @@ public abstract class ConfigEntryWidget<T> {
 	protected ImmutableRect2i area = ImmutableRect2i.EMPTY;
 	ImmutableRect2i nameArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i resetArea = ImmutableRect2i.EMPTY;
+	@Nullable
+	private ImmutableRect2i viewport;
 
 	protected ConfigEntryWidget(IConfigScreenValue<T> configValue, ConfigTextures textures) {
 		this(configValue, textures, ConfigEntryWidget::runOnClientThread);
@@ -380,6 +382,28 @@ public abstract class ConfigEntryWidget<T> {
 		draw(guiGraphics, mouseX, mouseY, allowHover, -1);
 	}
 
+	public final void draw(GuiGraphics guiGraphics, double mouseX, double mouseY, boolean allowHover, int rowIndex, ImmutableRect2i viewport) {
+		if (!getArea().intersects(viewport)) {
+			return;
+		}
+		ImmutableRect2i previousViewport = this.viewport;
+		this.viewport = viewport;
+		try {
+			draw(guiGraphics, mouseX, mouseY, allowHover, rowIndex);
+		} finally {
+			this.viewport = previousViewport;
+		}
+	}
+
+	@Nullable
+	protected final ImmutableRect2i getViewport() {
+		return viewport;
+	}
+
+	protected final boolean isVisible(ImmutableRect2i bounds) {
+		return !bounds.isEmpty() && (viewport == null || bounds.intersects(viewport));
+	}
+
 	public void draw(GuiGraphics guiGraphics, double mouseX, double mouseY, boolean allowHover, int rowIndex) {
 		drawRowStripe(guiGraphics, rowIndex);
 		ImmutableRect2i hoverArea = getHoverArea();
@@ -415,7 +439,9 @@ public abstract class ConfigEntryWidget<T> {
 			drawMouseY = mouseY;
 		}
 		drawContent(guiGraphics, drawMouseX, drawMouseY);
-		drawResetButton(guiGraphics, drawMouseX, drawMouseY);
+		if (isVisible(resetArea)) {
+			drawResetButton(guiGraphics, drawMouseX, drawMouseY);
+		}
 		if (!isEditable()) {
 			guiGraphics.fill(
 				area.getX() + 1,
