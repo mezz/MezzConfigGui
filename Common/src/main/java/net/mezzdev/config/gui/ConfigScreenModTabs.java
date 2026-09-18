@@ -14,7 +14,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Lays out and draws paged mod-icon tabs along the left side of a config screen.
+ * Lays out and draws a scrollable strip of mod-icon tabs along the left side of a config screen.
  */
 final class ConfigScreenModTabs {
 	static final int TAB_WIDTH = 24;
@@ -23,9 +23,9 @@ final class ConfigScreenModTabs {
 	private static final int INACTIVE_TAB_INSET = 4;
 	private static final int TAB_SCREEN_MARGIN = 2;
 	private static final int TAB_VERTICAL_MARGIN = 4;
-	private static final int PAGE_BUTTON_HEIGHT = 12;
-	private static final int PAGE_BUTTON_GAP = 2;
-	private static final int PAGE_BUTTON_WIDTH = TAB_WIDTH - TAB_GUI_OVERLAP - 1;
+	private static final int SCROLL_BUTTON_HEIGHT = 12;
+	private static final int SCROLL_BUTTON_GAP = 2;
+	private static final int SCROLL_BUTTON_WIDTH = TAB_WIDTH - TAB_GUI_OVERLAP - 1;
 	private static final int ICON_SIZE = 16;
 
 	private final String activeModId;
@@ -34,12 +34,13 @@ final class ConfigScreenModTabs {
 
 	private ImmutableRect2i screenArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i tabsArea = ImmutableRect2i.EMPTY;
-	private ImmutableRect2i previousPageArea = ImmutableRect2i.EMPTY;
-	private ImmutableRect2i nextPageArea = ImmutableRect2i.EMPTY;
-	private int pageNumber;
-	private int pageCount = 1;
-	private int entriesPerPage;
-	private boolean pageSelected;
+	private ImmutableRect2i scrollUpArea = ImmutableRect2i.EMPTY;
+	private ImmutableRect2i scrollDownArea = ImmutableRect2i.EMPTY;
+	private int firstVisibleIndex;
+	private int visibleTabCount;
+	private boolean scrollPositionSelected;
+	private boolean showScrollButtons;
+	private double scrollRemainder;
 	@Nullable
 	private ClickTarget pressedTarget;
 
@@ -64,10 +65,10 @@ final class ConfigScreenModTabs {
 
 	public void updateLayout(ImmutableRect2i screenArea) {
 		this.screenArea = screenArea;
-		int previousEntriesPerPage = entriesPerPage;
+		int previousVisibleTabCount = visibleTabCount;
 		visibleTabs.clear();
-		previousPageArea = ImmutableRect2i.EMPTY;
-		nextPageArea = ImmutableRect2i.EMPTY;
+		scrollUpArea = ImmutableRect2i.EMPTY;
+		scrollDownArea = ImmutableRect2i.EMPTY;
 		tabsArea = ImmutableRect2i.EMPTY;
 		if (screenArea.isEmpty() || entries.isEmpty()) {
 			return;
@@ -79,33 +80,32 @@ final class ConfigScreenModTabs {
 			return;
 		}
 
-		boolean paged = entries.size() > availableSlots;
-		int pagedSlots = (availableHeight - 2 * (PAGE_BUTTON_HEIGHT + PAGE_BUTTON_GAP)) / TAB_HEIGHT;
-		if (paged && pagedSlots > 0) {
-			entriesPerPage = pagedSlots;
-			pageCount = divideCeil(entries.size(), entriesPerPage);
+		boolean overflowing = entries.size() > availableSlots;
+		int scrollableSlots = (availableHeight - 2 * (SCROLL_BUTTON_HEIGHT + SCROLL_BUTTON_GAP)) / TAB_HEIGHT;
+		showScrollButtons = overflowing && scrollableSlots > 0;
+		if (showScrollButtons) {
+			visibleTabCount = scrollableSlots;
 		} else {
-			entriesPerPage = Math.min(entries.size(), availableSlots);
-			pageCount = 1;
+			visibleTabCount = Math.min(entries.size(), availableSlots);
 		}
-		if (!pageSelected || entriesPerPage != previousEntriesPerPage) {
+		if (!scrollPositionSelected || visibleTabCount != previousVisibleTabCount) {
 			int activeIndex = getActiveEntryIndex();
 			if (activeIndex < 0) {
-				pageNumber = 0;
+				firstVisibleIndex = 0;
 			} else {
-				pageNumber = activeIndex / entriesPerPage;
+				firstVisibleIndex = activeIndex - visibleTabCount / 2;
 			}
-			pageSelected = true;
+			scrollPositionSelected = true;
 		}
-		pageNumber = Math.clamp(pageNumber, 0, pageCount - 1);
+		firstVisibleIndex = Math.clamp(firstVisibleIndex, 0, getMaximumScroll());
 		updateVisibleTabs();
 	}
 
 	private void updateVisibleTabs() {
 		visibleTabs.clear();
-		previousPageArea = ImmutableRect2i.EMPTY;
-		nextPageArea = ImmutableRect2i.EMPTY;
-		if (screenArea.isEmpty() || entriesPerPage <= 0) {
+		scrollUpArea = ImmutableRect2i.EMPTY;
+		scrollDownArea = ImmutableRect2i.EMPTY;
+		if (screenArea.isEmpty() || visibleTabCount <= 0) {
 			tabsArea = ImmutableRect2i.EMPTY;
 			return;
 		}
@@ -113,13 +113,13 @@ final class ConfigScreenModTabs {
 		int x = Math.max(0, screenArea.getX() - TAB_WIDTH + TAB_GUI_OVERLAP);
 		int y = screenArea.getY() + TAB_VERTICAL_MARGIN;
 		int firstY = y;
-		if (pageCount > 1) {
-			previousPageArea = new ImmutableRect2i(x, y, PAGE_BUTTON_WIDTH, PAGE_BUTTON_HEIGHT);
-			y += PAGE_BUTTON_HEIGHT + PAGE_BUTTON_GAP;
+		if (showScrollButtons) {
+			scrollUpArea = new ImmutableRect2i(x, y, SCROLL_BUTTON_WIDTH, SCROLL_BUTTON_HEIGHT);
+			y += SCROLL_BUTTON_HEIGHT + SCROLL_BUTTON_GAP;
 		}
 
-		int startIndex = pageNumber * entriesPerPage;
-		int endIndex = Math.min(entries.size(), startIndex + entriesPerPage);
+		int startIndex = firstVisibleIndex;
+		int endIndex = Math.min(entries.size(), startIndex + visibleTabCount);
 		for (int i = startIndex; i < endIndex; i++) {
 			ConfigScreenListEntry entry = entries.get(i);
 			int inset = INACTIVE_TAB_INSET;
@@ -130,9 +130,9 @@ final class ConfigScreenModTabs {
 			y += TAB_HEIGHT;
 		}
 
-		if (pageCount > 1) {
+		if (showScrollButtons) {
 			y = screenArea.getY() + screenArea.getHeight() - TAB_VERTICAL_MARGIN;
-			nextPageArea = new ImmutableRect2i(x, y - PAGE_BUTTON_HEIGHT, PAGE_BUTTON_WIDTH, PAGE_BUTTON_HEIGHT);
+			scrollDownArea = new ImmutableRect2i(x, y - SCROLL_BUTTON_HEIGHT, SCROLL_BUTTON_WIDTH, SCROLL_BUTTON_HEIGHT);
 		}
 		tabsArea = new ImmutableRect2i(x, firstY, TAB_WIDTH, y - firstY);
 	}
@@ -147,14 +147,14 @@ final class ConfigScreenModTabs {
 	}
 
 	public void draw(GuiGraphics guiGraphics, Font font, ConfigTextures textures, int mouseX, int mouseY) {
-		if (!previousPageArea.isEmpty()) {
-			drawPageButton(guiGraphics, textures, previousPageArea, textures.getArrowUp(), mouseX, mouseY);
+		if (!scrollUpArea.isEmpty()) {
+			drawScrollButton(guiGraphics, textures, scrollUpArea, textures.getArrowUp(), firstVisibleIndex > 0, mouseX, mouseY);
 		}
 		for (ModTab tab : visibleTabs) {
 			drawModTab(guiGraphics, font, textures, tab);
 		}
-		if (!nextPageArea.isEmpty()) {
-			drawPageButton(guiGraphics, textures, nextPageArea, textures.getArrowDown(), mouseX, mouseY);
+		if (!scrollDownArea.isEmpty()) {
+			drawScrollButton(guiGraphics, textures, scrollDownArea, textures.getArrowDown(), firstVisibleIndex < getMaximumScroll(), mouseX, mouseY);
 		}
 	}
 
@@ -175,17 +175,18 @@ final class ConfigScreenModTabs {
 		tab.entry().icon().draw(guiGraphics, font, iconArea);
 	}
 
-	private void drawPageButton(
+	private void drawScrollButton(
 		GuiGraphics guiGraphics,
 		ConfigTextures textures,
 		ImmutableRect2i area,
 		ConfigDrawableStatic arrow,
+		boolean enabled,
 		int mouseX,
 		int mouseY
 	) {
-		boolean hovered = area.contains(mouseX, mouseY);
+		boolean hovered = enabled && area.contains(mouseX, mouseY);
 		boolean pressed = isPressed(null, area);
-		textures.getButtonForState(pressed, true, hovered).draw(guiGraphics, area);
+		textures.getButtonForState(pressed, enabled, hovered).draw(guiGraphics, area);
 		int arrowX = area.getX() + (area.getWidth() - arrow.getWidth()) / 2;
 		int arrowY = area.getY() + (area.getHeight() - arrow.getHeight()) / 2;
 		arrow.draw(guiGraphics, arrowX, arrowY);
@@ -229,13 +230,17 @@ final class ConfigScreenModTabs {
 		if (!pressedTarget.area().contains(mouseX, mouseY)) {
 			return ClickResult.HANDLED;
 		}
-		if (pressedTarget.area().equals(previousPageArea)) {
-			previousPage();
-			return ClickResult.PAGE_CHANGED;
+		if (pressedTarget.area().equals(scrollUpArea)) {
+			if (scrollBy(-1)) {
+				return ClickResult.SCROLLED;
+			}
+			return ClickResult.HANDLED;
 		}
-		if (pressedTarget.area().equals(nextPageArea)) {
-			nextPage();
-			return ClickResult.PAGE_CHANGED;
+		if (pressedTarget.area().equals(scrollDownArea)) {
+			if (scrollBy(1)) {
+				return ClickResult.SCROLLED;
+			}
+			return ClickResult.HANDLED;
 		}
 		ConfigScreenListEntry entry = pressedTarget.entry();
 		if (entry != null && !entry.modId().equals(activeModId)) {
@@ -249,51 +254,46 @@ final class ConfigScreenModTabs {
 	}
 
 	public boolean mouseScrolled(double mouseX, double mouseY, double scrollY) {
-		if (pageCount <= 1 || scrollY == 0 || !tabsArea.contains(mouseX, mouseY)) {
+		if (getMaximumScroll() == 0 || !Double.isFinite(scrollY) || scrollY == 0 || !tabsArea.contains(mouseX, mouseY)) {
 			return false;
 		}
-		if (scrollY > 0) {
-			previousPage();
-		} else {
-			nextPage();
+		if (Math.signum(scrollRemainder) != Math.signum(scrollY)) {
+			scrollRemainder = 0;
 		}
+		scrollRemainder += scrollY;
+		int steps = (int) scrollRemainder;
+		scrollRemainder -= steps;
+		scrollBy(-(long) steps);
 		return true;
 	}
 
-	private void previousPage() {
-		if (pageCount <= 1) {
-			return;
-		}
-		pageNumber--;
-		if (pageNumber < 0) {
-			pageNumber = pageCount - 1;
-		}
-		updateVisibleTabs();
+	private int getMaximumScroll() {
+		return Math.max(0, entries.size() - visibleTabCount);
 	}
 
-	private void nextPage() {
-		if (pageCount <= 1) {
-			return;
+	private boolean scrollBy(long steps) {
+		int nextIndex = (int) Math.clamp(firstVisibleIndex + steps, 0, getMaximumScroll());
+		if (nextIndex == firstVisibleIndex) {
+			return false;
 		}
-		pageNumber++;
-		if (pageNumber >= pageCount) {
-			pageNumber = 0;
-		}
+		firstVisibleIndex = nextIndex;
+		pressedTarget = null;
 		updateVisibleTabs();
+		return true;
 	}
 
 	@Nullable
 	private ClickTarget getClickTarget(double mouseX, double mouseY) {
-		if (previousPageArea.contains(mouseX, mouseY)) {
-			return new ClickTarget(null, previousPageArea);
+		if (scrollUpArea.contains(mouseX, mouseY)) {
+			return new ClickTarget(null, scrollUpArea);
 		}
 		Optional<ModTab> hoveredTab = findHoveredTab(mouseX, mouseY);
 		if (hoveredTab.isPresent()) {
 			ModTab tab = hoveredTab.get();
 			return new ClickTarget(tab.entry(), tab.area());
 		}
-		if (nextPageArea.contains(mouseX, mouseY)) {
-			return new ClickTarget(null, nextPageArea);
+		if (scrollDownArea.contains(mouseX, mouseY)) {
+			return new ClickTarget(null, scrollDownArea);
 		}
 		return null;
 	}
@@ -302,18 +302,6 @@ final class ConfigScreenModTabs {
 		return visibleTabs.stream()
 			.filter(tab -> tab.area().contains(mouseX, mouseY))
 			.findFirst();
-	}
-
-	private static int divideCeil(int numerator, int denominator) {
-		return (numerator + denominator - 1) / denominator;
-	}
-
-	int getPageNumber() {
-		return pageNumber;
-	}
-
-	int getPageCount() {
-		return pageCount;
 	}
 
 	List<String> getVisibleModIds() {
@@ -358,7 +346,7 @@ final class ConfigScreenModTabs {
 	) {
 		private static final ClickResult NOT_HANDLED = new ClickResult(false, false, Optional.empty());
 		private static final ClickResult HANDLED = new ClickResult(true, false, Optional.empty());
-		private static final ClickResult PAGE_CHANGED = new ClickResult(true, true, Optional.empty());
+		private static final ClickResult SCROLLED = new ClickResult(true, true, Optional.empty());
 
 		ClickResult {
 			Objects.requireNonNull(entry, "entry");

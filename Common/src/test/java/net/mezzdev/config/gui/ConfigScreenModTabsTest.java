@@ -18,59 +18,73 @@ class ConfigScreenModTabsTest {
 	private static final ImmutableRect2i SCREEN_AREA = new ImmutableRect2i(100, 20, 500, 128);
 
 	@Test
-	void selectsPageContainingActiveMod() {
+	void initiallyShowsTheActiveMod() {
 		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod7", createEntries(10));
 
 		tabs.updateLayout(SCREEN_AREA);
 
-		assertEquals(2, tabs.getPageNumber());
-		assertEquals(4, tabs.getPageCount());
 		assertEquals(List.of("mod6", "mod7", "mod8"), tabs.getVisibleModIds());
 		assertEquals(new ImmutableRect2i(79, 24, 24, 120), tabs.getTabsArea());
 	}
 
 	@Test
-	void resizingSelectsTheActiveModsNewPage() {
+	void resizingKeepsTheActiveModVisible() {
 		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod7", createEntries(10));
 		tabs.updateLayout(new ImmutableRect2i(100, 20, 500, 320));
-		assertEquals(0, tabs.getPageNumber());
+		assertEquals(10, tabs.getVisibleModIds().size());
 
 		tabs.updateLayout(SCREEN_AREA);
 
-		assertEquals(2, tabs.getPageNumber());
 		assertEquals(List.of("mod6", "mod7", "mod8"), tabs.getVisibleModIds());
 	}
 
 	@Test
-	void mouseWheelPagesAndWrapsOverTabStrip() {
+	void mouseWheelMovesOneTabAtATimeAndStopsAtTheEnds() {
 		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod0", createEntries(10));
 		tabs.updateLayout(SCREEN_AREA);
 
 		assertTrue(tabs.mouseScrolled(80, 25, 1));
-		assertEquals(3, tabs.getPageNumber());
-		assertEquals(List.of("mod9"), tabs.getVisibleModIds());
+		assertEquals(List.of("mod0", "mod1", "mod2"), tabs.getVisibleModIds());
 
 		assertTrue(tabs.mouseScrolled(80, 25, -1));
-		assertEquals(0, tabs.getPageNumber());
+		assertEquals(List.of("mod1", "mod2", "mod3"), tabs.getVisibleModIds());
+		assertTrue(tabs.mouseScrolled(80, 25, 1));
 		assertEquals(List.of("mod0", "mod1", "mod2"), tabs.getVisibleModIds());
+		tabs.mouseScrolled(80, 25, -100);
+		assertEquals(List.of("mod7", "mod8", "mod9"), tabs.getVisibleModIds());
+		tabs.mouseScrolled(80, 25, -1);
+		assertEquals(List.of("mod7", "mod8", "mod9"), tabs.getVisibleModIds());
 		assertFalse(tabs.mouseScrolled(200, 25, -1));
 	}
 
 	@Test
-	void pagingButtonsStayOutsideTheWindowAndKeepTheirPositionOnShortPages() {
+	void fractionalTrackpadMovementAccumulatesToOneTab() {
+		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod0", createEntries(10));
+		tabs.updateLayout(SCREEN_AREA);
+		for (int event = 0; event < 3; event++) {
+			assertTrue(tabs.mouseScrolled(80, 25, -0.25));
+			assertEquals("mod0", tabs.getVisibleModIds().getFirst());
+		}
+		tabs.mouseScrolled(80, 25, -0.25);
+		assertEquals("mod1", tabs.getVisibleModIds().getFirst());
+		assertFalse(tabs.mouseScrolled(80, 25, Double.NaN));
+	}
+
+	@Test
+	void scrollingButtonsStayOutsideTheWindowAndMoveOneTab() {
 		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod0", createEntries(10));
 		tabs.updateLayout(SCREEN_AREA);
 
 		assertFalse(tabs.mouseClicked(SCREEN_AREA.getX(), 25, 0));
 		assertFalse(tabs.mouseClicked(SCREEN_AREA.getX(), 138, 0));
-		for (int page = 1; page <= 4; page++) {
+		for (int firstIndex = 1; firstIndex <= 8; firstIndex++) {
 			assertTrue(tabs.mouseClicked(90, 138, 0));
 			assertTrue(tabs.mouseReleased(90, 138, 0).handled());
-			assertEquals(page % 4, tabs.getPageNumber());
+			assertEquals("mod" + Math.min(firstIndex, 7), tabs.getVisibleModIds().getFirst());
 		}
 		assertTrue(tabs.mouseClicked(90, 25, 0));
 		tabs.mouseReleased(90, 25, 0);
-		assertEquals(3, tabs.getPageNumber());
+		assertEquals("mod6", tabs.getVisibleModIds().getFirst());
 	}
 
 	@Test
@@ -107,9 +121,9 @@ class ConfigScreenModTabsTest {
 		assertFalse(tabs.getResizeExclusionArea(40).isEmpty());
 		assertTrue(tabs.getResizeExclusionArea(37).isEmpty());
 		assertTrue(tabs.getResizeExclusionArea(120).isEmpty());
-		tabs.mouseScrolled(90, 25, 1);
+		tabs.mouseScrolled(90, 25, -100);
 		assertFalse(tabs.getResizeExclusionArea(40).isEmpty());
-		assertTrue(tabs.getResizeExclusionArea(70).isEmpty());
+		assertTrue(tabs.getResizeExclusionArea(120).isEmpty());
 	}
 
 	private static List<ConfigScreenListEntry> createEntries(int count) {
