@@ -65,7 +65,7 @@ public final class ConfigScreenResizer {
 		if (!ConfigGuiOptions.enableWindowResizing() || area.isEmpty() || !isInResizeArea(mouseX, mouseY)) {
 			return ConfigScreenLayout.ResizeHandle.NONE;
 		}
-		if (excludedArea.contains(mouseX, mouseY)) {
+		if (isExcluded(mouseX, mouseY, excludedArea)) {
 			return ConfigScreenLayout.ResizeHandle.NONE;
 		}
 		boolean left = mouseX < area.getX() + RESIZE_HANDLE_SIZE;
@@ -73,6 +73,23 @@ public final class ConfigScreenResizer {
 		boolean top = mouseY < area.getY() + RESIZE_HANDLE_SIZE;
 		boolean bottom = mouseY >= area.getY() + area.getHeight() - RESIZE_HANDLE_SIZE;
 		return ConfigScreenLayout.ResizeHandle.get(left, right, top, bottom);
+	}
+
+	private boolean isExcluded(double mouseX, double mouseY, ImmutableRect2i excludedArea) {
+		if (excludedArea.isEmpty() || mouseY < excludedArea.getY() || mouseY >= excludedArea.getY() + excludedArea.getHeight()) {
+			return false;
+		}
+		int left = excludedArea.getX();
+		int right = left + excludedArea.getWidth();
+		int windowRight = area.getX() + area.getWidth();
+		// A tab covering part of the frame reserves the full resize handle behind it.
+		if (left <= area.getX() && right > area.getX()) {
+			right = Math.max(right, area.getX() + RESIZE_HANDLE_SIZE);
+		}
+		if (left < windowRight && right >= windowRight) {
+			left = Math.min(left, windowRight - RESIZE_HANDLE_SIZE);
+		}
+		return mouseX >= left && mouseX < right;
 	}
 
 	public ConfigScreenLayout.ResizeHandle getActiveResizeHandle(double mouseX, double mouseY) {

@@ -13,6 +13,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigScreenLayoutOptionsTest {
 	@Test
+	void tabsReserveTheWholeResizeEdgeOnlyAtTheirHeight() {
+		ConfigScreenLayout layout = new ConfigScreenLayout();
+		layout.updateScreenBounds(1000, 800, createSearchBox());
+		ImmutableRect2i area = layout.getArea();
+		int tabY = area.getY() + 20;
+		ImmutableRect2i leftTab = new ImmutableRect2i(area.getX() - 21, tabY, 24, 24);
+		ImmutableRect2i rightTab = new ImmutableRect2i(area.getX() + area.getWidth() - 3, tabY, 24, 24);
+		for (int offset = 0; offset < 5; offset++) {
+			assertEquals(ConfigScreenLayout.ResizeHandle.NONE, layout.getResizeHandle(area.getX() + offset, tabY, leftTab));
+			assertEquals(ConfigScreenLayout.ResizeHandle.NONE, layout.getResizeHandle(area.getX() + area.getWidth() - 1 - offset, tabY, rightTab));
+		}
+		assertFalse(layout.startResizeDrag(area.getX() + 4, tabY, leftTab));
+		assertEquals(ConfigScreenLayout.ResizeHandle.LEFT, layout.getResizeHandle(area.getX() + 4, tabY + 24, leftTab));
+		assertEquals(ConfigScreenLayout.ResizeHandle.RIGHT, layout.getResizeHandle(area.getX() + area.getWidth() - 5, tabY - 1, rightTab));
+	}
+
+	@Test
 	void windowModeUsesConfiguredDimensions() {
 		ConfigScreenLayout layout = new ConfigScreenLayout();
 		EditBox searchBox = createSearchBox();

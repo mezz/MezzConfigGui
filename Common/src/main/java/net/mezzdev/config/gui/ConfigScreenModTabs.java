@@ -327,6 +327,16 @@ final class ConfigScreenModTabs {
 		return tabsArea;
 	}
 
+	ImmutableRect2i getResizeExclusionArea(double mouseY) {
+		for (ModTab tab : visibleTabs) {
+			ImmutableRect2i area = tab.area();
+			if (mouseY >= area.getY() && mouseY < area.getY() + area.getHeight()) {
+				return area;
+			}
+		}
+		return ImmutableRect2i.EMPTY;
+	}
+
 	private record ModTab(
 		ConfigScreenListEntry entry,
 		ImmutableRect2i area

@@ -632,7 +632,7 @@ public class ConfigScreen extends MezzConfigScreen {
 		if (modTabs.mouseClicked(mouseX, mouseY, button)) {
 			return true;
 		}
-		if (button == 0 && layout.startResizeDrag(mouseX, mouseY, modTabs.getTabsArea())) {
+		if (button == 0 && layout.startResizeDrag(mouseX, mouseY, modTabs.getResizeExclusionArea(mouseY))) {
 			flushPendingInput();
 			return true;
 		}

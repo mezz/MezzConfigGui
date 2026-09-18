@@ -99,6 +99,19 @@ class ConfigScreenModTabsTest {
 		assertEquals("mod2", tabs.mouseReleased(84, 73, 0).entry().orElseThrow().modId());
 	}
 
+	@Test
+	void resizeExclusionCoversTabsButLeavesPagingGapsAvailable() {
+		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod0", createEntries(10));
+		tabs.updateLayout(SCREEN_AREA);
+
+		assertFalse(tabs.getResizeExclusionArea(40).isEmpty());
+		assertTrue(tabs.getResizeExclusionArea(37).isEmpty());
+		assertTrue(tabs.getResizeExclusionArea(120).isEmpty());
+		tabs.mouseScrolled(90, 25, 1);
+		assertFalse(tabs.getResizeExclusionArea(40).isEmpty());
+		assertTrue(tabs.getResizeExclusionArea(70).isEmpty());
+	}
+
 	private static List<ConfigScreenListEntry> createEntries(int count) {
 		return IntStream.range(0, count)
 			.mapToObj(ConfigScreenModTabsTest::createEntry)

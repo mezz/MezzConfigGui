@@ -69,7 +69,7 @@ final class ConfigScreenView {
 	) {
 		Font font = Minecraft.getInstance().font;
 		ImmutableRect2i area = layout.getArea();
-		ConfigScreenLayout.ResizeHandle resizeHandle = layout.getActiveResizeHandle(mouseX, mouseY, modTabs.getTabsArea());
+		ConfigScreenLayout.ResizeHandle resizeHandle = layout.getActiveResizeHandle(mouseX, mouseY, modTabs.getResizeExclusionArea(mouseY));
 		ImmutableRect2i titleArea = layout.getTitleTextArea();
 		ImmutableRect2i navArea = layout.getNavArea();
 		ImmutableRect2i contentArea = layout.getContentArea();
@@ -103,8 +103,8 @@ final class ConfigScreenView {
 
 		guiGraphics.pose().pushPose();
 		background.draw(guiGraphics, area);
-		modTabs.draw(guiGraphics, font, textures, mouseX, mouseY);
 		ConfigScreenResizer.drawResizeHandles(guiGraphics, area, resizeHandle);
+		modTabs.draw(guiGraphics, font, textures, mouseX, mouseY);
 		drawTitle(guiGraphics, font, titleArea, title);
 		drawActionButtons(guiGraphics, screenListButtonArea, applyPendingChangesButtonArea, undoChangesButtonArea, mouseX, mouseY);
 		drawNavBackground(guiGraphics, navArea);
