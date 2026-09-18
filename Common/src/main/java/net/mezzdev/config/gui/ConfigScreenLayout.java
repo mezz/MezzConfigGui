@@ -4,8 +4,10 @@ import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.util.Mth;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
+import java.util.OptionalInt;
 
 /**
  * Calculates and stores screen rectangles, scroll state, and scrollbar positions.
@@ -17,7 +19,8 @@ public final class ConfigScreenLayout {
 	static final int SEARCH_HEIGHT = 18;
 	static final int INFO_AREA_HEIGHT = 57;
 
-	private static final int NAV_WIDTH = 110;
+	private static final int NAV_DIVIDER_WIDTH = 8;
+	private static final int MIN_CONTENT_WIDTH = 160;
 	private static final int SCROLLBAR_WIDTH = 12;
 	private static final int SCROLLBAR_GAP = 2;
 	private static final int BORDER_PADDING = 6;
@@ -40,6 +43,9 @@ public final class ConfigScreenLayout {
 	private ImmutableRect2i applyPendingChangesButtonArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i undoChangesButtonArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i navArea = ImmutableRect2i.EMPTY;
+	private ImmutableRect2i navDividerArea = ImmutableRect2i.EMPTY;
+	@Nullable
+	private NavigationResizeDrag navigationResizeDrag;
 	private ImmutableRect2i navScrollBarArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i contentArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i searchBackgroundArea = ImmutableRect2i.EMPTY;
@@ -86,10 +92,16 @@ public final class ConfigScreenLayout {
 		ImmutableRect2i mainArea = innerArea
 			.cropTop(TITLE_HEIGHT + SECTION_GAP)
 			.cropBottom(INFO_AREA_HEIGHT + SECTION_GAP);
-		navArea = mainArea.keepLeft(NAV_WIDTH);
+		int requestedNavWidth = ConfigGuiOptions.getNavigationWidth();
+		if (navigationResizeDrag != null) {
+			requestedNavWidth = navigationResizeDrag.width();
+		}
+		int navWidth = clampNavigationWidth(requestedNavWidth, mainArea.getWidth());
+		navArea = mainArea.keepLeft(navWidth);
+		navDividerArea = mainArea.cropLeft(navWidth).keepLeft(NAV_DIVIDER_WIDTH);
 		updateNavScrollBarArea();
 
-		contentWithScrollArea = mainArea.cropLeft(NAV_WIDTH + SECTION_GAP);
+		contentWithScrollArea = mainArea.cropLeft(navWidth + NAV_DIVIDER_WIDTH);
 		contentScrollBarVisible = shouldShowContentScrollBar(totalContentHeight, contentWithScrollArea);
 		ImmutableRect2i topBarArea = contentWithScrollArea.keepTop(SEARCH_HEIGHT);
 
@@ -129,6 +141,54 @@ public final class ConfigScreenLayout {
 	public ImmutableRect2i getNavArea() {
 		return navArea;
 	}
+
+	ImmutableRect2i getNavDividerArea() {
+		return navDividerArea;
+	}
+
+	boolean startNavigationResize(double mouseX, double mouseY) {
+		if (!navDividerArea.contains(mouseX, mouseY)) {
+			return false;
+		}
+		navigationResizeDrag = new NavigationResizeDrag(mouseX, navArea.getWidth(), navArea.getWidth());
+		return true;
+	}
+
+	boolean dragNavigationResize(double mouseX) {
+		NavigationResizeDrag drag = navigationResizeDrag;
+		if (drag == null) {
+			return false;
+		}
+		int mainWidth = navArea.getWidth() + navDividerArea.getWidth() + contentWithScrollArea.getWidth();
+		int requestedWidth = (int) Math.round(drag.startWidth() + mouseX - drag.startMouseX());
+		int width = clampNavigationWidth(requestedWidth, mainWidth);
+		if (width == drag.width()) {
+			return false;
+		}
+		navigationResizeDrag = new NavigationResizeDrag(drag.startMouseX(), drag.startWidth(), width);
+		return true;
+	}
+
+	boolean isResizingNavigation() {
+		return navigationResizeDrag != null;
+	}
+
+	OptionalInt finishNavigationResize() {
+		NavigationResizeDrag drag = navigationResizeDrag;
+		navigationResizeDrag = null;
+		if (drag == null || drag.width() == drag.startWidth()) {
+			return OptionalInt.empty();
+		}
+		return OptionalInt.of(drag.width());
+	}
+
+	private static int clampNavigationWidth(int width, int mainWidth) {
+		int maxWidth = Math.max(0, mainWidth - NAV_DIVIDER_WIDTH - MIN_CONTENT_WIDTH);
+		int minWidth = Math.min(ConfigGuiOptions.MIN_NAVIGATION_WIDTH, maxWidth);
+		return Math.clamp(width, minWidth, maxWidth);
+	}
+
+	private record NavigationResizeDrag(double startMouseX, int startWidth, int width) {}
 
 	public int getNavItemWidth() {
 		if (navScrollBarVisible) {

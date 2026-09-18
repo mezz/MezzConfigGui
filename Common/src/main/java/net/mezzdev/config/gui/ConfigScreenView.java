@@ -70,6 +70,9 @@ final class ConfigScreenView {
 		Font font = Minecraft.getInstance().font;
 		ImmutableRect2i area = layout.getArea();
 		ConfigScreenLayout.ResizeHandle resizeHandle = layout.getActiveResizeHandle(mouseX, mouseY, modTabs.getResizeExclusionArea(mouseY));
+		if (layout.isResizingNavigation()) {
+			resizeHandle = ConfigScreenLayout.ResizeHandle.NONE;
+		}
 		ImmutableRect2i titleArea = layout.getTitleTextArea();
 		ImmutableRect2i navArea = layout.getNavArea();
 		ImmutableRect2i contentArea = layout.getContentArea();
@@ -112,6 +115,7 @@ final class ConfigScreenView {
 		ConfigNavItem hoveredNavItem = drawNavItems(guiGraphics, navArea, mouseX, mouseY);
 		drawInsetBorder(guiGraphics, navArea);
 		drawNavScrollBar(guiGraphics);
+		drawNavigationDivider(guiGraphics, mouseX, mouseY);
 		drawSearch(guiGraphics, textures, searchBackgroundArea, mouseX, mouseY, partialTick);
 		drawValueAreaBackground(guiGraphics, contentArea);
 		@Nullable
@@ -202,6 +206,27 @@ final class ConfigScreenView {
 			navArea.getY() + navArea.getHeight(),
 			ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_NAVIGATION_BACKGROUND)
 		);
+	}
+
+	private void drawNavigationDivider(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+		ImmutableRect2i divider = layout.getNavDividerArea();
+		if (divider.isEmpty()) {
+			return;
+		}
+		boolean active = layout.isResizingNavigation() || divider.contains(mouseX, mouseY);
+		if (active) {
+			guiGraphics.fill(divider.getX(), divider.getY(), divider.getX() + divider.getWidth(), divider.getY() + divider.getHeight(),
+				ConfigGuiColors.getColor(GuiColor.CONFIG_ENTRY_ROW_HOVER));
+		}
+		GuiColor gripColor = GuiColor.CONFIG_SCREEN_RESIZE_GRIP;
+		if (active) {
+			gripColor = GuiColor.CONFIG_SCREEN_RESIZE_HANDLE_HOVER;
+		}
+		int color = ConfigGuiColors.getColor(gripColor);
+		int x = divider.getX() + (divider.getWidth() - 2) / 2;
+		int gripHeight = Math.min(20, divider.getHeight());
+		int y = divider.getY() + (divider.getHeight() - gripHeight) / 2;
+		guiGraphics.fill(x, y, x + 2, y + gripHeight, color);
 	}
 
 	@Nullable
@@ -462,6 +487,12 @@ final class ConfigScreenView {
 	) {
 		if (resizeHandle != ConfigScreenLayout.ResizeHandle.NONE) {
 			return getResizeInfo();
+		}
+		if (layout.isResizingNavigation() || layout.getNavDividerArea().contains(mouseX, mouseY)) {
+			return new ConfigInfo(
+				Component.translatable("mezz_config.config.screen.navigationResize.title"),
+				Component.translatable("mezz_config.config.screen.navigationResize.info")
+			);
 		}
 		if (searchBackgroundArea.contains(mouseX, mouseY)) {
 			return getSearchInfo();

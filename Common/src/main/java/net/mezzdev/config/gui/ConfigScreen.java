@@ -642,6 +642,10 @@ public class ConfigScreen extends MezzConfigScreen {
 			flushPendingInput();
 			return true;
 		}
+		if (button == 0 && layout.startNavigationResize(mouseX, mouseY)) {
+			flushPendingInput();
+			return true;
+		}
 		if (button == 0 && isActionButton(mouseX, mouseY)) {
 			return true;
 		}
@@ -680,6 +684,10 @@ public class ConfigScreen extends MezzConfigScreen {
 		if (button == 0 && layout.isResizing()) {
 			layout.finishResizeDrag()
 				.ifPresent(resizedArea -> ConfigGuiOptions.setWindowSize(resizedArea.getWidth(), resizedArea.getHeight()));
+			return true;
+		}
+		if (button == 0 && layout.isResizingNavigation()) {
+			layout.finishNavigationResize().ifPresent(ConfigGuiOptions::setNavigationWidth);
 			return true;
 		}
 		if (button == 0 && (controller.stopContentScrollDrag() || controller.stopNavScrollDrag())) {
@@ -747,6 +755,12 @@ public class ConfigScreen extends MezzConfigScreen {
 		}
 		if (button == 0 && layout.isResizing()) {
 			if (layout.dragResize(mouseX, mouseY, width, height)) {
+				refreshLayout();
+			}
+			return true;
+		}
+		if (button == 0 && layout.isResizingNavigation()) {
+			if (layout.dragNavigationResize(mouseX)) {
 				refreshLayout();
 			}
 			return true;

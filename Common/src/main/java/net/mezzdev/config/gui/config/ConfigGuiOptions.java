@@ -17,6 +17,7 @@ import java.util.List;
  */
 public final class ConfigGuiOptions {
 	public static final String MOD_ID = "mezz_config_gui";
+	public static final int MIN_NAVIGATION_WIDTH = 80;
 
 	private static final String CONFIG_FILE_NAME = "mezz_config_gui.ini";
 	private static final String LOCALIZATION_PATH = "mezz_config_gui.config";
@@ -25,6 +26,7 @@ public final class ConfigGuiOptions {
 	private static final int MAX_WINDOW_SIZE = 8192;
 	private static final int DEFAULT_WINDOW_WIDTH = 380;
 	private static final int DEFAULT_WINDOW_HEIGHT = 300;
+	private static final int DEFAULT_NAVIGATION_WIDTH = 110;
 
 	@Nullable
 	private static IConfigSchema schema;
@@ -36,6 +38,8 @@ public final class ConfigGuiOptions {
 	private static IConfigValue<Integer> windowWidth;
 	@Nullable
 	private static IConfigValue<Integer> windowHeight;
+	@Nullable
+	private static IConfigValue<Integer> navigationWidth;
 	@Nullable
 	private static IConfigValue<RowDensity> rowDensity;
 	@Nullable
@@ -91,6 +95,9 @@ public final class ConfigGuiOptions {
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 		windowHeight = appearance.addInteger("windowHeight", DEFAULT_WINDOW_HEIGHT, MIN_WINDOW_HEIGHT, MAX_WINDOW_SIZE)
+			.setEditMode(ConfigValueEditMode.IMMEDIATE)
+			.build();
+		navigationWidth = appearance.addInteger("navigationWidth", DEFAULT_NAVIGATION_WIDTH, MIN_NAVIGATION_WIDTH, MAX_WINDOW_SIZE)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 
@@ -181,6 +188,14 @@ public final class ConfigGuiOptions {
 
 	public static int getWindowHeight() {
 		return getValue(windowHeight, DEFAULT_WINDOW_HEIGHT);
+	}
+
+	public static int getNavigationWidth() {
+		return getValue(navigationWidth, DEFAULT_NAVIGATION_WIDTH);
+	}
+
+	public static void setNavigationWidth(int width) {
+		setValue(navigationWidth, Math.clamp(width, MIN_NAVIGATION_WIDTH, MAX_WINDOW_SIZE));
 	}
 
 	public static int getGuiWidth(int screenWidth) {
