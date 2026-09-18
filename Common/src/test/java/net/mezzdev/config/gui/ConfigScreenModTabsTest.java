@@ -28,14 +28,62 @@ class ConfigScreenModTabsTest {
 	}
 
 	@Test
-	void resizingKeepsTheActiveModVisible() {
+	void resizingScrollsOnlyAsFarAsNeededToKeepTheActiveModVisible() {
 		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod7", createEntries(10));
 		tabs.updateLayout(new ImmutableRect2i(100, 20, 500, 400));
 		assertEquals(10, tabs.getVisibleModIds().size());
 
 		tabs.updateLayout(SCREEN_AREA);
 
-		assertEquals(List.of("mod6", "mod7", "mod8"), tabs.getVisibleModIds());
+		assertEquals(List.of("mod5", "mod6", "mod7"), tabs.getVisibleModIds());
+		tabs.updateLayout(new ImmutableRect2i(100, 20, 500, 220));
+		assertEquals(List.of("mod5", "mod6", "mod7", "mod8"), tabs.getVisibleModIds());
+	}
+
+	@Test
+	void switchingModsKeepsTheClickedTabInItsExistingSlot() {
+		List<ConfigScreenListEntry> entries = createEntries(10);
+		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod0", entries);
+		tabs.updateLayout(SCREEN_AREA);
+		tabs.mouseScrolled(80, 25, -2);
+		assertEquals(List.of("mod2", "mod3", "mod4"), tabs.getVisibleModIds());
+		assertTrue(tabs.mouseClicked(84, 130, 0));
+		ConfigScreenListEntry clicked = tabs.mouseReleased(84, 130, 0).entry().orElseThrow();
+		assertEquals("mod4", clicked.modId());
+
+		ConfigScreenModTabs next = new ConfigScreenModTabs(clicked.modId(), entries);
+		next.copyScrollPositionFrom(tabs);
+		next.updateLayout(SCREEN_AREA);
+		assertEquals(tabs.getVisibleModIds(), next.getVisibleModIds());
+		assertTrue(next.mouseClicked(84, 60, 0));
+		assertEquals("mod2", next.mouseReleased(84, 60, 0).entry().orElseThrow().modId());
+		ConfigScreenModTabs back = new ConfigScreenModTabs("mod2", entries);
+		back.copyScrollPositionFrom(next);
+		back.updateLayout(SCREEN_AREA);
+		assertEquals(tabs.getVisibleModIds(), back.getVisibleModIds());
+	}
+
+	@Test
+	void transferredViewportTracksTheFirstVisibleModWhenTheListChanges() {
+		List<ConfigScreenListEntry> entries = createEntries(10);
+		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod4", entries);
+		tabs.updateLayout(SCREEN_AREA);
+		assertEquals(List.of("mod3", "mod4", "mod5"), tabs.getVisibleModIds());
+
+		ConfigScreenModTabs changed = new ConfigScreenModTabs("mod5", entries.subList(1, entries.size()));
+		changed.copyScrollPositionFrom(tabs);
+		changed.updateLayout(SCREEN_AREA);
+		assertEquals(tabs.getVisibleModIds(), changed.getVisibleModIds());
+	}
+
+	@Test
+	void transferredViewportClampsWhenItsAnchorWasRemoved() {
+		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod8", createEntries(10));
+		tabs.updateLayout(SCREEN_AREA);
+		ConfigScreenModTabs changed = new ConfigScreenModTabs("mod1", createEntries(6));
+		changed.copyScrollPositionFrom(tabs);
+		changed.updateLayout(SCREEN_AREA);
+		assertEquals(List.of("mod1", "mod2", "mod3"), changed.getVisibleModIds());
 	}
 
 	@Test

@@ -48,6 +48,21 @@ final class ConfigScreenModTabs {
 		this.entries = List.copyOf(entries);
 	}
 
+	/** Preserve the viewport when another mod's screen replaces this screen. */
+	void copyScrollPositionFrom(ConfigScreenModTabs previous) {
+		if (!previous.scrollPositionSelected || previous.entries.isEmpty()) {
+			return;
+		}
+		String firstVisibleModId = previous.entries.get(previous.firstVisibleIndex).modId();
+		firstVisibleIndex = getEntryIndex(firstVisibleModId);
+		if (firstVisibleIndex < 0) {
+			firstVisibleIndex = previous.firstVisibleIndex;
+		}
+		scrollPositionSelected = true;
+		// The next layout reveals the selected tab only if the viewport no longer contains it.
+		visibleTabCount = 0;
+	}
+
 	int getRequiredScreenLeftInset() {
 		if (entries.isEmpty()) {
 			return 0;
@@ -87,14 +102,20 @@ final class ConfigScreenModTabs {
 		} else {
 			visibleTabCount = Math.min(entries.size(), availableSlots);
 		}
-		if (!scrollPositionSelected || visibleTabCount != previousVisibleTabCount) {
-			int activeIndex = getActiveEntryIndex();
+		int activeIndex = getEntryIndex(activeModId);
+		if (!scrollPositionSelected) {
 			if (activeIndex < 0) {
 				firstVisibleIndex = 0;
 			} else {
 				firstVisibleIndex = activeIndex - visibleTabCount / 2;
 			}
 			scrollPositionSelected = true;
+		} else if (visibleTabCount != previousVisibleTabCount && activeIndex >= 0) {
+			if (activeIndex < firstVisibleIndex) {
+				firstVisibleIndex = activeIndex;
+			} else if (activeIndex >= firstVisibleIndex + visibleTabCount) {
+				firstVisibleIndex = activeIndex - visibleTabCount + 1;
+			}
 		}
 		firstVisibleIndex = Math.clamp(firstVisibleIndex, 0, getMaximumScroll());
 		updateVisibleTabs();
@@ -136,9 +157,9 @@ final class ConfigScreenModTabs {
 		tabsArea = new ImmutableRect2i(x, firstY, TAB_WIDTH, y - firstY);
 	}
 
-	private int getActiveEntryIndex() {
+	private int getEntryIndex(String modId) {
 		for (int i = 0; i < entries.size(); i++) {
-			if (entries.get(i).modId().equals(activeModId)) {
+			if (entries.get(i).modId().equals(modId)) {
 				return i;
 			}
 		}

@@ -456,7 +456,11 @@ public class ConfigScreen extends MezzConfigScreen {
 
 	private void openConfigScreenWithoutPrompt(ConfigScreenListEntry entry) {
 		if (minecraft != null) {
-			minecraft.setScreen(entry.factory().create(parent));
+			Screen nextScreen = entry.factory().create(parent);
+			if (nextScreen instanceof ConfigScreen configScreen) {
+				configScreen.modTabs.copyScrollPositionFrom(modTabs);
+			}
+			minecraft.setScreen(nextScreen);
 		}
 	}
 
