@@ -94,14 +94,19 @@ public final class ConfigScreenOwnerIcon {
 		int color = getPlaceholderColor(modId);
 		guiGraphics.fill(iconArea.getX(), iconArea.getY(), iconArea.getX() + iconArea.getWidth(), iconArea.getY() + iconArea.getHeight(), color);
 		drawInsetBorder(guiGraphics, iconArea);
-		String initial = getInitials(displayName, modId);
+		String initials = getInitials(displayName, modId);
+		float scale = Math.min(1.0F, (float) Math.max(1, iconArea.getWidth() - 4) / Math.max(1, font.width(initials)));
+		guiGraphics.pose().pushPose();
+		guiGraphics.pose().translate(iconArea.getX() + iconArea.getWidth() / 2, iconArea.getY() + Math.round((iconArea.getHeight() - font.lineHeight * scale) / 2.0F), 0);
+		guiGraphics.pose().scale(scale, scale, 1.0F);
 		guiGraphics.drawCenteredString(
 			font,
-			initial,
-			iconArea.getX() + iconArea.getWidth() / 2,
-			iconArea.getY() + (iconArea.getHeight() - font.lineHeight) / 2,
+			initials,
+			0,
+			0,
 			ConfigEntryWidget.getConfiguredTextColor()
 		);
+		guiGraphics.pose().popPose();
 	}
 
 	private static void drawMinecraftIcon(GuiGraphics guiGraphics, ImmutableRect2i iconArea) {
@@ -140,10 +145,12 @@ public final class ConfigScreenOwnerIcon {
 		}
 		StringBuilder initials = new StringBuilder();
 		if (words.size() > 1) {
-			initials.appendCodePoint(Character.toUpperCase(words.getFirst().codePointAt(0)));
-			initials.appendCodePoint(Character.toUpperCase(words.get(1).codePointAt(0)));
+			words.stream().limit(3)
+				.mapToInt(word -> word.codePointAt(0))
+				.map(Character::toUpperCase)
+				.forEach(initials::appendCodePoint);
 		} else {
-			words.getFirst().codePoints().limit(2)
+			words.getFirst().codePoints().limit(3)
 				.map(Character::toUpperCase)
 				.forEach(initials::appendCodePoint);
 		}
