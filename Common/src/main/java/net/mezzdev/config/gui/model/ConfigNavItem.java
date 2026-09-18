@@ -33,8 +33,8 @@ public final class ConfigNavItem implements ConfigInputHandler {
 	private static final int TEXT_VERTICAL_PADDING = 5;
 	private static final int MAX_TEXT_LINES = 2;
 	private static final int ACTIVE_ACCENT_WIDTH = 2;
-	private static final int INDENT_WIDTH = 6;
-	private static final int MAX_INDENT = 24;
+	private static final int INDENT_WIDTH = 12;
+	private static final int MAX_INDENT = 48;
 	private static final int TOGGLE_SIZE = 20;
 
 	private final Component fullName;
@@ -70,7 +70,7 @@ public final class ConfigNavItem implements ConfigInputHandler {
 
 	public int calculateHeight(int availableWidth) {
 		Font font = Minecraft.getInstance().font;
-		int textWidth = Math.max(0, availableWidth - getTextLeftPadding(true) - TEXT_RIGHT_PADDING);
+		int textWidth = Math.max(0, availableWidth - getTextLeftPadding(true) - getTextRightPadding());
 		int maxLines = MAX_TEXT_LINES;
 		if (fullName.getString().contains("\n")) {
 			// File-qualified categories must keep the distinguishing filename visible.
@@ -159,17 +159,21 @@ public final class ConfigNavItem implements ConfigInputHandler {
 	}
 
 	private ImmutableRect2i getToggleArea() {
-		return new ImmutableRect2i(area.getX() + getIndent(), area.getY() + (area.getHeight() - TOGGLE_SIZE) / 2, TOGGLE_SIZE, TOGGLE_SIZE);
+		return new ImmutableRect2i(area.getX() + area.getWidth() - TOGGLE_SIZE, area.getY() + (area.getHeight() - TOGGLE_SIZE) / 2, TOGGLE_SIZE, TOGGLE_SIZE);
 	}
 
 	private int getTextLeftPadding(boolean active) {
-		if (model.hasSubcategories(categoryIndex) || model.getCategoryDepth(categoryIndex) > 0) {
-			return getIndent() + TOGGLE_SIZE;
-		}
 		if (active) {
-			return ACTIVE_TEXT_LEFT_PADDING;
+			return ACTIVE_TEXT_LEFT_PADDING + getIndent();
 		}
-		return TEXT_LEFT_PADDING;
+		return TEXT_LEFT_PADDING + getIndent();
+	}
+
+	private int getTextRightPadding() {
+		if (model.hasSubcategories(categoryIndex)) {
+			return TEXT_RIGHT_PADDING + TOGGLE_SIZE;
+		}
+		return TEXT_RIGHT_PADDING;
 	}
 
 	public ConfigInfo getInfo() {

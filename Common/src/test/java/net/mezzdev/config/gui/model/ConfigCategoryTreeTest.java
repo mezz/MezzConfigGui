@@ -131,7 +131,7 @@ class ConfigCategoryTreeTest {
 	}
 
 	@Test
-	void expansionButtonHasASquareHitTargetSeparateFromSelectionAndHiddenItemsCannotBeClicked() {
+	void trailingExpansionButtonHasASquareHitTargetAndLeadingTextSelectsTheCategory() {
 		ConfigScreenModel model = animalModel();
 		int[] selected = {-1};
 		ConfigNavItem item = new ConfigNavItem(Component.literal("Common"), 0,
@@ -143,10 +143,23 @@ class ConfigCategoryTreeTest {
 		assertTrue(item.handleUserInput(null, mouse(29, 29, InputType.SIMULATE)).isPresent());
 		assertTrue(model.isCategoryExpanded(0));
 		assertTrue(item.handleUserInput(null, mouse(29, 29, InputType.EXECUTE)).isPresent());
+		assertTrue(model.isCategoryExpanded(0));
+		assertEquals(0, selected[0]);
+		selected[0] = -1;
+		assertTrue(item.handleUserInput(null, mouse(90, 10, InputType.SIMULATE)).isPresent());
+		assertTrue(model.isCategoryExpanded(0));
+		assertTrue(item.handleUserInput(null, mouse(90, 10, InputType.EXECUTE)).isPresent());
 		assertFalse(model.isCategoryExpanded(0));
 		assertEquals(-1, selected[0]);
-		item.handleUserInput(null, mouse(30, 29, InputType.EXECUTE));
+		item.handleUserInput(null, mouse(109, 29, InputType.EXECUTE));
+		assertTrue(model.isCategoryExpanded(0));
+		assertEquals(-1, selected[0]);
+		item.handleUserInput(null, mouse(89, 29, InputType.EXECUTE));
 		assertEquals(0, selected[0]);
+
+		item.updateBounds(new ImmutableRect2i(10, 10, 80, 20), 22);
+		item.handleUserInput(null, mouse(70, 10, InputType.EXECUTE));
+		assertFalse(model.isCategoryExpanded(0));
 		item.resetBounds();
 		assertTrue(item.handleUserInput(null, mouse(30, 29, InputType.EXECUTE)).isEmpty());
 	}
