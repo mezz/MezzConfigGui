@@ -164,6 +164,32 @@ class ConfigCategoryTreeTest {
 		assertTrue(item.handleUserInput(null, mouse(30, 29, InputType.EXECUTE)).isEmpty());
 	}
 
+	@Test
+	void nestedRowGuttersDoNotHoverOrSelectAndTheExpansionControlStaysAtTheRightEdge() {
+		ConfigScreenModel model = animalModel();
+		int[] selected = {-1};
+		ConfigNavItem item = new ConfigNavItem(Component.literal("Animals"), 1,
+			new ConfigCategoryWidget(model.getCategories().get(1), List.of()),
+			() -> new ImmutableRect2i(10, 10, 100, 100), index -> selected[0] = index,
+			model, model::toggleCategoryExpanded);
+		item.updateBounds(new ImmutableRect2i(10, 10, 100, 20), 22);
+
+		assertFalse(item.isMouseOver(21, 20));
+		assertTrue(item.handleUserInput(null, mouse(21, 20, InputType.EXECUTE)).isEmpty());
+		assertEquals(-1, selected[0]);
+		assertTrue(item.isMouseOver(22, 20));
+		assertTrue(item.handleUserInput(null, mouse(22, 20, InputType.EXECUTE)).isPresent());
+		assertEquals(1, selected[0]);
+		assertTrue(model.isCategoryExpanded(1));
+		item.handleUserInput(null, mouse(109, 20, InputType.EXECUTE));
+		assertFalse(model.isCategoryExpanded(1));
+
+		item.updateBounds(new ImmutableRect2i(10, 10, 80, 20), 22);
+		assertFalse(item.isMouseOver(21, 20));
+		item.handleUserInput(null, mouse(89, 20, InputType.EXECUTE));
+		assertTrue(model.isCategoryExpanded(1));
+	}
+
 	private static UserInput mouse(double x, double y, InputType type) {
 		return UserInput.fromVanilla(x, y, 0, type).orElseThrow();
 	}

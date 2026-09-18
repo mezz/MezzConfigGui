@@ -70,7 +70,7 @@ public final class ConfigNavItem implements ConfigInputHandler {
 
 	public int calculateHeight(int availableWidth) {
 		Font font = Minecraft.getInstance().font;
-		int textWidth = Math.max(0, availableWidth - getTextLeftPadding(true) - getTextRightPadding());
+		int textWidth = Math.max(0, availableWidth - getIndent() - getTextLeftPadding(true) - getTextRightPadding());
 		int maxLines = MAX_TEXT_LINES;
 		if (fullName.getString().contains("\n")) {
 			// File-qualified categories must keep the distinguishing filename visible.
@@ -84,8 +84,9 @@ public final class ConfigNavItem implements ConfigInputHandler {
 	}
 
 	public void updateBounds(ImmutableRect2i area, int hoverHeight) {
-		this.area = area;
-		this.hoverArea = new ImmutableRect2i(area.getX(), area.getY(), area.getWidth(), hoverHeight);
+		ImmutableRect2i rowArea = area.cropLeft(getIndent());
+		this.area = rowArea;
+		this.hoverArea = new ImmutableRect2i(rowArea.getX(), rowArea.getY(), rowArea.getWidth(), hoverHeight);
 	}
 
 	public void resetBounds() {
@@ -164,9 +165,9 @@ public final class ConfigNavItem implements ConfigInputHandler {
 
 	private int getTextLeftPadding(boolean active) {
 		if (active) {
-			return ACTIVE_TEXT_LEFT_PADDING + getIndent();
+			return ACTIVE_TEXT_LEFT_PADDING;
 		}
-		return TEXT_LEFT_PADDING + getIndent();
+		return TEXT_LEFT_PADDING;
 	}
 
 	private int getTextRightPadding() {
