@@ -59,11 +59,11 @@ public final class ConfigSectionHeader {
 		int y = area.getY();
 		int right = x + area.getWidth();
 		int bottom = y + area.getHeight();
-		guiGraphics.fill(x + 1, y + TOP_PADDING / 2, right - 1, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.NAV_ITEM_BACKGROUND));
-		guiGraphics.fill(x + 1, bottom - 1, right - 1, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.NAV_ITEM_DIVIDER));
+		guiGraphics.fill(x + 1, y + TOP_PADDING / 2, right - 1, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SECTION_HEADER_BACKGROUND));
+		guiGraphics.fill(x + 1, bottom - 1, right - 1, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SECTION_HEADER_DIVIDER));
 		int textY = y + TOP_PADDING;
 		for (FormattedCharSequence line : lines) {
-			guiGraphics.drawString(font, line, x + HORIZONTAL_PADDING, textY, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.NAV_ITEM_ACTIVE_TEXT), false);
+			guiGraphics.drawString(font, line, x + HORIZONTAL_PADDING, textY, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SECTION_HEADER_TEXT), false);
 			textY += font.lineHeight;
 		}
 	}

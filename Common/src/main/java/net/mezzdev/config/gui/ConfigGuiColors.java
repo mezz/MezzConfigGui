@@ -144,6 +144,10 @@ public final class ConfigGuiColors {
 		CONFIG_ENTRY_BUTTON_UNDERLAY("configEntryButtonUnderlay", 0xFF111216),
 		CONFIG_ENTRY_INVALID_TEXT("configEntryInvalidText", 0xFFFF7070),
 
+		SECTION_HEADER_BACKGROUND("sectionHeaderBackground", 0xFF303844),
+		SECTION_HEADER_TEXT("sectionHeaderText", 0xFFF3F6FF),
+		SECTION_HEADER_DIVIDER("sectionHeaderDivider", 0xFF637084),
+
 		LIST_ORDERED_GROUP_BACKGROUND("listOrderedGroupBackground", 0x22000000),
 		LIST_ORDERED_GROUP_BORDER_DARK("listOrderedGroupBorderDark", 0x90000000),
 		LIST_ORDERED_GROUP_BORDER_LIGHT("listOrderedGroupBorderLight", 0x24FFFFFF),
