@@ -42,6 +42,22 @@ final class ConfigCategoryTree {
 	}
 
 	private static void appendNodes(List<Node> result, MutableNode node, ConfigScreenCategoryGroup group, int parentIndex, int depth, int inlineSubsectionLimit) {
+		while (node.values.isEmpty() && node.children.size() == 1) {
+			MutableNode child = node.children.values().iterator().next();
+			if (!node.title.getString().equalsIgnoreCase(child.title.getString())) {
+				break;
+			}
+			node.values.addAll(child.values);
+			if (!child.description.getString().isBlank() && !node.description.equals(child.description)) {
+				if (node.description.getString().isBlank()) {
+					node.description = child.description;
+				} else {
+					node.description = node.description.copy().append("\n\n").append(child.description);
+				}
+			}
+			node.children.clear();
+			node.children.putAll(child.children);
+		}
 		int index = result.size();
 		List<IConfigScreenValue<?>> values = new ArrayList<>(node.values);
 		List<ConfigCategoryWidget.Section> inlineSections = new ArrayList<>();
@@ -54,8 +70,18 @@ final class ConfigCategoryTree {
 				navigationChildren.add(child);
 			}
 		}
-		ConfigScreenCategory category = new SectionCategory(node.name, node.title, node.description, group, List.copyOf(values));
-		result.add(new Node(category, parentIndex, depth, !navigationChildren.isEmpty(), List.copyOf(inlineSections)));
+		if (!navigationChildren.isEmpty()) {
+			ConfigScreenCategory category = new SectionCategory(node.name, node.title, node.description, group, List.of());
+			result.add(new Node(category, parentIndex, depth, true, List.of()));
+			if (!values.isEmpty()) {
+				ConfigScreenCategory settings = new SectionCategory(node.name + "/@values",
+					Component.translatableWithFallback("mezz_config.config.screen.sectionSettings", "Settings"), node.description, group, List.copyOf(values));
+				result.add(new Node(settings, index, depth + 1, false, List.copyOf(inlineSections)));
+			}
+		} else {
+			ConfigScreenCategory category = new SectionCategory(node.name, node.title, node.description, group, List.copyOf(values));
+			result.add(new Node(category, parentIndex, depth, false, List.copyOf(inlineSections)));
+		}
 		for (MutableNode child : navigationChildren) {
 			appendNodes(result, child, group, index, depth + 1, inlineSubsectionLimit);
 		}
@@ -67,7 +93,7 @@ final class ConfigCategoryTree {
 	private static final class MutableNode {
 		private final String name;
 		private final Component title;
-		private final Component description;
+		private Component description;
 		private final List<IConfigScreenValue<?>> values = new ArrayList<>();
 		private final Map<String, MutableNode> children = new LinkedHashMap<>();
 

@@ -32,6 +32,29 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigCategoryTreeTest {
 	@Test
+	void redundantSameNameOnlyChildrenCollapseIntoOneSelectableSection() {
+		for (int limit : List.of(0, 10)) {
+			TestValue value = value("General", "General", "General");
+			List<ConfigCategoryTree.Node> tree = ConfigCategoryTree.create(List.of(category("General", value)), limit);
+			assertEquals(1, tree.size());
+			assertEquals("General", tree.getFirst().category().getLocalizedName().getString());
+			assertEquals("General", tree.getFirst().category().getName());
+			assertFalse(tree.getFirst().hasChildren());
+			assertTrue(tree.getFirst().inlineSections().isEmpty());
+			assertEquals(List.of(value), tree.getFirst().category().getConfigValues());
+		}
+	}
+
+	@Test
+	void aDifferentOnlyChildKeepsItsSectionNameAndDuplicateNamesWithOwnValuesStaySeparate() {
+		List<ConfigCategoryTree.Node> tree = ConfigCategoryTree.create(List.of(category("General", value("General", "Animals"))), 0);
+		assertEquals(List.of("General", "Animals"), tree.stream().map(node -> node.category().getLocalizedName().getString()).toList());
+		tree = ConfigCategoryTree.create(List.of(category("General", value("General"), value("General", "General"))), 0);
+		assertEquals(List.of("General", "Settings", "General"), tree.stream().map(node -> node.category().getLocalizedName().getString()).toList());
+		assertEquals(2, tree.stream().mapToInt(node -> node.category().getConfigValues().size()).sum());
+	}
+
+	@Test
 	void defaultLimitGroupsTenOptionsButKeepsElevenInNavigationWithoutLosingValues() {
 		List<IConfigScreenValue<?>> values = new ArrayList<>();
 		TestValue direct = value("common.toml");
@@ -42,12 +65,13 @@ class ConfigCategoryTreeTest {
 		ConfigScreenModel model = new ConfigScreenModel(List.of(new TestCategory("common.toml", values)));
 
 		assertEquals(10, ConfigGuiOptions.getInlineSubsectionLimit());
-		assertEquals(List.of("common.toml", "Large"), model.getCategories().stream().map(category -> category.getLocalizedName().getString()).toList());
-		assertEquals(12, model.getCategories().getFirst().getConfigValues().size());
+		assertEquals(List.of("common.toml", "Settings", "Large"), model.getCategories().stream().map(category -> category.getLocalizedName().getString()).toList());
+		assertTrue(model.getCategories().getFirst().getConfigValues().isEmpty());
+		assertEquals(12, model.getCategories().get(1).getConfigValues().size());
 		assertEquals(11, model.getCategories().getLast().getConfigValues().size());
-		assertEquals(List.of("Small", "Tiny"), model.getInlineSections(0).stream().map(section -> section.title().getString()).toList());
-		assertEquals(List.of(1, 11), model.getInlineSections(0).stream().map(ConfigCategoryWidget.Section::firstEntryIndex).toList());
-		assertEquals(direct, model.getCategories().getFirst().getConfigValues().iterator().next());
+		assertEquals(List.of("Small", "Tiny"), model.getInlineSections(1).stream().map(section -> section.title().getString()).toList());
+		assertEquals(List.of(1, 11), model.getInlineSections(1).stream().map(ConfigCategoryWidget.Section::firstEntryIndex).toList());
+		assertEquals(direct, model.getCategories().get(1).getConfigValues().iterator().next());
 		var displayedValues = Collections.newSetFromMap(new IdentityHashMap<IConfigScreenValue<?>, Boolean>());
 		model.getCategories().forEach(category -> category.getConfigValues().forEach(value -> assertTrue(displayedValues.add(value))));
 		assertEquals(values.size(), displayedValues.size());
@@ -131,17 +155,18 @@ class ConfigCategoryTreeTest {
 	}
 
 	@Test
-	void settingsAppearOnceUnderTheirOwnSectionAndDirectSettingsStayAtTheParent() {
+	void branchSettingsAppearOnceInTheirOwnLeafAndBranchesContainNoValues() {
 		TestValue root = value("common.toml");
 		TestValue animals = value("common.toml", "Animals");
 		TestValue cow = value("common.toml", "Animals", "Cow");
 		TestValue pig = value("common.toml", "Animals", "Pig");
 		List<ConfigCategoryTree.Node> tree = ConfigCategoryTree.create(List.of(category("common.toml", root, animals, cow, pig)), 0);
 
-		assertEquals(List.of("common.toml", "Animals", "Cow", "Pig"), tree.stream().map(node -> node.category().getLocalizedName().getString()).toList());
-		assertEquals(List.of(-1, 0, 1, 1), tree.stream().map(ConfigCategoryTree.Node::parentIndex).toList());
-		assertEquals(List.of(0, 1, 2, 2), tree.stream().map(ConfigCategoryTree.Node::depth).toList());
-		assertEquals(List.of(true, true, false, false), tree.stream().map(ConfigCategoryTree.Node::hasChildren).toList());
+		assertEquals(List.of("common.toml", "Settings", "Animals", "Settings", "Cow", "Pig"), tree.stream().map(node -> node.category().getLocalizedName().getString()).toList());
+		assertEquals(List.of(-1, 0, 0, 2, 2, 2), tree.stream().map(ConfigCategoryTree.Node::parentIndex).toList());
+		assertEquals(List.of(0, 1, 1, 2, 2, 2), tree.stream().map(ConfigCategoryTree.Node::depth).toList());
+		assertEquals(List.of(true, false, true, false, false, false), tree.stream().map(ConfigCategoryTree.Node::hasChildren).toList());
+		assertTrue(tree.stream().filter(ConfigCategoryTree.Node::hasChildren).allMatch(node -> node.category().getConfigValues().isEmpty()));
 		assertEquals(List.of(root, animals, cow, pig), tree.stream().flatMap(node -> node.category().getConfigValues().stream()).toList());
 	}
 
@@ -175,12 +200,12 @@ class ConfigCategoryTreeTest {
 	}
 
 	@Test
-	void collapsingTheActiveBranchSelectsItsParentAndSelectingAHiddenLeafReopensAncestors() {
+	void collapsingABranchKeepsTheCurrentValuesAndSelectingAHiddenLeafReopensAncestors() {
 		ConfigScreenModel model = animalModel();
 		model.setActiveCategoryIndex(2);
 		model.toggleCategoryExpanded(1);
 
-		assertEquals(1, model.getActiveCategoryIndex());
+		assertEquals(2, model.getActiveCategoryIndex());
 		assertTrue(model.isCategoryVisible(1));
 		assertFalse(model.isCategoryVisible(2));
 		assertFalse(model.isCategoryVisible(3));
@@ -234,37 +259,33 @@ class ConfigCategoryTreeTest {
 	}
 
 	@Test
-	void trailingExpansionButtonHasASquareHitTargetAndLeadingTextSelectsTheCategory() {
+	void clickingABranchAnywhereOnlyTogglesAndClickingALeafSelectsIt() {
 		ConfigScreenModel model = animalModel();
 		int[] selected = {-1};
-		ConfigNavItem item = new ConfigNavItem(Component.literal("Common"), 0,
+		ConfigNavItem branch = new ConfigNavItem(Component.literal("Common"), 0,
 			new ConfigCategoryWidget(model.getCategories().getFirst(), List.of()),
 			() -> new ImmutableRect2i(10, 10, 100, 100), index -> selected[0] = index,
 			model, model::toggleCategoryExpanded);
-		item.updateBounds(new ImmutableRect2i(10, 10, 100, 20), 22);
+		branch.updateBounds(new ImmutableRect2i(10, 10, 100, 20), 22);
+		for (int x : List.of(10, 29, 89, 90, 109)) {
+			assertTrue(branch.handleUserInput(null, mouse(x, 29, InputType.SIMULATE)).isPresent());
+			assertTrue(model.isCategoryExpanded(0));
+			branch.handleUserInput(null, mouse(x, 29, InputType.EXECUTE));
+			assertFalse(model.isCategoryExpanded(0));
+			assertEquals(-1, selected[0]);
+			branch.handleUserInput(null, mouse(x, 29, InputType.EXECUTE));
+			assertTrue(model.isCategoryExpanded(0));
+		}
+		branch.resetBounds();
+		assertTrue(branch.handleUserInput(null, mouse(30, 29, InputType.EXECUTE)).isEmpty());
 
-		assertTrue(item.handleUserInput(null, mouse(29, 29, InputType.SIMULATE)).isPresent());
-		assertTrue(model.isCategoryExpanded(0));
-		assertTrue(item.handleUserInput(null, mouse(29, 29, InputType.EXECUTE)).isPresent());
-		assertTrue(model.isCategoryExpanded(0));
-		assertEquals(0, selected[0]);
-		selected[0] = -1;
-		assertTrue(item.handleUserInput(null, mouse(90, 10, InputType.SIMULATE)).isPresent());
-		assertTrue(model.isCategoryExpanded(0));
-		assertTrue(item.handleUserInput(null, mouse(90, 10, InputType.EXECUTE)).isPresent());
-		assertFalse(model.isCategoryExpanded(0));
-		assertEquals(-1, selected[0]);
-		item.handleUserInput(null, mouse(109, 29, InputType.EXECUTE));
-		assertTrue(model.isCategoryExpanded(0));
-		assertEquals(-1, selected[0]);
-		item.handleUserInput(null, mouse(89, 29, InputType.EXECUTE));
-		assertEquals(0, selected[0]);
-
-		item.updateBounds(new ImmutableRect2i(10, 10, 80, 20), 22);
-		item.handleUserInput(null, mouse(70, 10, InputType.EXECUTE));
-		assertFalse(model.isCategoryExpanded(0));
-		item.resetBounds();
-		assertTrue(item.handleUserInput(null, mouse(30, 29, InputType.EXECUTE)).isEmpty());
+		ConfigNavItem leaf = new ConfigNavItem(Component.literal("Cow"), 2,
+			new ConfigCategoryWidget(model.getCategories().get(2), List.of()),
+			() -> new ImmutableRect2i(10, 10, 100, 100), index -> selected[0] = index,
+			model, model::toggleCategoryExpanded);
+		leaf.updateBounds(new ImmutableRect2i(10, 40, 100, 20), 22);
+		leaf.handleUserInput(null, mouse(50, 50, InputType.EXECUTE));
+		assertEquals(2, selected[0]);
 	}
 
 	@Test
@@ -282,15 +303,15 @@ class ConfigCategoryTreeTest {
 		assertEquals(-1, selected[0]);
 		assertTrue(item.isMouseOver(22, 20));
 		assertTrue(item.handleUserInput(null, mouse(22, 20, InputType.EXECUTE)).isPresent());
-		assertEquals(1, selected[0]);
-		assertTrue(model.isCategoryExpanded(1));
-		item.handleUserInput(null, mouse(109, 20, InputType.EXECUTE));
+		assertEquals(-1, selected[0]);
 		assertFalse(model.isCategoryExpanded(1));
+		item.handleUserInput(null, mouse(109, 20, InputType.EXECUTE));
+		assertTrue(model.isCategoryExpanded(1));
 
 		item.updateBounds(new ImmutableRect2i(10, 10, 80, 20), 22);
 		assertFalse(item.isMouseOver(21, 20));
 		item.handleUserInput(null, mouse(89, 20, InputType.EXECUTE));
-		assertTrue(model.isCategoryExpanded(1));
+		assertFalse(model.isCategoryExpanded(1));
 	}
 
 	private static UserInput mouse(double x, double y, InputType type) {

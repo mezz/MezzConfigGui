@@ -48,20 +48,15 @@ final class ConfigScreenController {
 	}
 
 	public void setActiveCategory(int index) {
-		if (index < 0 || index >= model.getCategoryWidgets().size()) {
+		if (index < 0 || index >= model.getCategoryWidgets().size() || model.hasSubcategories(index)) {
 			return;
 		}
-		selectCategory(model.getFirstContentCategory(index));
+		selectCategory(index);
 	}
 
 	public void toggleCategoryExpanded(int index) {
-		int previousIndex = model.getActiveCategoryIndex();
 		model.toggleCategoryExpanded(index);
-		if (previousIndex != model.getActiveCategoryIndex()) {
-			selectCategory(model.getActiveCategoryIndex());
-		} else {
-			updateNavLayout();
-		}
+		updateNavLayout();
 	}
 
 	private void selectCategory(int index) {

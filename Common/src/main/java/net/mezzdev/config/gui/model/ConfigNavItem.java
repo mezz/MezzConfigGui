@@ -189,7 +189,7 @@ public final class ConfigNavItem implements ConfigInputHandler {
 			&& ConfigInputUtil.isLeftClick(input)
 		) {
 			if (!input.isSimulate()) {
-				if (model.hasSubcategories(categoryIndex) && getToggleArea().contains(input.getMouseX(), input.getMouseY())) {
+				if (model.hasSubcategories(categoryIndex)) {
 					expansionToggler.accept(categoryIndex);
 				} else {
 					categorySelector.accept(categoryIndex);

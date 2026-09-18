@@ -95,9 +95,6 @@ public final class ConfigScreenModel {
 		}
 		if (!collapsedCategories.remove(index)) {
 			collapsedCategories.add(index);
-			if (activeCategoryIndex >= 0 && activeCategoryIndex < categories.size() && !isCategoryVisible(activeCategoryIndex)) {
-				setActiveCategoryIndex(index);
-			}
 		}
 	}
 
