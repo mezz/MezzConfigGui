@@ -16,6 +16,7 @@ import java.util.function.ToDoubleFunction;
  */
 final class NumberSliderModel<T> {
 	private static final MathContext LONG_MATH_CONTEXT = MathContext.DECIMAL128;
+	private static final int MAX_SLIDER_SPAN = 1000;
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public static <T> Optional<NumberSliderModel<T>> create(ConfigValueRange<T> range) {
@@ -38,6 +39,9 @@ final class NumberSliderModel<T> {
 			return Optional.empty();
 		}
 		long span = (long) max - min;
+		if (span > MAX_SLIDER_SPAN) {
+			return Optional.empty();
+		}
 		return Optional.of(new NumberSliderModel<>(
 			range,
 			value -> ((long) value - min) / (double) span,
@@ -54,6 +58,9 @@ final class NumberSliderModel<T> {
 		}
 		BigDecimal decimalMin = BigDecimal.valueOf(min);
 		BigDecimal span = BigDecimal.valueOf(max).subtract(decimalMin);
+		if (span.compareTo(BigDecimal.valueOf(MAX_SLIDER_SPAN)) > 0) {
+			return Optional.empty();
+		}
 		BigInteger integerMin = BigInteger.valueOf(min);
 		BigInteger integerMax = BigInteger.valueOf(max);
 		return Optional.of(new NumberSliderModel<>(
@@ -79,7 +86,7 @@ final class NumberSliderModel<T> {
 		double max = range.max();
 		double span = max - min;
 		if (!Double.isFinite(min) || !Double.isFinite(max) || !Double.isFinite(span) ||
-			min >= max || min == -Double.MAX_VALUE || max == Double.MAX_VALUE
+			min >= max || min == -Double.MAX_VALUE || max == Double.MAX_VALUE || span > MAX_SLIDER_SPAN
 		) {
 			return Optional.empty();
 		}

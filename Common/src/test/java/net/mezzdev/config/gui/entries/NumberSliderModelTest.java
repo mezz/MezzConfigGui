@@ -33,18 +33,27 @@ class NumberSliderModelTest {
 	}
 
 	@Test
-	void mapsLargeLongRangeWithoutOverflow() {
+	void mapsSmallRangeOfLargeLongValuesWithoutOverflow() {
 		NumberSliderModel<Long> model = NumberSliderModel.create(
-				new ConfigValueRange<>(-8_000_000_000_000_000_000L, 8_000_000_000_000_000_000L)
+				new ConfigValueRange<>(8_000_000_000_000_000_000L, 8_000_000_000_000_000_100L)
 			)
 			.orElseThrow();
 
-		assertEquals(0.0, model.getPosition(-8_000_000_000_000_000_000L));
-		assertEquals(0.5, model.getPosition(0L));
-		assertEquals(1.0, model.getPosition(8_000_000_000_000_000_000L));
-		assertEquals(0L, model.getValue(0.5));
-		assertEquals(7_999_999_999_999_999_999L, model.getFineValue(8_000_000_000_000_000_000L, -1));
-		assertEquals(8_000_000_000_000_000_000L, model.getFineValue(8_000_000_000_000_000_000L, 1));
+		assertEquals(0.0, model.getPosition(8_000_000_000_000_000_000L));
+		assertEquals(0.5, model.getPosition(8_000_000_000_000_000_050L));
+		assertEquals(1.0, model.getPosition(8_000_000_000_000_000_100L));
+		assertEquals(8_000_000_000_000_000_050L, model.getValue(0.5));
+		assertEquals(8_000_000_000_000_000_099L, model.getFineValue(8_000_000_000_000_000_100L, -1));
+		assertEquals(8_000_000_000_000_000_100L, model.getFineValue(8_000_000_000_000_000_100L, 1));
+	}
+
+	@Test
+	void wideFiniteRangesUsePreciseControlsInsteadOfSliders() {
+		assertTrue(NumberSliderModel.create(new ConfigValueRange<>(0, 1000)).isPresent());
+		assertTrue(NumberSliderModel.create(new ConfigValueRange<>(0, 1001)).isEmpty());
+		assertTrue(NumberSliderModel.create(new ConfigValueRange<>(-1_000_000_000, 1_000_000_000)).isEmpty());
+		assertTrue(NumberSliderModel.create(new ConfigValueRange<>(-8_000_000_000_000_000_000L, 8_000_000_000_000_000_000L)).isEmpty());
+		assertTrue(NumberSliderModel.create(new ConfigValueRange<>(0.0, 1_000_000.0)).isEmpty());
 	}
 
 	@Test
