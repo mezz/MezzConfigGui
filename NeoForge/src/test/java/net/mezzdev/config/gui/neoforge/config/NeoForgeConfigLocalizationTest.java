@@ -14,6 +14,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NeoForgeConfigLocalizationTest {
 	@Test
+	void onlyCommonFilesOptIntoSharedNavigationWithoutChangingTheirValueCategories() {
+		ConfigValueSections.CategoryGroup first = NeoForgeConfigLocalization.getCategoryGroup("test", ModConfig.Type.COMMON, "test.first").orElseThrow();
+		ConfigValueSections.CategoryGroup second = NeoForgeConfigLocalization.getCategoryGroup("test", ModConfig.Type.COMMON, "test.second").orElseThrow();
+		assertEquals(first.name(), second.name());
+		assertEquals("Common (local)", first.title().getString());
+		for (ModConfig.Type type : List.of(ModConfig.Type.CLIENT, ModConfig.Type.SERVER, ModConfig.Type.STARTUP)) {
+			assertTrue(NeoForgeConfigLocalization.getCategoryGroup("test", type, "test.first").isEmpty());
+		}
+	}
+
+	@Test
 	void repeatedOptionNamesHaveShortLabelsAndSeparateSectionMetadata() {
 		ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 		ModConfigSpec.BooleanValue cowValue = builder.define("animals.cow.behavior.removeAI", false);

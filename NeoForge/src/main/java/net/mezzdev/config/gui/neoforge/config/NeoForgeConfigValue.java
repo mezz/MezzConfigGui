@@ -18,6 +18,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLocalizedValue, ConfigValueAccess, ConfigValueSections {
@@ -83,6 +84,12 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 	@Override
 	public List<Section> getSections() {
 		return sections;
+	}
+
+	@Override
+	public Optional<CategoryGroup> getCategoryGroup() {
+		return NeoForgeConfigLocalization.getCategoryGroup(modConfig.getModId(), modConfig.getType(),
+			NeoForgeConfigLocalization.getCategoryLocalizationKey(modConfig.getModId(), modConfig));
 	}
 
 	@Override

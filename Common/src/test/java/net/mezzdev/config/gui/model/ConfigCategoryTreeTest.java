@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,6 +32,59 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigCategoryTreeTest {
+	@Test
+	void compatibleNativeFilesShareOneRootButKeepTheirValuesAndStableSubsectionIdentities() {
+		ConfigValueSections.CategoryGroup group = new ConfigValueSections.CategoryGroup("common", Component.literal("Common (local)"), Component.literal("Local settings"));
+		TestCategory animals = groupedCategory("animals.toml", group, "Animals");
+		TestCategory items = groupedCategory("items.toml", group, "Items");
+		List<ConfigCategoryTree.Node> tree = ConfigCategoryTree.create(List.of(animals, items), 0);
+		assertEquals(List.of("Common (local)", "Animals", "Items"), tree.stream().map(node -> node.category().getLocalizedName().getString()).toList());
+		assertEquals(List.of(-1, 0, 0), tree.stream().map(ConfigCategoryTree.Node::parentIndex).toList());
+		assertEquals(ConfigCategoryTree.create(List.of(animals), 0).getLast().category().getName(), tree.get(1).category().getName());
+		assertEquals(ConfigCategoryTree.create(List.of(items), 0).getLast().category().getName(), tree.get(2).category().getName());
+		assertEquals(animals.values(), tree.get(1).category().getConfigValues());
+		assertEquals(items.values(), tree.get(2).category().getConfigValues());
+		assertEquals("File: animals.toml", tree.get(1).category().getLocalizedDescription().getString());
+		assertEquals("File: items.toml", tree.get(2).category().getLocalizedDescription().getString());
+
+		tree = ConfigCategoryTree.create(List.of(animals, items), 10);
+		assertEquals(1, tree.size());
+		assertEquals(2, tree.getFirst().category().getConfigValues().size());
+		assertEquals(List.of("Animals", "Items"), tree.getFirst().inlineSections().stream().map(section -> section.title().getString()).toList());
+	}
+
+	@Test
+	void groupedFilesWithIdenticalSectionsOrDirectValuesRemainDistinguishable() {
+		ConfigValueSections.CategoryGroup group = new ConfigValueSections.CategoryGroup("common", Component.literal("Common (local)"), Component.empty());
+		List<ConfigCategoryTree.Node> tree = ConfigCategoryTree.create(List.of(
+			groupedCategory("first.toml", group, "General"), groupedCategory("second.toml", group, "General"),
+			groupedCategory("third.toml", group), groupedCategory("fourth.toml", group)
+		), 0);
+		assertEquals(List.of("Common (local)", "General (1)", "General (2)", "Settings (1)", "Settings (2)"), tree.stream().map(node -> node.category().getLocalizedName().getString()).toList());
+		assertEquals(4, tree.stream().mapToInt(node -> node.category().getConfigValues().size()).sum());
+		assertEquals(5, tree.stream().map(node -> node.category().getName()).distinct().count());
+	}
+
+	@Test
+	void pluginsCanRelocateOrRenameNativeCategoriesWithoutBeingRegrouped() {
+		ConfigValueSections.CategoryGroup group = new ConfigValueSections.CategoryGroup("common", Component.literal("Common (local)"), Component.empty());
+		TestCategory first = groupedCategory("first.toml", group, "Animals");
+		TestCategory second = groupedCategory("second.toml", group, "Items");
+		TestCategory renamed = new TestCategory(second.name(), second.values(), Component.literal("Quick Settings"));
+		List<ConfigCategoryTree.Node> tree = ConfigCategoryTree.create(List.of(first, renamed), 10);
+		assertEquals(List.of("Common (local)", "Quick Settings"), tree.stream().map(node -> node.category().getLocalizedName().getString()).toList());
+		TestCategory relocated = new TestCategory("quick", second.values(), group.title());
+		tree = ConfigCategoryTree.create(List.of(first, relocated), 10);
+		assertEquals(2, tree.size());
+		assertTrue(tree.getLast().inlineSections().isEmpty());
+	}
+
+	private static TestCategory groupedCategory(String file, ConfigValueSections.CategoryGroup group, String... sections) {
+		TestValue original = value(file, sections);
+		TestValue grouped = new TestValue(file, original.sections(), Optional.of(group));
+		return new TestCategory(file, List.of(grouped), group.title());
+	}
+
 	@Test
 	void redundantSameNameOnlyChildrenCollapseIntoOneSelectableSection() {
 		for (int limit : List.of(0, 10)) {
@@ -338,7 +392,10 @@ class ConfigCategoryTreeTest {
 			.toList());
 	}
 
-	private record TestCategory(String name, List<IConfigScreenValue<?>> values) implements ConfigScreenCategory {
+	private record TestCategory(String name, List<IConfigScreenValue<?>> values, Component title) implements ConfigScreenCategory {
+		private TestCategory(String name, List<IConfigScreenValue<?>> values) {
+			this(name, values, Component.literal(name));
+		}
 		@Override
 		public ConfigScreenCategoryGroup getGroup() {
 			return ConfigScreenCategoryGroup.LOADER_NATIVE;
@@ -356,7 +413,7 @@ class ConfigCategoryTreeTest {
 
 		@Override
 		public Component getLocalizedName() {
-			return Component.literal(name);
+			return title;
 		}
 
 		@Override
@@ -370,7 +427,15 @@ class ConfigCategoryTreeTest {
 		}
 	}
 
-	private record TestValue(String category, List<Section> sections) implements IConfigScreenValue<Boolean>, IConfigLocalizedValue, ConfigValueSections {
+	private record TestValue(String category, List<Section> sections, Optional<CategoryGroup> categoryGroup) implements IConfigScreenValue<Boolean>, IConfigLocalizedValue, ConfigValueSections {
+		private TestValue(String category, List<Section> sections) {
+			this(category, sections, Optional.empty());
+		}
+
+		@Override
+		public Optional<CategoryGroup> getCategoryGroup() {
+			return categoryGroup;
+		}
 		@Override
 		public String getSectionCategoryName() {
 			return category;

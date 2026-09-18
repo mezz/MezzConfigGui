@@ -68,6 +68,11 @@ public final class NeoForgeConfigScreenConfigs {
 				.map(config -> createCategory(modId, config))
 				.flatMap(Optional::stream)
 				.toList();
+			if (configType == ModConfig.Type.COMMON) {
+				// Common files are grouped after plugin customization, keeping filenames as API identities.
+				categories.addAll(typeCategories);
+				continue;
+			}
 			List<NeoForgeConfigLocalization.CategoryName> categoryNames = typeCategories.stream()
 				.map(category -> new NeoForgeConfigLocalization.CategoryName(
 					category.localizedName(),

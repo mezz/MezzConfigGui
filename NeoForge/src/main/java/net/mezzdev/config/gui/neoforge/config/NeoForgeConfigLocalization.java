@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 final class NeoForgeConfigLocalization {
@@ -46,6 +47,18 @@ final class NeoForgeConfigLocalization {
 			title = Component.translatableWithFallback("mezz_config.config.native.local.title", "%s (local)", title);
 		}
 		return title;
+	}
+
+	static Optional<ConfigValueSections.CategoryGroup> getCategoryGroup(String modId, ModConfig.Type type, String localizationKey) {
+		if (type != ModConfig.Type.COMMON || I18n.exists(localizationKey + ".title")) {
+			return Optional.empty();
+		}
+		return Optional.of(new ConfigValueSections.CategoryGroup(
+			"@neoforge:" + modId + ":common",
+			getCategoryName(localizationKey, type),
+			Component.translatableWithFallback("mezz_config.config.native.description.common.group",
+				"These local configs may affect client or server behavior, depending on the mod. Changes here do not change a multiplayer server's config.")
+		));
 	}
 
 	static List<Component> getDistinctCategoryNames(List<CategoryName> categories) {

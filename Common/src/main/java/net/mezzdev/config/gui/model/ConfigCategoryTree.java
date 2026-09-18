@@ -8,9 +8,12 @@ import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Builds presentation-only subsections after plugins have resolved their categories and values.
@@ -22,23 +25,102 @@ final class ConfigCategoryTree {
 
 	static List<Node> create(List<ConfigScreenCategory> categories, int inlineSubsectionLimit) {
 		List<Node> result = new ArrayList<>();
+		Map<String, List<ConfigScreenCategory>> groupedCategories = new LinkedHashMap<>();
 		for (ConfigScreenCategory category : categories) {
-			MutableNode root = new MutableNode(category.getName(), category.getLocalizedName(), category.getLocalizedDescription());
-			for (IConfigScreenValue<?> value : category.getConfigValues()) {
-				MutableNode node = root;
-				if (value.getIdentityKey() instanceof ConfigValueSections sections &&
-					sections.getSectionCategoryName().equals(category.getName())
-				) {
-					for (ConfigValueSections.Section section : sections.getSections()) {
-						String childName = node.name + "/" + section.name().length() + ":" + section.name();
-						node = node.children.computeIfAbsent(section.name(), ignored -> new MutableNode(childName, section.title(), section.description()));
-					}
+			getCategoryGroup(category).ifPresent(group -> groupedCategories.computeIfAbsent(group.name(), ignored -> new ArrayList<>()).add(category));
+		}
+		for (ConfigScreenCategory category : categories) {
+			Optional<ConfigValueSections.CategoryGroup> grouping = getCategoryGroup(category);
+			if (grouping.isPresent() && groupedCategories.get(grouping.get().name()).size() > 1) {
+				List<ConfigScreenCategory> members = groupedCategories.get(grouping.get().name());
+				if (members.getFirst() == category) {
+					MutableNode root = createGroup(grouping.get(), members);
+					appendNodes(result, root, category.getGroup(), -1, 0, inlineSubsectionLimit);
 				}
-				node.values.add(value);
+				continue;
 			}
-			appendNodes(result, root, category.getGroup(), -1, 0, inlineSubsectionLimit);
+			appendNodes(result, createRoot(category), category.getGroup(), -1, 0, inlineSubsectionLimit);
 		}
 		return List.copyOf(result);
+	}
+
+	private static Optional<ConfigValueSections.CategoryGroup> getCategoryGroup(ConfigScreenCategory category) {
+		if (category.getGroup() != ConfigScreenCategoryGroup.LOADER_NATIVE || category.getConfigValues().isEmpty()) {
+			return Optional.empty();
+		}
+		ConfigValueSections.CategoryGroup grouping = null;
+		for (IConfigScreenValue<?> value : category.getConfigValues()) {
+			if (!(value.getIdentityKey() instanceof ConfigValueSections sections) || !sections.getSectionCategoryName().equals(category.getName())) {
+				return Optional.empty();
+			}
+			Optional<ConfigValueSections.CategoryGroup> candidate = sections.getCategoryGroup();
+			if (candidate.isEmpty() || !candidate.get().title().getString().equals(category.getLocalizedName().getString())) {
+				return Optional.empty();
+			}
+			if (grouping != null && !grouping.name().equals(candidate.get().name())) {
+				return Optional.empty();
+			}
+			grouping = candidate.get();
+		}
+		return Optional.ofNullable(grouping);
+	}
+
+	private static MutableNode createGroup(ConfigValueSections.CategoryGroup group, List<ConfigScreenCategory> members) {
+		MutableNode root = new MutableNode(group.name(), group.title(), group.description());
+		for (ConfigScreenCategory member : members) {
+			MutableNode fileRoot = createRoot(member);
+			if (!fileRoot.values.isEmpty()) {
+				MutableNode settings = new MutableNode(fileRoot.name + "/@values",
+					Component.translatableWithFallback("mezz_config.config.screen.sectionSettings", "Settings"), fileRoot.description);
+				settings.values.addAll(fileRoot.values);
+				root.children.put(settings.name, settings);
+			}
+			for (MutableNode child : fileRoot.children.values()) {
+				Component source = Component.translatableWithFallback("mezz_config.config.screen.configFile", "File: %s", member.getName());
+				if (child.description.getString().isBlank()) {
+					child.description = source;
+				} else {
+					child.description = child.description.copy().append("\n\n").append(source);
+				}
+				root.children.put(child.name, child);
+			}
+		}
+		Map<String, List<MutableNode>> duplicateTitles = new LinkedHashMap<>();
+		for (MutableNode child : root.children.values()) {
+			duplicateTitles.computeIfAbsent(child.title.getString(), ignored -> new ArrayList<>()).add(child);
+		}
+		Set<String> usedTitles = new HashSet<>(duplicateTitles.keySet());
+		for (List<MutableNode> duplicates : duplicateTitles.values()) {
+			if (duplicates.size() > 1) {
+				int suffix = 1;
+				for (int i = 0; i < duplicates.size(); i++) {
+					MutableNode child = duplicates.get(i);
+					Component title;
+					do {
+						title = Component.translatableWithFallback("mezz_config.config.native.numbered.title", "%s (%s)", child.title, suffix++);
+					} while (!usedTitles.add(title.getString()));
+					child.title = title;
+				}
+			}
+		}
+		return root;
+	}
+
+	private static MutableNode createRoot(ConfigScreenCategory category) {
+		MutableNode root = new MutableNode(category.getName(), category.getLocalizedName(), category.getLocalizedDescription());
+		for (IConfigScreenValue<?> value : category.getConfigValues()) {
+			MutableNode node = root;
+			if (value.getIdentityKey() instanceof ConfigValueSections sections &&
+				sections.getSectionCategoryName().equals(category.getName())
+			) {
+				for (ConfigValueSections.Section section : sections.getSections()) {
+					String childName = node.name + "/" + section.name().length() + ":" + section.name();
+					node = node.children.computeIfAbsent(section.name(), ignored -> new MutableNode(childName, section.title(), section.description()));
+				}
+			}
+			node.values.add(value);
+		}
+		return root;
 	}
 
 	private static void appendNodes(List<Node> result, MutableNode node, ConfigScreenCategoryGroup group, int parentIndex, int depth, int inlineSubsectionLimit) {
@@ -92,7 +174,7 @@ final class ConfigCategoryTree {
 
 	private static final class MutableNode {
 		private final String name;
-		private final Component title;
+		private Component title;
 		private Component description;
 		private final List<IConfigScreenValue<?>> values = new ArrayList<>();
 		private final Map<String, MutableNode> children = new LinkedHashMap<>();

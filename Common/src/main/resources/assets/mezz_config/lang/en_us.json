@@ -3,6 +3,8 @@
   "mezz_config.config.screen.search": "find configs by name",
   "mezz_config.config.screen.chooseSubsection": "Choose a subsection on the left.",
   "mezz_config.config.screen.sectionSettings": "Settings",
+  "mezz_config.config.screen.configFile": "File: %s",
+  "mezz_config.config.native.description.common.group": "These local configs may affect client or server behavior, depending on the mod. Changes here do not change a multiplayer server's config.",
   "mezz_config.config.screen.search.info.title": "Search",
   "mezz_config.config.screen.search.info": "Filter config options by name.",
   "mezz_config.config.screen.reset": "Reset",
