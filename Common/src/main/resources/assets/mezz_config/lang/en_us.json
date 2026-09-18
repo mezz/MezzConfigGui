@@ -50,6 +50,8 @@
   "mezz_config.config.screen.pendingChanges.list.changed": "Changed %s list positions",
   "mezz_config.config.screen.pendingChanges.list.sizeChanged": "Changed list size from %s to %s entries",
   "mezz_config.config.screen.range": "Range: %s ~ %s",
+  "mezz_config.config.screen.range.maximum": "maximum supported",
+  "mezz_config.config.screen.range.minimum": "minimum supported",
   "mezz_config.config.screen.validValues": "Valid values: %s",
   "mezz_config.config.screen.text.invalid": "Invalid Value",
   "mezz_config.config.screen.text.invalid.info": "This value cannot be saved.",

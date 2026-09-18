@@ -7,6 +7,7 @@ import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.info.ConfigValueInfoFactory;
+import net.mezzdev.config.gui.info.ConfigNumberInfo;
 import net.mezzdev.config.gui.input.UserInput;
 import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
@@ -105,7 +106,7 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 	public ConfigInfo getInfo() {
 		ConfigInfo info = super.getInfo();
 		List<Component> lines = new ArrayList<>(info.lines());
-		lines.add(Component.translatable("mezz_config.config.screen.validValues", serializer.getValidValuesDescription()));
+		lines.add(ConfigNumberInfo.getValidValuesDescription(serializer));
 		return new ConfigInfo(info.title(), lines);
 	}
 
@@ -139,7 +140,7 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 		if (lines.isEmpty()) {
 			lines.add(Component.translatable("mezz_config.config.screen.text.invalid.info"));
 		}
-		lines.add(Component.translatable("mezz_config.config.screen.validValues", serializer.getValidValuesDescription()));
+		lines.add(ConfigNumberInfo.getValidValuesDescription(serializer));
 		return new ConfigInfo(Component.translatable("mezz_config.config.screen.text.invalid"), lines);
 	}
 

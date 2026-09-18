@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui.entries;
 
+import net.mezzdev.config.gui.info.ConfigNumberInfo;
+
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.api.value.serializer.ConfigListOrdering;
 import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
@@ -449,13 +451,13 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			}
 			return new ConfigInfo(
 				Component.translatable("mezz_config.config.screen.add"),
-				List.of(Component.translatable("mezz_config.config.screen.validValues", elementSerializer.getValidValuesDescription()))
+				List.of(ConfigNumberInfo.getValidValuesDescription(elementSerializer))
 			);
 		}
 		if (allowsTypedInput && addValueButtonArea.contains(mouseX, mouseY)) {
 			return new ConfigInfo(
 				Component.translatable("mezz_config.config.screen.add"),
-				List.of(Component.translatable("mezz_config.config.screen.validValues", elementSerializer.getValidValuesDescription()))
+				List.of(ConfigNumberInfo.getValidValuesDescription(elementSerializer))
 			);
 		}
 		return null;
@@ -470,7 +472,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		if (lines.isEmpty()) {
 			lines.add(Component.translatable("mezz_config.config.screen.text.invalid.info"));
 		}
-		lines.add(Component.translatable("mezz_config.config.screen.validValues", elementSerializer.getValidValuesDescription()));
+		lines.add(ConfigNumberInfo.getValidValuesDescription(elementSerializer));
 		return new ConfigInfo(Component.translatable("mezz_config.config.screen.text.invalid"), lines);
 	}
 

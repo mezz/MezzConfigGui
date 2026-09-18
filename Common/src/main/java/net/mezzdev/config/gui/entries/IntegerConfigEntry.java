@@ -5,7 +5,7 @@ import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;
-import net.mezzdev.config.gui.internal.NumberFormatting;
+import net.mezzdev.config.gui.info.ConfigNumberInfo;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.info.ConfigValueInfoFactory;
 import net.mezzdev.config.gui.input.UserInput;
@@ -140,7 +140,7 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 	public ConfigInfo getInfo() {
 		ConfigInfo info = super.getInfo();
 		List<Component> lines = new ArrayList<>(info.lines());
-		lines.add(Component.translatable("mezz_config.config.screen.range", NumberFormatting.format(min), NumberFormatting.format(max)));
+		lines.add(ConfigNumberInfo.getRange(new ConfigValueRange<>(min, max)));
 		lines.add(Component.translatable("mezz_config.config.screen.number.shiftStep", SHIFT_STEP));
 		return new ConfigInfo(info.title(), lines);
 	}
