@@ -47,13 +47,13 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 		this.name = String.join(".", path);
 		this.localizationKey = NeoForgeConfigLocalization.getValueLocalizationKey(modId, path, valueSpec.getTranslationKey());
 		this.localizedName = NeoForgeConfigLocalization.getValueName(localizationKey, path);
-		this.localizedDescription = NeoForgeConfigLocalization.getValueDescription(localizationKey, valueSpec.getComment());
+		this.restartRequirement = getRestartRequirement(modConfig, valueSpec);
+		this.localizedDescription = NeoForgeConfigLocalization.getValueDescription(localizationKey, valueSpec.getComment(), restartRequirement);
 		this.modConfig = modConfig;
 		this.modConfigSpec = modConfigSpec;
 		this.configValue = configValue;
 		this.defaultValue = snapshot(configValue.getDefault());
 		this.serializer = serializer;
-		this.restartRequirement = getRestartRequirement(modConfig, valueSpec);
 	}
 
 	private static ConfigValueRestartRequirement getRestartRequirement(

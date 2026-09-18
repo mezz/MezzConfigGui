@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.neoforge.config;
 
+import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.util.ConfigNameUtil;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
@@ -73,12 +74,23 @@ final class NeoForgeConfigLocalization {
 		return Component.translatableWithFallback(localizationKey, getDisplayNameFallback(name));
 	}
 
-	public static Component getValueDescription(String localizationKey, @Nullable String comment) {
+	public static Component getValueDescription(String localizationKey, @Nullable String comment, ConfigValueRestartRequirement restartRequirement) {
 		String tooltipKey = localizationKey + ".tooltip";
+		Component description = Component.empty();
 		if (I18n.exists(tooltipKey) || !Strings.isBlank(comment)) {
-			return Component.translatableWithFallback(tooltipKey, getCommentFallback(comment));
+			description = Component.translatableWithFallback(tooltipKey, getCommentFallback(comment));
 		}
-		return Component.empty();
+		if (restartRequirement == ConfigValueRestartRequirement.NONE) {
+			Component restartNotice = Component.translatableWithFallback(
+				"mezz_config.config.native.restart.unknown",
+				"This mod does not declare a restart requirement. A game restart may be needed for changes to take effect."
+			);
+			if (description.getString().isBlank()) {
+				return restartNotice;
+			}
+			return description.copy().append("\n\n").append(restartNotice);
+		}
+		return description;
 	}
 
 	private static String getCommentFallback(@Nullable String comment) {
