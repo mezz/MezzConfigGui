@@ -210,7 +210,7 @@ subprojects {
 
             curseforge {
                 projectId.set(curseProjectId.orElse("0"))
-                projectSlug.set("mezzconfig-gui")
+                projectSlug.set("mezzconfiggui")
                 accessToken.set(providers.gradleProperty("curseforgeApikey"))
                 changelog.set(changelogHtml.singleFileContents())
                 changelogType.set("html")
