@@ -33,12 +33,17 @@ public final class ConfigNavItem implements ConfigInputHandler {
 	private static final int TEXT_VERTICAL_PADDING = 5;
 	private static final int MAX_TEXT_LINES = 2;
 	private static final int ACTIVE_ACCENT_WIDTH = 2;
+	private static final int INDENT_WIDTH = 6;
+	private static final int MAX_INDENT = 24;
+	private static final int TOGGLE_SIZE = 20;
 
 	private final Component fullName;
 	private final int categoryIndex;
 	private final ConfigCategoryWidget categoryWidget;
 	private final Supplier<ImmutableRect2i> navAreaSupplier;
 	private final IntConsumer categorySelector;
+	private final ConfigScreenModel model;
+	private final IntConsumer expansionToggler;
 
 	private ImmutableRect2i area = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i hoverArea = ImmutableRect2i.EMPTY;
@@ -50,18 +55,22 @@ public final class ConfigNavItem implements ConfigInputHandler {
 		int categoryIndex,
 		ConfigCategoryWidget categoryWidget,
 		Supplier<ImmutableRect2i> navAreaSupplier,
-		IntConsumer categorySelector
+		IntConsumer categorySelector,
+		ConfigScreenModel model,
+		IntConsumer expansionToggler
 	) {
 		this.fullName = StringUtil.stripStyling(displayName);
 		this.categoryIndex = categoryIndex;
 		this.categoryWidget = categoryWidget;
 		this.navAreaSupplier = navAreaSupplier;
 		this.categorySelector = categorySelector;
+		this.model = model;
+		this.expansionToggler = expansionToggler;
 	}
 
 	public int calculateHeight(int availableWidth) {
 		Font font = Minecraft.getInstance().font;
-		int textWidth = Math.max(0, availableWidth - ACTIVE_TEXT_LEFT_PADDING - TEXT_RIGHT_PADDING);
+		int textWidth = Math.max(0, availableWidth - getTextLeftPadding(true) - TEXT_RIGHT_PADDING);
 		int maxLines = MAX_TEXT_LINES;
 		if (fullName.getString().contains("\n")) {
 			// File-qualified categories must keep the distinguishing filename visible.
@@ -77,6 +86,11 @@ public final class ConfigNavItem implements ConfigInputHandler {
 	public void updateBounds(ImmutableRect2i area, int hoverHeight) {
 		this.area = area;
 		this.hoverArea = new ImmutableRect2i(area.getX(), area.getY(), area.getWidth(), hoverHeight);
+	}
+
+	public void resetBounds() {
+		area = ImmutableRect2i.EMPTY;
+		hoverArea = ImmutableRect2i.EMPTY;
 	}
 
 	public boolean isMouseOver(double mouseX, double mouseY) {
@@ -104,6 +118,16 @@ public final class ConfigNavItem implements ConfigInputHandler {
 		guiGraphics.fill(x, bottom - 1, right, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.NAV_ITEM_DIVIDER));
 
 		int textColor = getTextColor(active, hovered);
+		if (model.hasSubcategories(categoryIndex)) {
+			ImmutableRect2i toggleArea = getToggleArea();
+			String toggle = "+";
+			if (model.isCategoryExpanded(categoryIndex)) {
+				toggle = "−";
+			}
+			int toggleX = toggleArea.getX() + (TOGGLE_SIZE - font.width(toggle)) / 2;
+			int toggleY = toggleArea.getY() + (TOGGLE_SIZE - font.lineHeight) / 2;
+			guiGraphics.drawString(font, toggle, toggleX, toggleY, textColor, false);
+		}
 		int textX = area.getX() + getTextLeftPadding(active);
 		int textHeight = visibleNameLines.size() * font.lineHeight;
 		int textY = area.getY() + Math.round((area.getHeight() - textHeight) / 2.0f);
@@ -130,7 +154,18 @@ public final class ConfigNavItem implements ConfigInputHandler {
 		return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.NAV_ITEM_TEXT);
 	}
 
-	private static int getTextLeftPadding(boolean active) {
+	private int getIndent() {
+		return Math.min(MAX_INDENT, model.getCategoryDepth(categoryIndex) * INDENT_WIDTH);
+	}
+
+	private ImmutableRect2i getToggleArea() {
+		return new ImmutableRect2i(area.getX() + getIndent(), area.getY() + (area.getHeight() - TOGGLE_SIZE) / 2, TOGGLE_SIZE, TOGGLE_SIZE);
+	}
+
+	private int getTextLeftPadding(boolean active) {
+		if (model.hasSubcategories(categoryIndex) || model.getCategoryDepth(categoryIndex) > 0) {
+			return getIndent() + TOGGLE_SIZE;
+		}
 		if (active) {
 			return ACTIVE_TEXT_LEFT_PADDING;
 		}
@@ -149,7 +184,11 @@ public final class ConfigNavItem implements ConfigInputHandler {
 			&& ConfigInputUtil.isLeftClick(input)
 		) {
 			if (!input.isSimulate()) {
-				categorySelector.accept(categoryIndex);
+				if (model.hasSubcategories(categoryIndex) && getToggleArea().contains(input.getMouseX(), input.getMouseY())) {
+					expansionToggler.accept(categoryIndex);
+				} else {
+					categorySelector.accept(categoryIndex);
+				}
 			}
 			return Optional.of(this);
 		}

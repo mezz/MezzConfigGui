@@ -3,6 +3,7 @@ package net.mezzdev.config.gui.neoforge.config;
 import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.ConfigValueAccess;
+import net.mezzdev.config.gui.ConfigValueSections;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
@@ -19,12 +20,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLocalizedValue, ConfigValueAccess {
+final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLocalizedValue, ConfigValueAccess, ConfigValueSections {
 	private static final Logger LOGGER = LogManager.getLogger();
 
 	private final String name;
 	private final String localizationKey;
 	private final Component localizedName;
+	private final List<Section> sections;
 	private final Component localizedDescription;
 	private final ModConfig modConfig;
 	private final ModConfigSpec modConfigSpec;
@@ -48,7 +50,8 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 		List<String> path = configValue.getPath();
 		this.name = String.join(".", path);
 		this.localizationKey = NeoForgeConfigLocalization.getValueLocalizationKey(modId, path, valueSpec.getTranslationKey());
-		this.localizedName = NeoForgeConfigLocalization.getValueName(modId, modConfigSpec, localizationKey, path);
+		this.localizedName = NeoForgeConfigLocalization.getValueName(localizationKey, path);
+		this.sections = NeoForgeConfigLocalization.getSections(modId, modConfigSpec, path);
 		this.restartRequirement = getRestartRequirement(modConfig, valueSpec);
 		this.localizedDescription = NeoForgeConfigLocalization.getValueDescription(localizationKey, valueSpec.getComment(), restartRequirement);
 		this.modConfig = modConfig;
@@ -70,6 +73,16 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 			case WORLD -> ConfigValueRestartRequirement.WORLD_RESTART;
 			case GAME -> ConfigValueRestartRequirement.GAME_RESTART;
 		};
+	}
+
+	@Override
+	public String getSectionCategoryName() {
+		return modConfig.getFileName();
+	}
+
+	@Override
+	public List<Section> getSections() {
+		return sections;
 	}
 
 	@Override

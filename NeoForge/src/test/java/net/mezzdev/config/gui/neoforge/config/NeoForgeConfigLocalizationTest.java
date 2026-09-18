@@ -1,9 +1,12 @@
 package net.mezzdev.config.gui.neoforge.config;
 
 import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
+import net.mezzdev.config.gui.ConfigValueSections;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -11,24 +14,28 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NeoForgeConfigLocalizationTest {
 	@Test
-	void repeatedOptionNamesShowTheirFullSectionContext() {
+	void repeatedOptionNamesHaveShortLabelsAndSeparateSectionMetadata() {
 		ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 		ModConfigSpec.BooleanValue cowValue = builder.define("animals.cow.behavior.removeAI", false);
 		ModConfigSpec.BooleanValue pigValue = builder.define("animals.pig.behavior.removeAI", false);
 		ModConfigSpec spec = builder.build();
 
-		assertEquals("Animals › Cow › Behavior › Remove Ai", getValueName(spec, cowValue));
-		assertEquals("Animals › Pig › Behavior › Remove Ai", getValueName(spec, pigValue));
+		assertEquals("Remove Ai", getValueName(cowValue));
+		assertEquals("Remove Ai", getValueName(pigValue));
+		assertEquals(List.of("Animals", "Cow", "Behavior"), getSectionTitles(spec, cowValue));
+		assertEquals(List.of("Animals", "Pig", "Behavior"), getSectionTitles(spec, pigValue));
 	}
 
 	@Test
 	void sectionAndOptionTranslationsArePreserved() {
 		ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
-		builder.translation("gui.done").push("section");
+		builder.comment("Controls these settings.").translation("gui.done").push("section");
 		ModConfigSpec.BooleanValue value = builder.translation("gui.cancel").define("option", false);
 		ModConfigSpec spec = builder.build();
 
-		assertEquals("Done › Cancel", getValueName(spec, value));
+		assertEquals("Cancel", getValueName(value));
+		assertEquals(List.of("Done"), getSectionTitles(spec, value));
+		assertEquals("Controls these settings.", NeoForgeConfigLocalization.getSections("test", spec, value.getPath()).getFirst().description().getString());
 	}
 
 	@Test
@@ -37,12 +44,20 @@ class NeoForgeConfigLocalizationTest {
 		ModConfigSpec.BooleanValue value = builder.define("enabled", false);
 		ModConfigSpec spec = builder.build();
 
-		assertEquals("Enabled", getValueName(spec, value));
+		assertEquals("Enabled", getValueName(value));
+		assertTrue(NeoForgeConfigLocalization.getSections("test", spec, value.getPath()).isEmpty());
 	}
 
-	private static String getValueName(ModConfigSpec spec, ModConfigSpec.ConfigValue<?> value) {
+	private static List<String> getSectionTitles(ModConfigSpec spec, ModConfigSpec.ConfigValue<?> value) {
+		return NeoForgeConfigLocalization.getSections("test", spec, value.getPath()).stream()
+			.map(ConfigValueSections.Section::title)
+			.map(title -> title.getString())
+			.toList();
+	}
+
+	private static String getValueName(ModConfigSpec.ConfigValue<?> value) {
 		String key = NeoForgeConfigLocalization.getValueLocalizationKey("test", value.getPath(), value.getSpec().getTranslationKey());
-		return NeoForgeConfigLocalization.getValueName("test", spec, key, value.getPath()).getString();
+		return NeoForgeConfigLocalization.getValueName(key, value.getPath()).getString();
 	}
 
 	@Test

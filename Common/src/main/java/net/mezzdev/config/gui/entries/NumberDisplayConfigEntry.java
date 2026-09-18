@@ -83,6 +83,13 @@ final class NumberDisplayConfigEntry<T> extends ConfigEntryWidget<T> {
 	}
 
 	@Override
+	public void setShowSectionPath(boolean showSectionPath) {
+		super.setShowSectionPath(showSectionPath);
+		sliderEntry.setShowSectionPath(showSectionPath);
+		standardEntry.setShowSectionPath(showSectionPath);
+	}
+
+	@Override
 	public void updateBounds(ImmutableRect2i area) {
 		getActiveEntry().updateBounds(area);
 	}

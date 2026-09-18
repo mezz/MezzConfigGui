@@ -3,6 +3,7 @@ package net.mezzdev.config.gui.entries;
 import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.ConfigValueAccess;
+import net.mezzdev.config.gui.ConfigValueSections;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.model.ConfigValueChange;
@@ -162,6 +163,7 @@ public abstract class ConfigEntryWidget<T> {
 	protected final IConfigScreenValue<T> configValue;
 	private final ConfigTextures textures;
 	private final Component fullName;
+	private boolean showSectionPath;
 	private final Consumer<Runnable> clientThreadDispatcher;
 	private T value;
 	private T lastKnownConfigValue;
@@ -307,7 +309,7 @@ public abstract class ConfigEntryWidget<T> {
 		Font font = Minecraft.getInstance().font;
 		int nameColWidth = Math.max(40, area.getWidth() - rightReserve - NAME_LEFT_PADDING);
 		int wrapWidth = (int) (nameColWidth / TEXT_SCALE);
-		nameLines = font.split(fullName, wrapWidth);
+		nameLines = font.split(getDisplayName(), wrapWidth);
 		int scaledLineHeight = getScaledLineHeight(font);
 		int textHeight = nameLines.size() * scaledLineHeight;
 		this.nameArea = new ImmutableRect2i(
@@ -489,6 +491,17 @@ public abstract class ConfigEntryWidget<T> {
 		return fullName;
 	}
 
+	public void setShowSectionPath(boolean showSectionPath) {
+		this.showSectionPath = showSectionPath;
+	}
+
+	public Component getDisplayName() {
+		if (showSectionPath) {
+			return ConfigValueSections.getContextualName(configValue, fullName);
+		}
+		return fullName;
+	}
+
 	public ImmutableRect2i getArea() {
 		return area;
 	}
@@ -498,7 +511,7 @@ public abstract class ConfigEntryWidget<T> {
 			T oldValue = configValue.getValue();
 			T newValue = value;
 			return Optional.of(PendingConfigChange.create(
-				ConfigValueLocalization.getName(configValue),
+				ConfigValueSections.getContextualName(configValue, fullName),
 				getValueName(oldValue),
 				getValueName(newValue),
 				getInfo(),

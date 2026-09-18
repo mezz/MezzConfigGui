@@ -107,9 +107,9 @@ public class ConfigScreen extends MezzConfigScreen {
 		this.searchBox.setHint(Component.translatable("mezz_config.config.screen.search"));
 		updateSearchTextColor("");
 
-		List<ConfigScreenCategory> categories = createCategories(clientSchema);
-		this.model = new ConfigScreenModel(categories);
-		this.model.setActiveCategoryIndex(ConfigScreenHistory.getInitialCategoryIndex(modId, categories));
+		this.model = new ConfigScreenModel(createCategories(clientSchema));
+		List<ConfigScreenCategory> categories = model.getCategories();
+		this.model.setActiveCategoryIndex(model.getFirstContentCategory(ConfigScreenHistory.getInitialCategoryIndex(modId, categories)));
 		this.controller = new ConfigScreenController(changesHandler, model, layout, () -> {
 			if (!searchBox.getValue().isEmpty()) {
 				searchBox.setValue("");
@@ -152,7 +152,9 @@ public class ConfigScreen extends MezzConfigScreen {
 				i,
 				widget,
 				layout::getNavArea,
-				controller::setActiveCategory
+				controller::setActiveCategory,
+				model,
+				controller::toggleCategoryExpanded
 			);
 			model.addNavItem(navItem);
 		}

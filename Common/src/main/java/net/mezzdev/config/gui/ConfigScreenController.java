@@ -50,7 +50,20 @@ final class ConfigScreenController {
 		if (index < 0 || index >= model.getCategoryWidgets().size()) {
 			return;
 		}
+		selectCategory(model.getFirstContentCategory(index));
+	}
 
+	public void toggleCategoryExpanded(int index) {
+		int previousIndex = model.getActiveCategoryIndex();
+		model.toggleCategoryExpanded(index);
+		if (previousIndex != model.getActiveCategoryIndex()) {
+			selectCategory(model.getActiveCategoryIndex());
+		} else {
+			updateNavLayout();
+		}
+	}
+
+	private void selectCategory(int index) {
 		model.setActiveCategoryIndex(index);
 		activeCategoryListener.accept(index);
 		model.setSearchText("");
@@ -64,6 +77,7 @@ final class ConfigScreenController {
 			}
 		}
 
+		updateNavLayout();
 		updateContentLayout();
 	}
 
@@ -263,6 +277,7 @@ final class ConfigScreenController {
 	}
 
 	private int updateEntryBounds(ConfigEntryWidget<?> entryWidget, int y) {
+		entryWidget.setShowSectionPath(model.isSearching());
 		ImmutableRect2i contentArea = layout.getContentArea();
 		int entryWidth = contentArea.getWidth() - 4;
 		entryWidget.updateBounds(new ImmutableRect2i(contentArea.getX() + 2, y, entryWidth, ConfigEntryWidget.getMinimumHeight()));
@@ -285,6 +300,10 @@ final class ConfigScreenController {
 		List<ConfigNavItem> navItems = model.getNavItems();
 		for (int i = 0; i < navItems.size(); i++) {
 			ConfigNavItem navItem = navItems.get(i);
+			if (!model.isCategoryVisible(i)) {
+				navItem.resetBounds();
+				continue;
+			}
 			int itemHeight = navItem.calculateHeight(navItemWidth);
 			int itemHoverHeight = itemHeight;
 			if (i < navItems.size() - 1) {

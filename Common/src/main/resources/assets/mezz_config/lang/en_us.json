@@ -1,6 +1,7 @@
 {
   "mezz_config.config.screen.title": "MezzConfig Options",
   "mezz_config.config.screen.search": "find configs by name",
+  "mezz_config.config.screen.chooseSubsection": "Choose a subsection on the left.",
   "mezz_config.config.screen.search.info.title": "Search",
   "mezz_config.config.screen.search.info": "Filter config options by name.",
   "mezz_config.config.screen.reset": "Reset",

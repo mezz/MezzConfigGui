@@ -1,10 +1,10 @@
 package net.mezzdev.config.gui.neoforge.config;
 
 import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
+import net.mezzdev.config.gui.ConfigValueSections;
 import net.mezzdev.config.gui.util.ConfigNameUtil;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
@@ -12,6 +12,7 @@ import org.apache.logging.log4j.util.Strings;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Locale;
 
 final class NeoForgeConfigLocalization {
@@ -68,27 +69,30 @@ final class NeoForgeConfigLocalization {
 		return modId + ".configuration." + String.join(".", path);
 	}
 
-	public static Component getValueName(String modId, ModConfigSpec modConfigSpec, String localizationKey, List<String> path) {
-		MutableComponent result = Component.empty();
+	public static List<ConfigValueSections.Section> getSections(String modId, ModConfigSpec modConfigSpec, List<String> path) {
+		List<ConfigValueSections.Section> result = new ArrayList<>();
 		for (int level = 1; level < path.size(); level++) {
 			List<String> sectionPath = path.subList(0, level);
 			String sectionKey = getValueLocalizationKey(modId, sectionPath, modConfigSpec.getLevelTranslationKey(sectionPath));
-			result.append(Component.translatableWithFallback(sectionKey, getDisplayNameFallback(sectionPath.getLast())));
-			result.append(" › ");
+			result.add(new ConfigValueSections.Section(
+				sectionPath.getLast(),
+				getValueName(sectionKey, sectionPath),
+				getDescription(sectionKey, modConfigSpec.getLevelComment(sectionPath))
+			));
 		}
+		return List.copyOf(result);
+	}
+
+	public static Component getValueName(String localizationKey, List<String> path) {
 		String name = localizationKey;
 		if (!path.isEmpty()) {
 			name = path.getLast();
 		}
-		return result.append(Component.translatableWithFallback(localizationKey, getDisplayNameFallback(name)));
+		return Component.translatableWithFallback(localizationKey, getDisplayNameFallback(name));
 	}
 
 	public static Component getValueDescription(String localizationKey, @Nullable String comment, ConfigValueRestartRequirement restartRequirement) {
-		String tooltipKey = localizationKey + ".tooltip";
-		Component description = Component.empty();
-		if (I18n.exists(tooltipKey) || !Strings.isBlank(comment)) {
-			description = Component.translatableWithFallback(tooltipKey, getCommentFallback(comment));
-		}
+		Component description = getDescription(localizationKey, comment);
 		if (restartRequirement == ConfigValueRestartRequirement.NONE) {
 			Component restartNotice = Component.translatableWithFallback(
 				"mezz_config.config.native.restart.unknown",
@@ -100,6 +104,14 @@ final class NeoForgeConfigLocalization {
 			return description.copy().append("\n\n").append(restartNotice);
 		}
 		return description;
+	}
+
+	private static Component getDescription(String localizationKey, @Nullable String comment) {
+		String tooltipKey = localizationKey + ".tooltip";
+		if (I18n.exists(tooltipKey) || !Strings.isBlank(comment)) {
+			return Component.translatableWithFallback(tooltipKey, getCommentFallback(comment));
+		}
+		return Component.empty();
 	}
 
 	private static String getCommentFallback(@Nullable String comment) {
