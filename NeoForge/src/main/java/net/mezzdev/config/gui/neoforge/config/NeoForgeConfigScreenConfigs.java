@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,18 +59,19 @@ public final class NeoForgeConfigScreenConfigs {
 		String modId = modContainer.getModId();
 		List<NeoForgeConfigCategory> categories = new ArrayList<>();
 		for (ModConfig.Type configType : CONFIG_TYPE_ORDER) {
-			for (ModConfig modConfig : ModConfigs.getModConfigs(modId)) {
-				if (modConfig.getType() != configType) {
-					continue;
-				}
-				createCategory(modId, modConfig)
+			List<ModConfig> configs = ModConfigs.getModConfigs(modId).stream()
+				.filter(config -> config.getType() == configType && config.getLoadedConfig() != null)
+				.sorted(Comparator.comparing(ModConfig::getFileName))
+				.toList();
+			for (ModConfig modConfig : configs) {
+				createCategory(modId, modConfig, configs.size() > 1)
 					.ifPresent(categories::add);
 			}
 		}
 		return categories;
 	}
 
-	private static Optional<NeoForgeConfigCategory> createCategory(String modId, ModConfig modConfig) {
+	private static Optional<NeoForgeConfigCategory> createCategory(String modId, ModConfig modConfig, boolean showFileName) {
 		if (modConfig.getLoadedConfig() == null) {
 			return Optional.empty();
 		}
@@ -86,7 +88,7 @@ public final class NeoForgeConfigScreenConfigs {
 		return Optional.of(new NeoForgeConfigCategory(
 			modConfig.getFileName(),
 			localizationKey,
-			NeoForgeConfigLocalization.getCategoryName(localizationKey, modConfig),
+			NeoForgeConfigLocalization.getCategoryName(localizationKey, modConfig.getType(), modConfig.getFileName(), showFileName),
 			NeoForgeConfigLocalization.getCategoryDescription(localizationKey, modConfig),
 			modConfig,
 			modConfigSpec,

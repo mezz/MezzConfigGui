@@ -35,6 +35,7 @@ publishMods {
 }
 
 repositories {
+    mavenCentral()
     val deployDir = rootProject.findProperty("DEPLOY_DIR")
     if (deployDir != null) {
         maven(deployDir) {
@@ -63,6 +64,7 @@ val configModId: String by extra
 val configModGroup: String by extra
 val modJavaVersion: String by extra
 val jsr305Version: String by extra
+val jUnitVersion: String by extra
 val mezzConfigApiDependency: String by rootProject.extra
 val mezzConfigNeoForgeDependency: String by rootProject.extra
 val neoForgeNativeDefaultsTestModId = "mezz_config_gui_test_neoforge_defaults"
@@ -135,6 +137,7 @@ val configGuiAccessTransformer = commonProject.layout.projectDirectory.file("src
 
 neoForge {
     version = neoforgeVersion
+    addModdingDependenciesTo(sourceSets.test.get())
     accessTransformers {
         from(configGuiAccessTransformer)
     }
@@ -229,9 +232,18 @@ dependencies {
         implementation(it)
     }
     compileOnly(commonApiSourceSet.output)
+    testImplementation(commonApiSourceSet.output)
+    testImplementation(mezzConfigApiDependency)
+    testImplementation("org.junit.jupiter:junit-jupiter:$jUnitVersion")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testCompileOnly("com.google.code.findbugs:jsr305:$jsr305Version")
     for (testModSourceSet in testModSourceSets) {
         add(testModSourceSet.compileOnlyConfigurationName, "com.google.code.findbugs:jsr305:$jsr305Version")
     }
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 java {

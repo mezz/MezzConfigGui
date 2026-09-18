@@ -62,7 +62,12 @@ public final class ConfigNavItem implements ConfigInputHandler {
 	public int calculateHeight(int availableWidth) {
 		Font font = Minecraft.getInstance().font;
 		int textWidth = Math.max(0, availableWidth - ACTIVE_TEXT_LEFT_PADDING - TEXT_RIGHT_PADDING);
-		Pair<List<FormattedText>, Boolean> splitLines = StringUtil.splitLines(font, List.of(fullName), textWidth, MAX_TEXT_LINES);
+		int maxLines = MAX_TEXT_LINES;
+		if (fullName.getString().contains("\n")) {
+			// File-qualified categories must keep the distinguishing filename visible.
+			maxLines = Integer.MAX_VALUE;
+		}
+		Pair<List<FormattedText>, Boolean> splitLines = StringUtil.splitLines(font, List.of(fullName), textWidth, maxLines);
 		visibleNameLines = Language.getInstance().getVisualOrder(splitLines.first());
 		int textHeight = visibleNameLines.size() * font.lineHeight;
 		cachedHeight = Math.max(ConfigScreenLayout.NAV_ITEM_HEIGHT, textHeight + TEXT_VERTICAL_PADDING);

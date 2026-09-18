@@ -31,11 +31,14 @@ final class NeoForgeConfigLocalization {
 		return modId + ".configuration.section." + configFileName;
 	}
 
-	public static Component getCategoryName(String localizationKey, ModConfig modConfig) {
-		String fallback = getDisplayNameFallback(modConfig.getType().extension());
+	public static Component getCategoryName(String localizationKey, ModConfig.Type type, String fileName, boolean showFileName) {
+		String fallback = getDisplayNameFallback(type.extension());
 		Component title = Component.translatableWithFallback(localizationKey + ".title", fallback);
-		if (modConfig.getType() == ModConfig.Type.COMMON) {
-			return Component.translatableWithFallback("mezz_config.config.native.local.title", "%s (local)", title);
+		if (type == ModConfig.Type.COMMON) {
+			title = Component.translatableWithFallback("mezz_config.config.native.local.title", "%s (local)", title);
+		}
+		if (showFileName) {
+			return title.copy().append("\n").append(fileName);
 		}
 		return title;
 	}
