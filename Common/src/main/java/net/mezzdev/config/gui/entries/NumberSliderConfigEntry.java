@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui.entries;
 
+import net.mezzdev.config.gui.internal.NumberFormatting;
+
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.ConfigInputHandler;
 import net.mezzdev.config.gui.ConfigInputUtil;
@@ -89,7 +91,8 @@ final class NumberSliderConfigEntry<T> extends ConfigEntryWidget<T> {
 	public ConfigInfo getInfo() {
 		ConfigInfo info = super.getInfo();
 		List<Component> lines = new ArrayList<>(info.lines());
-		lines.add(Component.translatable("mezz_config.config.screen.range", model.getRange().min(), model.getRange().max()));
+		lines.add(Component.translatable("mezz_config.config.screen.range",
+			NumberFormatting.format((Number) model.getRange().min()), NumberFormatting.format((Number) model.getRange().max())));
 		lines.add(Component.translatable("mezz_config.config.screen.number.shiftStep", 1));
 		lines.add(Component.translatable("mezz_config.config.screen.number.slider.mouseWheel"));
 		return new ConfigInfo(info.title(), lines);

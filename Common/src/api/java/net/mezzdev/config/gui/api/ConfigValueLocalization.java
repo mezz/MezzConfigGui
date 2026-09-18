@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui.api;
 
+import net.mezzdev.config.gui.internal.NumberFormatting;
+
 import net.mezzdev.config.api.schema.category.IConfigEditorCategory;
 import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
@@ -129,6 +131,9 @@ public final class ConfigValueLocalization {
 		if (value instanceof Enum<?> enumValue) {
 			String key = getEnumValueLocalizationKey(configValueLocalizationKey, enumValue);
 			return Component.translatableWithFallback(key, getDisplayNameFallback(enumValue.name()));
+		}
+		if (value instanceof Number number) {
+			return Component.literal(NumberFormatting.format(number));
 		}
 		return Component.literal(serializer.serialize(value));
 	}

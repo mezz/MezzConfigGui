@@ -4,6 +4,8 @@ import net.mezzdev.config.api.value.serializer.ConfigValueRange;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.api.ConfigInfo;
+import net.mezzdev.config.gui.api.ConfigValueLocalization;
+import net.mezzdev.config.gui.internal.NumberFormatting;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.info.ConfigValueInfoFactory;
 import net.mezzdev.config.gui.input.UserInput;
@@ -111,7 +113,8 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 			}
 			drawRightAlignedText(guiGraphics, font, displayText, textY, textColor);
 		} else {
-			drawRightAlignedText(guiGraphics, font, getValue().toString(), textY, getConfiguredTextColor());
+			drawFittedText(guiGraphics, font, ConfigValueLocalization.getValueName(configValue, getValue()),
+				valueBoxArea.cropLeft(VALUE_TEXT_PADDING).cropRight(VALUE_TEXT_PADDING), getConfiguredTextColor(), true);
 		}
 
 		boolean canUp = getValue() < max;
@@ -128,6 +131,7 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 	private void drawRightAlignedText(GuiGraphics guiGraphics, Font font, String text, int y, int color) {
 		int minX = valueBoxArea.getX() + VALUE_TEXT_PADDING;
 		int maxX = valueBoxArea.getX() + valueBoxArea.getWidth() - VALUE_TEXT_PADDING;
+		text = font.plainSubstrByWidth(text, Math.max(0, maxX - minX), true);
 		int x = Math.max(minX, maxX - font.width(text));
 		drawText(guiGraphics, font, text, x, y, color);
 	}
@@ -136,7 +140,7 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 	public ConfigInfo getInfo() {
 		ConfigInfo info = super.getInfo();
 		List<Component> lines = new ArrayList<>(info.lines());
-		lines.add(Component.translatable("mezz_config.config.screen.range", min, max));
+		lines.add(Component.translatable("mezz_config.config.screen.range", NumberFormatting.format(min), NumberFormatting.format(max)));
 		lines.add(Component.translatable("mezz_config.config.screen.number.shiftStep", SHIFT_STEP));
 		return new ConfigInfo(info.title(), lines);
 	}
@@ -150,7 +154,11 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 			return resetInfo;
 		}
 		if (valueBoxArea.contains(mouseX, mouseY)) {
-			return ConfigValueInfoFactory.createUpdateInfo(configValue, getValue(), hasPendingChange());
+			ConfigInfo updateInfo = ConfigValueInfoFactory.createUpdateInfo(configValue, getValue(), hasPendingChange());
+			if (updateInfo != null) {
+				return updateInfo;
+			}
+			return new ConfigInfo(ConfigValueLocalization.getValueName(configValue, getValue()), List.of());
 		}
 		return null;
 	}

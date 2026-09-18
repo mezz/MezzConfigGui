@@ -4,6 +4,7 @@ import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.api.ConfigInfo;
+import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.info.ConfigValueInfoFactory;
 import net.mezzdev.config.gui.input.UserInput;
@@ -79,11 +80,15 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 		if (editing) {
 			return editText + "_";
 		}
-		return serializer.serialize(getValue());
+		return ConfigValueLocalization.getValueName(configValue, getValue()).getString();
 	}
 
 	private void drawValueText(GuiGraphics guiGraphics, Font font, String text, int color) {
 		ImmutableRect2i textArea = valueArea.cropLeft(VALUE_TEXT_PADDING).cropRight(VALUE_TEXT_PADDING);
+		if (!editing && getValue() instanceof Number) {
+			drawFittedText(guiGraphics, font, Component.literal(text), textArea, color, false);
+			return;
+		}
 		int y = getCenteredTextY(font, textArea);
 		String visibleText = getVisibleText(font, text, textArea.getWidth());
 		drawText(guiGraphics, font, visibleText, textArea.getX(), y, color);
@@ -118,7 +123,11 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 		if (editing && !isValidEditText()) {
 			return createInvalidValueInfo();
 		}
-		return ConfigValueInfoFactory.createUpdateInfo(configValue, getValue(), hasPendingChange());
+		ConfigInfo updateInfo = ConfigValueInfoFactory.createUpdateInfo(configValue, getValue(), hasPendingChange());
+		if (updateInfo != null) {
+			return updateInfo;
+		}
+		return new ConfigInfo(ConfigValueLocalization.getValueName(configValue, getValue()), List.of());
 	}
 
 	private ConfigInfo createInvalidValueInfo() {
