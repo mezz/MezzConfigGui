@@ -13,7 +13,11 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 final class NeoForgeConfigLocalization {
 	private NeoForgeConfigLocalization() {
@@ -35,16 +39,78 @@ final class NeoForgeConfigLocalization {
 		return modId + ".configuration.section." + configFileName;
 	}
 
-	public static Component getCategoryName(String localizationKey, ModConfig.Type type, String fileName, boolean showFileName) {
+	public static Component getCategoryName(String localizationKey, ModConfig.Type type) {
 		String fallback = getDisplayNameFallback(type.extension());
 		Component title = Component.translatableWithFallback(localizationKey + ".title", fallback);
 		if (type == ModConfig.Type.COMMON) {
 			title = Component.translatableWithFallback("mezz_config.config.native.local.title", "%s (local)", title);
 		}
-		if (showFileName) {
-			return title.copy().append("\n").append(fileName);
-		}
 		return title;
+	}
+
+	static List<Component> getDistinctCategoryNames(List<CategoryName> categories) {
+		List<Component> names = new ArrayList<>();
+		Map<String, List<Integer>> groups = new LinkedHashMap<>();
+		for (int index = 0; index < categories.size(); index++) {
+			Component title = categories.get(index).title();
+			names.add(title);
+			groups.computeIfAbsent(title.getString(), ignored -> new ArrayList<>()).add(index);
+		}
+		Set<String> usedNames = new HashSet<>(groups.keySet());
+		for (List<Integer> group : groups.values()) {
+			if (group.size() < 2) {
+				continue;
+			}
+			Map<String, Integer> sectionCounts = new LinkedHashMap<>();
+			for (int index : group) {
+				categories.get(index).sections().stream()
+					.map(Component::getString)
+					.distinct()
+					.forEach(name -> sectionCounts.merge(name, 1, Integer::sum));
+			}
+			for (int ordinal = 0; ordinal < group.size(); ordinal++) {
+				int index = group.get(ordinal);
+				CategoryName category = categories.get(index);
+				Component numberedName = Component.translatableWithFallback(
+					"mezz_config.config.native.numbered.title", "%s (%s)", category.title(), ordinal + 1
+				);
+				Component name = category.sections().stream()
+					.filter(section -> !section.getString().isBlank() && sectionCounts.get(section.getString()) == 1)
+					.findFirst()
+					.<Component>map(section -> Component.translatableWithFallback(
+						"mezz_config.config.native.section.title", "%s · %s", category.title(), section
+					))
+					.orElse(numberedName);
+				Component baseName = name;
+				int suffix = ordinal + 1;
+				while (!usedNames.add(name.getString())) {
+					name = baseName.copy().append(" (" + suffix++ + ")");
+				}
+				names.set(index, name);
+			}
+		}
+		return List.copyOf(names);
+	}
+
+	static List<Component> getSectionNames(List<List<ConfigValueSections.Section>> paths) {
+		Map<String, Component> names = new LinkedHashMap<>();
+		int maxDepth = paths.stream().mapToInt(List::size).max().orElse(0);
+		// Prefer broad sections before falling back to a distinguishing nested section.
+		for (int depth = 0; depth < maxDepth; depth++) {
+			for (List<ConfigValueSections.Section> path : paths) {
+				if (path.size() > depth) {
+					Component title = path.get(depth).title();
+					names.putIfAbsent(title.getString(), title);
+				}
+			}
+		}
+		return List.copyOf(names.values());
+	}
+
+	record CategoryName(Component title, List<Component> sections) {
+		CategoryName {
+			sections = List.copyOf(sections);
+		}
 	}
 
 	public static Component getCategoryDescription(String localizationKey, ModConfig modConfig) {

@@ -2,6 +2,7 @@ package net.mezzdev.config.gui.neoforge.config;
 
 import com.electronwill.nightconfig.core.UnmodifiableConfig;
 import net.mezzdev.config.gui.ConfigScreenConfig;
+import net.minecraft.network.chat.Component;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.config.ModConfig;
@@ -63,15 +64,31 @@ public final class NeoForgeConfigScreenConfigs {
 				.filter(config -> config.getType() == configType && config.getLoadedConfig() != null)
 				.sorted(Comparator.comparing(ModConfig::getFileName))
 				.toList();
-			for (ModConfig modConfig : configs) {
-				createCategory(modId, modConfig, configs.size() > 1)
-					.ifPresent(categories::add);
+			List<NeoForgeConfigCategory> typeCategories = configs.stream()
+				.map(config -> createCategory(modId, config))
+				.flatMap(Optional::stream)
+				.toList();
+			List<NeoForgeConfigLocalization.CategoryName> categoryNames = typeCategories.stream()
+				.map(category -> new NeoForgeConfigLocalization.CategoryName(
+					category.localizedName(),
+					NeoForgeConfigLocalization.getSectionNames(category.configValues().stream()
+						.map(NeoForgeConfigValue::getSections)
+						.toList())
+				))
+				.toList();
+			List<Component> names = NeoForgeConfigLocalization.getDistinctCategoryNames(categoryNames);
+			for (int index = 0; index < typeCategories.size(); index++) {
+				NeoForgeConfigCategory category = typeCategories.get(index);
+				categories.add(new NeoForgeConfigCategory(
+					category.name(), category.localizationKey(), names.get(index), category.localizedDescription(),
+					category.modConfig(), category.modConfigSpec(), category.configValues()
+				));
 			}
 		}
 		return categories;
 	}
 
-	private static Optional<NeoForgeConfigCategory> createCategory(String modId, ModConfig modConfig, boolean showFileName) {
+	private static Optional<NeoForgeConfigCategory> createCategory(String modId, ModConfig modConfig) {
 		if (modConfig.getLoadedConfig() == null) {
 			return Optional.empty();
 		}
@@ -88,7 +105,7 @@ public final class NeoForgeConfigScreenConfigs {
 		return Optional.of(new NeoForgeConfigCategory(
 			modConfig.getFileName(),
 			localizationKey,
-			NeoForgeConfigLocalization.getCategoryName(localizationKey, modConfig.getType(), modConfig.getFileName(), showFileName),
+			NeoForgeConfigLocalization.getCategoryName(localizationKey, modConfig.getType()),
 			NeoForgeConfigLocalization.getCategoryDescription(localizationKey, modConfig),
 			modConfig,
 			modConfigSpec,

@@ -2,6 +2,7 @@ package net.mezzdev.config.gui.neoforge.config;
 
 import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.ConfigValueSections;
+import net.minecraft.network.chat.Component;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import org.junit.jupiter.api.Test;
@@ -9,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NeoForgeConfigLocalizationTest {
@@ -91,20 +91,105 @@ class NeoForgeConfigLocalizationTest {
 	}
 
 	@Test
-	void multipleFilesOfTheSameTypeHaveDistinctVisibleNames() {
+	void repeatedCategoryNamesUseDistinctSectionTitlesInsteadOfFileNames() {
 		for (ModConfig.Type type : ModConfig.Type.values()) {
-			String first = NeoForgeConfigLocalization.getCategoryName("test.first", type, "animals/settings.toml", true).getString();
-			String second = NeoForgeConfigLocalization.getCategoryName("test.second", type, "items/settings.toml", true).getString();
-
-			assertNotEquals(first, second);
-			assertEquals("animals/settings.toml", first.substring(first.indexOf('\n') + 1));
-			assertEquals("items/settings.toml", second.substring(second.indexOf('\n') + 1));
+			Component first = NeoForgeConfigLocalization.getCategoryName("test.first", type);
+			Component second = NeoForgeConfigLocalization.getCategoryName("test.second", type);
+			List<Component> names = NeoForgeConfigLocalization.getDistinctCategoryNames(List.of(
+				new NeoForgeConfigLocalization.CategoryName(first, List.of(Component.literal("Animals"))),
+				new NeoForgeConfigLocalization.CategoryName(second, List.of(Component.literal("Items")))
+			));
+			assertEquals(first.getString() + " · Animals", names.getFirst().getString());
+			assertEquals(second.getString() + " · Items", names.getLast().getString());
 		}
 	}
 
 	@Test
 	void singleCommonFileStillMakesItsLocalScopeVisible() {
-		assertEquals("Common (local)", NeoForgeConfigLocalization.getCategoryName("test.common", ModConfig.Type.COMMON, "test-common.toml", false).getString());
-		assertEquals("Client", NeoForgeConfigLocalization.getCategoryName("test.client", ModConfig.Type.CLIENT, "test-client.toml", false).getString());
+		Component common = NeoForgeConfigLocalization.getCategoryName("test.common", ModConfig.Type.COMMON);
+		assertEquals("Common (local)", common.getString());
+		assertEquals("Client", NeoForgeConfigLocalization.getCategoryName("test.client", ModConfig.Type.CLIENT).getString());
+		assertEquals(List.of(common), NeoForgeConfigLocalization.getDistinctCategoryNames(List.of(
+			new NeoForgeConfigLocalization.CategoryName(common, List.of(Component.literal("Animals")))
+		)));
+	}
+
+	@Test
+	void commonSectionNamesAreSkippedAndRepeatedValuesDoNotCountAsDifferentFiles() {
+		assertEquals(List.of("Common · Animals", "Common · Items"), distinctNames(
+			categoryName("Common", "General", "Animals", "Animals"),
+			categoryName("Common", "General", "Items")
+		));
+	}
+
+	@Test
+	void identicalOrMissingSectionsGetCompactNumbersInFileOrder() {
+		assertEquals(List.of("Common (1)", "Common (2)", "Common (3)", "Common (4)"), distinctNames(
+			categoryName("Common", "General"),
+			categoryName("Common", "General"),
+			categoryName("Common"),
+			categoryName("Common", " ")
+		));
+	}
+
+	@Test
+	void distinctModProvidedTitlesArePreservedAndDoNotCompeteForSectionNames() {
+		assertEquals(List.of("Animal Settings", "Common · Animals", "Common · Items"), distinctNames(
+			categoryName("Animal Settings", "Animals"),
+			categoryName("Common", "Animals"),
+			categoryName("Common", "Items")
+		));
+		Component translatedSection = Component.translatable("gui.done");
+		List<Component> names = NeoForgeConfigLocalization.getDistinctCategoryNames(List.of(
+			new NeoForgeConfigLocalization.CategoryName(Component.literal("Client"), List.of(translatedSection)),
+			categoryName("Client", "Items")
+		));
+		assertEquals("Client · Done", names.getFirst().getString());
+	}
+
+	@Test
+	void generatedLabelsDoNotDuplicateAModProvidedTitle() {
+		assertEquals(List.of("Common · Animals", "Common · Animals (1)", "Common · Items"), distinctNames(
+			categoryName("Common · Animals"),
+			categoryName("Common", "Animals"),
+			categoryName("Common", "Items")
+		));
+		assertEquals(List.of("Common (1)", "Common (1) (1)", "Common (2)"), distinctNames(
+			categoryName("Common (1)"),
+			categoryName("Common"),
+			categoryName("Common")
+		));
+	}
+
+	@Test
+	void broadSectionsArePreferredBeforeDistinctNestedSections() {
+		ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
+		ModConfigSpec.BooleanValue cow = builder.define("general.animals.cow.enabled", false);
+		ModConfigSpec.BooleanValue items = builder.define("items.enabled", false);
+		ModConfigSpec spec = builder.build();
+		List<Component> sections = NeoForgeConfigLocalization.getSectionNames(List.of(
+			NeoForgeConfigLocalization.getSections("test", spec, cow.getPath()),
+			NeoForgeConfigLocalization.getSections("test", spec, items.getPath()),
+			NeoForgeConfigLocalization.getSections("test", spec, cow.getPath())
+		));
+		assertEquals(List.of("General", "Items", "Animals", "Cow"), sections.stream().map(Component::getString).toList());
+		assertEquals(List.of("Common · Items", "Common (2)"), distinctNames(
+			new NeoForgeConfigLocalization.CategoryName(Component.literal("Common"), sections),
+			categoryName("Common", "General")
+		));
+		assertEquals(List.of("Common · Animals", "Common · Blocks"), distinctNames(
+			categoryName("Common", "General", "Animals"),
+			categoryName("Common", "General", "Blocks")
+		));
+	}
+
+	private static NeoForgeConfigLocalization.CategoryName categoryName(String title, String... sections) {
+		return new NeoForgeConfigLocalization.CategoryName(Component.literal(title), List.of(sections).stream()
+			.<Component>map(Component::literal)
+			.toList());
+	}
+
+	private static List<String> distinctNames(NeoForgeConfigLocalization.CategoryName... categories) {
+		return NeoForgeConfigLocalization.getDistinctCategoryNames(List.of(categories)).stream().map(Component::getString).toList();
 	}
 }
