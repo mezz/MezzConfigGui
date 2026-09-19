@@ -54,8 +54,8 @@ val mezzConfigApiDependency: String by rootProject.extra
 val mezzConfigNeoForgeDependency: String by rootProject.extra
 val jeiApiDependency: String by rootProject.extra
 val apiBaselineVersion: String by extra
-val apiBaselineRequired: String by extra
-val requireApiBaseline = apiBaselineRequired.toBooleanStrict()
+val specificationVersion: String by extra
+val isInitialApiRelease = apiBaselineVersion == specificationVersion
 
 group = configModGroup
 
@@ -167,7 +167,7 @@ dependencies {
 }
 
 val apiBaselineArchives = apiBaseline.incoming.artifactView {
-    isLenient = !requireApiBaseline
+    isLenient = isInitialApiRelease
 }.files
 val missingApiBaselineArchive = layout.buildDirectory.file("api-baseline/missing-$apiBaselineVersion.jar")
 val apiBaselineArchive = layout.file(apiBaselineArchives.elements.map { archives ->
@@ -182,7 +182,7 @@ val checkJarCompatibility = tasks.named<CompatibilityTask>("checkJarCompatibilit
     baseJar.set(apiBaselineArchive)
     libraries.setFrom(apiSourceSet.compileClasspath.filter(File::exists))
     fail.set(true)
-    onlyIf("MezzConfig GUI API $apiBaselineVersion has been published") {
+    onlyIf("the initial MezzConfig GUI API $apiBaselineVersion baseline has been published") {
         baseJar.get().asFile.exists()
     }
 }

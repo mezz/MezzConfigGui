@@ -23,6 +23,16 @@ the public API, the shared implementation required by the platform Maven jars,
 and the Fabric, Forge, and NeoForge artifacts. Changelogs are generated
 automatically from Git history.
 
+## API compatibility baseline
+
+Keep `apiBaselineVersion` pinned to the first public API release. While
+`specificationVersion` equals that version, a missing baseline skips the API
+compatibility check so the first release can be built. If the baseline is
+available, it is checked even for that initial version. After
+`specificationVersion` advances, resolving the baseline is mandatory: an
+unavailable baseline fails verification instead of silently skipping the check.
+No separate flag needs to be changed after publishing.
+
 ## Repeated builds
 
 After all publishing stages succeed, Jenkins records the tag in the build's
