@@ -813,7 +813,12 @@ public class ConfigScreen extends MezzConfigScreen {
 		renderTransparentBackground(guiGraphics);
 		controller.stepScrollPositions();
 		updateValueSelectorBounds();
-		view.render(guiGraphics, mouseX, mouseY, partialTick, valueSelector);
+		if (view.render(guiGraphics, mouseX, mouseY, partialTick, valueSelector)) {
+			updateScreenBounds();
+			controller.updateNavLayout();
+			controller.updateContentLayout();
+			updateValueSelectorBounds();
+		}
 	}
 
 	private void updateValueSelectorBounds() {

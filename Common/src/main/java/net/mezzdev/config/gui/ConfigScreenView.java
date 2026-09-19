@@ -16,7 +16,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.util.FormattedCharSequence;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -26,7 +25,7 @@ import java.util.List;
  */
 final class ConfigScreenView {
 	private static final int VALUE_SELECTOR_Z_OFFSET = 350;
-	private static final int INFO_PADDING = 5;
+	private final ConfigInfoPanel infoPanel = new ConfigInfoPanel();
 
 	private final Component title;
 	private final EditBox searchBox;
@@ -60,7 +59,7 @@ final class ConfigScreenView {
 		this.scrollbarBackground = textures.getScrollbarBackground();
 	}
 
-	void render(
+	boolean render(
 		GuiGraphics guiGraphics,
 		int mouseX,
 		int mouseY,
@@ -121,13 +120,21 @@ final class ConfigScreenView {
 		@Nullable
 		ConfigInfo hoveredEntryInfo = drawEntries(guiGraphics, contentArea, mouseX, mouseY, valueSelector == null);
 		drawInsetBorder(guiGraphics, contentArea);
-		drawInfoPanel(guiGraphics, font, getInfo(hoveredValueSelectorInfo, hoveredControlInfo, hoveredNavItem, hoveredEntryInfo, activeValueSelectorInfo));
+		ImmutableRect2i infoArea = layout.getInfoArea();
+		infoPanel.update(
+			getInfo(hoveredValueSelectorInfo, hoveredControlInfo, hoveredNavItem, hoveredEntryInfo, activeValueSelectorInfo),
+			font,
+			infoArea.getWidth(),
+			infoArea.contains(mouseX, mouseY)
+		);
+		infoPanel.draw(guiGraphics, font, infoArea);
 		guiGraphics.pose().popPose();
 
 		drawContentScrollBar(guiGraphics);
 		drawValueSelector(guiGraphics, valueSelector, valueSelectorClipArea, mouseX, mouseY);
 		drawTooltip(guiGraphics, mouseX, mouseY, tooltipInfo);
 		modTabs.drawTooltip(guiGraphics, mouseX, mouseY);
+		return layout.requestInfoAreaHeight(infoPanel.getHeight());
 	}
 
 	static ImmutableRect2i getValueSelectorClipArea(ImmutableRect2i contentArea) {
@@ -544,58 +551,6 @@ final class ConfigScreenView {
 			Component.translatable("mezz_config.config.screen.resize.title"),
 			Component.translatable("mezz_config.config.screen.resize.info")
 		);
-	}
-
-	private void drawInfoPanel(GuiGraphics guiGraphics, Font font, @Nullable ConfigInfo info) {
-		ImmutableRect2i infoArea = layout.getInfoArea();
-		guiGraphics.fill(
-			infoArea.getX(),
-			infoArea.getY(),
-			infoArea.getX() + infoArea.getWidth(),
-			infoArea.getY() + infoArea.getHeight(),
-			ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_INFO_BACKGROUND)
-		);
-		guiGraphics.fill(
-			infoArea.getX(),
-			infoArea.getY(),
-			infoArea.getX() + infoArea.getWidth(),
-			infoArea.getY() + 1,
-			ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_INFO_BORDER)
-		);
-		if (info == null) {
-			return;
-		}
-
-		int textX = infoArea.getX() + INFO_PADDING;
-		int textY = infoArea.getY() + INFO_PADDING;
-		int maxTextY = infoArea.getY() + infoArea.getHeight() - INFO_PADDING;
-		int textWidth = infoArea.getWidth() - INFO_PADDING * 2;
-
-		guiGraphics.enableScissor(
-			infoArea.getX(),
-			infoArea.getY(),
-			infoArea.getX() + infoArea.getWidth(),
-			infoArea.getY() + infoArea.getHeight()
-		);
-
-		List<FormattedCharSequence> titleLines = font.split(info.title(), textWidth);
-		if (!titleLines.isEmpty()) {
-			guiGraphics.drawString(font, titleLines.getFirst(), textX, textY, ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_INFO_TITLE_TEXT), false);
-			textY += font.lineHeight + 2;
-		}
-
-		for (Component line : info.lines()) {
-			for (FormattedCharSequence wrappedLine : font.split(line, textWidth)) {
-				if (textY + font.lineHeight > maxTextY) {
-					guiGraphics.disableScissor();
-					return;
-				}
-				guiGraphics.drawString(font, wrappedLine, textX, textY, ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_INFO_TEXT), false);
-				textY += font.lineHeight;
-			}
-		}
-
-		guiGraphics.disableScissor();
 	}
 
 	private static void drawValueSelector(

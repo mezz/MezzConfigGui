@@ -51,6 +51,7 @@ public final class ConfigScreenLayout {
 	private ImmutableRect2i searchBackgroundArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i scrollBarArea = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i infoArea = ImmutableRect2i.EMPTY;
+	private int requestedInfoAreaHeight = INFO_AREA_HEIGHT;
 	private ImmutableRect2i contentWithScrollArea = ImmutableRect2i.EMPTY;
 	private int totalContentHeight = 0;
 	private double targetScrollY = 0;
@@ -87,11 +88,12 @@ public final class ConfigScreenLayout {
 		ImmutableRect2i innerArea = area.insetBy(BORDER_PADDING);
 		titleArea = innerArea.keepTop(TITLE_HEIGHT);
 		updateTitleRowAreas(hasScreenListButton);
-		infoArea = innerArea.keepBottom(INFO_AREA_HEIGHT);
+		int infoHeight = getInfoAreaHeight();
+		infoArea = innerArea.keepBottom(infoHeight);
 
 		ImmutableRect2i mainArea = innerArea
 			.cropTop(TITLE_HEIGHT + SECTION_GAP)
-			.cropBottom(INFO_AREA_HEIGHT + SECTION_GAP);
+			.cropBottom(infoHeight + SECTION_GAP);
 		int requestedNavWidth = ConfigGuiOptions.getNavigationWidth();
 		if (navigationResizeDrag != null) {
 			requestedNavWidth = navigationResizeDrag.width();
@@ -215,6 +217,18 @@ public final class ConfigScreenLayout {
 
 	public ImmutableRect2i getInfoArea() {
 		return infoArea;
+	}
+
+	boolean requestInfoAreaHeight(int height) {
+		// Keep the expanded height for this screen so hovering short and long descriptions
+		// does not repeatedly move the rows and scrollbars beneath the pointer.
+		requestedInfoAreaHeight = Math.max(requestedInfoAreaHeight, height);
+		return getInfoAreaHeight() != infoArea.getHeight();
+	}
+
+	private int getInfoAreaHeight() {
+		int maximumHeight = area.insetBy(BORDER_PADDING).getHeight() / 3;
+		return Math.min(requestedInfoAreaHeight, maximumHeight);
 	}
 
 	public ResizeHandle getResizeHandle(double mouseX, double mouseY) {
