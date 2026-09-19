@@ -19,6 +19,7 @@ import net.minecraft.network.chat.MutableComponent;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Draws the config screen frame, navigation, value rows, info panel, popups, and tooltips.
@@ -118,10 +119,10 @@ final class ConfigScreenView {
 		drawSearch(guiGraphics, textures, searchBackgroundArea, mouseX, mouseY, partialTick);
 		drawValueAreaBackground(guiGraphics, contentArea);
 		@Nullable
-		ConfigInfo hoveredEntryInfo = drawEntries(guiGraphics, contentArea, mouseX, mouseY, valueSelector == null);
+		Supplier<ConfigInfo> hoveredEntryInfo = drawEntries(guiGraphics, contentArea, mouseX, mouseY, valueSelector == null);
 		drawInsetBorder(guiGraphics, contentArea);
 		ImmutableRect2i infoArea = layout.getInfoArea();
-		infoPanel.update(
+		infoPanel.updateSource(
 			getInfo(hoveredValueSelectorInfo, hoveredControlInfo, hoveredNavItem, hoveredEntryInfo, activeValueSelectorInfo),
 			font,
 			infoArea.getWidth(),
@@ -309,7 +310,7 @@ final class ConfigScreenView {
 	}
 
 	@Nullable
-	private ConfigInfo drawEntries(
+	private Supplier<ConfigInfo> drawEntries(
 		GuiGraphics guiGraphics,
 		ImmutableRect2i contentArea,
 		int mouseX,
@@ -317,7 +318,7 @@ final class ConfigScreenView {
 		boolean allowEntryHover
 	) {
 		@Nullable
-		ConfigInfo hoveredEntryInfo = null;
+		Supplier<ConfigInfo> hoveredEntryInfo = null;
 		guiGraphics.enableScissor(
 			contentArea.getX(),
 			contentArea.getY(),
@@ -333,14 +334,14 @@ final class ConfigScreenView {
 			entryWidget.draw(guiGraphics, mouseX, mouseY, allowHoverAtMouse, rowIndex, contentArea);
 			rowIndex++;
 			if (allowHoverAtMouse && entryWidget.isMouseOver(mouseX, mouseY)) {
-				hoveredEntryInfo = entryWidget.getInfo(mouseX, mouseY);
+				hoveredEntryInfo = () -> entryWidget.getInfoWithAccess(mouseX, mouseY);
 			}
 		}
 		if (!model.isSearching()) {
 			for (var header : controller.getVisibleSectionHeaders()) {
 				header.draw(guiGraphics, contentArea);
 				if (allowHoverAtMouse && header.isMouseOver(mouseX, mouseY)) {
-					hoveredEntryInfo = header.getInfo();
+					hoveredEntryInfo = header::getInfo;
 				}
 			}
 		}
@@ -448,36 +449,35 @@ final class ConfigScreenView {
 		}
 	}
 
-	@Nullable
-	private ConfigInfo getInfo(
+	private Supplier<@Nullable ConfigInfo> getInfo(
 		@Nullable ConfigInfo hoveredValueSelectorInfo,
 		@Nullable ConfigInfo hoveredControlInfo,
 		@Nullable ConfigNavItem hoveredNavItem,
-		@Nullable ConfigInfo hoveredEntryInfo,
+		@Nullable Supplier<ConfigInfo> hoveredEntryInfo,
 		@Nullable ConfigInfo activeValueSelectorInfo
 	) {
 		if (hoveredValueSelectorInfo != null) {
-			return hoveredValueSelectorInfo;
+			return () -> hoveredValueSelectorInfo;
 		}
 		if (hoveredControlInfo != null) {
-			return hoveredControlInfo;
+			return () -> hoveredControlInfo;
 		}
 		if (hoveredEntryInfo != null) {
 			return hoveredEntryInfo;
 		}
 		if (hoveredNavItem != null) {
-			return hoveredNavItem.getInfo();
+			return hoveredNavItem::getInfo;
 		}
 		if (activeValueSelectorInfo != null) {
-			return activeValueSelectorInfo;
+			return () -> activeValueSelectorInfo;
 		}
 		if (model.isSearching()) {
-			return getSearchInfo();
+			return ConfigScreenView::getSearchInfo;
 		}
 		if (model.hasActiveCategory()) {
-			return model.getActiveCategoryWidget().getInfo();
+			return model.getActiveCategoryWidget()::getInfo;
 		}
-		return null;
+		return () -> null;
 	}
 
 	@Nullable

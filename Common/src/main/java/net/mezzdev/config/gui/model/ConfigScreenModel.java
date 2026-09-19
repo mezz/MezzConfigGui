@@ -92,13 +92,17 @@ public final class ConfigScreenModel {
 	}
 
 	public List<Integer> getActiveCategoryIndexes() {
-		if (activeCategoryIndex < 0 || activeCategoryIndex >= categoryTree.size()) {
+		return getCategoryIndexes(activeCategoryIndex);
+	}
+
+	public List<Integer> getCategoryIndexes(int categoryIndex) {
+		if (categoryIndex < 0 || categoryIndex >= categoryTree.size()) {
 			return List.of();
 		}
 		List<Integer> indexes = new ArrayList<>();
-		indexes.add(activeCategoryIndex);
-		int activeDepth = getCategoryDepth(activeCategoryIndex);
-		for (int index = activeCategoryIndex + 1; index < categoryTree.size() && getCategoryDepth(index) > activeDepth; index++) {
+		indexes.add(categoryIndex);
+		int activeDepth = getCategoryDepth(categoryIndex);
+		for (int index = categoryIndex + 1; index < categoryTree.size() && getCategoryDepth(index) > activeDepth; index++) {
 			indexes.add(index);
 		}
 		return List.copyOf(indexes);

@@ -16,6 +16,7 @@ import net.minecraft.util.FormattedCharSequence;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * A collapsible heading above a section's nested values, with its description available on hover.
@@ -27,7 +28,7 @@ public final class ConfigSectionHeader implements ConfigInputHandler {
 	private static final int BOTTOM_PADDING = 5;
 
 	private final Component title;
-	private final ConfigInfo info;
+	private final Supplier<ConfigInfo> info;
 	private final Runnable layoutUpdater;
 	private ImmutableRect2i area = ImmutableRect2i.EMPTY;
 	private List<FormattedCharSequence> lines = List.of();
@@ -41,8 +42,12 @@ public final class ConfigSectionHeader implements ConfigInputHandler {
 	}
 
 	public ConfigSectionHeader(Component title, Component description, Runnable layoutUpdater) {
+		this(title, () -> new ConfigInfo(title, description), layoutUpdater);
+	}
+
+	public ConfigSectionHeader(Component title, Supplier<ConfigInfo> info, Runnable layoutUpdater) {
 		this.title = StringUtil.stripStyling(title);
-		this.info = new ConfigInfo(title, description);
+		this.info = info;
 		this.layoutUpdater = layoutUpdater;
 	}
 
@@ -76,7 +81,7 @@ public final class ConfigSectionHeader implements ConfigInputHandler {
 	}
 
 	public ConfigInfo getInfo() {
-		return info;
+		return info.get();
 	}
 
 	public void draw(GuiGraphics guiGraphics, ImmutableRect2i viewport) {

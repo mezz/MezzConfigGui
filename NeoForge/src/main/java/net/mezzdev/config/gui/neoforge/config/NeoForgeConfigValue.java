@@ -4,6 +4,7 @@ import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.ConfigValueAccess;
 import net.mezzdev.config.gui.ConfigValueSections;
+import net.mezzdev.config.gui.info.ServerConfigAccess;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
@@ -20,9 +21,20 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLocalizedValue, ConfigValueAccess, ConfigValueSections {
 	private static final Logger LOGGER = LogManager.getLogger();
+	private static final Supplier<ServerConfigAccess> SERVER_ACCESS = () -> {
+		Minecraft minecraft = Minecraft.getInstance();
+		if (minecraft.getSingleplayerServer() != null) {
+			return ServerConfigAccess.LOCAL;
+		}
+		if (minecraft.getConnection() == null) {
+			return ServerConfigAccess.UNAVAILABLE;
+		}
+		return ServerConfigAccess.READ_ONLY;
+	};
 
 	private final String name;
 	private final String localizationKey;
@@ -109,13 +121,15 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 
 	@Override
 	public Component getLocalizedDescription() {
-		if (!isEditable()) {
-			return localizedDescription.copy().append("\n\n").append(Component.translatableWithFallback(
-				"mezz_config.config.native.server.readOnly",
-				"These settings are supplied by the multiplayer server and are read-only here. Ask the server administrator to edit the server's config file."
-			));
-		}
 		return localizedDescription;
+	}
+
+	@Override
+	public Optional<Supplier<ServerConfigAccess>> getServerAccess() {
+		if (modConfig.getType() == ModConfig.Type.SERVER) {
+			return Optional.of(SERVER_ACCESS);
+		}
+		return Optional.empty();
 	}
 
 	@Override
@@ -123,7 +137,7 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 		if (modConfig.getType() != ModConfig.Type.SERVER) {
 			return true;
 		}
-		return Minecraft.getInstance().getSingleplayerServer() != null;
+		return SERVER_ACCESS.get() == ServerConfigAccess.LOCAL;
 	}
 
 	@Override

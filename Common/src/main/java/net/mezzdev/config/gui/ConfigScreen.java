@@ -9,6 +9,7 @@ import net.mezzdev.config.gui.api.IConfigValueEditorFactory;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.entries.ConfigEntryWidget;
 import net.mezzdev.config.gui.entries.ConfigEntryWidgetFactory;
+import net.mezzdev.config.gui.info.ConfigServerInfo;
 import net.mezzdev.config.gui.input.InputType;
 import net.mezzdev.config.gui.input.UserInput;
 import net.mezzdev.config.gui.model.ConfigCategoryWidget;
@@ -41,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 
 /**
  * Main in-game config screen that wires the model, layout, view, and input routing together.
@@ -131,6 +133,7 @@ public class ConfigScreen extends MezzConfigScreen {
 		);
 		Map<Object, ConfigEntryWidget<?>> entryWidgetsByValueKey = new IdentityHashMap<>();
 		List<ConfigEntryWidget<?>> allEntryWidgets = new ArrayList<>();
+		ConfigServerInfo serverInfo = new ConfigServerInfo(clientSchema);
 		for (int i = 0; i < categories.size(); i++) {
 			ConfigScreenCategory category = categories.get(i);
 			List<ConfigEntryWidget<?>> entryWidgets = createEntryWidgets(
@@ -145,7 +148,9 @@ public class ConfigScreen extends MezzConfigScreen {
 				category,
 				entryWidgets,
 				model.getInlineSections(i),
-				controller::updateContentLayout
+				controller::updateContentLayout,
+				serverInfo.forValues(model.getCategoryIndexes(i).stream()
+					.flatMap(index -> categories.get(index).getConfigValues().stream()))
 			);
 			model.addCategoryWidget(widget);
 
@@ -161,6 +166,7 @@ public class ConfigScreen extends MezzConfigScreen {
 		}
 		allEntryWidgets
 			.stream()
+			.peek(entry -> entry.setAccessDescriptions(serverInfo.forValues(Stream.of(entry.getConfigValue()))))
 			.map(this::createEntryInputHandler)
 			.forEach(allInputHandlers::add);
 		model.getCategoryWidgets()

@@ -13,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * Wraps info text once for both measuring and drawing the bottom panel.
@@ -22,6 +23,7 @@ final class ConfigInfoPanel {
 	private static final int TITLE_GAP = 2;
 	@Nullable
 	private ConfigInfo info;
+	private Supplier<@Nullable ConfigInfo> infoSource = () -> null;
 	@Nullable
 	private Font font;
 	@Nullable
@@ -31,12 +33,16 @@ final class ConfigInfoPanel {
 	private List<FormattedCharSequence> titleLines = List.of();
 	private List<FormattedCharSequence> bodyLines = List.of();
 
-	void update(@Nullable ConfigInfo info, Font font, int width, boolean readingPanel) {
-		// Preserve the hovered entry's description when the panel grows under the
-		// pointer, or when the user moves into the panel to read it.
-		if (readingPanel && this.info != null) {
-			info = this.info;
+	void updateSource(Supplier<@Nullable ConfigInfo> source, Font font, int width, boolean readingPanel) {
+		// Keep the hovered source when the panel grows under the pointer or the user
+		// moves into it to read. Resolve it again so server access changes stay live.
+		if (!readingPanel || info == null) {
+			infoSource = source;
 		}
+		update(infoSource.get(), font, width);
+	}
+
+	private void update(@Nullable ConfigInfo info, Font font, int width) {
 		int textWidth = Math.max(1, width - PADDING * 2);
 		Language language = Language.getInstance();
 		if (Objects.equals(this.info, info) && this.font == font && this.language == language && this.textWidth == textWidth) {

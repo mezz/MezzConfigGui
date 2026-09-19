@@ -3,6 +3,7 @@ package net.mezzdev.config.gui.model;
 import net.mezzdev.config.gui.ConfigScreenCategory;
 import net.mezzdev.config.gui.entries.ConfigEntryWidget;
 import net.mezzdev.config.gui.api.ConfigInfo;
+import net.mezzdev.config.gui.info.ConfigServerInfo;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
@@ -11,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+import java.util.function.Supplier;
 
 /**
  * Groups the entry widgets for a config category and exposes category info for hover panels.
@@ -19,6 +21,7 @@ public final class ConfigCategoryWidget {
 	private final ConfigScreenCategory category;
 	private final List<ConfigEntryWidget<?>> entryWidgets;
 	private final ConfigSectionHeader categoryHeader;
+	private final Supplier<List<Component>> accessDescriptions;
 	private final Map<Integer, ConfigSectionHeader> sectionHeaders = new LinkedHashMap<>();
 
 	public ConfigCategoryWidget(
@@ -42,11 +45,23 @@ public final class ConfigCategoryWidget {
 		List<Section> sections,
 		Runnable layoutUpdater
 	) {
+		this(category, entryWidgets, sections, layoutUpdater, List::of);
+	}
+
+	public ConfigCategoryWidget(
+		ConfigScreenCategory category,
+		List<ConfigEntryWidget<?>> entryWidgets,
+		List<Section> sections,
+		Runnable layoutUpdater,
+		Supplier<List<Component>> accessDescriptions
+	) {
 		this.category = category;
+		this.accessDescriptions = accessDescriptions;
 		this.entryWidgets = List.copyOf(entryWidgets);
-		this.categoryHeader = new ConfigSectionHeader(category.getLocalizedName(), category.getLocalizedDescription(), layoutUpdater);
+		this.categoryHeader = new ConfigSectionHeader(category.getLocalizedName(), this::getInfo, layoutUpdater);
 		for (Section section : sections) {
-			sectionHeaders.put(section.firstEntryIndex(), new ConfigSectionHeader(section.title(), section.description(), layoutUpdater));
+			sectionHeaders.put(section.firstEntryIndex(), new ConfigSectionHeader(section.title(),
+				() -> ConfigServerInfo.add(new ConfigInfo(section.title(), section.description()), accessDescriptions.get()), layoutUpdater));
 		}
 	}
 
@@ -82,7 +97,7 @@ public final class ConfigCategoryWidget {
 	}
 
 	public ConfigInfo getInfo() {
-		return new ConfigInfo(category.getLocalizedName(), category.getLocalizedDescription());
+		return ConfigServerInfo.add(new ConfigInfo(category.getLocalizedName(), category.getLocalizedDescription()), accessDescriptions.get());
 	}
 
 	public record Section(int firstEntryIndex, Component title, Component description) {

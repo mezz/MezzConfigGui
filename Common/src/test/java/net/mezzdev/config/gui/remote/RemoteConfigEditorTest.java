@@ -19,6 +19,10 @@ import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.model.ConfigValueChange;
+import net.mezzdev.config.gui.ConfigScreenSchema;
+import net.mezzdev.config.gui.info.ConfigServerInfo;
+import net.mezzdev.config.gui.info.ServerConfigAccess;
+import net.mezzdev.config.gui.model.ConfigCategoryWidget;
 import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +34,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -42,6 +47,76 @@ class RemoteConfigEditorTest {
 	@AfterEach
 	void disconnect() {
 		RemoteConfigEditor.onClientDisconnect();
+	}
+
+	@Test
+	void serverInfoFollowsConfirmedAccessWithoutRebuildingTheCategory() {
+		RequestCapture capture = connectAndCapture();
+		TestConfigValue value = new TestConfigValue("effective");
+		TestConfigSchema schema = new TestConfigSchema(value);
+		IConfigScreenValue<String> screenValue = editor.createScreenValue(schema, value);
+		ConfigScreenSchema screenSchema = ConfigScreenSchema.from(schema);
+		ConfigServerInfo info = new ConfigServerInfo(screenSchema);
+		var descriptions = info.forValues(Stream.of(screenValue, screenValue));
+		ConfigCategoryWidget category = new ConfigCategoryWidget(screenSchema.getCategories().getFirst(), List.of(),
+			List.of(new ConfigCategoryWidget.Section(0, Component.literal("Nested"), Component.empty())), () -> {}, descriptions);
+
+		assertEquals(ServerConfigAccess.CHECKING.getDescription(), category.getInfo().lines().getFirst());
+		assertFalse(editor.isEditable(schema));
+		RemoteConfigMessage.SnapshotRequest request = (RemoteConfigMessage.SnapshotRequest) capture.take();
+		sendResponse(new RemoteConfigMessage.SnapshotResponse(request.requestId(), SCHEMA_KEY, true, false, "", 0, List.of()));
+		assertEquals(ServerConfigAccess.OP_REQUIRED.getDescription(), category.getInfo().lines().getFirst());
+		assertFalse(editor.isEditable(schema));
+
+		editor.ensureSnapshot(schema);
+		request = (RemoteConfigMessage.SnapshotRequest) capture.take();
+		sendResponse(new RemoteConfigMessage.SnapshotResponse(request.requestId(), SCHEMA_KEY, true, true, "", 1, List.of(valueData("effective"))));
+		assertEquals(List.of(ServerConfigAccess.EDITABLE.getDescription()), descriptions.get());
+		assertEquals(ServerConfigAccess.EDITABLE.getDescription(), category.getCategoryHeader().getInfo().lines().getFirst());
+		assertEquals(ServerConfigAccess.EDITABLE.getDescription(), category.getSectionHeader(0).getInfo().lines().getFirst());
+		assertTrue(editor.isEditable(schema));
+
+		CompletableFuture<Void> update = editor.requestUpdate(schema, List.of(new ConfigValueChange<>(screenValue, "changed")));
+		RemoteConfigMessage.UpdateRequest updateRequest = (RemoteConfigMessage.UpdateRequest) capture.take();
+		sendResponse(new RemoteConfigMessage.UpdateResponse(updateRequest.requestId(), SCHEMA_KEY, false, false, "Permission revoked", 1, List.of()));
+		assertTrue(update.isCompletedExceptionally());
+		assertEquals(ServerConfigAccess.OP_REQUIRED.getDescription(), category.getInfo().lines().getFirst());
+		assertFalse(editor.isEditable(schema));
+
+		RemoteConfigEditor.onClientTick(false);
+		assertEquals(ServerConfigAccess.READ_ONLY.getDescription(), category.getInfo().lines().getFirst());
+		RemoteConfigEditor.onClientDisconnect();
+		assertEquals(ServerConfigAccess.UNAVAILABLE.getDescription(), category.getInfo().lines().getFirst());
+	}
+
+	@Test
+	void failedOrTimedOutChecksDoNotClaimPermissionIsStillBeingChecked() {
+		RequestCapture capture = connectAndCapture();
+		TestConfigSchema schema = new TestConfigSchema(new TestConfigValue("effective"));
+		editor.ensureSnapshot(schema);
+		assertEquals(ServerConfigAccess.CHECKING, editor.getServerAccess(schema));
+		editor.tick(Long.MAX_VALUE);
+		assertEquals(ServerConfigAccess.UNAVAILABLE, editor.getServerAccess(schema));
+		editor.ensureSnapshot(schema);
+		RemoteConfigMessage.SnapshotRequest request = (RemoteConfigMessage.SnapshotRequest) capture.take();
+		sendResponse(new RemoteConfigMessage.SnapshotResponse(request.requestId(), SCHEMA_KEY, false, false, "Unavailable", 0, List.of()));
+		assertEquals(ServerConfigAccess.UNAVAILABLE, editor.getServerAccess(schema));
+	}
+
+	@Test
+	void localServerInfoTracksWorldAvailabilityAndClientConfigsHaveNoServerInfo() {
+		TestConfigValue value = new TestConfigValue("effective");
+		TestConfigSchema schema = new TestConfigSchema(value);
+		schema.path = Optional.of(Path.of("serverconfig", "test.ini"));
+		ConfigScreenSchema screenSchema = ConfigScreenSchema.from(schema);
+		var descriptions = new ConfigServerInfo(screenSchema).forValues(Stream.of(IConfigScreenValue.configValue(value)));
+		assertEquals(List.of(ServerConfigAccess.LOCAL.getDescription()), descriptions.get());
+		assertTrue(editor.isEditable(schema));
+		schema.active = false;
+		assertEquals(List.of(ServerConfigAccess.UNAVAILABLE.getDescription()), descriptions.get());
+		assertFalse(editor.isEditable(schema));
+		schema.type = ConfigSchemaType.CLIENT;
+		assertTrue(new ConfigServerInfo(screenSchema).forValues(Stream.of(IConfigScreenValue.configValue(value))).get().isEmpty());
 	}
 
 	@Test
@@ -260,6 +335,9 @@ class RemoteConfigEditorTest {
 	private static final class TestConfigSchema implements IConfigSchema {
 		private final TestConfigCategory category;
 		private int batchCount;
+		private boolean active = true;
+		private Optional<Path> path = Optional.empty();
+		private ConfigSchemaType type = ConfigSchemaType.SERVER;
 
 		private TestConfigSchema(TestConfigValue value) {
 			this.category = new TestConfigCategory(value);
@@ -277,17 +355,17 @@ class RemoteConfigEditorTest {
 
 		@Override
 		public ConfigSchemaType getType() {
-			return ConfigSchemaType.SERVER;
+			return type;
 		}
 
 		@Override
 		public boolean isActive() {
-			return true;
+			return active;
 		}
 
 		@Override
 		public Optional<Path> getPath() {
-			return Optional.empty();
+			return path;
 		}
 
 		@Override

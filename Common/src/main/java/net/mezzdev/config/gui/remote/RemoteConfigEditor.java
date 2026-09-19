@@ -10,6 +10,7 @@ import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.model.ConfigValueChange;
+import net.mezzdev.config.gui.info.ServerConfigAccess;
 import net.minecraft.network.chat.Component;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,6 +45,7 @@ public final class RemoteConfigEditor {
 	private final Set<IConfigSchema> wantedSchemas = Collections.newSetFromMap(new IdentityHashMap<>());
 	private final Map<IConfigSchema, Map<IConfigValue<?>, List<Consumer<Object>>>> valueListeners = new IdentityHashMap<>();
 	private boolean channelAvailable;
+	private boolean connected;
 	private long nextRequestId;
 
 	private RemoteConfigEditor() {
@@ -72,6 +74,37 @@ public final class RemoteConfigEditor {
 		synchronized (lock) {
 			SchemaState state = states.get(schema);
 			return channelAvailable && state != null && state.available() && state.canEdit();
+		}
+	}
+
+	public ServerConfigAccess getServerAccess(IConfigSchema schema) {
+		if (!schema.isActive()) {
+			return ServerConfigAccess.UNAVAILABLE;
+		}
+		if (schema.getPath().isPresent()) {
+			return ServerConfigAccess.LOCAL;
+		}
+		synchronized (lock) {
+			if (!connected) {
+				return ServerConfigAccess.UNAVAILABLE;
+			}
+			if (!channelAvailable) {
+				return ServerConfigAccess.READ_ONLY;
+			}
+			SchemaState state = states.get(schema);
+			if (state == null) {
+				if (hasPendingSnapshot(schema)) {
+					return ServerConfigAccess.CHECKING;
+				}
+				return ServerConfigAccess.UNAVAILABLE;
+			}
+			if (!state.available()) {
+				return ServerConfigAccess.UNAVAILABLE;
+			}
+			if (!state.canEdit()) {
+				return ServerConfigAccess.OP_REQUIRED;
+			}
+			return ServerConfigAccess.EDITABLE;
 		}
 	}
 
@@ -151,6 +184,9 @@ public final class RemoteConfigEditor {
 
 	public static void onClientConnected(boolean channelAvailable) {
 		INSTANCE.resetConnection(true, "The previous remote config editor session ended.");
+		synchronized (INSTANCE.lock) {
+			INSTANCE.connected = true;
+		}
 		INSTANCE.updateChannelAvailability(channelAvailable);
 	}
 
@@ -634,6 +670,7 @@ public final class RemoteConfigEditor {
 		List<PendingRequest> pending;
 		List<ValueNotification> notifications;
 		synchronized (lock) {
+			connected = false;
 			channelAvailable = false;
 			pending = List.copyOf(pendingRequests.values());
 			pendingRequests.clear();

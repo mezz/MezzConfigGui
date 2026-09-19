@@ -14,6 +14,7 @@ import net.mezzdev.config.gui.util.Pair;
 import net.mezzdev.config.gui.util.StringUtil;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.info.ConfigValueInfoFactory;
+import net.mezzdev.config.gui.info.ConfigServerInfo;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.model.PendingConfigChange;
 import net.mezzdev.config.gui.ConfigInputHandler;
@@ -36,6 +37,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Base widget for one editable config value row, including reset and pending-change handling.
@@ -174,6 +176,7 @@ public abstract class ConfigEntryWidget<T> {
 	private Runnable removeConfigValueListener;
 	private Function<ConfigValueChange<?>, Boolean> immediateChangeHandler = change -> false;
 	private BooleanSupplier editableSupplier = () -> true;
+	private Supplier<List<Component>> accessDescriptions = List::of;
 
 	protected List<FormattedCharSequence> nameLines = List.of();
 
@@ -342,6 +345,14 @@ public abstract class ConfigEntryWidget<T> {
 
 	public void setEditableSupplier(BooleanSupplier editableSupplier) {
 		this.editableSupplier = Objects.requireNonNull(editableSupplier, "editableSupplier");
+	}
+
+	public void setAccessDescriptions(Supplier<List<Component>> accessDescriptions) {
+		this.accessDescriptions = Objects.requireNonNull(accessDescriptions, "accessDescriptions");
+	}
+
+	public ConfigInfo getInfoWithAccess(double mouseX, double mouseY) {
+		return ConfigServerInfo.add(getInfo(mouseX, mouseY), accessDescriptions.get());
 	}
 
 	public boolean isEditable() {

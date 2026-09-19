@@ -11,18 +11,37 @@ import net.minecraft.util.FormattedCharSequence;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigInfoPanelTest {
 	@Test
+	void readingThePanelKeepsItsSourceButStillRefreshesChangingStatus() {
+		ConfigInfoPanel panel = new ConfigInfoPanel();
+		TestFont font = new TestFont();
+		AtomicReference<ConfigInfo> liveInfo = new AtomicReference<>(new ConfigInfo(Component.literal("Server"), Component.literal("Checking")));
+		Supplier<ConfigInfo> source = liveInfo::get;
+		panel.updateSource(source, font, 50, false);
+		int initialCalls = font.splitCalls;
+		panel.updateSource(() -> null, font, 50, true);
+		assertEquals(initialCalls, font.splitCalls);
+
+		liveInfo.set(new ConfigInfo(Component.literal("Server"), Component.literal("You can edit these settings on the server now.")));
+		panel.updateSource(() -> null, font, 50, true);
+		assertTrue(font.splitCalls > initialCalls);
+		assertEquals(10 + 3 * font.lineHeight + 2, panel.getHeight());
+	}
+
+	@Test
 	void heightIncludesEveryWrappedTitleAndDescriptionLine() {
 		ConfigInfoPanel panel = new ConfigInfoPanel();
 		TestFont font = new TestFont();
 		ConfigInfo info = new ConfigInfo(Component.literal("abcdefghijklmno"), List.of(Component.literal("abcdefghij"), Component.literal("klmno")));
 
-		panel.update(info, font, 15, false);
+		panel.updateSource(() -> info, font, 15, false);
 
 		assertEquals(10 + 6 * font.lineHeight + 2, panel.getHeight());
 	}
@@ -31,17 +50,17 @@ class ConfigInfoPanelTest {
 	void equivalentInfoReusesWrappingButChangesAndResizingRecalculateIt() {
 		ConfigInfoPanel panel = new ConfigInfoPanel();
 		TestFont font = new TestFont();
-		panel.update(createInfo(), font, 30, false);
+		panel.updateSource(() -> createInfo(), font, 30, false);
 		int originalHeight = panel.getHeight();
 		int originalCalls = font.splitCalls;
 
-		panel.update(createInfo(), font, 30, false);
+		panel.updateSource(() -> createInfo(), font, 30, false);
 		assertEquals(originalCalls, font.splitCalls);
-		panel.update(createInfo(), font, 15, false);
+		panel.updateSource(() -> createInfo(), font, 15, false);
 		assertTrue(font.splitCalls > originalCalls);
 		assertTrue(panel.getHeight() > originalHeight);
 
-		panel.update(new ConfigInfo(Component.literal("Short"), List.of()), font, 15, false);
+		panel.updateSource(() -> new ConfigInfo(Component.literal("Short"), List.of()), font, 15, false);
 		assertEquals(10 + font.lineHeight + 2, panel.getHeight());
 	}
 
@@ -49,15 +68,15 @@ class ConfigInfoPanelTest {
 	void growingUnderThePointerKeepsTheDescriptionAvailableToRead() {
 		ConfigInfoPanel panel = new ConfigInfoPanel();
 		TestFont font = new TestFont();
-		panel.update(createInfo(), font, 15, false);
+		panel.updateSource(() -> createInfo(), font, 15, false);
 		int height = panel.getHeight();
 		int splitCalls = font.splitCalls;
 
-		panel.update(new ConfigInfo(Component.literal("Category"), List.of()), font, 15, true);
+		panel.updateSource(() -> new ConfigInfo(Component.literal("Category"), List.of()), font, 15, true);
 		assertEquals(height, panel.getHeight());
 		assertEquals(splitCalls, font.splitCalls);
 
-		panel.update(null, font, 15, false);
+		panel.updateSource(() -> null, font, 15, false);
 		assertEquals(10, panel.getHeight());
 	}
 

@@ -5,6 +5,10 @@ import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.ConfigScreenCategory;
 import net.mezzdev.config.gui.ConfigScreenCategoryGroup;
 import net.mezzdev.config.gui.ConfigValueSections;
+import net.mezzdev.config.gui.ConfigScreenSchema;
+import net.mezzdev.config.gui.ConfigValueAccess;
+import net.mezzdev.config.gui.info.ConfigServerInfo;
+import net.mezzdev.config.gui.info.ServerConfigAccess;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
@@ -27,6 +31,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -34,6 +41,38 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigCategoryTreeTest {
+	@Test
+	void serverAccessSurvivesWrappersAndRemainsLiveOnParentsSectionsAndValues() {
+		AtomicReference<ServerConfigAccess> state = new AtomicReference<>(ServerConfigAccess.LOCAL);
+		AtomicInteger reads = new AtomicInteger();
+		Supplier<ServerConfigAccess> provider = () -> {
+			reads.incrementAndGet();
+			return state.get();
+		};
+		TestValue cow = value("server.toml", "Animals", "Cow");
+		TestValue pig = value("server.toml", "Animals", "Pig");
+		IConfigScreenValue<Boolean> wrappedCow = IConfigScreenValue.withApplyMode(
+			new TestValue(cow.category(), cow.sections(), cow.categoryGroup(), Optional.of(provider)), ConfigValueApplyMode.ON_APPLY);
+		IConfigScreenValue<Boolean> wrappedPig = IConfigScreenValue.withApplyMode(
+			new TestValue(pig.category(), pig.sections(), pig.categoryGroup(), Optional.of(provider)), ConfigValueApplyMode.ON_APPLY);
+		ConfigScreenSchema schema = () -> List.of(category("server.toml", wrappedCow, wrappedPig));
+		ConfigScreenModel model = navigationModel(List.copyOf(schema.getCategories()));
+		ConfigServerInfo info = new ConfigServerInfo(schema);
+		var descriptions = info.forValues(model.getCategoryIndexes(0).stream()
+			.flatMap(index -> model.getCategories().get(index).getConfigValues().stream()));
+		assertTrue(model.getCategories().getFirst().getConfigValues().isEmpty());
+		ConfigCategoryWidget parent = new ConfigCategoryWidget(model.getCategories().getFirst(), List.of(), List.of(), () -> {}, descriptions);
+		assertEquals(ServerConfigAccess.LOCAL.getDescription(), parent.getInfo().lines().getFirst());
+		assertEquals(1, reads.get());
+
+		state.set(ServerConfigAccess.READ_ONLY);
+		assertEquals(ServerConfigAccess.READ_ONLY.getDescription(), parent.getCategoryHeader().getInfo().lines().getFirst());
+		TestEntry entry = new TestEntry(wrappedCow);
+		entry.setAccessDescriptions(info.forValues(Stream.of(wrappedCow)));
+		assertEquals(ServerConfigAccess.READ_ONLY.getDescription(), entry.getInfoWithAccess(0, 0).lines().getFirst());
+		assertFalse(entry.isEditable());
+	}
+
 	@Test
 	void compatibleNativeFilesShareOneRootButKeepTheirValuesAndStableSubsectionIdentities() {
 		ConfigValueSections.CategoryGroup group = new ConfigValueSections.CategoryGroup("common", Component.literal("Common (local)"), Component.literal("Local settings"));
@@ -450,9 +489,23 @@ class ConfigCategoryTreeTest {
 		}
 	}
 
-	private record TestValue(String category, List<Section> sections, Optional<CategoryGroup> categoryGroup) implements IConfigScreenValue<Boolean>, IConfigLocalizedValue, ConfigValueSections {
+	private record TestValue(String category, List<Section> sections, Optional<CategoryGroup> categoryGroup, Optional<Supplier<ServerConfigAccess>> serverAccess) implements IConfigScreenValue<Boolean>, IConfigLocalizedValue, ConfigValueSections, ConfigValueAccess {
+		private TestValue(String category, List<Section> sections, Optional<CategoryGroup> categoryGroup) {
+			this(category, sections, categoryGroup, Optional.empty());
+		}
+
 		private TestValue(String category, List<Section> sections) {
 			this(category, sections, Optional.empty());
+		}
+
+		@Override
+		public boolean isEditable() {
+			return serverAccess.map(provider -> provider.get() == ServerConfigAccess.LOCAL).orElse(true);
+		}
+
+		@Override
+		public Optional<Supplier<ServerConfigAccess>> getServerAccess() {
+			return serverAccess;
 		}
 
 		@Override
