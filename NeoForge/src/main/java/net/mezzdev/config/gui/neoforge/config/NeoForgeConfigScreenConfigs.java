@@ -138,6 +138,7 @@ public final class NeoForgeConfigScreenConfigs {
 					NeoForgeConfigValueFactory.getUnsupportedDescription(configValue)
 				);
 			}
+			return true;
 		});
 		return values;
 	}
@@ -146,13 +147,15 @@ public final class NeoForgeConfigScreenConfigs {
 		if (!(modConfig.getSpec() instanceof ModConfigSpec modConfigSpec)) {
 			return false;
 		}
-		SupportedValueVisitor visitor = new SupportedValueVisitor();
-		visitValues(modConfigSpec, visitor);
-		return visitor.hasSupportedValue();
+		return hasSupportedValues(modConfigSpec);
 	}
 
-	private static void visitValues(ModConfigSpec modConfigSpec, ValueVisitor visitor) {
-		visitValues(
+	static boolean hasSupportedValues(ModConfigSpec modConfigSpec) {
+		return !visitValues(modConfigSpec, (path, configValue, valueSpec) -> !NeoForgeConfigValueFactory.supports(configValue, valueSpec));
+	}
+
+	static boolean visitValues(ModConfigSpec modConfigSpec, ValueVisitor visitor) {
+		return visitValues(
 			new ArrayDeque<>(),
 			modConfigSpec.getValues(),
 			modConfigSpec.getSpec(),
@@ -160,7 +163,7 @@ public final class NeoForgeConfigScreenConfigs {
 		);
 	}
 
-	private static void visitValues(
+	private static boolean visitValues(
 		ArrayDeque<String> path,
 		UnmodifiableConfig valueConfig,
 		UnmodifiableConfig specConfig,
@@ -172,30 +175,22 @@ public final class NeoForgeConfigScreenConfigs {
 			Object specValue = specConfig.getRaw(List.of(key));
 			path.addLast(key);
 			if (value instanceof ModConfigSpec.ConfigValue<?> configValue && specValue instanceof ModConfigSpec.ValueSpec valueSpec) {
-				visitor.visit(List.copyOf(path), configValue, valueSpec);
+				if (!visitor.visit(List.copyOf(path), configValue, valueSpec)) {
+					return false;
+				}
 			} else if (value instanceof UnmodifiableConfig childValues && specValue instanceof UnmodifiableConfig childSpecs) {
-				visitValues(path, childValues, childSpecs, visitor);
+				if (!visitValues(path, childValues, childSpecs, visitor)) {
+					return false;
+				}
 			}
 			path.removeLast();
 		}
+		return true;
 	}
 
-	private interface ValueVisitor {
-		void visit(List<String> path, ModConfigSpec.ConfigValue<?> configValue, ModConfigSpec.ValueSpec valueSpec);
-	}
-
-	private static final class SupportedValueVisitor implements ValueVisitor {
-		private boolean supportedValue;
-
-		@Override
-		public void visit(List<String> path, ModConfigSpec.ConfigValue<?> configValue, ModConfigSpec.ValueSpec valueSpec) {
-			if (NeoForgeConfigValueFactory.supports(configValue, valueSpec)) {
-				supportedValue = true;
-			}
-		}
-
-		public boolean hasSupportedValue() {
-			return supportedValue;
-		}
+	@FunctionalInterface
+	interface ValueVisitor {
+		/** @return false to stop traversing the config, true to continue. */
+		boolean visit(List<String> path, ModConfigSpec.ConfigValue<?> configValue, ModConfigSpec.ValueSpec valueSpec);
 	}
 }
