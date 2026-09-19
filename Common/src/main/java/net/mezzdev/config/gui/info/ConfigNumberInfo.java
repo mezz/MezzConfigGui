@@ -21,10 +21,13 @@ public final class ConfigNumberInfo {
 	}
 
 	public static Component getRange(ConfigValueRange<?> range) {
+		if (range.min().equals(range.max())) {
+			return Component.translatableWithFallback("mezz_config.config.screen.range.exact", "Range: %s", getBound(range.min()));
+		}
 		boolean minimumLimit = isTypeLimit(range.min(), false);
 		boolean maximumLimit = isTypeLimit(range.max(), true);
 		if (minimumLimit && maximumLimit) {
-			return Component.translatableWithFallback("mezz_config.config.screen.range.full", "Range: any supported value");
+			return Component.translatableWithFallback("mezz_config.config.screen.range.full", "Range: any");
 		}
 		if (maximumLimit) {
 			return Component.translatableWithFallback("mezz_config.config.screen.range.atLeast", "Range: >= %s", getBound(range.min()));
@@ -38,10 +41,12 @@ public final class ConfigNumberInfo {
 
 	private static boolean isTypeLimit(Object value, boolean upper) {
 		return switch (value) {
+			case Byte number -> upper && number == Byte.MAX_VALUE || !upper && number == Byte.MIN_VALUE;
+			case Short number -> upper && number == Short.MAX_VALUE || !upper && number == Short.MIN_VALUE;
 			case Integer number -> upper && number == Integer.MAX_VALUE || !upper && number == Integer.MIN_VALUE;
 			case Long number -> upper && number == Long.MAX_VALUE || !upper && number == Long.MIN_VALUE;
-			case Double number -> upper && number == Double.MAX_VALUE || !upper && number == -Double.MAX_VALUE;
-			case Float number -> upper && number == Float.MAX_VALUE || !upper && number == -Float.MAX_VALUE;
+			case Double number -> upper && number >= Double.MAX_VALUE || !upper && number <= -Double.MAX_VALUE;
+			case Float number -> upper && number >= Float.MAX_VALUE || !upper && number <= -Float.MAX_VALUE;
 			default -> false;
 		};
 	}
