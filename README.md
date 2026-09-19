@@ -33,3 +33,10 @@ by CI. Run the verification lifecycle directly with:
 
 See [automatic changelogs](Changelog/README.md) to preview the Git-based changelog
 shared by CurseForge and Modrinth.
+
+## Contributing
+
+Contributors must sign the [Contributor License Agreement](CLA.md) before their
+pull requests can be merged. Sign through
+[CLA Assistant](https://cla-assistant.io/mezz/MezzConfigGui) using the GitHub account
+associated with your contributions.
