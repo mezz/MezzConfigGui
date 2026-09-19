@@ -1,6 +1,6 @@
 package net.mezzdev.config.gui.api;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.Rect2i;
 
 /**
@@ -17,5 +17,5 @@ public interface IConfigValueIcon {
 	 *
 	 * @since 0.1.0
 	 */
-	void draw(GuiGraphics guiGraphics, Rect2i area);
+	void draw(GuiGraphicsExtractor guiGraphics, Rect2i area);
 }

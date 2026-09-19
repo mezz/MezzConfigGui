@@ -17,11 +17,11 @@ import net.mezzdev.config.gui.remote.RemoteConfigResponseChunkPayload;
 public final class ConfigGuiFabric implements ModInitializer {
 	@Override
 	public void onInitialize() {
-		PayloadTypeRegistry.playC2S().register(
+		PayloadTypeRegistry.serverboundPlay().register(
 			RemoteConfigRequestChunkPayload.TYPE,
 			RemoteConfigRequestChunkPayload.STREAM_CODEC
 		);
-		PayloadTypeRegistry.playS2C().register(
+		PayloadTypeRegistry.clientboundPlay().register(
 			RemoteConfigResponseChunkPayload.TYPE,
 			RemoteConfigResponseChunkPayload.STREAM_CODEC
 		);

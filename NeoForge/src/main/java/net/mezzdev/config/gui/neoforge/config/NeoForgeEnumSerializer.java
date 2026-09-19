@@ -4,7 +4,6 @@ import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.gui.api.ConfigValueEditorType;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
-import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.common.TranslatableEnum;
 
@@ -72,7 +71,7 @@ final class NeoForgeEnumSerializer<T extends Enum<T>> implements IConfigValueEdi
 
 	private Optional<Component> getTranslatedEnumValue(String configValueLocalizationKey, T value, String suffix) {
 		String translationKey = configValueLocalizationKey + ".value." + value.name() + suffix;
-		if (I18n.exists(translationKey)) {
+		if (net.minecraft.locale.Language.getInstance().has(translationKey)) {
 			return Optional.of(Component.translatable(translationKey));
 		}
 		return Optional.empty();

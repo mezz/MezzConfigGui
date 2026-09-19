@@ -22,7 +22,7 @@ import net.mezzdev.config.gui.input.UserInput;
 import net.mezzdev.config.gui.SameConfigElementInputHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
@@ -77,29 +77,29 @@ public abstract class ConfigEntryWidget<T> {
 		return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_DISABLED_TEXT);
 	}
 
-	public static void drawText(GuiGraphics guiGraphics, Font font, FormattedCharSequence text, int x, int y, int color) {
-		guiGraphics.drawString(font, text, x, y, color, false);
+	public static void drawText(GuiGraphicsExtractor guiGraphics, Font font, FormattedCharSequence text, int x, int y, int color) {
+		guiGraphics.text(font, text, x, y, color, false);
 	}
 
-	public static void drawText(GuiGraphics guiGraphics, Font font, Component text, int x, int y, int color) {
-		guiGraphics.drawString(font, text, x, y, color, false);
+	public static void drawText(GuiGraphicsExtractor guiGraphics, Font font, Component text, int x, int y, int color) {
+		guiGraphics.text(font, text, x, y, color, false);
 	}
 
-	public static void drawText(GuiGraphics guiGraphics, Font font, String text, int x, int y, int color) {
-		guiGraphics.drawString(font, text, x, y, color, false);
+	public static void drawText(GuiGraphicsExtractor guiGraphics, Font font, String text, int x, int y, int color) {
+		guiGraphics.text(font, text, x, y, color, false);
 	}
 
-	public static boolean drawCenteredButtonText(GuiGraphics guiGraphics, Font font, Component text, ImmutableRect2i area, int color) {
+	public static boolean drawCenteredButtonText(GuiGraphicsExtractor guiGraphics, Font font, Component text, ImmutableRect2i area, int color) {
 		ImmutableRect2i textArea = area.cropLeft(BUTTON_TEXT_PADDING).cropRight(BUTTON_TEXT_PADDING);
 		return drawFittedText(guiGraphics, font, text, textArea, color, true);
 	}
 
-	public static boolean drawCenteredButtonText(GuiGraphics guiGraphics, Font font, String text, ImmutableRect2i area, int color) {
+	public static boolean drawCenteredButtonText(GuiGraphicsExtractor guiGraphics, Font font, String text, ImmutableRect2i area, int color) {
 		return drawCenteredButtonText(guiGraphics, font, Component.literal(text), area, color);
 	}
 
 	public static boolean drawFittedText(
-		GuiGraphics guiGraphics,
+		GuiGraphicsExtractor guiGraphics,
 		Font font,
 		Component text,
 		ImmutableRect2i area,
@@ -146,7 +146,7 @@ public abstract class ConfigEntryWidget<T> {
 	}
 
 	public static void drawButtonBackground(
-		GuiGraphics guiGraphics,
+		GuiGraphicsExtractor guiGraphics,
 		ConfigTextures textures,
 		ImmutableRect2i area,
 		boolean active,
@@ -389,11 +389,11 @@ public abstract class ConfigEntryWidget<T> {
 
 	}
 
-	public void draw(GuiGraphics guiGraphics, double mouseX, double mouseY, boolean allowHover) {
+	public void draw(GuiGraphicsExtractor guiGraphics, double mouseX, double mouseY, boolean allowHover) {
 		draw(guiGraphics, mouseX, mouseY, allowHover, -1);
 	}
 
-	public final void draw(GuiGraphics guiGraphics, double mouseX, double mouseY, boolean allowHover, int rowIndex, ImmutableRect2i viewport) {
+	public final void draw(GuiGraphicsExtractor guiGraphics, double mouseX, double mouseY, boolean allowHover, int rowIndex, ImmutableRect2i viewport) {
 		if (!getArea().intersects(viewport)) {
 			return;
 		}
@@ -415,7 +415,7 @@ public abstract class ConfigEntryWidget<T> {
 		return !bounds.isEmpty() && (viewport == null || bounds.intersects(viewport));
 	}
 
-	public void draw(GuiGraphics guiGraphics, double mouseX, double mouseY, boolean allowHover, int rowIndex) {
+	public void draw(GuiGraphicsExtractor guiGraphics, double mouseX, double mouseY, boolean allowHover, int rowIndex) {
 		drawRowStripe(guiGraphics, rowIndex);
 		ImmutableRect2i hoverArea = getHoverArea();
 		if (allowHover && hoverArea.contains(mouseX, mouseY)) {
@@ -468,7 +468,7 @@ public abstract class ConfigEntryWidget<T> {
 		return area;
 	}
 
-	private void drawRowStripe(GuiGraphics guiGraphics, int rowIndex) {
+	private void drawRowStripe(GuiGraphicsExtractor guiGraphics, int rowIndex) {
 		if (rowIndex < 0 || !ConfigGuiOptions.showRowStriping()) {
 			return;
 		}
@@ -489,7 +489,7 @@ public abstract class ConfigEntryWidget<T> {
 		return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_ROW_STRIPE_DARK);
 	}
 
-	private void drawResetButton(GuiGraphics guiGraphics, double mouseX, double mouseY) {
+	private void drawResetButton(GuiGraphicsExtractor guiGraphics, double mouseX, double mouseY) {
 		boolean active = isEditable() && isModified();
 		boolean hovered = active && resetArea.contains(mouseX, mouseY);
 		drawButtonBackground(guiGraphics, textures, resetArea, active, hovered);
@@ -588,7 +588,7 @@ public abstract class ConfigEntryWidget<T> {
 		return null;
 	}
 
-	protected final void drawName(GuiGraphics guiGraphics) {
+	protected final void drawName(GuiGraphicsExtractor guiGraphics) {
 		Font font = Minecraft.getInstance().font;
 		int scaledLineHeight = getScaledLineHeight(font);
 		int y = nameArea.getY();
@@ -662,7 +662,7 @@ public abstract class ConfigEntryWidget<T> {
 
 	}
 
-	protected abstract void drawContent(GuiGraphics guiGraphics, double mouseX, double mouseY);
+	protected abstract void drawContent(GuiGraphicsExtractor guiGraphics, double mouseX, double mouseY);
 
 	private class EntryWidgetInputHandler implements ConfigInputHandler {
 		@Override

@@ -6,7 +6,6 @@ import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.mezzdev.config.gui.config.ConfigGuiOptionsTestUtil;
-import net.minecraft.client.KeyMapping;
 import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
@@ -44,7 +43,7 @@ class KeyMappingConfigEntryTest {
 
 	@Test
 	void missingOptionalTranslationsDoNotLeakIntoInfo() {
-		ConfigKeyMapping keyMapping = new ConfigKeyMapping(new KeyMapping("key.test_mod.without_details", -1, "key.categories.misc"));
+		ConfigKeyMapping keyMapping = new ConfigKeyMapping(net.mezzdev.config.gui.TestMinecraft.keyMapping("key.test_mod.without_details", -1, "key.categories.misc"));
 		KeyMappingConfigEntry entry = new KeyMappingConfigEntry(new KeyMappingConfigValue(keyMapping), null);
 
 		assertTrue(keyMapping.getLocalizedDescription().getString().isEmpty());

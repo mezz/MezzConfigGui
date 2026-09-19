@@ -1,9 +1,11 @@
 package net.mezzdev.config.gui;
 
+import net.mezzdev.config.gui.util.ConfigMath;
+
 import net.mezzdev.config.gui.ConfigGuiColors.GuiColor;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -167,7 +169,7 @@ public final class ConfigScreenResizer {
 	}
 
 	public static void drawResizeHandles(
-		GuiGraphics guiGraphics,
+		GuiGraphicsExtractor guiGraphics,
 		ImmutableRect2i area,
 		ConfigScreenLayout.ResizeHandle resizeHandle
 	) {
@@ -180,7 +182,7 @@ public final class ConfigScreenResizer {
 		}
 	}
 
-	private static void drawResizeGrip(GuiGraphics guiGraphics, ImmutableRect2i area, boolean hovered) {
+	private static void drawResizeGrip(GuiGraphicsExtractor guiGraphics, ImmutableRect2i area, boolean hovered) {
 		int color = getResizeGripColor(hovered);
 		int right = area.getX() + area.getWidth() - 4;
 		int bottom = area.getY() + area.getHeight() - 4;
@@ -198,7 +200,7 @@ public final class ConfigScreenResizer {
 		return ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_RESIZE_GRIP);
 	}
 
-	private static void drawResizeGripLine(GuiGraphics guiGraphics, int x1, int y1, int x2, int y2, int color) {
+	private static void drawResizeGripLine(GuiGraphicsExtractor guiGraphics, int x1, int y1, int x2, int y2, int color) {
 		int length = Math.min(x2 - x1, y1 - y2);
 		for (int i = 0; i <= length; i++) {
 			guiGraphics.fill(x1 + i, y1 - i, x1 + i + 1, y1 - i + 1, color);
@@ -206,7 +208,7 @@ public final class ConfigScreenResizer {
 	}
 
 	private static void drawResizeEdgeHighlight(
-		GuiGraphics guiGraphics,
+		GuiGraphicsExtractor guiGraphics,
 		ImmutableRect2i area,
 		ConfigScreenLayout.ResizeHandle resizeHandle
 	) {
@@ -242,8 +244,8 @@ public final class ConfigScreenResizer {
 		int maxHeight = Math.max(1, screenHeight);
 		int minWidth = Math.min(MIN_RESIZABLE_WIDTH, maxWidth);
 		int minHeight = Math.min(MIN_RESIZABLE_HEIGHT, maxHeight);
-		int width = Math.clamp(areaWidth, minWidth, maxWidth);
-		int height = Math.clamp(areaHeight, minHeight, maxHeight);
+		int width = ConfigMath.clamp(areaWidth, minWidth, maxWidth);
+		int height = ConfigMath.clamp(areaHeight, minHeight, maxHeight);
 		int x = horizontalBounds.left() + (maxWidth - width) / 2;
 		int y = (maxHeight - height) / 2;
 		return new ImmutableRect2i(x, y, width, height);
@@ -251,8 +253,8 @@ public final class ConfigScreenResizer {
 
 	private static HorizontalBounds getHorizontalBounds(int screenWidth, int screenLeftInset, int screenRightInset) {
 		int width = Math.max(1, screenWidth);
-		int left = Math.clamp(screenLeftInset, 0, width - 1);
-		int right = Math.clamp(screenRightInset, 0, width - left - 1);
+		int left = ConfigMath.clamp(screenLeftInset, 0, width - 1);
+		int right = ConfigMath.clamp(screenRightInset, 0, width - left - 1);
 		return new HorizontalBounds(left, width - left - right);
 	}
 

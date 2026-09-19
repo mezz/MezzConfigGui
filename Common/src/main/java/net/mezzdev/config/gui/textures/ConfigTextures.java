@@ -2,7 +2,7 @@ package net.mezzdev.config.gui.textures;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureManager;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 public class ConfigTextures {
@@ -60,17 +60,17 @@ public class ConfigTextures {
 		return textures;
 	}
 
-	private static ResourceLocation createSprite(String name) {
-		return ResourceLocation.fromNamespaceAndPath(ConfigGuiSpriteManager.TEXTURE_NAMESPACE, name);
+	private static Identifier createSprite(String name) {
+		return Identifier.fromNamespaceAndPath(ConfigGuiSpriteManager.TEXTURE_NAMESPACE, name);
 	}
 
 	private ConfigDrawableStatic createGuiSprite(String name, int width, int height) {
-		ResourceLocation location = createSprite(name);
+		Identifier location = createSprite(name);
 		return new ConfigDrawableStatic(() -> guiSpriteManager.getSprite(location), width, height);
 	}
 
 	private ConfigScalableDrawable createScalableGuiSprite(String name) {
-		ResourceLocation location = createSprite(name);
+		Identifier location = createSprite(name);
 		return new ConfigScalableDrawable(() -> guiSpriteManager.getSprite(location));
 	}
 

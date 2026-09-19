@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui.popup;
 
+import net.mezzdev.config.gui.util.ConfigMath;
+
 import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValuePopup;
@@ -9,7 +11,7 @@ import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
@@ -50,7 +52,7 @@ public final class ConfigValueSelector<T> implements IConfigValuePopup<T> {
 				return textWidth + ConfigValueIcon.getTextOffset(configValue, entry.value);
 			})
 			.max().orElse(MIN_ENTRY_WIDTH);
-		return Math.clamp(width + 12, MIN_ENTRY_WIDTH, MAX_ENTRY_WIDTH);
+		return ConfigMath.clamp(width + 12, MIN_ENTRY_WIDTH, MAX_ENTRY_WIDTH);
 	}
 
 	@Override
@@ -86,7 +88,7 @@ public final class ConfigValueSelector<T> implements IConfigValuePopup<T> {
 	}
 
 	@Override
-	public void draw(GuiGraphics guiGraphics, Rect2i area, double mouseX, double mouseY) {
+	public void draw(GuiGraphicsExtractor guiGraphics, Rect2i area, double mouseX, double mouseY) {
 		if (isEmpty(area)) {
 			return;
 		}
@@ -142,7 +144,7 @@ public final class ConfigValueSelector<T> implements IConfigValuePopup<T> {
 		return valueEntries.isEmpty();
 	}
 
-	private static void drawBackground(GuiGraphics guiGraphics, Rect2i area) {
+	private static void drawBackground(GuiGraphicsExtractor guiGraphics, Rect2i area) {
 		int x = area.getX();
 		int y = area.getY();
 		int right = x + area.getWidth();
@@ -155,7 +157,7 @@ public final class ConfigValueSelector<T> implements IConfigValuePopup<T> {
 		guiGraphics.fill(x, bottom - 1, right, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.VALUE_SELECTOR_BORDER_LIGHT));
 	}
 
-	private static void drawEntryBackground(GuiGraphics guiGraphics, ImmutableRect2i valueArea, boolean hovered, boolean drawDivider) {
+	private static void drawEntryBackground(GuiGraphicsExtractor guiGraphics, ImmutableRect2i valueArea, boolean hovered, boolean drawDivider) {
 		int x = valueArea.getX();
 		int y = valueArea.getY();
 		int right = x + valueArea.getWidth();
@@ -204,10 +206,10 @@ public final class ConfigValueSelector<T> implements IConfigValuePopup<T> {
 	}
 
 	private void clampScrollOffset(ImmutableRect2i contentArea) {
-		scrollOffset = Math.clamp(scrollOffset, 0, getMaxScroll(contentArea));
+		scrollOffset = ConfigMath.clamp(scrollOffset, 0, getMaxScroll(contentArea));
 	}
 
-	private void drawScrollbar(GuiGraphics guiGraphics, ImmutableRect2i contentArea) {
+	private void drawScrollbar(GuiGraphicsExtractor guiGraphics, ImmutableRect2i contentArea) {
 		int contentHeight = valueEntries.size() * ENTRY_HEIGHT;
 		if (contentArea.isEmpty() || contentHeight <= contentArea.getHeight()) {
 			return;

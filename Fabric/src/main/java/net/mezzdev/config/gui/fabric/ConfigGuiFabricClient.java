@@ -5,7 +5,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
 import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.MezzConfigScreen;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
@@ -25,9 +25,9 @@ public final class ConfigGuiFabricClient implements ClientModInitializer {
 		ConfigGuiOptions.register();
 		ScreenEvents.AFTER_INIT.register((client, screen, width, height) -> {
 			if (screen instanceof MezzConfigScreen configScreen) {
-				ScreenEvents.beforeRender(screen).register((renderedScreen, graphics, mouseX, mouseY, tickDelta) -> configScreen.clearTooltipForNextRenderPass());
+				ScreenEvents.beforeExtract(screen).register((renderedScreen, graphics, mouseX, mouseY, tickDelta) -> configScreen.clearTooltipForNextRenderPass());
 				// Runs after renderWithTooltip, including JEI's foreground injection.
-				ScreenEvents.afterRender(screen).register(
+				ScreenEvents.afterExtract(screen).register(
 					(renderedScreen, graphics, mouseX, mouseY, tickDelta) -> configScreen.renderDeferredTooltip(graphics, mouseX, mouseY)
 				);
 			}
@@ -48,16 +48,11 @@ public final class ConfigGuiFabricClient implements ClientModInitializer {
 			(handler, sender, client) -> RemoteConfigEditor.onClientConnected(isChannelAvailable())
 		);
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> RemoteConfigEditor.onClientDisconnect());
-		ResourceManagerHelper.get(PackType.CLIENT_RESOURCES)
-			.registerReloadListener(new ConfigGuiIdentifiableResourceReloadListener(
-				"config_gui_sprite_manager",
-				() -> ConfigTextures.get().getGuiSpriteManager()
-			));
-		ResourceManagerHelper.get(PackType.CLIENT_RESOURCES)
-			.registerReloadListener(new ConfigGuiIdentifiableResourceReloadListener(
-				"config_gui_colors",
-				ConfigGuiColors::createReloadListener
-			));
+		var resources = ResourceLoader.get(PackType.CLIENT_RESOURCES);
+		var sprites = new ConfigGuiIdentifiableResourceReloadListener("config_gui_sprite_manager", () -> ConfigTextures.get().getGuiSpriteManager());
+		var colors = new ConfigGuiIdentifiableResourceReloadListener("config_gui_colors", ConfigGuiColors::createReloadListener);
+		resources.registerReloadListener(sprites.getFabricId(), sprites);
+		resources.registerReloadListener(colors.getFabricId(), colors);
 	}
 
 	private static boolean isChannelAvailable() {

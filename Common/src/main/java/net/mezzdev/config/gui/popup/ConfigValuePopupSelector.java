@@ -8,7 +8,7 @@ import net.mezzdev.config.gui.info.ConfigValueInfoFactory;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.input.UserInput;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.Rect2i;
 import org.jetbrains.annotations.Nullable;
 
@@ -74,7 +74,7 @@ public final class ConfigValuePopupSelector<T> implements ConfigPopupSelector {
 	}
 
 	@Override
-	public void draw(GuiGraphics guiGraphics, double mouseX, double mouseY) {
+	public void draw(GuiGraphicsExtractor guiGraphics, double mouseX, double mouseY) {
 		if (!area.isEmpty()) {
 			popup.draw(guiGraphics, toRect2i(area), mouseX, mouseY);
 		}

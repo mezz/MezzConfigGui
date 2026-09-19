@@ -38,7 +38,6 @@ import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryRegistry;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
-import org.lwjgl.glfw.GLFW;
 
 import java.lang.reflect.Field;
 import java.nio.file.Path;
@@ -98,7 +97,7 @@ class ConfigGuiPluginLoaderTest {
 		);
 
 		assertEquals(List.of("general", "keyMappings"), categoryNames(categories));
-		assertSame(keyMappingValue, List.copyOf(categories.get(1).getConfigValues()).getFirst());
+		assertSame(keyMappingValue, List.copyOf(categories.get(1).getConfigValues()).get(0));
 	}
 
 	@Test
@@ -130,7 +129,7 @@ class ConfigGuiPluginLoaderTest {
 
 	@Test
 	void explicitKeyMappingsAreHiddenWhenKeyMappingsAreHidden() {
-		KeyMapping keyMapping = keyMapping("key.test_mod.open", GLFW.GLFW_KEY_K);
+		KeyMapping keyMapping = keyMapping("key.test_mod.open", com.mojang.blaze3d.platform.InputConstants.KEY_K);
 
 		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("showKeyMappings", false)) {
 			List<ConfigScreenCategory> categories = createCategories(
@@ -156,15 +155,15 @@ class ConfigGuiPluginLoaderTest {
 		);
 
 		assertEquals(List.of("keyMappings"), categoryNames(categories));
-		assertEquals("Controls", categories.getFirst().getLocalizedName().getString());
-		assertSame(keyMappingValue, List.copyOf(categories.getFirst().getConfigValues()).getFirst());
+		assertEquals("Controls", categories.get(0).getLocalizedName().getString());
+		assertSame(keyMappingValue, List.copyOf(categories.get(0).getConfigValues()).get(0));
 	}
 
 	@Test
 	void supportsMultipleCustomKeyMappingCategoriesAndSuppressesDefaultCategory() {
 		AtomicBoolean defaultProviderCalled = new AtomicBoolean(false);
-		KeyMapping primaryKeyMapping = keyMapping("key.test_mod.primary", GLFW.GLFW_KEY_K);
-		KeyMapping secondaryKeyMapping = keyMapping("key.test_mod.secondary", GLFW.GLFW_KEY_L);
+		KeyMapping primaryKeyMapping = keyMapping("key.test_mod.primary", com.mojang.blaze3d.platform.InputConstants.KEY_K);
+		KeyMapping secondaryKeyMapping = keyMapping("key.test_mod.secondary", com.mojang.blaze3d.platform.InputConstants.KEY_L);
 
 		List<ConfigScreenCategory> categories = createCategories(
 			List.of(),
@@ -191,7 +190,7 @@ class ConfigGuiPluginLoaderTest {
 		AtomicBoolean defaultProviderCalled = new AtomicBoolean(false);
 		TestConfigValue originalValue = new TestConfigValue("dragDelayInMilliseconds");
 		TestCategory originalCategory = new TestCategory("input", List.of(originalValue));
-		KeyMapping keyMapping = keyMapping("key.test_mod.openScreen", GLFW.GLFW_KEY_G);
+		KeyMapping keyMapping = keyMapping("key.test_mod.openScreen", com.mojang.blaze3d.platform.InputConstants.KEY_G);
 
 		List<ConfigScreenCategory> categories = createCategories(
 			List.of(originalCategory),
@@ -204,7 +203,7 @@ class ConfigGuiPluginLoaderTest {
 		);
 
 		assertEquals(List.of("input"), categoryNames(categories));
-		assertEquals(List.of("dragDelayInMilliseconds", "key.test_mod.openScreen"), valueNames(categories.getFirst()));
+		assertEquals(List.of("dragDelayInMilliseconds", "key.test_mod.openScreen"), valueNames(categories.get(0)));
 		assertFalse(defaultProviderCalled.get());
 	}
 
@@ -224,7 +223,7 @@ class ConfigGuiPluginLoaderTest {
 		);
 
 		assertEquals(List.of("ingredientList", "bookmarkList"), categoryNames(categories));
-		assertSame(bookmarkRows, List.copyOf(categories.get(1).getConfigValues()).getFirst());
+		assertSame(bookmarkRows, List.copyOf(categories.get(1).getConfigValues()).get(0));
 	}
 
 	@Test
@@ -242,7 +241,7 @@ class ConfigGuiPluginLoaderTest {
 		);
 
 		assertEquals(List.of("quick", "ingredientList", "bookmarkList"), categoryNames(categories));
-		assertSame(bookmarkRows, List.copyOf(categories.getFirst().getConfigValues()).getFirst());
+		assertSame(bookmarkRows, List.copyOf(categories.get(0).getConfigValues()).get(0));
 	}
 
 	@Test
@@ -262,7 +261,7 @@ class ConfigGuiPluginLoaderTest {
 		);
 
 		assertEquals(List.of("controls"), categoryNames(categories));
-		assertEquals(List.of("primary", "secondary", "mode", "custom"), valueNames(categories.getFirst()));
+		assertEquals(List.of("primary", "secondary", "mode", "custom"), valueNames(categories.get(0)));
 	}
 
 	@Test
@@ -281,7 +280,7 @@ class ConfigGuiPluginLoaderTest {
 		);
 
 		assertEquals(List.of("controls"), categoryNames(categories));
-		assertEquals(List.of("mode"), valueNames(categories.getFirst()));
+		assertEquals(List.of("mode"), valueNames(categories.get(0)));
 	}
 
 	@Test
@@ -304,7 +303,7 @@ class ConfigGuiPluginLoaderTest {
 			);
 
 			IConfigScreenValue<?> result = customizedSchema.getCategories()
-				.getFirst()
+				.get(0)
 				.getConfigValues()
 				.iterator()
 				.next();
@@ -352,7 +351,7 @@ class ConfigGuiPluginLoaderTest {
 			lookup -> List.of()
 		);
 
-		ConfigScreenCategory category = categories.getFirst();
+		ConfigScreenCategory category = categories.get(0);
 		assertEquals(List.of("ingredientList"), categoryNames(categories));
 		assertEquals(
 			List.of("maxRows", "maxColumns", "alignment", "buttonNavigationVisibility", "drawBackground", "toastReflowEnabled"),
@@ -386,7 +385,7 @@ class ConfigGuiPluginLoaderTest {
 		);
 
 		assertEquals(List.of("sorting"), categoryNames(categories));
-		IConfigScreenValue<?> value = valueByName(categories.getFirst(), "sortOrder");
+		IConfigScreenValue<?> value = valueByName(categories.get(0), "sortOrder");
 		assertEquals("test.sortOrder", value.getLocalizationKey());
 		assertEquals(List.of("first", "second"), value.getDefaultValue());
 		assertEquals(List.of("first", "second"), value.getValue());
@@ -457,9 +456,9 @@ class ConfigGuiPluginLoaderTest {
 
 		assertEquals(List.of(MOD_ID), List.copyOf(registry.getFactories().keySet()));
 		assertEquals(1, registry.getEntries().size());
-		assertEquals(MOD_ID, registry.getEntries().getFirst().modId());
-		assertEquals("Test Title", registry.getEntries().getFirst().title().getString());
-		assertSame(registry.getFactories().get(MOD_ID), registry.getEntries().getFirst().factory());
+		assertEquals(MOD_ID, registry.getEntries().get(0).modId());
+		assertEquals("Test Title", registry.getEntries().get(0).title().getString());
+		assertSame(registry.getFactories().get(MOD_ID), registry.getEntries().get(0).factory());
 	}
 
 	@Test
@@ -503,12 +502,12 @@ class ConfigGuiPluginLoaderTest {
 		assertEquals("Native Title", merged.getTitle().getString());
 		List<? extends ConfigScreenCategory> categoriesBeforeNativeLoad = merged.getSchema().getCategories();
 		assertEquals(List.of("general"), categoryNames(categoriesBeforeNativeLoad));
-		assertEquals(List.of("mezzConfig"), valueNames(categoriesBeforeNativeLoad.getFirst()));
+		assertEquals(List.of("mezzConfig"), valueNames(categoriesBeforeNativeLoad.get(0)));
 
 		nativeConfigActive.set(true);
 		List<? extends ConfigScreenCategory> categoriesAfterNativeLoad = merged.getSchema().getCategories();
 		assertEquals(List.of("general"), categoryNames(categoriesAfterNativeLoad));
-		assertEquals(List.of("mezzConfig", "native"), valueNames(categoriesAfterNativeLoad.getFirst()));
+		assertEquals(List.of("mezzConfig", "native"), valueNames(categoriesAfterNativeLoad.get(0)));
 	}
 
 	@Test
@@ -571,9 +570,9 @@ class ConfigGuiPluginLoaderTest {
 		List<? extends ConfigScreenCategory> secondCategories = secondSchema.getCategories();
 		assertEquals(List.of("runtime", "base"), categoryNames(firstCategories));
 		assertEquals(List.of("runtime", "base"), categoryNames(secondCategories));
-		assertEquals(List.of("runtime1"), valueNames(firstCategories.getFirst()));
+		assertEquals(List.of("runtime1"), valueNames(firstCategories.get(0)));
 		assertEquals(List.of("base1"), valueNames(firstCategories.get(1)));
-		assertEquals(List.of("runtime2"), valueNames(secondCategories.getFirst()));
+		assertEquals(List.of("runtime2"), valueNames(secondCategories.get(0)));
 		assertEquals(List.of("base2"), valueNames(secondCategories.get(1)));
 	}
 
@@ -593,7 +592,7 @@ class ConfigGuiPluginLoaderTest {
 		);
 
 		assertEquals(List.of("overview", "general", "advanced"), categoryNames(categories));
-		assertEquals(List.of("combined"), valueNames(categories.getFirst()));
+		assertEquals(List.of("combined"), valueNames(categories.get(0)));
 	}
 
 	@Test
@@ -615,7 +614,7 @@ class ConfigGuiPluginLoaderTest {
 		);
 
 		assertEquals(List.of("overview"), categoryNames(categories));
-		assertEquals(List.of("combined"), valueNames(categories.getFirst()));
+		assertEquals(List.of("combined"), valueNames(categories.get(0)));
 	}
 
 	@Test
@@ -634,7 +633,7 @@ class ConfigGuiPluginLoaderTest {
 		);
 
 		assertEquals(List.of("general", "advanced"), categoryNames(categories));
-		assertEquals(List.of("enabled"), valueNames(categories.getFirst()));
+		assertEquals(List.of("enabled"), valueNames(categories.get(0)));
 		assertEquals(List.of("refreshTicks", "replacement"), valueNames(categories.get(1)));
 	}
 
@@ -658,7 +657,7 @@ class ConfigGuiPluginLoaderTest {
 		);
 
 		assertEquals(List.of("advanced"), categoryNames(categories));
-		assertEquals(List.of("replacement"), valueNames(categories.getFirst()));
+		assertEquals(List.of("replacement"), valueNames(categories.get(0)));
 	}
 
 	@Test
@@ -674,8 +673,8 @@ class ConfigGuiPluginLoaderTest {
 		);
 
 		assertEquals(List.of("advanced"), categoryNames(categories));
-		assertEquals("Advanced Settings", categories.getFirst().getLocalizedName().getString());
-		assertEquals(List.of("refreshTicks"), valueNames(categories.getFirst()));
+		assertEquals("Advanced Settings", categories.get(0).getLocalizedName().getString());
+		assertEquals(List.of("refreshTicks"), valueNames(categories.get(0)));
 	}
 
 	@Test
@@ -695,7 +694,7 @@ class ConfigGuiPluginLoaderTest {
 			lookup -> List.of()
 		);
 
-		List<? extends IConfigScreenValue<?>> values = List.copyOf(categories.getFirst().getConfigValues());
+		List<? extends IConfigScreenValue<?>> values = List.copyOf(categories.get(0).getConfigValues());
 		assertEquals(ConfigValueApplyMode.IMMEDIATE, values.get(0).getApplyMode());
 		assertEquals(ConfigValueApplyMode.ON_APPLY, values.get(1).getApplyMode());
 	}
@@ -714,7 +713,7 @@ class ConfigGuiPluginLoaderTest {
 			lookup -> List.of()
 		);
 
-		List<? extends IConfigScreenValue<?>> values = List.copyOf(categories.getFirst().getConfigValues());
+		List<? extends IConfigScreenValue<?>> values = List.copyOf(categories.get(0).getConfigValues());
 		assertEquals(ConfigValueRestartRequirement.NONE, values.get(0).getRestartRequirement());
 		assertEquals(ConfigValueRestartRequirement.WORLD_RESTART, values.get(1).getRestartRequirement());
 	}
@@ -739,9 +738,9 @@ class ConfigGuiPluginLoaderTest {
 		assertFalse(value.equals(decoratedValue));
 		assertFalse(decoratedValue.equals(value));
 		assertSame(value.getIdentityKey(), decoratedValue.getIdentityKey());
-		List<? extends IConfigScreenValue<?>> values = List.copyOf(categories.getFirst().getConfigValues());
+		List<? extends IConfigScreenValue<?>> values = List.copyOf(categories.get(0).getConfigValues());
 		assertEquals(1, values.size());
-		assertEquals(ConfigValueRestartRequirement.WORLD_RESTART, values.getFirst().getRestartRequirement());
+		assertEquals(ConfigValueRestartRequirement.WORLD_RESTART, values.get(0).getRestartRequirement());
 	}
 
 	@Test
@@ -783,7 +782,7 @@ class ConfigGuiPluginLoaderTest {
 			lookup -> List.of()
 		);
 
-		IConfigScreenValue<?> configuredValue = List.copyOf(categories.getFirst().getConfigValues()).getFirst();
+		IConfigScreenValue<?> configuredValue = List.copyOf(categories.get(0).getConfigValues()).get(0);
 		assertEquals(ConfigValueApplyMode.IMMEDIATE, configuredValue.getApplyMode());
 		assertEquals(ConfigValueRestartRequirement.GAME_RESTART, configuredValue.getRestartRequirement());
 	}
@@ -830,8 +829,8 @@ class ConfigGuiPluginLoaderTest {
 			commonAliases,
 			commonCacheBudget
 		), ConfigScreenCategoryGroup.LOADER_NATIVE);
-		KeyMapping openKey = keyMapping("key.test_mod.openNativeScreen", GLFW.GLFW_KEY_J);
-		KeyMapping toggleKey = keyMapping("key.test_mod.toggleNativeOverlay", GLFW.GLFW_KEY_O);
+		KeyMapping openKey = keyMapping("key.test_mod.openNativeScreen", com.mojang.blaze3d.platform.InputConstants.KEY_J);
+		KeyMapping toggleKey = keyMapping("key.test_mod.toggleNativeOverlay", com.mojang.blaze3d.platform.InputConstants.KEY_O);
 		AtomicBoolean defaultProviderCalled = new AtomicBoolean(false);
 
 		List<ConfigScreenCategory> categories = createCategories(
@@ -1007,7 +1006,7 @@ class ConfigGuiPluginLoaderTest {
 	}
 
 	private static KeyMapping keyMapping(String name, int keyCode) {
-		return new KeyMapping(
+		return net.mezzdev.config.gui.TestMinecraft.keyMapping(
 			name,
 			InputConstants.Type.KEYSYM,
 			keyCode,

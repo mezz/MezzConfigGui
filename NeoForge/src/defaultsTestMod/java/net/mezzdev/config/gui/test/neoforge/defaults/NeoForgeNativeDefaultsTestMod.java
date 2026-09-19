@@ -6,7 +6,6 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
-import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 
 import java.util.List;
 
@@ -80,13 +79,12 @@ public final class NeoForgeNativeDefaultsTestMod {
 		if (dist.isClient()) {
 			NeoForgeNativeDefaultsTestClient.register(modEventBus);
 		}
-		modEventBus.addListener(NeoForgeNativeDefaultsTestMod::registerGameTests);
+		net.neoforged.testframework.conf.FrameworkConfiguration.builder(
+				net.minecraft.resources.Identifier.fromNamespaceAndPath(MOD_ID, "tests")
+			)
+			.build().create().init(modEventBus, modContainer);
 		modContainer.registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC, "%s-client.toml".formatted(MOD_ID));
 		modContainer.registerConfig(ModConfig.Type.COMMON, COMMON_SPEC, "%s-common.toml".formatted(MOD_ID));
-	}
-
-	private static void registerGameTests(RegisterGameTestsEvent event) {
-		event.register(NeoForgeNativeDefaultsTestGameTests.class);
 	}
 
 	enum TestMode {

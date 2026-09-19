@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui.fabric;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.loader.api.FabricLoader;
 import net.mezzdev.config.gui.keybindings.ConfigKeyBinding;
 import net.mezzdev.config.gui.keybindings.ConfigKeyBindingUtil;
@@ -13,7 +13,7 @@ import net.minecraft.network.chat.Component;
 public final class FabricConfigKeyMappingPlatformHelper extends VanillaConfigKeyMappingPlatformHelper {
 	@Override
 	public ConfigKeyBinding getValue(KeyMapping keyMapping) {
-		InputConstants.Key key = KeyBindingHelper.getBoundKeyOf(keyMapping);
+		InputConstants.Key key = KeyMappingHelper.getBoundKeyOf(keyMapping);
 		ConfigKeyModifier modifier = getBoundModifier(keyMapping);
 		return ConfigKeyBindingUtil.create(key, modifier);
 	}

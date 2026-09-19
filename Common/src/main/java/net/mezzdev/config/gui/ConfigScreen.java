@@ -26,7 +26,7 @@ import net.mezzdev.config.gui.util.ImmutableRect2i;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.Rect2i;
@@ -34,7 +34,6 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -175,7 +174,7 @@ public class ConfigScreen extends MezzConfigScreen {
 			.forEach(allInputHandlers::add);
 		allInputHandlers.addAll(model.getNavItems());
 
-		allInputHandlers.addFirst(new ConfigValueSelectorInputHandler(
+		allInputHandlers.add(0, new ConfigValueSelectorInputHandler(
 			() -> valueSelector,
 			() -> ConfigScreenView.getValueSelectorClipArea(layout.getContentArea()),
 			this::closeValueSelector,
@@ -455,13 +454,13 @@ public class ConfigScreen extends MezzConfigScreen {
 
 	private void closeWithoutPrompt() {
 		if (minecraft != null) {
-			minecraft.setScreen(parent);
+			net.mezzdev.config.gui.ConfigClientUtil.setScreen(parent);
 		}
 	}
 
 	private void openScreenListWithoutPrompt() {
 		if (minecraft != null) {
-			minecraft.setScreen(navigation.createScreenList(parent));
+			net.mezzdev.config.gui.ConfigClientUtil.setScreen(navigation.createScreenList(parent));
 		}
 	}
 
@@ -471,7 +470,7 @@ public class ConfigScreen extends MezzConfigScreen {
 			if (nextScreen instanceof ConfigScreen configScreen) {
 				configScreen.modTabs.copyScrollPositionFrom(modTabs);
 			}
-			minecraft.setScreen(nextScreen);
+			net.mezzdev.config.gui.ConfigClientUtil.setScreen(nextScreen);
 		}
 	}
 
@@ -482,7 +481,7 @@ public class ConfigScreen extends MezzConfigScreen {
 		PendingChangesScreen pendingChangesScreen = new PendingChangesScreen(
 			applyChanges -> {
 				if (applyChanges) {
-					minecraft.setScreen(this);
+					net.mezzdev.config.gui.ConfigClientUtil.setScreen(this);
 					applyPendingChanges(leaveAction, () -> {});
 					return;
 				} else {
@@ -490,11 +489,11 @@ public class ConfigScreen extends MezzConfigScreen {
 				}
 				leaveAction.run();
 			},
-			() -> minecraft.setScreen(this),
+			() -> net.mezzdev.config.gui.ConfigClientUtil.setScreen(this),
 			controller.getPendingChangesRestartRequirement(),
 			controller.getPendingConfigChanges()
 		);
-		minecraft.setScreen(pendingChangesScreen);
+		net.mezzdev.config.gui.ConfigClientUtil.setScreen(pendingChangesScreen);
 	}
 
 	private void applyPendingChanges() {
@@ -570,7 +569,7 @@ public class ConfigScreen extends MezzConfigScreen {
 		if (valueSelector != null && valueSelector.charTyped(codePoint, modifiers)) {
 			return true;
 		}
-		if (searchBox.isFocused() && searchBox.charTyped(codePoint, modifiers)) {
+		if (searchBox.isFocused() && ConfigInputUtil.charTyped(searchBox, codePoint, modifiers)) {
 			return true;
 		}
 		if (forwardCharTypedToEntries(codePoint, modifiers)) {
@@ -586,14 +585,14 @@ public class ConfigScreen extends MezzConfigScreen {
 			if (valueSelector.keyPressed(keyCode, scanCode, modifiers)) {
 				return true;
 			}
-			if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+			if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
 				closeValueSelector();
 				return true;
 			}
 		}
 		UserInput input = UserInput.fromVanilla(keyCode, scanCode, modifiers, InputType.IMMEDIATE);
 		if (searchBox.isFocused()) {
-			if (searchBox.keyPressed(keyCode, scanCode, modifiers)) {
+			if (ConfigInputUtil.keyPressed(searchBox, keyCode, scanCode, modifiers)) {
 				return true;
 			}
 			if (input.is(Minecraft.getInstance().options.keyInventory)) {
@@ -650,28 +649,28 @@ public class ConfigScreen extends MezzConfigScreen {
 		if (modTabs.mouseClicked(mouseX, mouseY, button)) {
 			return true;
 		}
-		if (button == 0 && layout.startResizeDrag(mouseX, mouseY, modTabs.getResizeExclusionArea(mouseY))) {
+		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && layout.startResizeDrag(mouseX, mouseY, modTabs.getResizeExclusionArea(mouseY))) {
 			flushPendingInput();
 			return true;
 		}
-		if (button == 0 && layout.startNavigationResize(mouseX, mouseY)) {
+		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && layout.startNavigationResize(mouseX, mouseY)) {
 			flushPendingInput();
 			return true;
 		}
-		if (button == 0 && isActionButton(mouseX, mouseY)) {
+		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && isActionButton(mouseX, mouseY)) {
 			return true;
 		}
-		if (button == 1 && searchBox.isMouseOver(mouseX, mouseY)) {
+		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT && searchBox.isMouseOver(mouseX, mouseY)) {
 			if (!searchBox.getValue().isEmpty()) {
 				searchBox.setValue("");
 			}
 			searchBox.setFocused(true);
 			return true;
 		}
-		if (button == 0 && controller.startContentScrollDrag(mouseX, mouseY)) {
+		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && controller.startContentScrollDrag(mouseX, mouseY)) {
 			return true;
 		}
-		if (button == 0 && controller.startNavScrollDrag(mouseX, mouseY)) {
+		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && controller.startNavScrollDrag(mouseX, mouseY)) {
 			return true;
 		}
 		if (searchBox.isFocused() && !searchBox.isMouseOver(mouseX, mouseY)) {
@@ -693,19 +692,19 @@ public class ConfigScreen extends MezzConfigScreen {
 			modTabResult.entry().ifPresent(this::requestOpenConfigScreen);
 			return true;
 		}
-		if (button == 0 && layout.isResizing()) {
+		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && layout.isResizing()) {
 			layout.finishResizeDrag()
 				.ifPresent(resizedArea -> ConfigGuiOptions.setWindowSize(resizedArea.getWidth(), resizedArea.getHeight()));
 			return true;
 		}
-		if (button == 0 && layout.isResizingNavigation()) {
+		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && layout.isResizingNavigation()) {
 			layout.finishNavigationResize().ifPresent(ConfigGuiOptions::setNavigationWidth);
 			return true;
 		}
-		if (button == 0 && (controller.stopContentScrollDrag() || controller.stopNavScrollDrag())) {
+		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && (controller.stopContentScrollDrag() || controller.stopNavScrollDrag())) {
 			return true;
 		}
-		if (button == 0) {
+		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
 			if (handleActionButton(mouseX, mouseY)) {
 				Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
 				return true;
@@ -762,25 +761,25 @@ public class ConfigScreen extends MezzConfigScreen {
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		if (button == 0 && modTabs.isPressing()) {
+		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && modTabs.isPressing()) {
 			return true;
 		}
-		if (button == 0 && layout.isResizing()) {
+		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && layout.isResizing()) {
 			if (layout.dragResize(mouseX, mouseY, width, height)) {
 				refreshLayout();
 			}
 			return true;
 		}
-		if (button == 0 && layout.isResizingNavigation()) {
+		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && layout.isResizingNavigation()) {
 			if (layout.dragNavigationResize(mouseX)) {
 				refreshLayout();
 			}
 			return true;
 		}
-		if (button == 0 && controller.dragContentScroll(mouseY)) {
+		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && controller.dragContentScroll(mouseY)) {
 			return true;
 		}
-		if (button == 0 && controller.dragNavScroll(mouseY)) {
+		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && controller.dragNavScroll(mouseY)) {
 			return true;
 		}
 		if (inputHandler.handleMouseDragged(this, mouseX, mouseY, button, dragX, dragY)) {
@@ -811,15 +810,15 @@ public class ConfigScreen extends MezzConfigScreen {
 	}
 
 	@Override
-	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+	public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
 		if (minecraft == null) {
 			return;
 		}
 		updateSearchTextColor(searchBox.getValue());
-		renderTransparentBackground(guiGraphics);
+		extractTransparentBackground(guiGraphics);
 		controller.stepScrollPositions();
 		updateValueSelectorBounds();
-		if (view.render(guiGraphics, mouseX, mouseY, partialTick, valueSelector)) {
+		if (view.extractRenderState(guiGraphics, mouseX, mouseY, partialTick, valueSelector)) {
 			updateScreenBounds();
 			controller.updateNavLayout();
 			controller.updateContentLayout();

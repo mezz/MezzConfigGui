@@ -17,7 +17,7 @@ final class ConfigScreenGuiHandler implements IGlobalGuiHandler {
 	@Override
 	public Collection<Rect2i> getGuiExtraAreas() {
 		Minecraft minecraft = Minecraft.getInstance();
-		if (minecraft.screen instanceof ConfigScreen configScreen) {
+		if (net.mezzdev.config.gui.ConfigClientUtil.screen() instanceof ConfigScreen configScreen) {
 			List<Rect2i> areas = new ArrayList<>(2);
 			@Nullable
 			Rect2i modTabsArea = configScreen.getModTabsArea();
