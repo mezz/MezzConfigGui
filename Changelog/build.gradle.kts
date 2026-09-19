@@ -15,14 +15,15 @@ plugins {
 }
 
 val specificationVersion: String by extra
+val minecraftVersion: String by extra
 val changelogUntaggedName = "Current release $specificationVersion"
 
 // Exclude the version being built so tagged releases and their preceding CI
 // builds use the same range. An empty result includes all history for a first release.
 val previousRelease = providers.exec {
     workingDir(rootProject.rootDir)
-    commandLine("git", "describe", "--tags", "--abbrev=0", "--match", "v[0-9]*.[0-9]*.[0-9]*",
-        "--exclude", "v$specificationVersion", "HEAD")
+    commandLine("git", "describe", "--tags", "--abbrev=0", "--match", "mc$minecraftVersion/v[0-9]*.[0-9]*.[0-9]*",
+        "--exclude", "mc$minecraftVersion/v$specificationVersion", "--match", "v[0-9]*.[0-9]*.[0-9]*", "--exclude", "v$specificationVersion", "HEAD")
     isIgnoreExitValue = true
 }.standardOutput.asText.map { it.trim() }
 

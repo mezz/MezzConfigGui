@@ -180,7 +180,7 @@ neoForge {
         }
         create("client") {
             client()
-            gameDirectory = file("run/client/Dev")
+            gameDirectory = file("run/client")
             logLevel = Level.DEBUG
         }
         create("server") {
@@ -226,6 +226,7 @@ sourceSets {
 }
 
 dependencies {
+
     compileOnly(mezzConfigApiDependency)
     mezzConfigRun(mezzConfigNeoForgeDependency)
     dependencyProjects.forEach {
@@ -294,19 +295,6 @@ val sourcesJarTask = tasks.named<Jar>("sourcesJar") {
     archiveClassifier.set("sources")
 }
 
-val mavenJarTask = tasks.register<Jar>("mavenJar") {
-    from(sourceSets.main.get().output)
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    destinationDirectory.set(layout.buildDirectory.dir("maven-libs"))
-}
-
-val mavenSourcesJarTask = tasks.register<Jar>("mavenSourcesJar") {
-    from(sourceSets.main.get().allJava)
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    archiveClassifier.set("sources")
-    destinationDirectory.set(layout.buildDirectory.dir("maven-libs"))
-}
-
 tasks.assemble {
     dependsOn(sourcesJarTask)
 }
@@ -315,16 +303,12 @@ publishing {
     publications {
         register<MavenPublication>("configGuiNeoForgeJar") {
             artifactId = baseArchivesName
-            artifact(mavenJarTask.get())
-            artifact(mavenSourcesJarTask.get())
+            // NeoForge must discover common/API classes in the mod's game-layer jar.
+            // A transitive plain common jar is not a loadable NeoForge mod or game library.
+            artifact(tasks.jar)
+            artifact(sourcesJarTask)
 
-            val dependencyInfos = listOf(dependencyInfo(mezzConfigNeoForgeDependency)) + dependencyProjects.map {
-                mapOf(
-                    "groupId" to it.group,
-                    "artifactId" to it.base.archivesName.get(),
-                    "version" to it.version
-                )
-            }
+            val dependencyInfos = listOf(dependencyInfo(mezzConfigNeoForgeDependency))
 
             pom.withXml {
                 val dependenciesNode = asNode().appendNode("dependencies")
