@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * Groups the entry widgets for a config category and exposes category info for hover panels.
@@ -17,13 +18,14 @@ import java.util.Map;
 public final class ConfigCategoryWidget {
 	private final ConfigScreenCategory category;
 	private final List<ConfigEntryWidget<?>> entryWidgets;
+	private final ConfigSectionHeader categoryHeader;
 	private final Map<Integer, ConfigSectionHeader> sectionHeaders = new LinkedHashMap<>();
 
 	public ConfigCategoryWidget(
 		ConfigScreenCategory category,
 		List<ConfigEntryWidget<?>> entryWidgets
 	) {
-		this(category, entryWidgets, List.of());
+		this(category, entryWidgets, List.of(), () -> {});
 	}
 
 	public ConfigCategoryWidget(
@@ -31,11 +33,25 @@ public final class ConfigCategoryWidget {
 		List<ConfigEntryWidget<?>> entryWidgets,
 		List<Section> sections
 	) {
+		this(category, entryWidgets, sections, () -> {});
+	}
+
+	public ConfigCategoryWidget(
+		ConfigScreenCategory category,
+		List<ConfigEntryWidget<?>> entryWidgets,
+		List<Section> sections,
+		Runnable layoutUpdater
+	) {
 		this.category = category;
 		this.entryWidgets = List.copyOf(entryWidgets);
+		this.categoryHeader = new ConfigSectionHeader(category.getLocalizedName(), category.getLocalizedDescription(), layoutUpdater);
 		for (Section section : sections) {
-			sectionHeaders.put(section.firstEntryIndex(), new ConfigSectionHeader(section.title(), section.description()));
+			sectionHeaders.put(section.firstEntryIndex(), new ConfigSectionHeader(section.title(), section.description(), layoutUpdater));
 		}
+	}
+
+	public ConfigSectionHeader getCategoryHeader() {
+		return categoryHeader;
 	}
 
 	public List<ConfigEntryWidget<?>> getEntryWidgets() {
@@ -51,7 +67,12 @@ public final class ConfigCategoryWidget {
 		return sectionHeaders.values();
 	}
 
+	public Stream<ConfigSectionHeader> getAllSectionHeaders() {
+		return Stream.concat(Stream.of(categoryHeader), sectionHeaders.values().stream());
+	}
+
 	public void resetBounds() {
+		categoryHeader.resetBounds();
 		for (ConfigSectionHeader header : sectionHeaders.values()) {
 			header.resetBounds();
 		}

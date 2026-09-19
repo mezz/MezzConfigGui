@@ -8,9 +8,7 @@ import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.util.ConfigLocale;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -19,7 +17,7 @@ import java.util.stream.Stream;
 public final class ConfigScreenModel {
 	private final List<ConfigScreenCategory> categories;
 	private final List<ConfigCategoryTree.Node> categoryTree;
-	private final Set<Integer> collapsedCategories = new HashSet<>();
+	private final List<List<Integer>> childCategoryIndexes;
 	private final List<ConfigCategoryWidget> categoryWidgets = new ArrayList<>();
 	private final List<ConfigNavItem> navItems = new ArrayList<>();
 
@@ -29,6 +27,17 @@ public final class ConfigScreenModel {
 	public ConfigScreenModel(List<ConfigScreenCategory> categories) {
 		this.categoryTree = ConfigCategoryTree.create(categories, ConfigGuiOptions.getInlineSubsectionLimit());
 		this.categories = categoryTree.stream().map(ConfigCategoryTree.Node::category).toList();
+		List<List<Integer>> children = new ArrayList<>();
+		for (int index = 0; index < categoryTree.size(); index++) {
+			children.add(new ArrayList<>());
+		}
+		for (int index = 0; index < categoryTree.size(); index++) {
+			int parentIndex = categoryTree.get(index).parentIndex();
+			if (parentIndex >= 0) {
+				children.get(parentIndex).add(index);
+			}
+		}
+		this.childCategoryIndexes = children.stream().map(List::copyOf).toList();
 	}
 
 	public List<ConfigScreenCategory> getCategories() {
@@ -61,11 +70,6 @@ public final class ConfigScreenModel {
 
 	public void setActiveCategoryIndex(int activeCategoryIndex) {
 		this.activeCategoryIndex = activeCategoryIndex;
-		if (activeCategoryIndex >= 0 && activeCategoryIndex < categoryTree.size()) {
-			for (int parent = categoryTree.get(activeCategoryIndex).parentIndex(); parent >= 0; parent = categoryTree.get(parent).parentIndex()) {
-				collapsedCategories.remove(parent);
-			}
-		}
 	}
 
 	public int getCategoryDepth(int index) {
@@ -76,38 +80,28 @@ public final class ConfigScreenModel {
 		return categoryTree.get(index).hasChildren();
 	}
 
-	public boolean isCategoryExpanded(int index) {
-		return !collapsedCategories.contains(index);
-	}
-
-	public boolean isCategoryVisible(int index) {
-		for (int parent = categoryTree.get(index).parentIndex(); parent >= 0; parent = categoryTree.get(parent).parentIndex()) {
-			if (collapsedCategories.contains(parent)) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-	public void toggleCategoryExpanded(int index) {
-		if (!hasSubcategories(index)) {
-			return;
-		}
-		if (!collapsedCategories.remove(index)) {
-			collapsedCategories.add(index);
-		}
-	}
-
 	public int getFirstContentCategory(int index) {
-		if (index < 0 || index >= categories.size() || !categories.get(index).getConfigValues().isEmpty()) {
-			return index;
-		}
-		for (int child = index + 1; child < categories.size() && getCategoryDepth(child) > getCategoryDepth(index); child++) {
-			if (!categories.get(child).getConfigValues().isEmpty()) {
-				return child;
-			}
-		}
 		return index;
+	}
+
+	public List<Integer> getChildCategoryIndexes(int index) {
+		if (index < 0 || index >= categoryTree.size()) {
+			return List.of();
+		}
+		return childCategoryIndexes.get(index);
+	}
+
+	public List<Integer> getActiveCategoryIndexes() {
+		if (activeCategoryIndex < 0 || activeCategoryIndex >= categoryTree.size()) {
+			return List.of();
+		}
+		List<Integer> indexes = new ArrayList<>();
+		indexes.add(activeCategoryIndex);
+		int activeDepth = getCategoryDepth(activeCategoryIndex);
+		for (int index = activeCategoryIndex + 1; index < categoryTree.size() && getCategoryDepth(index) > activeDepth; index++) {
+			indexes.add(index);
+		}
+		return List.copyOf(indexes);
 	}
 
 	public boolean hasActiveCategory() {
@@ -157,7 +151,10 @@ public final class ConfigScreenModel {
 		if (!hasActiveCategory()) {
 			return List.of();
 		}
-		return List.copyOf(getActiveCategoryWidget().getEntryWidgets());
+		return getActiveCategoryIndexes().stream()
+			.flatMap(index -> categoryWidgets.get(index).getEntryWidgets().stream())
+			.distinct()
+			.toList();
 	}
 
 	public Stream<ConfigEntryWidget<?>> getAllEntryWidgets() {

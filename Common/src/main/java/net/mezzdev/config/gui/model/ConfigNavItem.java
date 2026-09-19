@@ -35,7 +35,6 @@ public final class ConfigNavItem implements ConfigInputHandler {
 	private static final int ACTIVE_ACCENT_WIDTH = 2;
 	private static final int INDENT_WIDTH = 12;
 	private static final int MAX_INDENT = 48;
-	private static final int TOGGLE_SIZE = 20;
 
 	private final Component fullName;
 	private final int categoryIndex;
@@ -43,7 +42,6 @@ public final class ConfigNavItem implements ConfigInputHandler {
 	private final Supplier<ImmutableRect2i> navAreaSupplier;
 	private final IntConsumer categorySelector;
 	private final ConfigScreenModel model;
-	private final IntConsumer expansionToggler;
 
 	private ImmutableRect2i area = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i hoverArea = ImmutableRect2i.EMPTY;
@@ -56,8 +54,7 @@ public final class ConfigNavItem implements ConfigInputHandler {
 		ConfigCategoryWidget categoryWidget,
 		Supplier<ImmutableRect2i> navAreaSupplier,
 		IntConsumer categorySelector,
-		ConfigScreenModel model,
-		IntConsumer expansionToggler
+		ConfigScreenModel model
 	) {
 		this.fullName = StringUtil.stripStyling(displayName);
 		this.categoryIndex = categoryIndex;
@@ -65,7 +62,6 @@ public final class ConfigNavItem implements ConfigInputHandler {
 		this.navAreaSupplier = navAreaSupplier;
 		this.categorySelector = categorySelector;
 		this.model = model;
-		this.expansionToggler = expansionToggler;
 	}
 
 	public int calculateHeight(int availableWidth) {
@@ -119,16 +115,6 @@ public final class ConfigNavItem implements ConfigInputHandler {
 		guiGraphics.fill(x, bottom - 1, right, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.NAV_ITEM_DIVIDER));
 
 		int textColor = getTextColor(active, hovered);
-		if (model.hasSubcategories(categoryIndex)) {
-			ImmutableRect2i toggleArea = getToggleArea();
-			String toggle = "+";
-			if (model.isCategoryExpanded(categoryIndex)) {
-				toggle = "−";
-			}
-			int toggleX = toggleArea.getX() + (TOGGLE_SIZE - font.width(toggle)) / 2;
-			int toggleY = toggleArea.getY() + (TOGGLE_SIZE - font.lineHeight) / 2;
-			guiGraphics.drawString(font, toggle, toggleX, toggleY, textColor, false);
-		}
 		int textX = area.getX() + getTextLeftPadding(active);
 		int textHeight = visibleNameLines.size() * font.lineHeight;
 		int textY = area.getY() + Math.round((area.getHeight() - textHeight) / 2.0f);
@@ -159,10 +145,6 @@ public final class ConfigNavItem implements ConfigInputHandler {
 		return Math.min(MAX_INDENT, model.getCategoryDepth(categoryIndex) * INDENT_WIDTH);
 	}
 
-	private ImmutableRect2i getToggleArea() {
-		return new ImmutableRect2i(area.getX() + area.getWidth() - TOGGLE_SIZE, area.getY() + (area.getHeight() - TOGGLE_SIZE) / 2, TOGGLE_SIZE, TOGGLE_SIZE);
-	}
-
 	private int getTextLeftPadding(boolean active) {
 		if (active) {
 			return ACTIVE_TEXT_LEFT_PADDING;
@@ -171,9 +153,6 @@ public final class ConfigNavItem implements ConfigInputHandler {
 	}
 
 	private int getTextRightPadding() {
-		if (model.hasSubcategories(categoryIndex)) {
-			return TEXT_RIGHT_PADDING + TOGGLE_SIZE;
-		}
 		return TEXT_RIGHT_PADDING;
 	}
 
@@ -189,11 +168,7 @@ public final class ConfigNavItem implements ConfigInputHandler {
 			&& ConfigInputUtil.isLeftClick(input)
 		) {
 			if (!input.isSimulate()) {
-				if (model.hasSubcategories(categoryIndex)) {
-					expansionToggler.accept(categoryIndex);
-				} else {
-					categorySelector.accept(categoryIndex);
-				}
+				categorySelector.accept(categoryIndex);
 			}
 			return Optional.of(this);
 		}

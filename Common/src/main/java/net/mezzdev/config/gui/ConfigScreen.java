@@ -144,7 +144,8 @@ public class ConfigScreen extends MezzConfigScreen {
 			ConfigCategoryWidget widget = new ConfigCategoryWidget(
 				category,
 				entryWidgets,
-				model.getInlineSections(i)
+				model.getInlineSections(i),
+				controller::updateContentLayout
 			);
 			model.addCategoryWidget(widget);
 
@@ -154,14 +155,17 @@ public class ConfigScreen extends MezzConfigScreen {
 				widget,
 				layout::getNavArea,
 				controller::setActiveCategory,
-				model,
-				controller::toggleCategoryExpanded
+				model
 			);
 			model.addNavItem(navItem);
 		}
 		allEntryWidgets
 			.stream()
 			.map(this::createEntryInputHandler)
+			.forEach(allInputHandlers::add);
+		model.getCategoryWidgets()
+			.stream()
+			.flatMap(ConfigCategoryWidget::getAllSectionHeaders)
 			.forEach(allInputHandlers::add);
 		allInputHandlers.addAll(model.getNavItems());
 

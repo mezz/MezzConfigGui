@@ -241,9 +241,6 @@ final class ConfigScreenView {
 		);
 		List<ConfigNavItem> navItems = model.getNavItems();
 		for (int i = 0; i < navItems.size(); i++) {
-			if (!model.isCategoryVisible(i)) {
-				continue;
-			}
 			ConfigNavItem navItem = navItems.get(i);
 			navItem.draw(guiGraphics, mouseX, mouseY, !model.isSearching() && i == model.getActiveCategoryIndex());
 			if (navArea.contains(mouseX, mouseY) && navItem.isMouseOver(mouseX, mouseY)) {
@@ -332,23 +329,13 @@ final class ConfigScreenView {
 				hoveredEntryInfo = entryWidget.getInfo(mouseX, mouseY);
 			}
 		}
-		if (!model.isSearching() && model.hasActiveCategory()) {
-			for (var header : model.getActiveCategoryWidget().getSectionHeaders()) {
+		if (!model.isSearching()) {
+			for (var header : controller.getVisibleSectionHeaders()) {
 				header.draw(guiGraphics, contentArea);
 				if (allowHoverAtMouse && header.isMouseOver(mouseX, mouseY)) {
 					hoveredEntryInfo = header.getInfo();
 				}
 			}
-		}
-		if (rowIndex == 0 && !model.isSearching() && model.hasActiveCategory() && model.hasSubcategories(model.getActiveCategoryIndex())) {
-			guiGraphics.drawWordWrap(
-				Minecraft.getInstance().font,
-				Component.translatable("mezz_config.config.screen.chooseSubsection"),
-				contentArea.getX() + 8,
-				contentArea.getY() + 8,
-				Math.max(1, contentArea.getWidth() - 16),
-				ConfigGuiColors.getColor(GuiColor.NAV_ITEM_TEXT)
-			);
 		}
 		guiGraphics.disableScissor();
 		return hoveredEntryInfo;

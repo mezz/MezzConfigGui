@@ -20,12 +20,16 @@ import java.util.function.IntConsumer;
  * Coordinates search, category selection, scrolling, and applying or discarding config changes.
  */
 final class ConfigScreenController {
+	private static final int SECTION_INDENT = 12;
+	private static final int MIN_SECTION_WIDTH = 80;
 	private final ConfigChangesHandler changesHandler;
 	private final ConfigScreenModel model;
 	private final ConfigScreenLayout layout;
 	private final Runnable clearSearchInput;
 	private final IntConsumer activeCategoryListener;
 	private final AppliedConfigChangeTracker appliedChangeTracker = new AppliedConfigChangeTracker();
+	private final List<ConfigEntryWidget<?>> visibleEntryWidgets = new ArrayList<>();
+	private final List<ConfigSectionHeader> visibleSectionHeaders = new ArrayList<>();
 
 	public ConfigScreenController(
 		ConfigChangesHandler changesHandler,
@@ -48,15 +52,10 @@ final class ConfigScreenController {
 	}
 
 	public void setActiveCategory(int index) {
-		if (index < 0 || index >= model.getCategoryWidgets().size() || model.hasSubcategories(index)) {
+		if (index < 0 || index >= model.getCategoryWidgets().size()) {
 			return;
 		}
 		selectCategory(index);
-	}
-
-	public void toggleCategoryExpanded(int index) {
-		model.toggleCategoryExpanded(index);
-		updateNavLayout();
 	}
 
 	private void selectCategory(int index) {
@@ -65,13 +64,6 @@ final class ConfigScreenController {
 		model.setSearchText("");
 		layout.resetContentScroll();
 		clearSearchInput.run();
-
-		for (int i = 0; i < model.getCategoryWidgets().size(); i++) {
-			ConfigCategoryWidget widget = model.getCategoryWidgets().get(i);
-			if (i != index) {
-				widget.resetBounds();
-			}
-		}
 
 		updateNavLayout();
 		updateContentLayout();
@@ -170,7 +162,11 @@ final class ConfigScreenController {
 	}
 
 	public List<ConfigEntryWidget<?>> getVisibleEntryWidgets() {
-		return model.getVisibleEntryWidgets();
+		return List.copyOf(visibleEntryWidgets);
+	}
+
+	public List<ConfigSectionHeader> getVisibleSectionHeaders() {
+		return List.copyOf(visibleSectionHeaders);
 	}
 
 	public boolean scroll(double mouseX, double mouseY, double scrollY) {
@@ -242,52 +238,96 @@ final class ConfigScreenController {
 
 	private boolean updateContentLayoutInternal() {
 		ImmutableRect2i contentArea = layout.getContentArea();
-		int currentY = contentArea.getY() - (int) layout.getCurrentScrollY();
-		int totalContentHeight = 0;
+		LayoutCursor cursor = new LayoutCursor(contentArea.getY() - (int) layout.getCurrentScrollY());
+		visibleEntryWidgets.clear();
+		visibleSectionHeaders.clear();
+		for (ConfigCategoryWidget widget : model.getCategoryWidgets()) {
+			widget.resetBounds();
+		}
 
 		if (model.isSearching()) {
-			for (ConfigCategoryWidget widget : model.getCategoryWidgets()) {
-				widget.resetBounds();
-			}
 			for (ConfigEntryWidget<?> entryWidget : model.getAllEntryWidgets().filter(model::matchesSearch).toList()) {
-				int height = updateEntryBounds(entryWidget, currentY);
-				currentY += height;
-				totalContentHeight += height;
+				layoutEntry(entryWidget, 0, cursor);
 			}
 		} else if (model.hasActiveCategory()) {
-			for (ConfigCategoryWidget widget : model.getCategoryWidgets()) {
-				if (widget != model.getActiveCategoryWidget()) {
-					widget.resetBounds();
-				}
-			}
-
-			ConfigCategoryWidget activeWidget = model.getActiveCategoryWidget();
-			List<ConfigEntryWidget<?>> entries = activeWidget.getEntryWidgets();
-			for (int i = 0; i < entries.size(); i++) {
-				ConfigSectionHeader header = activeWidget.getSectionHeader(i);
-				if (header != null) {
-					int height = header.updateBounds(contentArea.getX() + 2, currentY, contentArea.getWidth() - 4);
-					currentY += height;
-					totalContentHeight += height;
-				}
-				ConfigEntryWidget<?> entryWidget = entries.get(i);
-				int height = updateEntryBounds(entryWidget, currentY);
-				currentY += height;
-				totalContentHeight += height;
+			int activeIndex = model.getActiveCategoryIndex();
+			layoutWidgetContents(model.getActiveCategoryWidget(), 0, cursor);
+			for (int childIndex : model.getChildCategoryIndexes(activeIndex)) {
+				layoutCategorySection(childIndex, 0, cursor);
 			}
 		}
 
-		return layout.setTotalContentHeight(totalContentHeight);
+		int contentStart = contentArea.getY() - (int) layout.getCurrentScrollY();
+		return layout.setTotalContentHeight(cursor.y - contentStart);
 	}
 
-	private int updateEntryBounds(ConfigEntryWidget<?> entryWidget, int y) {
+	private void layoutCategorySection(int categoryIndex, int depth, LayoutCursor cursor) {
+		ConfigCategoryWidget widget = model.getCategoryWidgets().get(categoryIndex);
+		ConfigSectionHeader header = widget.getCategoryHeader();
+		layoutHeader(header, depth, cursor);
+		if (!header.isCollapsed()) {
+			layoutWidgetContents(widget, depth + 1, cursor);
+			for (int childIndex : model.getChildCategoryIndexes(categoryIndex)) {
+				layoutCategorySection(childIndex, depth + 1, cursor);
+			}
+		}
+		header.setContentBottom(cursor.y);
+	}
+
+	private void layoutWidgetContents(ConfigCategoryWidget widget, int depth, LayoutCursor cursor) {
+		ConfigSectionHeader currentHeader = null;
+		boolean sectionCollapsed = false;
+		List<ConfigEntryWidget<?>> entries = widget.getEntryWidgets();
+		for (int i = 0; i < entries.size(); i++) {
+			ConfigSectionHeader header = widget.getSectionHeader(i);
+			if (header != null) {
+				if (currentHeader != null) {
+					currentHeader.setContentBottom(cursor.y);
+				}
+				currentHeader = header;
+				layoutHeader(header, depth, cursor);
+				sectionCollapsed = header.isCollapsed();
+			}
+			if (!sectionCollapsed) {
+				int entryDepth = depth;
+				if (currentHeader != null) {
+					entryDepth++;
+				}
+				layoutEntry(entries.get(i), entryDepth, cursor);
+			}
+		}
+		if (currentHeader != null) {
+			currentHeader.setContentBottom(cursor.y);
+		}
+	}
+
+	private void layoutHeader(ConfigSectionHeader header, int depth, LayoutCursor cursor) {
+		ImmutableRect2i contentArea = layout.getContentArea();
+		int indent = getSectionIndent(depth, contentArea.getWidth());
+		int height = header.updateBounds(
+			contentArea.getX() + 2 + indent,
+			cursor.y,
+			Math.max(1, contentArea.getWidth() - 4 - indent)
+		);
+		cursor.y += height;
+		visibleSectionHeaders.add(header);
+	}
+
+	private void layoutEntry(ConfigEntryWidget<?> entryWidget, int depth, LayoutCursor cursor) {
 		entryWidget.setShowSectionPath(model.isSearching());
 		ImmutableRect2i contentArea = layout.getContentArea();
-		int entryWidth = contentArea.getWidth() - 4;
-		entryWidget.updateBounds(new ImmutableRect2i(contentArea.getX() + 2, y, entryWidth, ConfigEntryWidget.getMinimumHeight()));
+		int indent = getSectionIndent(depth, contentArea.getWidth());
+		int entryWidth = Math.max(1, contentArea.getWidth() - 4 - indent);
+		int x = contentArea.getX() + 2 + indent;
+		entryWidget.updateBounds(new ImmutableRect2i(x, cursor.y, entryWidth, ConfigEntryWidget.getMinimumHeight()));
 		int height = entryWidget.getHeight();
-		entryWidget.updateBounds(new ImmutableRect2i(contentArea.getX() + 2, y, entryWidth, height));
-		return height;
+		entryWidget.updateBounds(new ImmutableRect2i(x, cursor.y, entryWidth, height));
+		cursor.y += height;
+		visibleEntryWidgets.add(entryWidget);
+	}
+
+	private static int getSectionIndent(int depth, int contentWidth) {
+		return Math.min(depth * SECTION_INDENT, Math.max(0, contentWidth - 4 - MIN_SECTION_WIDTH));
 	}
 
 	public void updateNavLayout() {
@@ -304,10 +344,6 @@ final class ConfigScreenController {
 		List<ConfigNavItem> navItems = model.getNavItems();
 		for (int i = 0; i < navItems.size(); i++) {
 			ConfigNavItem navItem = navItems.get(i);
-			if (!model.isCategoryVisible(i)) {
-				navItem.resetBounds();
-				continue;
-			}
 			int itemHeight = navItem.calculateHeight(navItemWidth);
 			int itemHoverHeight = itemHeight;
 			if (i < navItems.size() - 1) {
@@ -326,5 +362,13 @@ final class ConfigScreenController {
 			totalNavHeight -= ConfigScreenLayout.NAV_ITEM_GAP;
 		}
 		return layout.setTotalNavHeight(totalNavHeight);
+	}
+
+	private static final class LayoutCursor {
+		private int y;
+
+		private LayoutCursor(int y) {
+			this.y = y;
+		}
 	}
 }

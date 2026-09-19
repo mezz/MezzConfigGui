@@ -18,6 +18,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -25,6 +26,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -254,22 +256,25 @@ class ConfigCategoryTreeTest {
 	}
 
 	@Test
-	void collapsingABranchKeepsTheCurrentValuesAndSelectingAHiddenLeafReopensAncestors() {
+	void selectingAParentExposesItsWholeNestedSubtreeAndSelectingALeafStaysFocused() {
 		ConfigScreenModel model = animalModel();
-		model.setActiveCategoryIndex(2);
-		model.toggleCategoryExpanded(1);
+		TestEntry cow = new TestEntry(value("common.toml", "Animals", "Cow"));
+		TestEntry pig = new TestEntry(value("common.toml", "Animals", "Pig"));
+		model.addCategoryWidget(new ConfigCategoryWidget(model.getCategories().get(0), List.of()));
+		model.addCategoryWidget(new ConfigCategoryWidget(model.getCategories().get(1), List.of()));
+		model.addCategoryWidget(new ConfigCategoryWidget(model.getCategories().get(2), List.of(cow)));
+		model.addCategoryWidget(new ConfigCategoryWidget(model.getCategories().get(3), List.of(pig)));
 
-		assertEquals(2, model.getActiveCategoryIndex());
-		assertTrue(model.isCategoryVisible(1));
-		assertFalse(model.isCategoryVisible(2));
-		assertFalse(model.isCategoryVisible(3));
-		model.toggleCategoryExpanded(0);
-		assertFalse(model.isCategoryVisible(1));
+		model.setActiveCategoryIndex(0);
+		assertEquals(List.of(0, 1, 2, 3), model.getActiveCategoryIndexes());
+		assertEquals(List.of(1), model.getChildCategoryIndexes(0));
+		assertEquals(List.of(2, 3), model.getChildCategoryIndexes(1));
+		assertEquals(0, model.getFirstContentCategory(0));
+		assertEquals(List.of(cow, pig), model.getVisibleEntryWidgets());
 		model.setActiveCategoryIndex(3);
-		assertTrue(model.isCategoryExpanded(0));
-		assertTrue(model.isCategoryExpanded(1));
-		assertTrue(model.isCategoryVisible(3));
-		assertEquals(2, model.getFirstContentCategory(0));
+		assertEquals(List.of(3), model.getActiveCategoryIndexes());
+		assertTrue(model.getChildCategoryIndexes(3).isEmpty());
+		assertEquals(List.of(pig), model.getVisibleEntryWidgets());
 	}
 
 	@Test
@@ -299,7 +304,6 @@ class ConfigCategoryTreeTest {
 			model.addCategoryWidget(new ConfigCategoryWidget(model.getCategories().get(index), entries));
 		}
 		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("searchDescriptions", false)) {
-			model.toggleCategoryExpanded(0);
 			model.setSearchText("cOw");
 			assertEquals(List.of(cow), model.getVisibleEntryWidgets());
 			cow.setShowSectionPath(true);
@@ -313,22 +317,19 @@ class ConfigCategoryTreeTest {
 	}
 
 	@Test
-	void clickingABranchAnywhereOnlyTogglesAndClickingALeafSelectsIt() {
+	void clickingAnyNavigationRowSelectsItIncludingParents() {
 		ConfigScreenModel model = animalModel();
 		int[] selected = {-1};
 		ConfigNavItem branch = new ConfigNavItem(Component.literal("Common"), 0,
 			new ConfigCategoryWidget(model.getCategories().getFirst(), List.of()),
 			() -> new ImmutableRect2i(10, 10, 100, 100), index -> selected[0] = index,
-			model, model::toggleCategoryExpanded);
+			model);
 		branch.updateBounds(new ImmutableRect2i(10, 10, 100, 20), 22);
 		for (int x : List.of(10, 29, 89, 90, 109)) {
 			assertTrue(branch.handleUserInput(null, mouse(x, 29, InputType.SIMULATE)).isPresent());
-			assertTrue(model.isCategoryExpanded(0));
 			branch.handleUserInput(null, mouse(x, 29, InputType.EXECUTE));
-			assertFalse(model.isCategoryExpanded(0));
-			assertEquals(-1, selected[0]);
-			branch.handleUserInput(null, mouse(x, 29, InputType.EXECUTE));
-			assertTrue(model.isCategoryExpanded(0));
+			assertEquals(0, selected[0]);
+			selected[0] = -1;
 		}
 		branch.resetBounds();
 		assertTrue(branch.handleUserInput(null, mouse(30, 29, InputType.EXECUTE)).isEmpty());
@@ -336,20 +337,20 @@ class ConfigCategoryTreeTest {
 		ConfigNavItem leaf = new ConfigNavItem(Component.literal("Cow"), 2,
 			new ConfigCategoryWidget(model.getCategories().get(2), List.of()),
 			() -> new ImmutableRect2i(10, 10, 100, 100), index -> selected[0] = index,
-			model, model::toggleCategoryExpanded);
+			model);
 		leaf.updateBounds(new ImmutableRect2i(10, 40, 100, 20), 22);
 		leaf.handleUserInput(null, mouse(50, 50, InputType.EXECUTE));
 		assertEquals(2, selected[0]);
 	}
 
 	@Test
-	void nestedRowGuttersDoNotHoverOrSelectAndTheExpansionControlStaysAtTheRightEdge() {
+	void nestedRowGuttersDoNotHoverOrSelectButTheWholeVisibleRowDoes() {
 		ConfigScreenModel model = animalModel();
 		int[] selected = {-1};
 		ConfigNavItem item = new ConfigNavItem(Component.literal("Animals"), 1,
 			new ConfigCategoryWidget(model.getCategories().get(1), List.of()),
 			() -> new ImmutableRect2i(10, 10, 100, 100), index -> selected[0] = index,
-			model, model::toggleCategoryExpanded);
+			model);
 		item.updateBounds(new ImmutableRect2i(10, 10, 100, 20), 22);
 
 		assertFalse(item.isMouseOver(21, 20));
@@ -357,15 +358,37 @@ class ConfigCategoryTreeTest {
 		assertEquals(-1, selected[0]);
 		assertTrue(item.isMouseOver(22, 20));
 		assertTrue(item.handleUserInput(null, mouse(22, 20, InputType.EXECUTE)).isPresent());
-		assertEquals(-1, selected[0]);
-		assertFalse(model.isCategoryExpanded(1));
+		assertEquals(1, selected[0]);
+		selected[0] = -1;
 		item.handleUserInput(null, mouse(109, 20, InputType.EXECUTE));
-		assertTrue(model.isCategoryExpanded(1));
+		assertEquals(1, selected[0]);
 
 		item.updateBounds(new ImmutableRect2i(10, 10, 80, 20), 22);
 		assertFalse(item.isMouseOver(21, 20));
+		selected[0] = -1;
 		item.handleUserInput(null, mouse(89, 20, InputType.EXECUTE));
-		assertFalse(model.isCategoryExpanded(1));
+		assertEquals(1, selected[0]);
+	}
+
+	@Test
+	void rightSideSectionHeadersToggleTheirOwnContentState() throws ReflectiveOperationException {
+		AtomicInteger updates = new AtomicInteger();
+		ConfigSectionHeader header = new ConfigSectionHeader(Component.literal("Animals"), Component.empty(), updates::incrementAndGet);
+		Field area = ConfigSectionHeader.class.getDeclaredField("area");
+		area.setAccessible(true);
+		area.set(header, new ImmutableRect2i(20, 30, 160, 24));
+
+		assertFalse(header.isCollapsed());
+		assertTrue(header.handleUserInput(null, mouse(30, 40, InputType.SIMULATE)).isPresent());
+		assertFalse(header.isCollapsed());
+		assertEquals(0, updates.get());
+		assertTrue(header.handleUserInput(null, mouse(30, 40, InputType.EXECUTE)).isPresent());
+		assertTrue(header.isCollapsed());
+		assertEquals(1, updates.get());
+		assertTrue(header.handleUserInput(null, mouse(30, 40, InputType.EXECUTE)).isPresent());
+		assertFalse(header.isCollapsed());
+		assertEquals(2, updates.get());
+		assertTrue(header.handleUserInput(null, mouse(10, 40, InputType.EXECUTE)).isEmpty());
 	}
 
 	private static UserInput mouse(double x, double y, InputType type) {
