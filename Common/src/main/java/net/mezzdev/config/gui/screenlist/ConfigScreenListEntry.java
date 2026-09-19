@@ -8,13 +8,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * One resolved config screen entry shared by direct navigation and the browse-all screen.
@@ -47,22 +42,10 @@ public record ConfigScreenListEntry(
 	}
 
 	public static List<ConfigScreenListEntry> applyPreferences(List<ConfigScreenListEntry> entries) {
-		Map<String, Integer> order = new HashMap<>();
-		for (String modId : ConfigGuiOptions.getModOrder()) {
-			order.putIfAbsent(normalizeModId(modId), order.size());
-		}
-		Set<String> hidden = ConfigGuiOptions.getHiddenMods().stream()
-			.map(ConfigScreenListEntry::normalizeModId)
-			.collect(Collectors.toSet());
-		return entries.stream()
-			.filter(entry -> !hidden.contains(entry.modId()))
-			.sorted(Comparator.<ConfigScreenListEntry>comparingInt(entry -> order.getOrDefault(entry.modId(), Integer.MAX_VALUE))
-				.thenComparing(ALPHABETICAL_ORDER))
+		List<ConfigScreenListEntry> sortedEntries = entries.stream()
+			.sorted(ALPHABETICAL_ORDER)
 			.toList();
-	}
-
-	private static String normalizeModId(String modId) {
-		return modId.strip().toLowerCase(Locale.ROOT);
+		return ConfigGuiOptions.applyModNavigationPreferences(sortedEntries);
 	}
 
 	private static ConfigScreenListEntry create(

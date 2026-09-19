@@ -28,7 +28,7 @@ final class ConfigScreenModTabs {
 	private static final int ICON_SIZE = 24;
 
 	private final String activeModId;
-	private final List<ConfigScreenListEntry> entries;
+	private List<ConfigScreenListEntry> entries;
 	private final List<ModTab> visibleTabs = new ArrayList<>();
 
 	private ImmutableRect2i screenArea = ImmutableRect2i.EMPTY;
@@ -46,6 +46,23 @@ final class ConfigScreenModTabs {
 	public ConfigScreenModTabs(String activeModId, List<ConfigScreenListEntry> entries) {
 		this.activeModId = Objects.requireNonNull(activeModId, "activeModId");
 		this.entries = List.copyOf(entries);
+	}
+
+	void updateEntries(List<ConfigScreenListEntry> entries) {
+		if (this.entries.equals(entries)) {
+			return;
+		}
+		String firstModId = activeModId;
+		if (!visibleTabs.isEmpty()) {
+			firstModId = visibleTabs.getFirst().entry().modId();
+		}
+		this.entries = List.copyOf(entries);
+		int firstIndex = getEntryIndex(firstModId);
+		if (firstIndex >= 0) {
+			firstVisibleIndex = firstIndex;
+		}
+		pressedTarget = null;
+		updateLayout(screenArea);
 	}
 
 	/** Preserve the viewport when another mod's screen replaces this screen. */

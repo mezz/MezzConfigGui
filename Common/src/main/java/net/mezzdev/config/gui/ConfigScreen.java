@@ -539,6 +539,7 @@ public class ConfigScreen extends MezzConfigScreen {
 	}
 
 	private void refreshLayout() {
+		modTabs.updateEntries(navigation.getScreenListEntries());
 		updateScreenBounds();
 		modTabs.updateLayout(layout.getArea());
 		controller.updateNavLayout();

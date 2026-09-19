@@ -8,6 +8,7 @@ import net.mezzdev.config.api.schema.builder.IConfigSchemaBuilder;
 import net.mezzdev.config.api.value.editor.ConfigValueEditMode;
 import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IConfigValue;
+import net.mezzdev.config.gui.screenlist.ConfigScreenListEntry;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -76,9 +77,7 @@ public final class ConfigGuiOptions {
 	@Nullable
 	private static IConfigValue<DiscoveryLogging> discoveryLogging;
 	@Nullable
-	private static IConfigValue<List<String>> modOrder;
-	@Nullable
-	private static IConfigValue<List<String>> hiddenMods;
+	private static ModNavigationConfig modNavigation;
 
 	private ConfigGuiOptions() {
 
@@ -147,8 +146,9 @@ public final class ConfigGuiOptions {
 			.build();
 
 		IConfigCategoryBuilder modList = schemaBuilder.addCategory("modList");
-		modOrder = modList.addStringList("modOrder", List.of()).build();
-		hiddenMods = modList.addStringList("hiddenMods", List.of()).build();
+		// Read the old preferences for migration; the GUI replaces these with one sorting editor.
+		IConfigValue<List<String>> legacyModOrder = modList.addStringList("modOrder", List.of()).build();
+		IConfigValue<List<String>> legacyHiddenMods = modList.addStringList("hiddenMods", List.of()).build();
 
 		IConfigCategoryBuilder integrations = schemaBuilder.addCategory("integrations");
 		showKeyMappings = integrations.addBoolean("showKeyMappings", true)
@@ -171,6 +171,9 @@ public final class ConfigGuiOptions {
 			.build();
 
 		schema = schemaBuilder.build();
+		ModNavigationConfig navigationConfig = new ModNavigationConfig(comparator -> registration.createSortingConfig("mod-navigation.ini", comparator, true));
+		schema.getPath().ifPresent(path -> navigationConfig.migrateLegacyPreferences(path, legacyModOrder.get(), legacyHiddenMods.get()));
+		modNavigation = navigationConfig;
 	}
 
 	public static IConfigSchema getSchema() {
@@ -261,12 +264,24 @@ public final class ConfigGuiOptions {
 		return getValue(inlineSubsectionLimit, DEFAULT_INLINE_SUBSECTION_LIMIT);
 	}
 
-	public static List<String> getModOrder() {
-		return getValue(modOrder, List.of());
+	public static ModNavigationConfig getModNavigationConfig() {
+		if (modNavigation == null) {
+			throw new IllegalStateException("MezzConfig GUI options have not been registered yet.");
+		}
+		return modNavigation;
 	}
 
-	public static List<String> getHiddenMods() {
-		return getValue(hiddenMods, List.of());
+	public static void setModNavigationEntries(List<ConfigScreenListEntry> entries) {
+		if (modNavigation != null) {
+			modNavigation.setEntries(entries);
+		}
+	}
+
+	public static List<ConfigScreenListEntry> applyModNavigationPreferences(List<ConfigScreenListEntry> entries) {
+		if (modNavigation == null) {
+			return entries;
+		}
+		return modNavigation.applyPreferences(entries);
 	}
 
 	public static boolean searchDescriptions() {

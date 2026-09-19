@@ -51,6 +51,7 @@ val mixinVersion: String by extra
 val jetbrainsAnnotationsVersion: String by extra
 val fastutilVersion: String by extra
 val mezzConfigApiDependency: String by rootProject.extra
+val mezzConfigNeoForgeDependency: String by rootProject.extra
 val jeiApiDependency: String by rootProject.extra
 val apiBaselineVersion: String by extra
 val apiBaselineRequired: String by extra
@@ -94,6 +95,10 @@ dependencies {
     implementation("it.unimi.dsi:fastutil:$fastutilVersion")
     testImplementation("org.junit.jupiter:junit-jupiter:$jUnitVersion")
     testImplementation(mezzConfigApiDependency)
+    // Exercise sorting persistence with the released implementation, not a reimplementation in a test double.
+    testImplementation(mezzConfigNeoForgeDependency) {
+        isTransitive = false
+    }
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

@@ -136,6 +136,27 @@ class ConfigScreenModTabsTest {
 	}
 
 	@Test
+	void applyingModPreferencesUpdatesTabsAndClearsRemovedClickTargets() {
+		List<ConfigScreenListEntry> entries = createEntries(10);
+		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod0", entries);
+		tabs.updateLayout(SCREEN_AREA);
+		tabs.mouseScrolled(80, 25, -2);
+		assertTrue(tabs.mouseClicked(84, 60, 0));
+
+		tabs.updateEntries(entries.subList(3, entries.size()));
+
+		assertFalse(tabs.isPressing());
+		assertFalse(tabs.mouseReleased(84, 60, 0).handled());
+		assertFalse(tabs.getVisibleModIds().contains("mod2"));
+		tabs.updateEntries(List.of());
+		assertTrue(tabs.getTabsArea().isEmpty());
+		assertTrue(tabs.getVisibleModIds().isEmpty());
+		tabs.updateEntries(entries);
+		assertFalse(tabs.getTabsArea().isEmpty());
+		assertFalse(tabs.getVisibleModIds().isEmpty());
+	}
+
+	@Test
 	void clickingAnotherModReturnsItsNavigationEntry() {
 		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod1", createEntries(4));
 		tabs.updateLayout(new ImmutableRect2i(100, 0, 500, 176));

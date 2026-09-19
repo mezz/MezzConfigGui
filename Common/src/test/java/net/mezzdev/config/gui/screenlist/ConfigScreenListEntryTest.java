@@ -1,7 +1,6 @@
 package net.mezzdev.config.gui.screenlist;
 
 import net.mezzdev.config.gui.ConfigScreenNavigation;
-import net.mezzdev.config.gui.config.ConfigGuiOptionsTestUtil;
 import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
@@ -12,23 +11,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ConfigScreenListEntryTest {
 	@Test
-	void packOrderComesFirstAndUnlistedModsRemainAlphabetical() {
+	void unconfiguredNavigationDefaultsToAlphabeticalOrder() {
 		List<ConfigScreenListEntry> entries = List.of(entry("zebra"), entry("beta"), entry("alpha"), entry("gamma"));
-		try (var order = ConfigGuiOptionsTestUtil.setValue("modOrder", List.of("missing", " GAMMA ", "beta", "gamma"))) {
-			assertEquals(List.of("gamma", "beta", "alpha", "zebra"), ids(ConfigScreenListEntry.applyPreferences(entries)));
-		}
 		assertEquals(List.of("alpha", "beta", "gamma", "zebra"), ids(ConfigScreenListEntry.applyPreferences(entries)));
 	}
 
 	@Test
-	void hidingWinsOverOrderingAndPreferencesDoNotDiscardRegisteredEntries() {
+	void navigationUsesAllRegisteredEntries() {
 		ConfigScreenNavigation navigation = new ConfigScreenNavigation();
 		navigation.setScreenListEntries(List.of(entry("zebra"), entry("alpha"), entry("beta")));
-		try (var order = ConfigGuiOptionsTestUtil.setValue("modOrder", List.of("beta", "zebra"));
-			var hidden = ConfigGuiOptionsTestUtil.setValue("hiddenMods", List.of(" BETA ", "missing"))
-		) {
-			assertEquals(List.of("zebra", "alpha"), ids(navigation.getScreenListEntries()));
-		}
 		assertEquals(List.of("alpha", "beta", "zebra"), ids(navigation.getScreenListEntries()));
 	}
 

@@ -21,5 +21,6 @@ public final class ConfigGuiOptionsPlugin implements IConfigGuiPlugin {
 			Component.translatable("mezz_config_gui.config.screen.title"),
 			ConfigGuiOptions::getSchema
 		);
+		registration.configureScreen(screen -> ConfigGuiOptions.getModNavigationConfig().configureCategory(screen.configureCategory("modList")));
 	}
 }
