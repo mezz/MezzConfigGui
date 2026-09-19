@@ -30,3 +30,6 @@ by CI. Run the verification lifecycle directly with:
 ```console
 ./gradlew check
 ```
+
+See [automatic changelogs](Changelog/README.md) to preview the Git-based changelog
+shared by CurseForge and Modrinth.
