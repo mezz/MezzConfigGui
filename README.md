@@ -1,3 +1,9 @@
+[![CI](https://github.com/mezz/MezzConfigGui/actions/workflows/ci.yml/badge.svg?branch=1.21.1)](https://github.com/mezz/MezzConfigGui/actions/workflows/ci.yml)
+[![CurseForge downloads](https://cf.way2muchnoise.eu/full_1700987_downloads.svg)](https://www.curseforge.com/minecraft/mc-mods/mezzconfiggui)
+[![Modrinth downloads](https://img.shields.io/modrinth/dt/BOHUKqOz?logo=modrinth&label=Modrinth)](https://modrinth.com/project/mezzconfiggui)
+[![Discord](https://img.shields.io/discord/358816755646332941?color=5865F2&logo=discord&logoColor=white&label=Discord)](https://discord.gg/sCQcWU2)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 # MezzConfig GUI
 
 MezzConfig GUI is a client-side config screen for Minecraft mods.
