@@ -20,7 +20,7 @@ plugins {
 	base
 
 	// https://github.com/modmuss50/mod-publish-plugin
-	id("me.modmuss50.mod-publish-plugin") version("1.1.0") apply(false)
+	id("me.modmuss50.mod-publish-plugin") version("2.2.0") apply(false)
 
 	// https://github.com/mezz/JavaFormatting
 	id("net.mezzdev.java-formatting") version("0.4.0")
@@ -248,8 +248,8 @@ subprojects {
                 changelogType.set("html")
                 minecraftVersions.add(minecraftVersion)
                 javaVersions.add(JavaVersion.toVersion(modJavaVersion))
-                clientRequired.set(true)
-                serverRequired.set(false)
+                client.set(true)
+                server.set(true)
                 requires("mezzconfig")
                 if (loaderName == "Fabric") {
                     requires("fabric-api")
@@ -260,6 +260,7 @@ subprojects {
                 projectId.set(modrinthId.orElse("00000000"))
                 accessToken.set(providers.gradleProperty("modrinthToken"))
                 minecraftVersions.add(minecraftVersion)
+                environment.set(CLIENT_ONLY_SERVER_OPTIONAL)
                 requires("7tEfOcA7")
                 if (loaderName == "Fabric") {
                     requires("fabric-api")
