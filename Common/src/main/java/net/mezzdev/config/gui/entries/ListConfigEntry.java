@@ -48,6 +48,8 @@ import org.lwjgl.glfw.GLFW;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -132,7 +134,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			valueRows.add(new ListValueRow(displayedValues.get(i), i, true));
 		}
 		if (shouldShowUnusedValues()) {
-			List<T> current = getValue();
+			Set<T> current = new HashSet<>(displayedValues);
 			for (T value : allValidValues) {
 				if (!current.contains(value)) {
 					unusedValueRows.add(new ListValueRow(value, unusedValueRows.size(), false));

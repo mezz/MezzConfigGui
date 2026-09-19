@@ -11,15 +11,28 @@ import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
+import java.util.AbstractList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ListConfigEntryTest {
+	@Test
+	void openingLargeSortingListsDoesNotRepeatedlyScanSelectedValues() {
+		int size = 2000;
+		List<String> allValues = IntStream.range(0, size).mapToObj(index -> "value" + index).toList();
+		CountingList selectedValues = new CountingList(allValues);
+		TestListSerializer serializer = new TestListSerializer(true, Optional.of(allValues), ConfigListOrdering.ORDERED);
+		new ListConfigEntry<>(new TestConfigValue(serializer, selectedValues), serializer, selector -> {}, () -> {}, null);
+		assertTrue(selectedValues.reads <= size * 3,
+			"Opening a sorting list repeatedly scanned its selected values: " + selectedValues.reads);
+	}
+
 	@Test
 	void onlyVisibleRowsAreVisitedEvenInVeryLargeSortingLists() {
 		ImmutableRect2i viewport = new ImmutableRect2i(0, 0, 200, 240);
@@ -171,9 +184,15 @@ class ListConfigEntryTest {
 
 	private static final class TestConfigValue implements IConfigScreenValue<List<String>> {
 		private final TestListSerializer serializer;
+		private final List<String> values;
 
 		private TestConfigValue(TestListSerializer serializer) {
+			this(serializer, List.of("first"));
+		}
+
+		private TestConfigValue(TestListSerializer serializer, List<String> values) {
 			this.serializer = serializer;
+			this.values = values;
 		}
 
 		@Override
@@ -188,7 +207,7 @@ class ListConfigEntryTest {
 
 		@Override
 		public List<String> getValue() {
-			return List.of("first");
+			return values;
 		}
 
 		@Override
@@ -209,6 +228,26 @@ class ListConfigEntryTest {
 		@Override
 		public IConfigValueSerializer<List<String>> getSerializer() {
 			return serializer;
+		}
+	}
+
+	private static final class CountingList extends AbstractList<String> {
+		private final List<String> values;
+		private int reads;
+
+		private CountingList(List<String> values) {
+			this.values = values;
+		}
+
+		@Override
+		public String get(int index) {
+			reads++;
+			return values.get(index);
+		}
+
+		@Override
+		public int size() {
+			return values.size();
 		}
 	}
 
