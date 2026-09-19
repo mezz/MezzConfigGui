@@ -43,8 +43,9 @@ public class ConfigTextures {
 
 		this.modTabSelected = createScalableGuiSprite("mod_tab_selected");
 		this.modTabUnselected = createScalableGuiSprite("mod_tab_unselected");
-		this.arrowUp = createGuiSprite("icons/arrow_up", 9, 9);
-		this.arrowDown = createGuiSprite("icons/arrow_down", 9, 9);
+		// These sprites include padding; enlarge them so the visible arrows match JEI navigation icons.
+		this.arrowUp = createGuiSprite("icons/arrow_up", 13, 13);
+		this.arrowDown = createGuiSprite("icons/arrow_down", 13, 13);
 		this.checkbox = createGuiSprite("checkbox", 18, 18);
 		this.checkboxHighlight = createGuiSprite("checkbox_highlight", 18, 18);
 	}

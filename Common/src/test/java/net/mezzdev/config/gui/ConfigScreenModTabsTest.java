@@ -23,7 +23,7 @@ class ConfigScreenModTabsTest {
 
 		tabs.updateLayout(SCREEN_AREA);
 
-		assertEquals(List.of("mod6", "mod7", "mod8"), tabs.getVisibleModIds());
+		assertEquals(List.of("mod5", "mod6", "mod7", "mod8"), tabs.getVisibleModIds());
 		assertEquals(new ImmutableRect2i(67, 24, 36, 180), tabs.getTabsArea());
 	}
 
@@ -35,9 +35,9 @@ class ConfigScreenModTabsTest {
 
 		tabs.updateLayout(SCREEN_AREA);
 
-		assertEquals(List.of("mod5", "mod6", "mod7"), tabs.getVisibleModIds());
+		assertEquals(List.of("mod4", "mod5", "mod6", "mod7"), tabs.getVisibleModIds());
 		tabs.updateLayout(new ImmutableRect2i(100, 20, 500, 220));
-		assertEquals(List.of("mod5", "mod6", "mod7", "mod8"), tabs.getVisibleModIds());
+		assertEquals(List.of("mod4", "mod5", "mod6", "mod7", "mod8"), tabs.getVisibleModIds());
 	}
 
 	@Test
@@ -46,7 +46,7 @@ class ConfigScreenModTabsTest {
 		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod0", entries);
 		tabs.updateLayout(SCREEN_AREA);
 		tabs.mouseScrolled(80, 25, -2);
-		assertEquals(List.of("mod2", "mod3", "mod4"), tabs.getVisibleModIds());
+		assertEquals(List.of("mod2", "mod3", "mod4", "mod5"), tabs.getVisibleModIds());
 		assertTrue(tabs.mouseClicked(84, 130, 0));
 		ConfigScreenListEntry clicked = tabs.mouseReleased(84, 130, 0).entry().orElseThrow();
 		assertEquals("mod4", clicked.modId());
@@ -68,7 +68,7 @@ class ConfigScreenModTabsTest {
 		List<ConfigScreenListEntry> entries = createEntries(10);
 		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod4", entries);
 		tabs.updateLayout(SCREEN_AREA);
-		assertEquals(List.of("mod3", "mod4", "mod5"), tabs.getVisibleModIds());
+		assertEquals(List.of("mod2", "mod3", "mod4", "mod5"), tabs.getVisibleModIds());
 
 		ConfigScreenModTabs changed = new ConfigScreenModTabs("mod5", entries.subList(1, entries.size()));
 		changed.copyScrollPositionFrom(tabs);
@@ -83,7 +83,7 @@ class ConfigScreenModTabsTest {
 		ConfigScreenModTabs changed = new ConfigScreenModTabs("mod1", createEntries(6));
 		changed.copyScrollPositionFrom(tabs);
 		changed.updateLayout(SCREEN_AREA);
-		assertEquals(List.of("mod1", "mod2", "mod3"), changed.getVisibleModIds());
+		assertEquals(List.of("mod1", "mod2", "mod3", "mod4"), changed.getVisibleModIds());
 	}
 
 	@Test
@@ -92,16 +92,16 @@ class ConfigScreenModTabsTest {
 		tabs.updateLayout(SCREEN_AREA);
 
 		assertTrue(tabs.mouseScrolled(80, 25, 1));
-		assertEquals(List.of("mod0", "mod1", "mod2"), tabs.getVisibleModIds());
+		assertEquals(List.of("mod0", "mod1", "mod2", "mod3"), tabs.getVisibleModIds());
 
 		assertTrue(tabs.mouseScrolled(80, 25, -1));
-		assertEquals(List.of("mod1", "mod2", "mod3"), tabs.getVisibleModIds());
+		assertEquals(List.of("mod1", "mod2", "mod3", "mod4"), tabs.getVisibleModIds());
 		assertTrue(tabs.mouseScrolled(80, 25, 1));
-		assertEquals(List.of("mod0", "mod1", "mod2"), tabs.getVisibleModIds());
+		assertEquals(List.of("mod0", "mod1", "mod2", "mod3"), tabs.getVisibleModIds());
 		tabs.mouseScrolled(80, 25, -100);
-		assertEquals(List.of("mod7", "mod8", "mod9"), tabs.getVisibleModIds());
+		assertEquals(List.of("mod6", "mod7", "mod8", "mod9"), tabs.getVisibleModIds());
 		tabs.mouseScrolled(80, 25, -1);
-		assertEquals(List.of("mod7", "mod8", "mod9"), tabs.getVisibleModIds());
+		assertEquals(List.of("mod6", "mod7", "mod8", "mod9"), tabs.getVisibleModIds());
 		assertFalse(tabs.mouseScrolled(200, 25, -1));
 	}
 
@@ -126,13 +126,13 @@ class ConfigScreenModTabsTest {
 		assertFalse(tabs.mouseClicked(SCREEN_AREA.getX(), 25, 0));
 		assertFalse(tabs.mouseClicked(SCREEN_AREA.getX(), 180, 0));
 		for (int firstIndex = 1; firstIndex <= 8; firstIndex++) {
-			assertTrue(tabs.mouseClicked(90, 180, 0));
-			assertTrue(tabs.mouseReleased(90, 180, 0).handled());
-			assertEquals("mod" + Math.min(firstIndex, 7), tabs.getVisibleModIds().getFirst());
+			assertTrue(tabs.mouseClicked(90, 190, 0));
+			assertTrue(tabs.mouseReleased(90, 190, 0).handled());
+			assertEquals("mod" + Math.min(firstIndex, 6), tabs.getVisibleModIds().getFirst());
 		}
 		assertTrue(tabs.mouseClicked(90, 25, 0));
 		tabs.mouseReleased(90, 25, 0);
-		assertEquals("mod6", tabs.getVisibleModIds().getFirst());
+		assertEquals("mod5", tabs.getVisibleModIds().getFirst());
 	}
 
 	@Test
@@ -167,11 +167,11 @@ class ConfigScreenModTabsTest {
 		tabs.updateLayout(SCREEN_AREA);
 
 		assertFalse(tabs.getResizeExclusionArea(60).isEmpty());
-		assertTrue(tabs.getResizeExclusionArea(57).isEmpty());
-		assertTrue(tabs.getResizeExclusionArea(165).isEmpty());
+		assertTrue(tabs.getResizeExclusionArea(45).isEmpty());
+		assertTrue(tabs.getResizeExclusionArea(175).isEmpty());
 		tabs.mouseScrolled(90, 25, -100);
 		assertFalse(tabs.getResizeExclusionArea(60).isEmpty());
-		assertTrue(tabs.getResizeExclusionArea(165).isEmpty());
+		assertTrue(tabs.getResizeExclusionArea(175).isEmpty());
 	}
 
 	@Test
@@ -179,14 +179,16 @@ class ConfigScreenModTabsTest {
 		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod0", createEntries(10));
 		tabs.updateLayout(SCREEN_AREA);
 
-		assertTrue(tabs.mouseClicked(98, 203, 0));
-		assertTrue(tabs.mouseReleased(98, 203, 0).playSound());
+		assertTrue(tabs.mouseClicked(94, 203, 0));
+		assertTrue(tabs.mouseReleased(94, 203, 0).playSound());
 		assertEquals("mod1", tabs.getVisibleModIds().getFirst());
-		assertTrue(tabs.mouseClicked(98, 55, 0));
-		assertTrue(tabs.mouseReleased(98, 55, 0).playSound());
+		assertTrue(tabs.mouseClicked(94, 43, 0));
+		assertTrue(tabs.mouseReleased(94, 43, 0).playSound());
 		assertEquals("mod0", tabs.getVisibleModIds().getFirst());
-		assertFalse(tabs.mouseClicked(98, 56, 0));
-		assertFalse(tabs.mouseClicked(98, 171, 0));
+		assertFalse(tabs.mouseClicked(95, 43, 0));
+		assertFalse(tabs.mouseClicked(74, 43, 0));
+		assertFalse(tabs.mouseClicked(94, 44, 0));
+		assertFalse(tabs.mouseClicked(94, 183, 0));
 	}
 
 	private static List<ConfigScreenListEntry> createEntries(int count) {
