@@ -35,7 +35,11 @@ final class ConfigTooltip {
 				Integer.MAX_VALUE
 			);
 			List<FormattedCharSequence> visibleLines = Language.getInstance().getVisualOrder(splitLines.first());
-			guiGraphics.renderTooltip(font, visibleLines, x, y);
+			if (Minecraft.getInstance().screen instanceof MezzConfigScreen screen) {
+				screen.setTooltipForNextRenderPass(visibleLines);
+			} else {
+				guiGraphics.renderTooltip(font, visibleLines, x, y);
+			}
 		}
 	}
 }

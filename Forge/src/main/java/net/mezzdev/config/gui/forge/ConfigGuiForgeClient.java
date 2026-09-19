@@ -3,6 +3,7 @@ package net.mezzdev.config.gui.forge;
 import net.mezzdev.config.gui.api.IConfigScreenFactory;
 import net.mezzdev.config.gui.ConfigGui;
 import net.mezzdev.config.gui.ConfigGuiColors;
+import net.mezzdev.config.gui.MezzConfigScreen;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.remote.RemoteConfigEditor;
 import net.mezzdev.config.gui.remote.RemoteConfigNetworking;
@@ -15,9 +16,11 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraftforge.client.ConfigScreenHandler;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
+import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.network.Channel;
@@ -37,6 +40,17 @@ public final class ConfigGuiForgeClient {
 
 	public static void register(IEventBus modEventBus, ConfigGuiForgeNetwork network) {
 		ConfigGuiOptions.register();
+		MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, (ScreenEvent.Render.Pre event) -> {
+			if (event.getScreen() instanceof MezzConfigScreen screen) {
+				screen.clearTooltipForNextRenderPass();
+			}
+		});
+		// JEI renders its overlay in Render.Post, before this final tooltip pass.
+		MinecraftForge.EVENT_BUS.addListener(EventPriority.LOWEST, (ScreenEvent.Render.Post event) -> {
+			if (event.getScreen() instanceof MezzConfigScreen screen) {
+				screen.renderDeferredTooltip(event.getGuiGraphics(), event.getMouseX(), event.getMouseY());
+			}
+		});
 		RemoteConfigNetworking.setClientSender(payload -> {
 			ClientPacketListener listener = Minecraft.getInstance().getConnection();
 			if (listener == null) {

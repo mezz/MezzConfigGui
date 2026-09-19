@@ -4,6 +4,7 @@ import net.mezzdev.config.gui.api.IConfigScreenFactory;
 import net.mezzdev.config.gui.ConfigGui;
 import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.ConfigScreenConfig;
+import net.mezzdev.config.gui.MezzConfigScreen;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.remote.RemoteConfigEditor;
 import net.mezzdev.config.gui.remote.RemoteConfigNetworking;
@@ -14,11 +15,13 @@ import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.apache.logging.log4j.LogManager;
@@ -39,6 +42,17 @@ public final class ConfigGuiNeoForgeClient {
 
 	public static void register(IEventBus modEventBus) {
 		ConfigGuiOptions.register();
+		NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, (ScreenEvent.Render.Pre event) -> {
+			if (event.getScreen() instanceof MezzConfigScreen screen) {
+				screen.clearTooltipForNextRenderPass();
+			}
+		});
+		// JEI renders its overlay in Render.Post, before this final tooltip pass.
+		NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, (ScreenEvent.Render.Post event) -> {
+			if (event.getScreen() instanceof MezzConfigScreen screen) {
+				screen.renderDeferredTooltip(event.getGuiGraphics(), event.getMouseX(), event.getMouseY());
+			}
+		});
 		RemoteConfigNetworking.setClientSender(payload -> {
 			ClientPacketListener connection = Minecraft.getInstance().getConnection();
 			if (connection == null || !connection.hasChannel(payload.type())) {
