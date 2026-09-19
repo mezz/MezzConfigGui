@@ -20,6 +20,7 @@ class ConfigValueSelectorInputHandlerTest {
 	private static final ImmutableRect2i CLIP_AREA = new ImmutableRect2i(0, 0, 200, 200);
 
 	@Test
+	@SuppressWarnings("DataFlowIssue")
 	void releasingOutsideAfterDraggingDoesNotCloseThePopup() {
 		DraggingPopupSelector popup = new DraggingPopupSelector();
 		AtomicInteger closeCount = new AtomicInteger();
@@ -29,10 +30,10 @@ class ConfigValueSelectorInputHandlerTest {
 			closeCount::incrementAndGet,
 			() -> {}
 		);
-		Screen screen = new Screen(Component.empty()) {};
+		Screen screen = null;
 
 		assertTrue(handler.handleUserInput(screen, mouseInput(50, 50, InputType.SIMULATE)).isPresent());
-		assertTrue(handler.handleMouseDragged(screen, 150, 50, 0, 100, 0).isPresent());
+		assertTrue(handler.handleMouseDragged(screen, 150, 50, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT, 100, 0).isPresent());
 		assertTrue(handler.handleUserInput(screen, mouseInput(150, 50, InputType.EXECUTE)).isPresent());
 
 		assertEquals(1, popup.clickCount);
@@ -46,7 +47,7 @@ class ConfigValueSelectorInputHandlerTest {
 	}
 
 	private static UserInput mouseInput(double mouseX, double mouseY, InputType inputType) {
-		return UserInput.fromVanilla(mouseX, mouseY, 0, inputType).orElseThrow();
+		return UserInput.fromVanilla(mouseX, mouseY, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT, inputType).orElseThrow();
 	}
 
 	private static final class DraggingPopupSelector implements ConfigPopupSelector {

@@ -27,7 +27,7 @@ class AppliedConfigChangeTrackerTest {
 
 		List<ConfigValueChange<?>> undoChanges = tracker.getUndoChanges();
 		assertEquals(1, undoChanges.size());
-		assertEquals("first", undoChanges.getFirst().value());
+		assertEquals("first", undoChanges.get(0).value());
 	}
 
 	@Test
@@ -68,7 +68,7 @@ class AppliedConfigChangeTrackerTest {
 
 		List<ConfigValueChange<?>> undoChanges = tracker.getUndoChanges();
 		assertEquals(1, undoChanges.size());
-		assertEquals("first", undoChanges.getFirst().value());
+		assertEquals("first", undoChanges.get(0).value());
 	}
 
 	@Test
@@ -96,7 +96,7 @@ class AppliedConfigChangeTrackerTest {
 
 		List<ConfigValueChange<?>> undoChanges = tracker.getUndoChanges();
 		assertEquals(List.of(firstValue, secondValue), undoChanges.stream().map(ConfigValueChange::configValue).toList());
-		assertEquals("first", undoChanges.getFirst().value());
+		assertEquals("first", undoChanges.get(0).value());
 	}
 
 	private static final class TestConfigValue implements IConfigScreenValue<String> {

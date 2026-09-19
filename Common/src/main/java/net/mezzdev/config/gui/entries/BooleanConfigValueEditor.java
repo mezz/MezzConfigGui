@@ -59,7 +59,7 @@ final class BooleanConfigValueEditor implements IConfigValueEditor<Boolean> {
 		double mouseY,
 		int button
 	) {
-		if (button != 0) {
+		if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
 			return Optional.empty();
 		}
 		return Optional.of(!value);

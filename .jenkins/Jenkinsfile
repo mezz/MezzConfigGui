@@ -19,13 +19,10 @@ def getReleaseVersion() {
     if (tagName.startsWith('refs/tags/')) {
         tagName = tagName.substring('refs/tags/'.length())
     }
-    if (tagName.startsWith('v')) {
-        tagName = tagName.substring(1)
-    }
-    if (!tagName) {
+    if (!(tagName ==~ /mc1\.21\.11\/v[0-9]+\.[0-9]+\.[0-9]+/)) {
         error "Could not determine release version from RELEASE_TAG='${env.RELEASE_TAG}'."
     }
-    return tagName
+    return tagName.substring(tagName.lastIndexOf('/v') + 2)
 }
 
 def shellQuote(String value) {
@@ -55,7 +52,7 @@ def wasReleasePublished(String tagName) {
 }
 
 def shouldPublishRelease() {
-    return env.BRANCH_NAME == '1.21.1' && !env.CHANGE_ID && env.RELEASE_TAG?.trim() &&
+    return env.BRANCH_NAME == '1.21.11' && !env.CHANGE_ID && (env.RELEASE_TAG?.trim()?.replaceFirst('^refs/tags/', '') ==~ /mc1\.21\.11\/v[0-9]+\.[0-9]+\.[0-9]+/) &&
         !wasReleasePublished(env.RELEASE_TAG)
 }
 
@@ -82,7 +79,7 @@ pipeline {
 
         stage('Resolve Release Tag') {
             when {
-                branch '1.21.1'
+                branch '1.21.11'
             }
             steps {
                 script {
@@ -90,7 +87,7 @@ pipeline {
                     env.RELEASE_TAG = sh(
                         script: '''
                             head_commit="$(git rev-parse HEAD)"
-                            git for-each-ref --sort=-v:refname --format='%(refname:short)' 'refs/tags/v[0-9]*.[0-9]*.[0-9]*' |
+                            git for-each-ref --sort=-v:refname --format='%(refname:short)' 'refs/tags/mc1.21.11/v[0-9]*.[0-9]*.[0-9]*' |
                                 while IFS= read -r tag; do
                                     tag_commit="$(git rev-list -n 1 "$tag")"
                                     if [ "$tag_commit" = "$head_commit" ]; then
@@ -175,7 +172,7 @@ pipeline {
             }
             steps {
                 script {
-                    sh "./gradlew --no-configuration-cache :Fabric:publishCurseforge :Forge:publishCurseforge :NeoForge:publishCurseforge -PpublishDryRun=false ${getReleaseGradleArgs()} --no-daemon"
+                    sh "./gradlew --no-configuration-cache :Fabric:publishCurseforge :NeoForge:publishCurseforge -PpublishDryRun=false ${getReleaseGradleArgs()} --no-daemon"
                 }
             }
         }
@@ -189,7 +186,7 @@ pipeline {
             }
             steps {
                 script {
-                    sh "./gradlew --no-configuration-cache :Fabric:publishModrinth :Forge:publishModrinth :NeoForge:publishModrinth -PpublishDryRun=false ${getReleaseGradleArgs()} --no-daemon"
+                    sh "./gradlew --no-configuration-cache :Fabric:publishModrinth :NeoForge:publishModrinth -PpublishDryRun=false ${getReleaseGradleArgs()} --no-daemon"
                 }
             }
         }

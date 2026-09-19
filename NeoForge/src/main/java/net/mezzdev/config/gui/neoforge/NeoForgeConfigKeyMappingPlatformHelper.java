@@ -83,7 +83,7 @@ public final class NeoForgeConfigKeyMappingPlatformHelper extends VanillaConfigK
 
 	@Override
 	public boolean isInDev() {
-		return !FMLLoader.isProduction();
+		return !FMLLoader.getCurrent().isProduction();
 	}
 
 	private boolean hasKeyContextConflict(KeyMapping keyMapping, KeyMapping otherKeyMapping) {
@@ -94,7 +94,7 @@ public final class NeoForgeConfigKeyMappingPlatformHelper extends VanillaConfigK
 
 	private static KeyModifier toNeoForge(ConfigKeyModifier modifier) {
 		return switch (modifier) {
-			case CONTROL_OR_COMMAND -> KeyModifier.CONTROL;
+			case CONTROL_OR_COMMAND -> KeyModifier.CONTROL_OR_COMMAND;
 			case SHIFT -> KeyModifier.SHIFT;
 			case ALT -> KeyModifier.ALT;
 			case NONE -> KeyModifier.NONE;
@@ -103,7 +103,7 @@ public final class NeoForgeConfigKeyMappingPlatformHelper extends VanillaConfigK
 
 	private static ConfigKeyModifier fromNeoForge(KeyModifier modifier) {
 		return switch (modifier) {
-			case CONTROL -> ConfigKeyModifier.CONTROL_OR_COMMAND;
+			case CONTROL, CONTROL_OR_COMMAND -> ConfigKeyModifier.CONTROL_OR_COMMAND;
 			case SHIFT -> ConfigKeyModifier.SHIFT;
 			case ALT -> ConfigKeyModifier.ALT;
 			case NONE -> ConfigKeyModifier.NONE;

@@ -8,7 +8,7 @@ import net.mezzdev.config.gui.ConfigScreen;
 import net.mezzdev.config.gui.MezzConfigScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.Rect2i;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -19,8 +19,8 @@ public class ConfigGuiPlugin implements IModPlugin {
 	private static final String CONFIG_GUI_MOD_ID = "mezz_config_gui";
 
 	@Override
-	public ResourceLocation getPluginUid() {
-		return ResourceLocation.fromNamespaceAndPath(CONFIG_GUI_MOD_ID, "config_gui");
+	public Identifier getPluginUid() {
+		return Identifier.fromNamespaceAndPath(CONFIG_GUI_MOD_ID, "config_gui");
 	}
 
 	@Override

@@ -56,11 +56,11 @@ class ConfigValueSelectorTest {
 			() -> {}
 		);
 
-		UserInput simulate = UserInput.fromVanilla(15.0, 35.0, 1, InputType.SIMULATE).orElseThrow();
-		UserInput execute = UserInput.fromVanilla(15.0, 35.0, 1, InputType.EXECUTE).orElseThrow();
+		UserInput simulate = UserInput.fromVanilla(15.0, 35.0, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT, InputType.SIMULATE).orElseThrow();
+		UserInput execute = UserInput.fromVanilla(15.0, 35.0, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT, InputType.EXECUTE).orElseThrow();
 		assertTrue(inputHandler.handleUserInput(null, simulate).isPresent());
 		assertTrue(inputHandler.handleUserInput(null, execute).isPresent());
-		assertEquals(1, clickedButton.get());
+		assertEquals(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT, clickedButton.get());
 		assertEquals("selected", selectedValue.get());
 	}
 
@@ -83,10 +83,10 @@ class ConfigValueSelectorTest {
 			() -> {}
 		);
 
-		UserInput simulate = UserInput.fromVanilla(15.0, 35.0, 0, InputType.SIMULATE).orElseThrow();
-		UserInput execute = UserInput.fromVanilla(18.0, 38.0, 0, InputType.EXECUTE).orElseThrow();
+		UserInput simulate = UserInput.fromVanilla(15.0, 35.0, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT, InputType.SIMULATE).orElseThrow();
+		UserInput execute = UserInput.fromVanilla(18.0, 38.0, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT, InputType.EXECUTE).orElseThrow();
 		assertTrue(inputHandler.handleUserInput(null, simulate).isPresent());
-		assertTrue(inputHandler.handleMouseDragged(null, 18.0, 38.0, 0, 3.0, 3.0).isPresent());
+		assertTrue(inputHandler.handleMouseDragged(null, 18.0, 38.0, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT, 3.0, 3.0).isPresent());
 		assertTrue(inputHandler.handleUserInput(null, execute).isPresent());
 
 		assertEquals(List.of("dragged"), selectedValues);

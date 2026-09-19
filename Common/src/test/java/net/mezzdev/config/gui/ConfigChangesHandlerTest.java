@@ -51,7 +51,7 @@ class ConfigChangesHandlerTest {
 		assertEquals("first changed", first.getValue());
 		assertEquals("failing", failing.getValue());
 		assertEquals("unattempted", unattempted.getValue());
-		AppliedConfigValueChange<?> appliedChange = result.appliedChanges().getFirst();
+		AppliedConfigValueChange<?> appliedChange = result.appliedChanges().get(0);
 		assertEquals("first", appliedChange.oldValue());
 		assertEquals("first changed", appliedChange.newValue());
 		assertSame(failing, result.failure().orElseThrow().change().configValue());
@@ -126,7 +126,7 @@ class ConfigChangesHandlerTest {
 		assertEquals("restartRequired changed", restartRequiredValue.getPendingValue());
 		assertEquals("restartRequired changed", screenValue.getValue());
 		assertEquals(ConfigValueRestartRequirement.GAME_RESTART, result.restartRequirement());
-		AppliedConfigValueChange<?> appliedChange = result.appliedChanges().getFirst();
+		AppliedConfigValueChange<?> appliedChange = result.appliedChanges().get(0);
 		assertEquals("restartRequired", appliedChange.oldValue());
 		assertEquals("restartRequired changed", appliedChange.newValue());
 	}
@@ -167,7 +167,7 @@ class ConfigChangesHandlerTest {
 		assertEquals("local", localScreenValue.getValue());
 		assertEquals(1, continuationTasks.size());
 
-		continuationTasks.getFirst().run();
+		continuationTasks.get(0).run();
 
 		assertTrue(resultFuture.join().succeeded());
 		assertEquals("local changed", localScreenValue.getValue());

@@ -1,6 +1,6 @@
 package net.mezzdev.config.gui.keybindings;
 
-import net.minecraft.client.gui.screens.Screen;
+import net.mezzdev.config.gui.ConfigInputUtil;
 
 final class KeyModifiers {
 	private KeyModifiers() {
@@ -8,13 +8,13 @@ final class KeyModifiers {
 	}
 
 	public static ConfigKeyModifier getActive() {
-		if (Screen.hasShiftDown()) {
+		if (ConfigInputUtil.hasShiftDown()) {
 			return ConfigKeyModifier.SHIFT;
 		}
-		if (Screen.hasControlDown()) {
+		if (ConfigInputUtil.hasControlDown()) {
 			return ConfigKeyModifier.CONTROL_OR_COMMAND;
 		}
-		if (Screen.hasAltDown()) {
+		if (ConfigInputUtil.hasAltDown()) {
 			return ConfigKeyModifier.ALT;
 		}
 		return ConfigKeyModifier.NONE;

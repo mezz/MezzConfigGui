@@ -6,17 +6,16 @@ import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.gui.api.IConfigValueIcon;
 import net.mezzdev.config.gui.api.IConfigValueIconProvider;
 import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
-import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.List;
 import java.util.Optional;
 
 final class NeoForgeBooleanSerializer implements IConfigValueEditorSerializer<Boolean>, IConfigValueIconProvider<Boolean> {
 	public static final NeoForgeBooleanSerializer INSTANCE = new NeoForgeBooleanSerializer();
-	private static final ResourceLocation ENABLED_ICON = ResourceLocation.withDefaultNamespace("container/beacon/confirm");
-	private static final ResourceLocation DISABLED_ICON = ResourceLocation.withDefaultNamespace("container/beacon/cancel");
+	private static final Identifier ENABLED_ICON = Identifier.withDefaultNamespace("container/beacon/confirm");
+	private static final Identifier DISABLED_ICON = Identifier.withDefaultNamespace("container/beacon/cancel");
 
 	private NeoForgeBooleanSerializer() {
 
@@ -58,7 +57,7 @@ final class NeoForgeBooleanSerializer implements IConfigValueEditorSerializer<Bo
 	public Optional<Component> getLocalizedValueDescription(String configValueLocalizationKey, Boolean value) {
 		String suffix = ".value." + value + ".description";
 		String translationKey = configValueLocalizationKey + suffix;
-		if (I18n.exists(translationKey)) {
+		if (net.minecraft.locale.Language.getInstance().has(translationKey)) {
 			return Optional.of(Component.translatable(translationKey));
 		}
 		return Optional.of(Component.translatable(getValueDescriptionTranslationKey(value)));
@@ -66,8 +65,8 @@ final class NeoForgeBooleanSerializer implements IConfigValueEditorSerializer<Bo
 
 	@Override
 	public Optional<IConfigValueIcon> getIcon(Boolean value) {
-		ResourceLocation location = getValueIconLocation(value);
-		return Optional.of((guiGraphics, area) -> guiGraphics.blitSprite(location, area.getX(), area.getY(), area.getWidth(), area.getHeight()));
+		Identifier location = getValueIconLocation(value);
+		return Optional.of((guiGraphics, area) -> net.mezzdev.config.gui.ConfigRenderUtil.blitSprite(guiGraphics, location, area.getX(), area.getY(), area.getWidth(), area.getHeight()));
 	}
 
 	@Override
@@ -89,7 +88,7 @@ final class NeoForgeBooleanSerializer implements IConfigValueEditorSerializer<Bo
 		return "mezz_config.config.value.boolean.false.description";
 	}
 
-	private static ResourceLocation getValueIconLocation(boolean value) {
+	private static Identifier getValueIconLocation(boolean value) {
 		if (value) {
 			return ENABLED_ICON;
 		}

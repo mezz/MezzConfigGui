@@ -43,7 +43,7 @@
     "java": ">=${modJavaVersion}"
   },
   "suggests": {
-    "amecsapi": "*",
+    "amecs_key_modifiers": "*",
     "modmenu": "*",
     "jei": "*"
   }

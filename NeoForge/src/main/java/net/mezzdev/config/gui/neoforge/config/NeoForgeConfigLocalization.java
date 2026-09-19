@@ -2,7 +2,6 @@ package net.mezzdev.config.gui.neoforge.config;
 
 import net.mezzdev.config.gui.ConfigValueSections;
 import net.mezzdev.config.gui.util.ConfigNameUtil;
-import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.config.ModConfig;
@@ -49,7 +48,7 @@ final class NeoForgeConfigLocalization {
 	}
 
 	static Optional<ConfigValueSections.CategoryGroup> getCategoryGroup(String modId, ModConfig.Type type, String localizationKey) {
-		if (type != ModConfig.Type.COMMON || I18n.exists(localizationKey + ".title")) {
+		if (type != ModConfig.Type.COMMON || net.minecraft.locale.Language.getInstance().has(localizationKey + ".title")) {
 			return Optional.empty();
 		}
 		return Optional.of(new ConfigValueSections.CategoryGroup(
@@ -134,7 +133,7 @@ final class NeoForgeConfigLocalization {
 			case STARTUP -> "mezz_config.config.native.description.startup";
 		};
 		Component scope = Component.translatable(fallbackKey, modConfig.getFileName());
-		if (I18n.exists(tooltipKey)) {
+		if (net.minecraft.locale.Language.getInstance().has(tooltipKey)) {
 			return Component.translatable(tooltipKey).append("\n\n").append(scope);
 		}
 		return scope;
@@ -186,7 +185,7 @@ final class NeoForgeConfigLocalization {
 
 	private static Component getDescription(String localizationKey, @Nullable String comment) {
 		String tooltipKey = localizationKey + ".tooltip";
-		if (I18n.exists(tooltipKey) || !Strings.isBlank(comment)) {
+		if (net.minecraft.locale.Language.getInstance().has(tooltipKey) || !Strings.isBlank(comment)) {
 			return Component.translatableWithFallback(tooltipKey, getCommentFallback(comment));
 		}
 		return Component.empty();

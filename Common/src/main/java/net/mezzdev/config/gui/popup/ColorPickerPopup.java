@@ -1,5 +1,9 @@
 package net.mezzdev.config.gui.popup;
 
+import net.mezzdev.config.gui.ConfigInputUtil;
+
+import net.mezzdev.config.gui.util.ConfigMath;
+
 import net.mezzdev.config.api.value.color.ConfigColorFormat;
 import net.mezzdev.config.api.value.color.PackedColor;
 import net.mezzdev.config.gui.ConfigGuiColors;
@@ -10,11 +14,9 @@ import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.util.StringUtil;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -118,7 +120,7 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 
 	@Override
 	public Optional<PackedColor> getClickedValue(Rect2i area, double mouseX, double mouseY, int button) {
-		if (button != 0) {
+		if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
 			return Optional.empty();
 		}
 		PickerLayout layout = createLayout(area);
@@ -155,7 +157,7 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 
 	@Override
 	public Optional<PackedColor> getDraggedValue(Rect2i area, double mouseX, double mouseY, int button) {
-		if (button != 0) {
+		if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
 			return Optional.empty();
 		}
 		PickerLayout layout = createLayout(area);
@@ -183,34 +185,34 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		if (focusedField == null) {
 			return false;
 		}
-		if (Screen.isSelectAll(keyCode)) {
+		if (ConfigInputUtil.isSelectAll(keyCode)) {
 			selectAll = true;
 			return true;
 		}
-		if (Screen.isPaste(keyCode)) {
+		if (ConfigInputUtil.isPaste(keyCode)) {
 			appendText(Minecraft.getInstance().keyboardHandler.getClipboard());
 			applyEditText(valueConsumer);
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_TAB) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_TAB) {
 			focusField(ColorField.HEX);
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_RETURN || keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_NUMPADENTER) {
 			applyEditText(valueConsumer);
 			selectAll = true;
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
 			clearFocus();
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_BACKSPACE) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_BACKSPACE) {
 			removeLastCharacter();
 			applyEditText(valueConsumer);
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_DELETE) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_DELETE) {
 			editText = "";
 			selectAll = false;
 			return true;
@@ -338,11 +340,11 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 	}
 
 	static float getPreciseSliderPosition(float valueAnchor, float pointerAnchor, float pointerPosition) {
-		return Math.clamp(valueAnchor + (pointerPosition - pointerAnchor) * PRECISE_SLIDER_SCALE, 0.0f, 1.0f);
+		return ConfigMath.clamp(valueAnchor + (pointerPosition - pointerAnchor) * PRECISE_SLIDER_SCALE, 0.0f, 1.0f);
 	}
 
 	private static boolean isShiftDown() {
-		return Minecraft.getInstance() != null && Screen.hasShiftDown();
+		return Minecraft.getInstance() != null && ConfigInputUtil.hasShiftDown();
 	}
 
 	private float getControlPosition(ColorControl control) {
@@ -874,7 +876,7 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		if (size <= 1) {
 			return 0.0f;
 		}
-		return (float) Math.clamp((position - start) / (size - 1), 0.0, 1.0);
+		return (float) ConfigMath.clamp((position - start) / (size - 1), 0.0, 1.0);
 	}
 
 	private static boolean contains(Rect2i area, double mouseX, double mouseY) {

@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui;
 
+import net.mezzdev.config.gui.util.ConfigMath;
+
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.gui.components.EditBox;
@@ -187,7 +189,7 @@ public final class ConfigScreenLayout {
 	private static int clampNavigationWidth(int width, int mainWidth) {
 		int maxWidth = Math.max(0, mainWidth - NAV_DIVIDER_WIDTH - MIN_CONTENT_WIDTH);
 		int minWidth = Math.min(ConfigGuiOptions.MIN_NAVIGATION_WIDTH, maxWidth);
-		return Math.clamp(width, minWidth, maxWidth);
+		return ConfigMath.clamp(width, minWidth, maxWidth);
 	}
 
 	private record NavigationResizeDrag(double startMouseX, int startWidth, int width) {}
@@ -387,7 +389,7 @@ public final class ConfigScreenLayout {
 	}
 
 	private static double getDragScrollAmount(double edgeDistance) {
-		double factor = Math.clamp(edgeDistance / DRAG_SCROLL_EDGE_SIZE, 0.0, 1.0);
+		double factor = ConfigMath.clamp(edgeDistance / DRAG_SCROLL_EDGE_SIZE, 0.0, 1.0);
 		return factor * ConfigGuiOptions.getDragAutoScrollSpeed();
 	}
 

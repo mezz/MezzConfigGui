@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui.entries;
 
+import net.mezzdev.config.gui.util.ConfigMath;
+
 import net.mezzdev.config.api.value.serializer.ConfigValueRange;
 
 import java.math.BigDecimal;
@@ -46,7 +48,7 @@ final class NumberSliderModel<T> {
 			range,
 			value -> ((long) value - min) / (double) span,
 			position -> (int) (min + Math.round(position * span)),
-			(value, steps) -> (int) Math.clamp((long) value + steps, min, max)
+			(value, steps) -> (int) ConfigMath.clamp((long) value + steps, min, max)
 		));
 	}
 
@@ -94,7 +96,7 @@ final class NumberSliderModel<T> {
 			range,
 			value -> (value - min) / span,
 			position -> Math.fma(span, position, min),
-			(value, steps) -> Math.clamp(value + steps, min, max)
+			(value, steps) -> ConfigMath.clamp(value + steps, min, max)
 		));
 	}
 
@@ -120,11 +122,11 @@ final class NumberSliderModel<T> {
 	}
 
 	public double getPosition(T value) {
-		return Math.clamp(positionGetter.applyAsDouble(value), 0.0, 1.0);
+		return ConfigMath.clamp(positionGetter.applyAsDouble(value), 0.0, 1.0);
 	}
 
 	public T getValue(double position) {
-		double clampedPosition = Math.clamp(position, 0.0, 1.0);
+		double clampedPosition = ConfigMath.clamp(position, 0.0, 1.0);
 		if (clampedPosition == 0.0) {
 			return range.min();
 		}

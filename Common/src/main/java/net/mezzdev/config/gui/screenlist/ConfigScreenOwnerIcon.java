@@ -1,15 +1,15 @@
 package net.mezzdev.config.gui.screenlist;
 
+import net.mezzdev.config.gui.ConfigRenderUtil;
+
 import com.mojang.blaze3d.platform.NativeImage;
 import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.entries.ConfigEntryWidget;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import org.apache.logging.log4j.LogManager;
@@ -75,10 +75,7 @@ public final class ConfigScreenOwnerIcon {
 			NativeImage image = NativeImage.read(inputStream);
 			int imageWidth = image.getWidth();
 			int imageHeight = image.getHeight();
-			DynamicTexture texture = new DynamicTexture(image);
-			ResourceLocation location = Minecraft.getInstance()
-				.getTextureManager()
-				.register("mezz_config_gui_mod_icon", texture);
+			Identifier location = ConfigRenderUtil.registerIcon(image);
 			return Optional.of(new LoadedIcon(location, imageWidth, imageHeight));
 		} catch (IOException | RuntimeException e) {
 			LOGGER.debug("Failed to load config screen icon for mod id: {}, path: {}", modId, path, e);
@@ -96,9 +93,9 @@ public final class ConfigScreenOwnerIcon {
 		drawInsetBorder(guiGraphics, iconArea);
 		String initials = getInitials(displayName, modId);
 		float scale = Math.min(1.0F, (float) Math.max(1, iconArea.getWidth() - 4) / Math.max(1, font.width(initials)));
-		guiGraphics.pose().pushPose();
-		guiGraphics.pose().translate(iconArea.getX() + iconArea.getWidth() / 2, iconArea.getY() + Math.round((iconArea.getHeight() - font.lineHeight * scale) / 2.0F), 0);
-		guiGraphics.pose().scale(scale, scale, 1.0F);
+		ConfigRenderUtil.pushPose(guiGraphics);
+		ConfigRenderUtil.translate(guiGraphics, iconArea.getX() + iconArea.getWidth() / 2, iconArea.getY() + Math.round((iconArea.getHeight() - font.lineHeight * scale) / 2.0F), 0);
+		ConfigRenderUtil.scale(guiGraphics, scale, scale, 1.0F);
 		guiGraphics.drawCenteredString(
 			font,
 			initials,
@@ -106,17 +103,17 @@ public final class ConfigScreenOwnerIcon {
 			0,
 			ConfigEntryWidget.getConfiguredTextColor()
 		);
-		guiGraphics.pose().popPose();
+		ConfigRenderUtil.popPose(guiGraphics);
 	}
 
 	private static void drawMinecraftIcon(GuiGraphics guiGraphics, ImmutableRect2i iconArea) {
 		drawIconBorder(guiGraphics, iconArea);
-		guiGraphics.pose().pushPose();
+		ConfigRenderUtil.pushPose(guiGraphics);
 		float scale = (float) iconArea.getWidth() / ITEM_ICON_SIZE;
-		guiGraphics.pose().translate(iconArea.getX(), iconArea.getY(), 0);
-		guiGraphics.pose().scale(scale, scale, 1.0F);
+		ConfigRenderUtil.translate(guiGraphics, iconArea.getX(), iconArea.getY(), 0);
+		ConfigRenderUtil.scale(guiGraphics, scale, scale, 1.0F);
 		guiGraphics.renderFakeItem(MinecraftIconHolder.ICON, 0, 0);
-		guiGraphics.pose().popPose();
+		ConfigRenderUtil.popPose(guiGraphics);
 	}
 
 	private static final class MinecraftIconHolder {
@@ -150,7 +147,7 @@ public final class ConfigScreenOwnerIcon {
 				.map(Character::toUpperCase)
 				.forEach(initials::appendCodePoint);
 		} else {
-			words.getFirst().codePoints().limit(3)
+			words.get(0).codePoints().limit(3)
 				.map(Character::toUpperCase)
 				.forEach(initials::appendCodePoint);
 		}
@@ -186,7 +183,7 @@ public final class ConfigScreenOwnerIcon {
 	}
 
 	private record LoadedIcon(
-		ResourceLocation location,
+		Identifier location,
 		int width,
 		int height
 	) {
@@ -197,7 +194,7 @@ public final class ConfigScreenOwnerIcon {
 		public void draw(GuiGraphics guiGraphics, ImmutableRect2i iconArea) {
 			drawIconBorder(guiGraphics, iconArea);
 			ImmutableRect2i fittedIconArea = getFittedIconArea(iconArea);
-			guiGraphics.blit(
+			ConfigRenderUtil.blit(guiGraphics,
 				location,
 				fittedIconArea.getX(),
 				fittedIconArea.getY(),

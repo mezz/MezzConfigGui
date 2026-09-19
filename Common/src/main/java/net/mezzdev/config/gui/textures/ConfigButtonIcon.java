@@ -4,7 +4,7 @@ import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * Atlas-backed icons shared by compact config GUI buttons.
@@ -25,7 +25,7 @@ public enum ConfigButtonIcon {
 	ConfigButtonIcon(String name, int width, int height) {
 		this.width = width;
 		this.height = height;
-		ResourceLocation location = ResourceLocation.fromNamespaceAndPath(ConfigGuiSpriteManager.TEXTURE_NAMESPACE, name);
+		Identifier location = Identifier.fromNamespaceAndPath(ConfigGuiSpriteManager.TEXTURE_NAMESPACE, name);
 		this.drawable = new ConfigDrawableStatic(
 			() -> ConfigTextures.get().getGuiSpriteManager().getSprite(location),
 			width,
@@ -49,16 +49,7 @@ public enum ConfigButtonIcon {
 			return;
 		}
 
-		guiGraphics.pose().pushPose();
 		int color = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.DISABLED_BUTTON_ICON_TINT);
-		guiGraphics.setColor(
-			((color >>> 16) & 0xFF) / 255.0f,
-			((color >>> 8) & 0xFF) / 255.0f,
-			(color & 0xFF) / 255.0f,
-			((color >>> 24) & 0xFF) / 255.0f
-		);
-		drawable.draw(guiGraphics, x, y);
-		guiGraphics.setColor(1.0f, 1.0f, 1.0f, 1.0f);
-		guiGraphics.pose().popPose();
+		drawable.drawTinted(guiGraphics, x, y, color);
 	}
 }

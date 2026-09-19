@@ -29,7 +29,8 @@ final class NeoForgeConfigScreenOwnerMetadata {
 	private static Optional<Path> getIconPath(IModInfo modInfo) {
 		return modInfo.getLogoFile()
 			.map(NeoForgeConfigScreenOwnerMetadata::toPathParts)
-			.map(pathParts -> modInfo.getOwningFile().getFile().findResource(pathParts))
+			.flatMap(pathParts -> modInfo.getOwningFile().getFile().getContents().findFile(String.join("/", pathParts)))
+			.map(Path::of)
 			.filter(Files::exists);
 	}
 

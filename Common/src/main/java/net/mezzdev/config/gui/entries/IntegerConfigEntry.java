@@ -1,5 +1,9 @@
 package net.mezzdev.config.gui.entries;
 
+import net.mezzdev.config.gui.ConfigInputUtil;
+
+import net.mezzdev.config.gui.util.ConfigMath;
+
 import net.mezzdev.config.api.value.serializer.ConfigValueRange;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.ConfigGuiColors;
@@ -15,10 +19,8 @@ import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -208,7 +210,7 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 		editing = false;
 		try {
 			int val = Integer.parseInt(editText.trim());
-			val = Math.clamp(val, min, max);
+			val = ConfigMath.clamp(val, min, max);
 			setValue(val);
 		} catch (NumberFormatException ignored) {}
 		editText = "";
@@ -235,26 +237,26 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 		if (!editing) {
 			return false;
 		}
-		if (keyCode == GLFW.GLFW_KEY_UP) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_UP) {
 			commitEdit();
 			incrementValue(getStep(modifiers));
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_DOWN) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_DOWN) {
 			commitEdit();
 			incrementValue(-getStep(modifiers));
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_ENTER) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_RETURN) {
 			commitEdit();
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
 			editing = false;
 			editText = "";
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_BACKSPACE && !editText.isEmpty()) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_BACKSPACE && !editText.isEmpty()) {
 			editText = editText.substring(0, editText.length() - 1);
 			return true;
 		}
@@ -262,21 +264,21 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 	}
 
 	private int getStep() {
-		if (Screen.hasShiftDown()) {
+		if (ConfigInputUtil.hasShiftDown()) {
 			return SHIFT_STEP;
 		}
 		return NORMAL_STEP;
 	}
 
 	private static int getStep(int modifiers) {
-		if ((modifiers & GLFW.GLFW_MOD_SHIFT) != 0) {
+		if ((modifiers & net.mezzdev.config.gui.ConfigInputUtil.SHIFT_MODIFIER) != 0) {
 			return SHIFT_STEP;
 		}
 		return NORMAL_STEP;
 	}
 
 	private void incrementValue(int increment) {
-		int value = (int) Math.clamp((long) getValue() + increment, min, max);
+		int value = (int) ConfigMath.clamp((long) getValue() + increment, min, max);
 		setValue(value);
 	}
 

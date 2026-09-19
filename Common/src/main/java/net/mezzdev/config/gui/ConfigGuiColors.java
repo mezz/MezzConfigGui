@@ -4,7 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
@@ -23,7 +23,7 @@ import java.util.OptionalInt;
  */
 public final class ConfigGuiColors {
 	private static final Logger LOGGER = LogManager.getLogger();
-	private static final ResourceLocation COLORS_RESOURCE = ResourceLocation.fromNamespaceAndPath("mezz_config", "gui/colors.json");
+	private static final Identifier COLORS_RESOURCE = Identifier.fromNamespaceAndPath("mezz_config", "gui/colors.json");
 	private static final long MAX_COLOR = 0xFFFFFFFFL;
 
 	private static volatile Map<GuiColor, Integer> colors = createDefaultColors();

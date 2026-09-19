@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui.popup;
 
+import net.mezzdev.config.gui.util.ConfigMath;
+
 import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValuePopup;
@@ -50,7 +52,7 @@ public final class ConfigValueSelector<T> implements IConfigValuePopup<T> {
 				return textWidth + ConfigValueIcon.getTextOffset(configValue, entry.value);
 			})
 			.max().orElse(MIN_ENTRY_WIDTH);
-		return Math.clamp(width + 12, MIN_ENTRY_WIDTH, MAX_ENTRY_WIDTH);
+		return ConfigMath.clamp(width + 12, MIN_ENTRY_WIDTH, MAX_ENTRY_WIDTH);
 	}
 
 	@Override
@@ -204,7 +206,7 @@ public final class ConfigValueSelector<T> implements IConfigValuePopup<T> {
 	}
 
 	private void clampScrollOffset(ImmutableRect2i contentArea) {
-		scrollOffset = Math.clamp(scrollOffset, 0, getMaxScroll(contentArea));
+		scrollOffset = ConfigMath.clamp(scrollOffset, 0, getMaxScroll(contentArea));
 	}
 
 	private void drawScrollbar(GuiGraphics guiGraphics, ImmutableRect2i contentArea) {

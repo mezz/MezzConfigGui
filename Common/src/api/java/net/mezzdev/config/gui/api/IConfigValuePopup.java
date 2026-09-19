@@ -102,7 +102,7 @@ public interface IConfigValuePopup<T> {
 	 * @since 0.1.0
 	 */
 	default Optional<T> getClickedValue(Rect2i area, double mouseX, double mouseY, int button) {
-		if (button != 0) {
+		if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
 			return Optional.empty();
 		}
 		return getHoveredValue(area, mouseX, mouseY);

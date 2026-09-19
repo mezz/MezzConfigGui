@@ -5,7 +5,7 @@ Modrinth receives the generated Markdown; CurseForge receives HTML rendered from
 that same content.
 
 The commit list includes changes since the nearest reachable
-`v<major>.<minor>.<patch>` release tag, excluding the version
+`mc<minecraft>/v<major>.<minor>.<patch>` release tag, excluding the version
 being built. With no previous tag, it includes all history. Successful CI builds
 do not shorten the release notes. Fetch full history and tags before generating
 them; GitHub Actions and Jenkins already do this. To select an explicit starting
