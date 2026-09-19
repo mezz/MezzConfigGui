@@ -169,7 +169,18 @@ final class NeoForgeConfigLocalization {
 		return Component.translatableWithFallback(localizationKey, getDisplayNameFallback(name));
 	}
 
-	public static Component getValueDescription(String localizationKey, @Nullable String comment) {
+	public static Component getValueDescription(String localizationKey, ModConfigSpec.ValueSpec valueSpec) {
+		String comment = valueSpec.getComment();
+		ModConfigSpec.Range<?> range = valueSpec.getRange();
+		if (comment != null && range != null && range.getMin() instanceof Number && range.getMax() instanceof Number) {
+			// defineInRange appends this line. Numeric editors already display the localized range.
+			String generatedRangeComment = " Range: " + range;
+			if (comment.equals(generatedRangeComment)) {
+				comment = "";
+			} else if (comment.endsWith("\n" + generatedRangeComment)) {
+				comment = comment.substring(0, comment.length() - generatedRangeComment.length() - 1);
+			}
+		}
 		return getDescription(localizationKey, comment);
 	}
 

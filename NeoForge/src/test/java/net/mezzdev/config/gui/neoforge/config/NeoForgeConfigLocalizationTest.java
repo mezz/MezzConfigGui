@@ -73,8 +73,54 @@ class NeoForgeConfigLocalizationTest {
 
 	@Test
 	void descriptionsDoNotAddSpeculativeRestartWarnings() {
-		assertEquals("Controls animal behavior.", NeoForgeConfigLocalization.getValueDescription("test.setting", "Controls animal behavior.").getString());
-		assertEquals("", NeoForgeConfigLocalization.getValueDescription("test.setting", null).getString());
+		ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
+		ModConfigSpec.BooleanValue described = builder.comment("Controls animal behavior.").define("described", false);
+		ModConfigSpec.BooleanValue plain = builder.define("plain", false);
+		builder.build();
+		assertEquals("Controls animal behavior.", NeoForgeConfigLocalization.getValueDescription("test.setting", described.getSpec()).getString());
+		assertEquals("", NeoForgeConfigLocalization.getValueDescription("test.setting", plain.getSpec()).getString());
+	}
+
+	@Test
+	void numericDescriptionsOmitTheRangeGeneratedByNeoForge() {
+		ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
+		String comment = "Controls the number of animals.";
+		List<ModConfigSpec.ConfigValue<?>> values = List.of(
+			builder.comment(comment).defineInRange("bounded", 0, -10, 50),
+			builder.comment(comment).defineInRange("unbounded", 0, 0, Integer.MAX_VALUE),
+			builder.comment(comment).defineInRange("long", 0L, 0L, Long.MAX_VALUE),
+			builder.comment(comment).defineInRange("double", 0.0, 0.0, Double.MAX_VALUE)
+		);
+		builder.build();
+		for (ModConfigSpec.ConfigValue<?> value : values) {
+			ModConfigSpec.ValueSpec spec = value.getSpec();
+			String originalComment = spec.getComment();
+			assertTrue(originalComment.contains("\n Range: "));
+			assertEquals(comment + "\n Default: " + value.getDefault(),
+				NeoForgeConfigLocalization.getValueDescription("test.setting", spec).getString());
+			assertEquals(originalComment, spec.getComment());
+		}
+	}
+
+	@Test
+	void removingGeneratedRangesPreservesAuthorCommentsAndDefaults() {
+		ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
+		String comment = " Range: 0 ~ 50\nSmaller ranges may improve performance.";
+		ModConfigSpec.IntValue described = builder.comment(comment).defineInRange("described", 0, 0, 50);
+		ModConfigSpec.IntValue plain = builder.defineInRange("plain", 0, 0, 50);
+		builder.build();
+		assertEquals(comment + "\n Default: 0", NeoForgeConfigLocalization.getValueDescription("test.setting", described.getSpec()).getString());
+		assertEquals(" Default: 0", NeoForgeConfigLocalization.getValueDescription("test.setting", plain.getSpec()).getString());
+	}
+
+	@Test
+	void descriptionsKeepRangesNotDisplayedByNumericEditors() {
+		ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
+		ModConfigSpec.BooleanValue manual = builder.comment(" Range: 0 ~ 50").define("manual", false);
+		ModConfigSpec.ConfigValue<String> text = builder.defineInRange("text", "m", "a", "z", String.class);
+		builder.build();
+		assertEquals(manual.getSpec().getComment(), NeoForgeConfigLocalization.getValueDescription("test.setting", manual.getSpec()).getString());
+		assertEquals(text.getSpec().getComment(), NeoForgeConfigLocalization.getValueDescription("test.setting", text.getSpec()).getString());
 	}
 
 	@Test
