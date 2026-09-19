@@ -45,7 +45,7 @@ public final class RemoteConfigNetworking {
 			}
 			return true;
 		} catch (RuntimeException exception) {
-			LOGGER.error("Failed to send remote config editor response to {}.", player.getGameProfile().getName(), exception);
+			LOGGER.error("Failed to send remote config editor response to {}.", player.getName().getString(), exception);
 			return false;
 		}
 	}

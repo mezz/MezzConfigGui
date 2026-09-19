@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui.input;
 
+import net.mezzdev.config.gui.ConfigInputUtil;
+
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -9,7 +11,7 @@ import java.util.Optional;
 
 public class UserInput {
 	public static UserInput fromVanilla(int keyCode, int scanCode, int modifiers, InputType inputType) {
-		InputConstants.Key input = InputConstants.getKey(keyCode, scanCode);
+		InputConstants.Key input = ConfigInputUtil.getKey(keyCode, scanCode);
 		return new UserInput(input, getCurrentMouseX(), getCurrentMouseY(), modifiers, inputType);
 	}
 
@@ -78,9 +80,6 @@ public class UserInput {
 		if (keyMapping.isUnbound()) {
 			return false;
 		}
-		if (key.getType() == InputConstants.Type.MOUSE) {
-			return keyMapping.matchesMouse(key.getValue());
-		}
-		return keyMapping.matches(key.getValue(), 0);
+		return ConfigInputUtil.matches(keyMapping, key, modifiers);
 	}
 }

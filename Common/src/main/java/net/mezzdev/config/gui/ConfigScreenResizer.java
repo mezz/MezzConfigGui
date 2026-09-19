@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui;
 
+import net.mezzdev.config.gui.util.ConfigMath;
+
 import net.mezzdev.config.gui.ConfigGuiColors.GuiColor;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
@@ -242,8 +244,8 @@ public final class ConfigScreenResizer {
 		int maxHeight = Math.max(1, screenHeight);
 		int minWidth = Math.min(MIN_RESIZABLE_WIDTH, maxWidth);
 		int minHeight = Math.min(MIN_RESIZABLE_HEIGHT, maxHeight);
-		int width = Math.clamp(areaWidth, minWidth, maxWidth);
-		int height = Math.clamp(areaHeight, minHeight, maxHeight);
+		int width = ConfigMath.clamp(areaWidth, minWidth, maxWidth);
+		int height = ConfigMath.clamp(areaHeight, minHeight, maxHeight);
 		int x = horizontalBounds.left() + (maxWidth - width) / 2;
 		int y = (maxHeight - height) / 2;
 		return new ImmutableRect2i(x, y, width, height);
@@ -251,8 +253,8 @@ public final class ConfigScreenResizer {
 
 	private static HorizontalBounds getHorizontalBounds(int screenWidth, int screenLeftInset, int screenRightInset) {
 		int width = Math.max(1, screenWidth);
-		int left = Math.clamp(screenLeftInset, 0, width - 1);
-		int right = Math.clamp(screenRightInset, 0, width - left - 1);
+		int left = ConfigMath.clamp(screenLeftInset, 0, width - 1);
+		int right = ConfigMath.clamp(screenRightInset, 0, width - left - 1);
 		return new HorizontalBounds(left, width - left - right);
 	}
 

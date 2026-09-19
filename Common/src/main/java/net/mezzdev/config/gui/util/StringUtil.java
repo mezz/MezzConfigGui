@@ -36,7 +36,7 @@ public final class StringUtil {
 
 		FormattedText truncatedText = font.substrByWidth(text, width - ellipsisWidth);
 
-		Style style = font.getSplitter().componentStyleAtWidth(text, width - ellipsisWidth);
+		Style style = net.mezzdev.config.gui.ConfigRenderUtil.truncationStyle(font, text, width - ellipsisWidth);
 		if (style == null) {
 			style = Style.EMPTY;
 		}
@@ -81,7 +81,7 @@ public final class StringUtil {
 
 	private static boolean addLine(List<FormattedText> result, FormattedText line, int width, int maxLines, Font font) {
 		if (result.size() == maxLines) {
-			FormattedText last = result.removeLast();
+			FormattedText last = result.remove(result.size() - 1);
 			last = truncateStringToWidth(last, width, font);
 			result.add(last);
 			return false;

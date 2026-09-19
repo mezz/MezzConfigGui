@@ -1,4 +1,4 @@
-[![CI](https://github.com/mezz/MezzConfigGui/actions/workflows/ci.yml/badge.svg?branch=1.21.1)](https://github.com/mezz/MezzConfigGui/actions/workflows/ci.yml)
+[![CI](https://github.com/mezz/MezzConfigGui/actions/workflows/ci.yml/badge.svg?branch=1.20.1)](https://github.com/mezz/MezzConfigGui/actions/workflows/ci.yml)
 [![CurseForge downloads](https://cf.way2muchnoise.eu/full_1700987_downloads.svg)](https://www.curseforge.com/minecraft/mc-mods/mezzconfiggui)
 [![Modrinth downloads](https://img.shields.io/modrinth/dt/BOHUKqOz?logo=modrinth&label=Modrinth)](https://modrinth.com/project/mezzconfiggui)
 [![Discord](https://img.shields.io/discord/358816755646332941?color=5865F2&logo=discord&logoColor=white&label=Discord)](https://discord.gg/sCQcWU2)
@@ -15,7 +15,10 @@ Pack authors can [customize mod order and visibility](docs/PACK_CONFIGURATION.md
 See [server configuration support](docs/SERVER_CONFIGS.md) for the difference
 between MezzConfig remote editing and native NeoForge configs.
 
-See [Dependency Setup for Minecraft 1.21.1](docs/DEPENDENCY_SETUP.md) for Fabric, Forge, and NeoForge Gradle examples.
+See [Dependency Setup](docs/DEPENDENCY_SETUP.md) for loader-specific Gradle examples.
+This branch builds Minecraft 1.20.1 for Fabric and Forge.
+See [Minecraft branches](docs/BRANCHES.md) for the other supported versions.
+Run Gradle with Java 21 and install a Java 17 compilation toolchain.
 
 ## Building
 

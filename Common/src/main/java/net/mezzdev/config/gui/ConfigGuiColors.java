@@ -23,7 +23,7 @@ import java.util.OptionalInt;
  */
 public final class ConfigGuiColors {
 	private static final Logger LOGGER = LogManager.getLogger();
-	private static final ResourceLocation COLORS_RESOURCE = ResourceLocation.fromNamespaceAndPath("mezz_config", "gui/colors.json");
+	private static final ResourceLocation COLORS_RESOURCE = new ResourceLocation("mezz_config", "gui/colors.json");
 	private static final long MAX_COLOR = 0xFFFFFFFFL;
 
 	private static volatile Map<GuiColor, Integer> colors = createDefaultColors();

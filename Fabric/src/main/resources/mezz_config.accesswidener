@@ -1,5 +1,1 @@
 accessWidener v1 named
-
-accessible method net/minecraft/client/gui/GuiGraphics blitSprite (Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;IIIIIIIII)V
-accessible method net/minecraft/client/gui/GuiGraphics blitNineSlicedSprite (Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;Lnet/minecraft/client/resources/metadata/gui/GuiSpriteScaling$NineSlice;IIIII)V
-accessible method net/minecraft/client/gui/GuiGraphics blitTiledSprite (Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;IIIIIIIIIII)V

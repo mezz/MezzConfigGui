@@ -145,11 +145,11 @@ interface ConfigChangesHandler {
 				);
 			}
 		} catch (RuntimeException exception) {
-			return CompletableFuture.completedFuture(ConfigChangesResult.failure(changes.getFirst(), exception));
+			return CompletableFuture.completedFuture(ConfigChangesResult.failure(changes.get(0), exception));
 		}
 		return request.handle((ignored, throwable) -> {
 			if (throwable != null) {
-				return ConfigChangesResult.failure(changes.getFirst(), asRuntimeException(throwable));
+				return ConfigChangesResult.failure(changes.get(0), asRuntimeException(throwable));
 			}
 			try {
 				List<AppliedConfigValueChange<?>> appliedChanges = new ArrayList<>();
@@ -158,7 +158,7 @@ interface ConfigChangesHandler {
 				}
 				return ConfigChangesResult.success(appliedChanges);
 			} catch (RuntimeException exception) {
-				return ConfigChangesResult.failure(changes.getFirst(), exception);
+				return ConfigChangesResult.failure(changes.get(0), exception);
 			}
 		});
 	}

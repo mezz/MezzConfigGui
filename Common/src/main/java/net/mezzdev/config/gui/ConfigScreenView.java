@@ -104,7 +104,7 @@ final class ConfigScreenView {
 			mouseY
 		);
 
-		guiGraphics.pose().pushPose();
+		ConfigRenderUtil.pushPose(guiGraphics);
 		background.draw(guiGraphics, area);
 		ConfigScreenResizer.drawResizeHandles(guiGraphics, area, resizeHandle);
 		modTabs.draw(guiGraphics, font, textures, mouseX, mouseY);
@@ -129,7 +129,7 @@ final class ConfigScreenView {
 			infoArea.contains(mouseX, mouseY)
 		);
 		infoPanel.draw(guiGraphics, font, infoArea);
-		guiGraphics.pose().popPose();
+		ConfigRenderUtil.popPose(guiGraphics);
 
 		drawContentScrollBar(guiGraphics);
 		drawValueSelector(guiGraphics, valueSelector, valueSelectorClipArea, mouseX, mouseY);
@@ -269,7 +269,7 @@ final class ConfigScreenView {
 	) {
 		textures.getSearchBackground()
 			.draw(guiGraphics, searchBackgroundArea);
-		searchBox.render(guiGraphics, mouseX, mouseY, partialTick);
+		net.mezzdev.config.gui.ConfigRenderUtil.renderEditBox(searchBox, guiGraphics, mouseX, mouseY, partialTick);
 	}
 
 	private static void drawValueAreaBackground(GuiGraphics guiGraphics, ImmutableRect2i contentArea) {
@@ -569,10 +569,10 @@ final class ConfigScreenView {
 			valueSelectorClipArea.getX() + valueSelectorClipArea.getWidth(),
 			valueSelectorClipArea.getY() + valueSelectorClipArea.getHeight()
 		);
-		guiGraphics.pose().pushPose();
-		guiGraphics.pose().translate(0, 0, VALUE_SELECTOR_Z_OFFSET);
+		ConfigRenderUtil.pushPose(guiGraphics);
+		ConfigRenderUtil.translate(guiGraphics, 0, 0, VALUE_SELECTOR_Z_OFFSET);
 		valueSelector.draw(guiGraphics, mouseX, mouseY);
-		guiGraphics.pose().popPose();
+		ConfigRenderUtil.popPose(guiGraphics);
 		guiGraphics.disableScissor();
 	}
 

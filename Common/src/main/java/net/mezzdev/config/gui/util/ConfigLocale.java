@@ -32,9 +32,9 @@ public final class ConfigLocale {
 			cachedLocaleCode = code;
 			String[] splitLangCode = code.split("_", 2);
 			if (splitLangCode.length == 1) {
-				cachedLocale = Locale.of(code);
+				cachedLocale = new Locale(code);
 			} else {
-				cachedLocale = Locale.of(splitLangCode[0], splitLangCode[1]);
+				cachedLocale = new Locale(splitLangCode[0], splitLangCode[1]);
 			}
 		}
 		return cachedLocale;

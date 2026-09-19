@@ -44,11 +44,11 @@ public final class ForgeConfigKeyMappingPlatformHelper extends VanillaConfigKeyM
 
 	@Override
 	public ConfigKeyModifier getKeyModifier(InputConstants.Key key) {
-		KeyModifier modifier = KeyModifier.getModifier(key);
-		if (modifier == null) {
-			return ConfigKeyModifier.NONE;
+		for (KeyModifier modifier : KeyModifier.values()) {
+			if (modifier != KeyModifier.NONE && modifier.matches(key))
+				return fromForge(modifier);
 		}
-		return fromForge(modifier);
+		return ConfigKeyModifier.NONE;
 	}
 
 	@Override

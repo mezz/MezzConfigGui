@@ -23,7 +23,7 @@ public final class ConfigValueEditorType<T> {
 	 * @since 0.1.0
 	 */
 	public static <T> ConfigValueEditorType<T> create(String namespace, String path) {
-		ResourceLocation uid = ResourceLocation.fromNamespaceAndPath(namespace, path);
+		ResourceLocation uid = new ResourceLocation(namespace, path);
 		return create(uid);
 	}
 

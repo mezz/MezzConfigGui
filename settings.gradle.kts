@@ -1,21 +1,20 @@
 pluginManagement {
+    plugins {
+        id("net.fabricmc.fabric-loom") version providers.gradleProperty("loomVersion").get()
+        id("net.neoforged.moddev.legacyforge") version providers.gradleProperty("moddevVersion").get()
+        id("me.modmuss50.mod-publish-plugin") version providers.gradleProperty("publishPluginVersion").get()
+    }
 	repositories {
 		fun exclusiveMaven(url: String, filter: Action<InclusiveRepositoryContentDescriptor>) =
 			exclusiveContent {
 				forRepository { maven(url) }
 				filter(filter)
 			}
-		maven("https://maven.minecraftforge.net") {
-			content {
-				includeGroupByRegex("net\\.minecraftforge.*")
-			}
-		}
 		exclusiveMaven("https://maven.parchmentmc.org") {
 			includeGroupByRegex("org\\.parchmentmc.*")
 		}
 		exclusiveMaven("https://maven.fabricmc.net/") {
 			includeGroupByRegex("net\\.fabricmc.*")
-			includeGroup("fabric-loom")
 		}
 		exclusiveMaven("https://maven.neoforged.net/releases") {
 			includeGroupByRegex("net\\.neoforged.*")
@@ -28,19 +27,7 @@ pluginManagement {
 		}
 		gradlePluginPortal()
 	}
-	resolutionStrategy {
-		eachPlugin {
-			if (requested.id.id == "net.minecraftforge.gradle") {
-				useModule("${requested.id}:ForgeGradle:${requested.version}")
-			}
-		}
-	}
 }
 
 rootProject.name = "MezzConfigGui"
-
-include(
-	"Changelog",
-	"Common",
-	"Fabric", "Forge", "NeoForge"
-)
+include("Changelog", "Common", "Fabric", "Forge")

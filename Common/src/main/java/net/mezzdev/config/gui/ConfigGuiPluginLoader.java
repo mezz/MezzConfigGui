@@ -1733,7 +1733,7 @@ final class ConfigGuiPluginLoader {
 		Component message = Component.translatable("mezz_config.config.screen.saveFailed", valueName, reason);
 		Minecraft minecraft = Minecraft.getInstance();
 		if (minecraft.player != null) {
-			minecraft.player.displayClientMessage(message, false);
+			ConfigClientUtil.sendMessage(message);
 		}
 		LOGGER.error("Failed to save config value {} for {}.", failure.change().configValue().getName(), modId, exception);
 	}
@@ -1751,7 +1751,7 @@ final class ConfigGuiPluginLoader {
 		Component message = Component.translatable(translationKey, title);
 		Minecraft minecraft = Minecraft.getInstance();
 		if (minecraft.player != null) {
-			minecraft.player.displayClientMessage(message, false);
+			ConfigClientUtil.sendMessage(message);
 		}
 		if (restartRequirement == ConfigValueRestartRequirement.WORLD_RESTART) {
 			LOGGER.info("Config changes for {} were saved and will be applied the next time a world is opened.", modId);

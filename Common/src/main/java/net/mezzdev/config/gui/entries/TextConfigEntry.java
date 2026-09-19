@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui.entries;
 
+import net.mezzdev.config.gui.ConfigInputUtil;
+
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.ConfigGuiColors;
@@ -20,11 +22,8 @@ import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.StringUtil;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -236,7 +235,7 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 	}
 
 	private void appendCharacter(char codePoint) {
-		if (editText.length() >= MAX_EDIT_TEXT_LENGTH || !StringUtil.isAllowedChatCharacter(codePoint)) {
+		if (editText.length() >= MAX_EDIT_TEXT_LENGTH || !net.minecraft.SharedConstants.isAllowedChatCharacter(codePoint)) {
 			return;
 		}
 		editText += codePoint;
@@ -247,24 +246,24 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 		if (!editing) {
 			return false;
 		}
-		if (Screen.isPaste(keyCode)) {
+		if (ConfigInputUtil.isPaste(keyCode)) {
 			appendText(Minecraft.getInstance().keyboardHandler.getClipboard());
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_RETURN || keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_NUMPADENTER) {
 			commitEdit();
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
 			editing = false;
 			editText = "";
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_BACKSPACE && !editText.isEmpty()) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_BACKSPACE && !editText.isEmpty()) {
 			editText = editText.substring(0, editText.length() - 1);
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_DELETE) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_DELETE) {
 			editText = "";
 			return true;
 		}

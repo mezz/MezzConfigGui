@@ -5,54 +5,49 @@ import net.mezzdev.config.gui.remote.RemoteConfigEditorServer;
 import net.mezzdev.config.gui.remote.RemoteConfigNetworking;
 import net.mezzdev.config.gui.remote.RemoteConfigRequestChunkPayload;
 import net.mezzdev.config.gui.remote.RemoteConfigResponseChunkPayload;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.event.network.CustomPayloadEvent;
-import net.minecraftforge.network.Channel;
-import net.minecraftforge.network.ChannelBuilder;
 import net.minecraftforge.network.NetworkDirection;
+import net.minecraftforge.network.NetworkRegistry;
+import net.minecraftforge.network.PacketDistributor;
+import net.minecraftforge.network.simple.SimpleChannel;
 
 public final class ConfigGuiForgeNetwork {
-	private static final int PROTOCOL_VERSION = 1;
-	private final Channel<CustomPacketPayload> channel;
+	private static final String PROTOCOL_VERSION = "1";
+	private final SimpleChannel channel;
 
 	public ConfigGuiForgeNetwork() {
-		this.channel = ChannelBuilder.named(ResourceLocation.fromNamespaceAndPath(ConfigGuiForge.MOD_ID, "remote_config"))
-			.networkProtocolVersion(PROTOCOL_VERSION)
-			.optional()
-			.payloadChannel()
-			.play()
-			.serverbound()
-			.add(RemoteConfigRequestChunkPayload.TYPE, RemoteConfigRequestChunkPayload.STREAM_CODEC, this::handleRequest)
-			.clientbound()
-			.add(RemoteConfigResponseChunkPayload.TYPE, RemoteConfigResponseChunkPayload.STREAM_CODEC, this::handleResponse)
-			.build();
+		channel = NetworkRegistry.newSimpleChannel(
+			new ResourceLocation(ConfigGuiForge.MOD_ID, "remote_config"),
+			() -> PROTOCOL_VERSION,
+			ConfigGuiForgeNetwork::acceptsVersion,
+			ConfigGuiForgeNetwork::acceptsVersion
+		);
+		channel.messageBuilder(RemoteConfigRequestChunkPayload.class, 0, NetworkDirection.PLAY_TO_SERVER)
+			.encoder((payload, buffer) -> buffer.writeByteArray(payload.payload()))
+			.decoder(buffer -> new RemoteConfigRequestChunkPayload(buffer.readByteArray(RemoteConfigRequestChunkPayload.MAX_NETWORK_PAYLOAD_LENGTH)))
+			.consumerMainThread((payload, context) -> {
+				ServerPlayer player = context.get().getSender();
+				if (player != null)
+					RemoteConfigEditorServer.handleRequestChunk(player, payload);
+			})
+			.add();
+		channel.messageBuilder(RemoteConfigResponseChunkPayload.class, 1, NetworkDirection.PLAY_TO_CLIENT)
+			.encoder((payload, buffer) -> buffer.writeByteArray(payload.payload()))
+			.decoder(buffer -> new RemoteConfigResponseChunkPayload(buffer.readByteArray(RemoteConfigResponseChunkPayload.MAX_NETWORK_PAYLOAD_LENGTH)))
+			.consumerMainThread((payload, context) -> RemoteConfigEditor.handleResponseChunk(payload))
+			.add();
 		RemoteConfigNetworking.setServerSender((player, payload) -> {
-			if (!channel.isRemotePresent(player.connection.getConnection())) {
+			if (!channel.isRemotePresent(player.connection.connection))
 				return false;
-			}
-			Packet<?> packet = NetworkDirection.PLAY_TO_CLIENT.buildPacket(channel, payload);
-			player.connection.send(packet);
+			channel.send(PacketDistributor.PLAYER.with(() -> player), payload);
 			return true;
 		});
 	}
 
-	private void handleRequest(RemoteConfigRequestChunkPayload payload, CustomPayloadEvent.Context context) {
-		ServerPlayer player = context.getSender();
-		if (player != null) {
-			context.setPacketHandled(true);
-			RemoteConfigEditorServer.handleRequestChunk(player, payload);
-		}
+	private static boolean acceptsVersion(String version) {
+		return PROTOCOL_VERSION.equals(version) || NetworkRegistry.ABSENT.equals(version) || NetworkRegistry.ACCEPTVANILLA.equals(version);
 	}
 
-	private void handleResponse(RemoteConfigResponseChunkPayload payload, CustomPayloadEvent.Context context) {
-		context.setPacketHandled(true);
-		context.enqueueWork(() -> RemoteConfigEditor.handleResponseChunk(payload));
-	}
-
-	public Channel<CustomPacketPayload> getChannel() {
-		return channel;
-	}
+	public SimpleChannel getChannel() { return channel; }
 }

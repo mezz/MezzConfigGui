@@ -12,7 +12,6 @@ import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.Connection;
-import net.minecraft.network.protocol.Packet;
 import net.minecraftforge.client.ConfigScreenHandler;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
@@ -23,8 +22,7 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.network.Channel;
-import net.minecraftforge.network.NetworkDirection;
+import net.minecraftforge.network.simple.SimpleChannel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -54,12 +52,11 @@ public final class ConfigGuiForgeClient {
 				return false;
 			}
 			Connection connection = listener.getConnection();
-			Channel<?> channel = network.getChannel();
+			SimpleChannel channel = network.getChannel();
 			if (!connection.isConnected() || !channel.isRemotePresent(connection)) {
 				return false;
 			}
-			Packet<?> packet = NetworkDirection.PLAY_TO_SERVER.buildPacket(network.getChannel(), payload);
-			listener.send(packet);
+			channel.sendToServer(payload);
 			return true;
 		});
 		MinecraftForge.EVENT_BUS.addListener((TickEvent.ClientTickEvent event) -> {

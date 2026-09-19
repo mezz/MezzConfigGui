@@ -19,7 +19,8 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 public final class ConfigGuiForge {
 	public static final String MOD_ID = "mezz_config_gui";
 
-	public ConfigGuiForge(FMLJavaModLoadingContext context) {
+	public ConfigGuiForge() {
+		FMLJavaModLoadingContext context = FMLJavaModLoadingContext.get();
 		ConfigGuiForgeNetwork network = new ConfigGuiForgeNetwork();
 		MinecraftForge.EVENT_BUS.addListener(
 			(ServerStartedEvent event) -> RemoteConfigEditorServer.onServerStarted(event.getServer())

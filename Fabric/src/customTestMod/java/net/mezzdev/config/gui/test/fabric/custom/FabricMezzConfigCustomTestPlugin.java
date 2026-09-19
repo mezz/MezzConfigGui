@@ -32,7 +32,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,14 +48,14 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 	private static final KeyMapping OPEN_SCREEN_KEY = new KeyMapping(
 		"key.%s.openScreen".formatted(MOD_ID),
 		InputConstants.Type.KEYSYM,
-		GLFW.GLFW_KEY_G,
-		"key.categories.%s".formatted(MOD_ID)
+		com.mojang.blaze3d.platform.InputConstants.KEY_G,
+		net.mezzdev.config.gui.ConfigInputUtil.keyCategory(MOD_ID)
 	);
 	private static final KeyMapping TOGGLE_OVERLAY_KEY = new KeyMapping(
 		"key.%s.toggleOverlay".formatted(MOD_ID),
 		InputConstants.Type.KEYSYM,
-		GLFW.GLFW_KEY_H,
-		"key.categories.%s".formatted(MOD_ID)
+		com.mojang.blaze3d.platform.InputConstants.KEY_H,
+		net.mezzdev.config.gui.ConfigInputUtil.keyCategory(MOD_ID)
 	);
 
 	@Nullable
@@ -544,7 +543,7 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 			double mouseY,
 			int button
 		) {
-			if (button != 0) {
+			if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
 				return Optional.empty();
 			}
 			return Optional.of(new TestColorPopup(configValue));

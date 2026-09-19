@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui.popup;
 
+import net.mezzdev.config.gui.util.ConfigMath;
+
 import net.mezzdev.config.api.value.color.ConfigColorFormat;
 import net.mezzdev.config.api.value.color.PackedColor;
 
@@ -21,9 +23,9 @@ final class ColorPickerModel {
 	}
 
 	void setRgb(int red, int green, int blue) {
-		red = Math.clamp(red, 0, 255);
-		green = Math.clamp(green, 0, 255);
-		blue = Math.clamp(blue, 0, 255);
+		red = ConfigMath.clamp(red, 0, 255);
+		green = ConfigMath.clamp(green, 0, 255);
+		blue = ConfigMath.clamp(blue, 0, 255);
 		float r = red / 255.0f;
 		float g = green / 255.0f;
 		float b = blue / 255.0f;
@@ -89,7 +91,7 @@ final class ColorPickerModel {
 	}
 
 	void setAlphaChannel(int alpha) {
-		setAlpha(Math.clamp(alpha, 0, 255) / 255.0f);
+		setAlpha(ConfigMath.clamp(alpha, 0, 255) / 255.0f);
 	}
 
 	PackedColor getPackedColor() {
@@ -170,7 +172,7 @@ final class ColorPickerModel {
 	}
 
 	private static float clamp(float value) {
-		return Math.clamp(value, 0.0f, 1.0f);
+		return ConfigMath.clamp(value, 0.0f, 1.0f);
 	}
 
 	record Rgb(int red, int green, int blue) {

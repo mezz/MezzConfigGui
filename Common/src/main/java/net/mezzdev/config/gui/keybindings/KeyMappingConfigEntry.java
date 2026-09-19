@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui.keybindings;
 
+import net.mezzdev.config.gui.ConfigInputUtil;
+
 import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
@@ -16,7 +18,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -172,12 +173,12 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 		if (!listening) {
 			return false;
 		}
-		if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
 			setBindingValue(ConfigKeyBinding.UNKNOWN);
 			stopListening();
 			return true;
 		}
-		InputConstants.Key key = InputConstants.getKey(keyCode, scanCode);
+		InputConstants.Key key = ConfigInputUtil.getKey(keyCode, scanCode);
 		String keyName = key.getName();
 		ConfigKeyModifier keyModifier = configKeyMapping.getKeyModifier(keyName);
 		if (keyModifier != ConfigKeyModifier.NONE) {
@@ -199,7 +200,7 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 		if (!listening) {
 			return false;
 		}
-		InputConstants.Key key = InputConstants.getKey(keyCode, scanCode);
+		InputConstants.Key key = ConfigInputUtil.getKey(keyCode, scanCode);
 		String keyName = key.getName();
 		if (lastPressedKey.equals(keyName)) {
 			lastKeyHeldDown = false;

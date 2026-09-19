@@ -61,7 +61,7 @@ public class ConfigTextures {
 	}
 
 	private static ResourceLocation createSprite(String name) {
-		return ResourceLocation.fromNamespaceAndPath(ConfigGuiSpriteManager.TEXTURE_NAMESPACE, name);
+		return new ResourceLocation(ConfigGuiSpriteManager.TEXTURE_NAMESPACE, name);
 	}
 
 	private ConfigDrawableStatic createGuiSprite(String name, int width, int height) {

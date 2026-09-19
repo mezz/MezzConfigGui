@@ -1,5 +1,9 @@
 package net.mezzdev.config.gui.entries;
 
+import net.mezzdev.config.gui.ConfigRenderUtil;
+
+import net.mezzdev.config.gui.util.ConfigMath;
+
 import net.mezzdev.config.gui.info.ConfigNumberInfo;
 
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
@@ -39,11 +43,9 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.StringUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -287,12 +289,12 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		}
 		drawAddValueRow(guiGraphics, mouseX, mouseY);
 		if (dragSession != null) {
-			guiGraphics.flush();
-			guiGraphics.pose().pushPose();
-			guiGraphics.pose().translate(0, 0, ORDERED_ROW_DRAG_FLOAT_Z_OFFSET);
+			ConfigRenderUtil.flush(guiGraphics);
+			ConfigRenderUtil.pushPose(guiGraphics);
+			ConfigRenderUtil.translate(guiGraphics, 0, 0, ORDERED_ROW_DRAG_FLOAT_Z_OFFSET);
 			dragSession.drawFloatingRow(guiGraphics);
-			guiGraphics.pose().popPose();
-			guiGraphics.flush();
+			ConfigRenderUtil.popPose(guiGraphics);
+			ConfigRenderUtil.flush(guiGraphics);
 		}
 	}
 
@@ -301,7 +303,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		if (viewport == null || rows.isEmpty()) {
 			return rows;
 		}
-		RowRange range = getVisibleRowRange(rows.getFirst().area.getY(), getEntryRowHeight(), rows.size(), viewport, overscan);
+		RowRange range = getVisibleRowRange(rows.get(0).area.getY(), getEntryRowHeight(), rows.size(), viewport, overscan);
 		return rows.subList(range.first(), range.end());
 	}
 
@@ -311,7 +313,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		}
 		long first = Math.floorDiv((long) viewport.getY() - firstY, rowHeight) - overscan;
 		long end = -Math.floorDiv((long) firstY - viewport.getY() - viewport.getHeight(), rowHeight) + overscan;
-		return new RowRange(Math.clamp(first, 0, rowCount), Math.clamp(end, 0, rowCount));
+		return new RowRange(ConfigMath.clamp(first, 0, rowCount), ConfigMath.clamp(end, 0, rowCount));
 	}
 
 	record RowRange(int first, int end) {
@@ -552,7 +554,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	}
 
 	private void appendAddValueCharacter(char codePoint) {
-		if (addValueText.length() >= MAX_ADD_VALUE_TEXT_LENGTH || !StringUtil.isAllowedChatCharacter(codePoint)) {
+		if (addValueText.length() >= MAX_ADD_VALUE_TEXT_LENGTH || !net.minecraft.SharedConstants.isAllowedChatCharacter(codePoint)) {
 			return;
 		}
 		addValueText += codePoint;
@@ -570,23 +572,23 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	}
 
 	private boolean keyPressedAddValue(int keyCode) {
-		if (Screen.isPaste(keyCode)) {
+		if (ConfigInputUtil.isPaste(keyCode)) {
 			appendAddValueText(Minecraft.getInstance().keyboardHandler.getClipboard());
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_RETURN || keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_NUMPADENTER) {
 			commitAddValue();
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
 			cancelAddValue();
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_BACKSPACE && !addValueText.isEmpty()) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_BACKSPACE && !addValueText.isEmpty()) {
 			addValueText = addValueText.substring(0, addValueText.length() - 1);
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_DELETE) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_DELETE) {
 			addValueText = "";
 			return true;
 		}
@@ -594,28 +596,28 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	}
 
 	private boolean keyPressedComponentEdit(int keyCode) {
-		if (Screen.isPaste(keyCode)) {
+		if (ConfigInputUtil.isPaste(keyCode)) {
 			appendComponentEditText(Minecraft.getInstance().keyboardHandler.getClipboard());
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_RETURN || keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_NUMPADENTER) {
 			commitComponentEdit();
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_TAB) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_TAB) {
 			commitComponentEdit();
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
 			cancelComponentEdit();
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_BACKSPACE && !componentEditSession.editText.isEmpty()) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_BACKSPACE && !componentEditSession.editText.isEmpty()) {
 			String editText = componentEditSession.editText;
 			componentEditSession.editText = editText.substring(0, editText.length() - 1);
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_DELETE) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_DELETE) {
 			componentEditSession.editText = "";
 			return true;
 		}
@@ -631,7 +633,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	private void appendComponentEditCharacter(char codePoint) {
 		if (componentEditSession == null ||
 			componentEditSession.editText.length() >= MAX_ADD_VALUE_TEXT_LENGTH ||
-			!StringUtil.isAllowedChatCharacter(codePoint)
+			!net.minecraft.SharedConstants.isAllowedChatCharacter(codePoint)
 		) {
 			return;
 		}
@@ -1257,7 +1259,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			double dragX,
 			double dragY
 		) {
-			if (button != 0) {
+			if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
 				stop();
 				return Optional.empty();
 			}
@@ -1354,7 +1356,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			}
 			int minY = valueRows.get(0).area.getY();
 			int maxY = valueRows.get(valueRows.size() - 1).area.getY();
-			return Math.clamp(y, minY, maxY);
+			return ConfigMath.clamp(y, minY, maxY);
 		}
 
 		@Nullable
@@ -1376,7 +1378,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 
 	static int getDragRowX(int originalX, double mouseX, double grabOffsetX) {
 		int desiredX = (int) Math.round(mouseX - grabOffsetX);
-		return Math.clamp(
+		return ConfigMath.clamp(
 			desiredX,
 			originalX - ORDERED_ROW_MAX_HORIZONTAL_DRAG_OFFSET,
 			originalX + ORDERED_ROW_MAX_HORIZONTAL_DRAG_OFFSET
