@@ -28,9 +28,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
 
 public final class ConfigGuiNeoForgeClient {
@@ -87,12 +85,8 @@ public final class ConfigGuiNeoForgeClient {
 	}
 
 	private static void registerConfigScreens(ConfigScreenFactoryRegistry registry) {
-		Map<String, IConfigScreenFactory> factories = new LinkedHashMap<>(registry.getFactories());
-		factories.put(
-			ConfigGuiOptions.MOD_ID,
-			ConfigGui.createScreenListFactory(registry, NeoForgeConfigScreenOwnerMetadata::get)
-		);
-		factories.forEach(ConfigGuiNeoForgeClient::registerConfigScreen);
+		ConfigGui.createScreenListFactory(registry, NeoForgeConfigScreenOwnerMetadata::get);
+		registry.getFactories().forEach(ConfigGuiNeoForgeClient::registerConfigScreen);
 	}
 
 	private static void registerConfigScreen(String modId, IConfigScreenFactory configScreenFactory) {

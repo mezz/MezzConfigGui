@@ -28,9 +28,6 @@ import net.minecraftforge.network.NetworkDirection;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 public final class ConfigGuiForgeClient {
 	private static final Logger LOGGER = LogManager.getLogger();
 
@@ -85,12 +82,8 @@ public final class ConfigGuiForgeClient {
 	}
 
 	private static void registerConfigScreens(ConfigScreenFactoryRegistry registry) {
-		Map<String, IConfigScreenFactory> factories = new LinkedHashMap<>(registry.getFactories());
-		factories.put(
-			ConfigGuiOptions.MOD_ID,
-			ConfigGui.createScreenListFactory(registry, ForgeConfigScreenOwnerMetadata::get)
-		);
-		factories.forEach(ConfigGuiForgeClient::registerConfigScreen);
+		ConfigGui.createScreenListFactory(registry, ForgeConfigScreenOwnerMetadata::get);
+		registry.getFactories().forEach(ConfigGuiForgeClient::registerConfigScreen);
 	}
 
 	private static void registerConfigScreen(String modId, IConfigScreenFactory configScreenFactory) {
