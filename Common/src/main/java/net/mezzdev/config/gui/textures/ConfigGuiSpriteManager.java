@@ -1,42 +1,124 @@
 package net.mezzdev.config.gui.textures;
 
-import net.minecraft.client.renderer.texture.SpriteContents;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.renderer.texture.SpriteLoader;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureManager;
-import net.minecraft.client.resources.TextureAtlasHolder;
-import net.minecraft.client.resources.metadata.animation.AnimationMetadataSection;
-import net.minecraft.client.resources.metadata.gui.GuiMetadataSection;
-import net.minecraft.client.resources.metadata.gui.GuiSpriteScaling;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.ResourceMetadata;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.metadata.MetadataSectionType;
+import net.minecraft.server.packs.resources.PreparableReloadListener;
+import net.minecraft.server.packs.resources.ResourceManager;
 
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
-public class ConfigGuiSpriteManager extends TextureAtlasHolder {
+/** Atlas reload protocol adapted from JEI (MIT). */
+public class ConfigGuiSpriteManager implements PreparableReloadListener, AutoCloseable {
+	public static final PreparableReloadListener.StateKey<PendingStitchResults> PENDING_STITCH = new PreparableReloadListener.StateKey<>();
+	private final AtlasEntry atlasEntry;
+
 	static final String TEXTURE_NAMESPACE = "mezz_config";
-	private static final ResourceLocation CONFIG_GUI_TEXTURE_ATLAS_LOCATION = ResourceLocation.fromNamespaceAndPath(TEXTURE_NAMESPACE, "textures/atlas/gui.png");
-	private static final ResourceLocation CONFIG_GUI_TEXTURE_ATLAS_ID = ResourceLocation.fromNamespaceAndPath(TEXTURE_NAMESPACE, "gui");
-
 	public ConfigGuiSpriteManager(TextureManager textureManager) {
-		super(textureManager, CONFIG_GUI_TEXTURE_ATLAS_LOCATION, CONFIG_GUI_TEXTURE_ATLAS_ID, Set.of(AnimationMetadataSection.SERIALIZER, GuiMetadataSection.TYPE));
+		this(textureManager, new Config(
+			Identifier.fromNamespaceAndPath(TEXTURE_NAMESPACE, "textures/atlas/gui.png"),
+			Identifier.fromNamespaceAndPath(TEXTURE_NAMESPACE, "gui"),
+			Set.of(net.minecraft.client.resources.metadata.gui.GuiMetadataSection.TYPE)
+		));
+	}
+	public net.minecraft.client.renderer.texture.TextureAtlasSprite getSprite(Identifier location) {
+		return getAtlas().getSprite(location);
+	}
+	public net.minecraft.client.resources.metadata.gui.GuiSpriteScaling getSpriteScaling(net.minecraft.client.renderer.texture.TextureAtlasSprite sprite) {
+		return sprite.contents().getAdditionalMetadata(net.minecraft.client.resources.metadata.gui.GuiMetadataSection.TYPE)
+			.orElse(net.minecraft.client.resources.metadata.gui.GuiMetadataSection.DEFAULT).scaling();
+	}
+	private ConfigGuiSpriteManager(TextureManager textureManager, Config config) {
+		TextureAtlas atlas = new TextureAtlas(config.textureId);
+		textureManager.register(config.textureId, atlas);
+		this.atlasEntry = new AtlasEntry(atlas, config);
 	}
 
-	/**
-	 * Overridden to make it public.
-	 */
+	public TextureAtlas getAtlas() {
+		return atlasEntry.atlas;
+	}
+
 	@Override
-	public TextureAtlasSprite getSprite(ResourceLocation location) {
-		return super.getSprite(location);
+	public void close() {
+		this.atlasEntry.close();
 	}
 
-	public GuiSpriteScaling getSpriteScaling(TextureAtlasSprite sprite) {
-		return getMetadata(sprite).scaling();
+	@Override
+	public void prepareSharedState(PreparableReloadListener.SharedState state) {
+		CompletableFuture<SpriteLoader.Preparations> preparations = new CompletableFuture<>();
+		PendingStitch pendingStitch = new PendingStitch(atlasEntry, preparations);
+		CompletableFuture<?> readyToUpload = preparations.thenCompose(SpriteLoader.Preparations::readyForUpload);
+
+		state.set(PENDING_STITCH, new PendingStitchResults(pendingStitch, readyToUpload));
 	}
 
-	private GuiMetadataSection getMetadata(TextureAtlasSprite sprite) {
-		SpriteContents contents = sprite.contents();
-		ResourceMetadata metadata = contents.metadata();
-		return metadata.getSection(GuiMetadataSection.TYPE)
-			.orElse(GuiMetadataSection.DEFAULT);
+	@Override
+	public CompletableFuture<Void> reload(
+		PreparableReloadListener.SharedState state,
+		Executor loadAndStitchExecutor,
+		PreparableReloadListener.PreparationBarrier preparationBarrier,
+		Executor joinAndUploadExecutor
+	) {
+		PendingStitchResults pendingStitchResults = state.get(PENDING_STITCH);
+		ResourceManager resourcemanager = state.resourceManager();
+
+		PendingStitch pendingStitch = pendingStitchResults.pendingStitch;
+		pendingStitch.entry.scheduleLoad(resourcemanager, loadAndStitchExecutor)
+			.whenComplete((preparations, throwable) -> {
+				if (preparations != null) {
+					pendingStitch.preparations.complete(preparations);
+				} else {
+					pendingStitch.preparations.completeExceptionally(throwable);
+				}
+			});
+		return pendingStitchResults.readyToUpload
+			.thenCompose(preparationBarrier::wait)
+			.thenAcceptAsync(ignored -> pendingStitchResults.joinAndUpload(), joinAndUploadExecutor);
+	}
+
+	public record Config(
+		Identifier textureId,
+		Identifier definitionLocation,
+		Set<MetadataSectionType<?>> additionalMetadata
+	) {}
+
+	record AtlasEntry(TextureAtlas atlas, Config config) implements AutoCloseable {
+		@Override
+		public void close() {
+			this.atlas.clearTextureData();
+		}
+
+		CompletableFuture<SpriteLoader.Preparations> scheduleLoad(ResourceManager resourceManager, Executor executor) {
+			return SpriteLoader.create(this.atlas)
+				.loadAndStitch(resourceManager, this.config.definitionLocation, 0, executor, this.config.additionalMetadata);
+		}
+	}
+
+	record PendingStitch(AtlasEntry entry, CompletableFuture<SpriteLoader.Preparations> preparations) {
+		public void joinAndUpload() {
+			SpriteLoader.Preparations preparations = this.preparations.join();
+			this.entry.atlas.upload(preparations);
+		}
+	}
+
+	public static class PendingStitchResults {
+		private final PendingStitch pendingStitch;
+		private final CompletableFuture<?> readyToUpload;
+
+		PendingStitchResults(
+			PendingStitch pendingStitch,
+			CompletableFuture<?> readyToUpload
+		) {
+			this.pendingStitch = pendingStitch;
+			this.readyToUpload = readyToUpload;
+		}
+
+		public void joinAndUpload() {
+			pendingStitch.joinAndUpload();
+		}
 	}
 }

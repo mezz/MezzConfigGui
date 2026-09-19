@@ -1,5 +1,9 @@
 package net.mezzdev.config.gui.popup;
 
+import net.mezzdev.config.gui.ConfigInputUtil;
+
+import net.mezzdev.config.gui.util.ConfigMath;
+
 import net.mezzdev.config.api.value.color.ConfigColorFormat;
 import net.mezzdev.config.api.value.color.PackedColor;
 import net.mezzdev.config.gui.ConfigGuiColors;
@@ -9,12 +13,10 @@ import net.mezzdev.config.gui.info.ColorSwatch;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.util.StringUtil;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -118,7 +120,7 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 
 	@Override
 	public Optional<PackedColor> getClickedValue(Rect2i area, double mouseX, double mouseY, int button) {
-		if (button != 0) {
+		if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
 			return Optional.empty();
 		}
 		PickerLayout layout = createLayout(area);
@@ -155,7 +157,7 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 
 	@Override
 	public Optional<PackedColor> getDraggedValue(Rect2i area, double mouseX, double mouseY, int button) {
-		if (button != 0) {
+		if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
 			return Optional.empty();
 		}
 		PickerLayout layout = createLayout(area);
@@ -183,34 +185,34 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		if (focusedField == null) {
 			return false;
 		}
-		if (Screen.isSelectAll(keyCode)) {
+		if (ConfigInputUtil.isSelectAll(keyCode)) {
 			selectAll = true;
 			return true;
 		}
-		if (Screen.isPaste(keyCode)) {
+		if (ConfigInputUtil.isPaste(keyCode)) {
 			appendText(Minecraft.getInstance().keyboardHandler.getClipboard());
 			applyEditText(valueConsumer);
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_TAB) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_TAB) {
 			focusField(ColorField.HEX);
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_RETURN || keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_NUMPADENTER) {
 			applyEditText(valueConsumer);
 			selectAll = true;
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
 			clearFocus();
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_BACKSPACE) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_BACKSPACE) {
 			removeLastCharacter();
 			applyEditText(valueConsumer);
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_DELETE) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_DELETE) {
 			editText = "";
 			selectAll = false;
 			return true;
@@ -224,7 +226,7 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 	}
 
 	@Override
-	public void draw(GuiGraphics guiGraphics, Rect2i area, double mouseX, double mouseY) {
+	public void draw(GuiGraphicsExtractor guiGraphics, Rect2i area, double mouseX, double mouseY) {
 		PickerLayout layout = createLayout(area);
 		drawBackground(guiGraphics, area);
 		ColorSwatch.draw(guiGraphics, layout.colorPreviewArea(), model.getPackedColor());
@@ -338,11 +340,11 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 	}
 
 	static float getPreciseSliderPosition(float valueAnchor, float pointerAnchor, float pointerPosition) {
-		return Math.clamp(valueAnchor + (pointerPosition - pointerAnchor) * PRECISE_SLIDER_SCALE, 0.0f, 1.0f);
+		return ConfigMath.clamp(valueAnchor + (pointerPosition - pointerAnchor) * PRECISE_SLIDER_SCALE, 0.0f, 1.0f);
 	}
 
 	private static boolean isShiftDown() {
-		return Minecraft.getInstance() != null && Screen.hasShiftDown();
+		return Minecraft.getInstance() != null && ConfigInputUtil.hasShiftDown();
 	}
 
 	private float getControlPosition(ColorControl control) {
@@ -367,14 +369,14 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		precisionControl = ColorControl.NONE;
 	}
 
-	private void drawColorControls(GuiGraphics guiGraphics, PickerLayout layout, double mouseX, double mouseY) {
+	private void drawColorControls(GuiGraphicsExtractor guiGraphics, PickerLayout layout, double mouseX, double mouseY) {
 		drawColorPlane(guiGraphics, layout.colorPlaneArea());
 		drawVerticalAxisSlider(guiGraphics, layout.verticalSliderArea());
 		drawAxisSelectors(guiGraphics, layout.axisSelectorAreas(), mouseX, mouseY);
 		drawSliders(guiGraphics, layout.sliderAreas(), layout.channelSliderLabelWidth());
 	}
 
-	private void drawColorPlane(GuiGraphics guiGraphics, Rect2i area) {
+	private void drawColorPlane(GuiGraphicsExtractor guiGraphics, Rect2i area) {
 		for (int xOffset = 0; xOffset < area.getWidth(); xOffset++) {
 			float x = getPosition(xOffset, 0, area.getWidth());
 			int topColor = getPlaneColor(x, 1.0f);
@@ -410,7 +412,7 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		};
 	}
 
-	private void drawVerticalAxisSlider(GuiGraphics guiGraphics, Rect2i area) {
+	private void drawVerticalAxisSlider(GuiGraphicsExtractor guiGraphics, Rect2i area) {
 		for (int yOffset = 0; yOffset < area.getHeight(); yOffset++) {
 			float position = getVerticalAxisPosition(area.getY() + yOffset, area);
 			int color = getVerticalAxisColor(position);
@@ -435,7 +437,7 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 	}
 
 	private void drawAxisSelectors(
-		GuiGraphics guiGraphics,
+		GuiGraphicsExtractor guiGraphics,
 		List<AxisSelectorArea> selectorAreas,
 		double mouseX,
 		double mouseY
@@ -457,17 +459,17 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 			String label = selectorArea.axis().label;
 			int x = area.getX() + (area.getWidth() - font.width(label)) / 2 + 1;
 			int y = area.getY() + (area.getHeight() - font.lineHeight) / 2 + 1;
-			guiGraphics.drawString(font, label, x, y, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_LIGHT), false);
+			guiGraphics.text(font, label, x, y, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_LIGHT), false);
 		}
 	}
 
-	private void drawSliders(GuiGraphics guiGraphics, List<SliderArea> sliders, int labelWidth) {
+	private void drawSliders(GuiGraphicsExtractor guiGraphics, List<SliderArea> sliders, int labelWidth) {
 		for (SliderArea slider : sliders) {
 			drawSlider(guiGraphics, slider, labelWidth);
 		}
 	}
 
-	private void drawSlider(GuiGraphics guiGraphics, SliderArea slider, int labelWidth) {
+	private void drawSlider(GuiGraphicsExtractor guiGraphics, SliderArea slider, int labelWidth) {
 		Rect2i area = slider.area();
 		int length = area.getWidth();
 		for (int offset = 0; offset < length; offset++) {
@@ -500,19 +502,19 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		};
 	}
 
-	private void drawSliderLabel(GuiGraphics guiGraphics, SliderArea slider, int labelWidth) {
+	private void drawSliderLabel(GuiGraphicsExtractor guiGraphics, SliderArea slider, int labelWidth) {
 		Font font = Minecraft.getInstance().font;
 		Rect2i area = slider.area();
 		int textY = area.getY() + (area.getHeight() - font.lineHeight) / 2;
 		String label = slider.field().label;
 		int labelX = area.getX() - labelWidth + (labelWidth - font.width(label)) / 2;
-		guiGraphics.drawString(font, label, labelX, textY, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_LIGHT), false);
+		guiGraphics.text(font, label, labelX, textY, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_LIGHT), false);
 		String value = getFieldText(slider.field());
 		int valueX = area.getX() + area.getWidth() + 3;
-		guiGraphics.drawString(font, value, valueX, textY, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_LIGHT), false);
+		guiGraphics.text(font, value, valueX, textY, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_LIGHT), false);
 	}
 
-	private void drawAlpha(GuiGraphics guiGraphics, Rect2i area, int labelWidth) {
+	private void drawAlpha(GuiGraphicsExtractor guiGraphics, Rect2i area, int labelWidth) {
 		ColorSwatch.drawCheckerboard(
 			guiGraphics,
 			area.getX(),
@@ -532,8 +534,8 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		Font font = Minecraft.getInstance().font;
 		int textY = area.getY() + (area.getHeight() - font.lineHeight) / 2;
 		int labelX = area.getX() - labelWidth + (labelWidth - font.width(ColorField.ALPHA.label)) / 2;
-		guiGraphics.drawString(font, ColorField.ALPHA.label, labelX, textY, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_LIGHT), false);
-		guiGraphics.drawString(
+		guiGraphics.text(font, ColorField.ALPHA.label, labelX, textY, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_LIGHT), false);
+		guiGraphics.text(
 			font,
 			getFieldText(ColorField.ALPHA),
 			area.getX() + area.getWidth() + 3,
@@ -543,12 +545,12 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		);
 	}
 
-	private void drawFields(GuiGraphics guiGraphics, PickerLayout layout) {
+	private void drawFields(GuiGraphicsExtractor guiGraphics, PickerLayout layout) {
 		Font font = Minecraft.getInstance().font;
 		drawField(guiGraphics, font, layout.hexFieldArea());
 	}
 
-	private void drawField(GuiGraphics guiGraphics, Font font, FieldArea fieldArea) {
+	private void drawField(GuiGraphicsExtractor guiGraphics, Font font, FieldArea fieldArea) {
 		ColorField field = fieldArea.field();
 		boolean focused = field == focusedField;
 		boolean valid = !focused || isEditTextValid();
@@ -705,7 +707,7 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		};
 	}
 
-	private static void drawBackground(GuiGraphics guiGraphics, Rect2i area) {
+	private static void drawBackground(GuiGraphicsExtractor guiGraphics, Rect2i area) {
 		int right = area.getX() + area.getWidth();
 		int bottom = area.getY() + area.getHeight();
 		guiGraphics.fill(area.getX(), area.getY(), right, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_BACKGROUND));
@@ -715,14 +717,14 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		guiGraphics.fill(area.getX(), bottom - 1, right, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_BORDER_LIGHT));
 	}
 
-	private static void fillWithBorder(GuiGraphics guiGraphics, Rect2i area, int fillColor, int borderColor) {
+	private static void fillWithBorder(GuiGraphicsExtractor guiGraphics, Rect2i area, int fillColor, int borderColor) {
 		int right = area.getX() + area.getWidth();
 		int bottom = area.getY() + area.getHeight();
 		guiGraphics.fill(area.getX(), area.getY(), right, bottom, borderColor);
 		guiGraphics.fill(area.getX() + 1, area.getY() + 1, right - 1, bottom - 1, fillColor);
 	}
 
-	private static void drawBorder(GuiGraphics guiGraphics, Rect2i area, int color) {
+	private static void drawBorder(GuiGraphicsExtractor guiGraphics, Rect2i area, int color) {
 		int right = area.getX() + area.getWidth();
 		int bottom = area.getY() + area.getHeight();
 		guiGraphics.fill(area.getX(), area.getY(), right, area.getY() + 1, color);
@@ -731,18 +733,18 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		guiGraphics.fill(area.getX(), bottom - 1, right, bottom, color);
 	}
 
-	private static void drawPointMarker(GuiGraphics guiGraphics, int x, int y) {
+	private static void drawPointMarker(GuiGraphicsExtractor guiGraphics, int x, int y) {
 		guiGraphics.fill(x - 3, y - 3, x + 4, y + 4, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_DARK));
 		guiGraphics.fill(x - 2, y - 2, x + 3, y + 3, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_LIGHT));
 		guiGraphics.fill(x - 1, y - 1, x + 2, y + 2, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_DARK));
 	}
 
-	private static void drawHorizontalMarker(GuiGraphics guiGraphics, Rect2i area, int y) {
+	private static void drawHorizontalMarker(GuiGraphicsExtractor guiGraphics, Rect2i area, int y) {
 		guiGraphics.fill(area.getX() - 1, y - 1, area.getX() + area.getWidth() + 1, y + 2, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_DARK));
 		guiGraphics.fill(area.getX(), y, area.getX() + area.getWidth(), y + 1, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_LIGHT));
 	}
 
-	private static void drawVerticalMarker(GuiGraphics guiGraphics, Rect2i area, int x) {
+	private static void drawVerticalMarker(GuiGraphicsExtractor guiGraphics, Rect2i area, int x) {
 		guiGraphics.fill(x - 1, area.getY() - 1, x + 2, area.getY() + area.getHeight() + 1, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_DARK));
 		guiGraphics.fill(x, area.getY(), x + 1, area.getY() + area.getHeight(), ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_MARKER_LIGHT));
 	}
@@ -874,7 +876,7 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		if (size <= 1) {
 			return 0.0f;
 		}
-		return (float) Math.clamp((position - start) / (size - 1), 0.0, 1.0);
+		return (float) ConfigMath.clamp((position - start) / (size - 1), 0.0, 1.0);
 	}
 
 	private static boolean contains(Rect2i area, double mouseX, double mouseY) {

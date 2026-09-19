@@ -6,7 +6,7 @@ import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.ConfigValueAccess;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -113,7 +113,7 @@ class ConfigEntryWidgetImmediateWriteTest {
 		}
 
 		@Override
-		protected void drawContent(GuiGraphics guiGraphics, double mouseX, double mouseY) {
+		protected void drawContent(GuiGraphicsExtractor guiGraphics, double mouseX, double mouseY) {
 
 		}
 	}

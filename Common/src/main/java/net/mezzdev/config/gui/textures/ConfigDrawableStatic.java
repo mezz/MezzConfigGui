@@ -1,8 +1,9 @@
 package net.mezzdev.config.gui.textures;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.mezzdev.config.gui.ConfigRenderUtil;
+
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Supplier;
 
@@ -10,9 +11,6 @@ public final class ConfigDrawableStatic {
 	private final Supplier<TextureAtlasSprite> spriteSupplier;
 	private final int width;
 	private final int height;
-
-	@Nullable
-	private TextureAtlasSprite sprite;
 
 	public ConfigDrawableStatic(Supplier<TextureAtlasSprite> spriteSupplier, int width, int height) {
 		if (width < 0 || height < 0 || (width == 0) != (height == 0)) {
@@ -33,11 +31,11 @@ public final class ConfigDrawableStatic {
 		return getHeight(sprite);
 	}
 
-	public void draw(GuiGraphics guiGraphics, int xOffset, int yOffset) {
+	public void draw(GuiGraphicsExtractor guiGraphics, int xOffset, int yOffset) {
 		draw(guiGraphics, xOffset, yOffset, 0, 0, 0, 0);
 	}
 
-	public void draw(GuiGraphics guiGraphics, int xOffset, int yOffset, int maskTop, int maskBottom, int maskLeft, int maskRight) {
+	public void draw(GuiGraphicsExtractor guiGraphics, int xOffset, int yOffset, int maskTop, int maskBottom, int maskLeft, int maskRight) {
 		TextureAtlasSprite sprite = getSprite();
 		int width = getWidth(sprite);
 		int height = getHeight(sprite);
@@ -45,7 +43,7 @@ public final class ConfigDrawableStatic {
 		int uWidth = width - (maskRight + maskLeft);
 		int vHeight = height - (maskBottom + maskTop);
 
-		guiGraphics.blitSprite(
+		ConfigRenderUtil.blitSprite(guiGraphics,
 			sprite,
 			width,
 			height,
@@ -59,11 +57,15 @@ public final class ConfigDrawableStatic {
 		);
 	}
 
+	public void drawTinted(GuiGraphicsExtractor graphics, int x, int y, int color) {
+		TextureAtlasSprite sprite = getSprite();
+		int width = getWidth(sprite);
+		int height = getHeight(sprite);
+		ConfigRenderUtil.blitSprite(graphics, sprite, width, height, 0, 0, x, y, 0, width, height, color);
+	}
+
 	private TextureAtlasSprite getSprite() {
-		if (sprite == null) {
-			sprite = spriteSupplier.get();
-		}
-		return sprite;
+		return spriteSupplier.get();
 	}
 
 	private int getWidth(TextureAtlasSprite sprite) {

@@ -28,11 +28,10 @@ import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,15 +47,15 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 	private static final String LOCALIZATION_PATH = "mezz_config_gui_test.fabric.custom";
 	private static final KeyMapping OPEN_SCREEN_KEY = new KeyMapping(
 		"key.%s.openScreen".formatted(MOD_ID),
-		InputConstants.Type.KEYSYM,
-		GLFW.GLFW_KEY_G,
-		"key.categories.%s".formatted(MOD_ID)
+		InputConstants.Type.KEYBOARD,
+		com.mojang.blaze3d.platform.InputConstants.KEY_G,
+		net.mezzdev.config.gui.ConfigInputUtil.keyCategory(MOD_ID)
 	);
 	private static final KeyMapping TOGGLE_OVERLAY_KEY = new KeyMapping(
 		"key.%s.toggleOverlay".formatted(MOD_ID),
-		InputConstants.Type.KEYSYM,
-		GLFW.GLFW_KEY_H,
-		"key.categories.%s".formatted(MOD_ID)
+		InputConstants.Type.KEYBOARD,
+		com.mojang.blaze3d.platform.InputConstants.KEY_H,
+		net.mezzdev.config.gui.ConfigInputUtil.keyCategory(MOD_ID)
 	);
 
 	@Nullable
@@ -507,7 +506,7 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 
 		@Override
 		public void draw(
-			GuiGraphics guiGraphics,
+			GuiGraphicsExtractor guiGraphics,
 			Rect2i area,
 			IConfigScreenValue<TestColor> configValue,
 			TestColor value,
@@ -517,7 +516,7 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 			guiGraphics.fill(area.getX(), area.getY(), area.getX() + area.getWidth(), area.getY() + area.getHeight(), value.getArgb());
 			Font font = Minecraft.getInstance().font;
 			Component valueName = ConfigValueLocalization.getValueName(configValue, value);
-			guiGraphics.drawString(font, valueName, area.getX() + 4, area.getY() + 5, 0xFFFFFFFF, false);
+			guiGraphics.text(font, valueName, area.getX() + 4, area.getY() + 5, 0xFFFFFFFF, false);
 		}
 
 		@Override
@@ -544,7 +543,7 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 			double mouseY,
 			int button
 		) {
-			if (button != 0) {
+			if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
 				return Optional.empty();
 			}
 			return Optional.of(new TestColorPopup(configValue));
@@ -578,14 +577,14 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 		}
 
 		@Override
-		public void draw(GuiGraphics guiGraphics, Rect2i area, double mouseX, double mouseY) {
+		public void draw(GuiGraphicsExtractor guiGraphics, Rect2i area, double mouseX, double mouseY) {
 			Font font = Minecraft.getInstance().font;
 			for (int i = 0; i < TestColor.values().length; i++) {
 				TestColor color = TestColor.values()[i];
 				int y = area.getY() + i * ROW_HEIGHT;
 				guiGraphics.fill(area.getX(), y, area.getX() + area.getWidth(), y + ROW_HEIGHT, color.getArgb());
 				Component valueName = ConfigValueLocalization.getValueName(configValue, color);
-				guiGraphics.drawString(font, valueName, area.getX() + 4, y + 5, 0xFFFFFFFF, false);
+				guiGraphics.text(font, valueName, area.getX() + 4, y + 5, 0xFFFFFFFF, false);
 			}
 		}
 	}

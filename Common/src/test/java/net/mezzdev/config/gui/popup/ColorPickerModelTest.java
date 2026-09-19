@@ -74,7 +74,7 @@ class ColorPickerModelTest {
 		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.rgb(0xFF0000));
 		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
 
-		assertTrue(popup.getClickedValue(area, 240, 63, 0).isEmpty());
+		assertTrue(popup.getClickedValue(area, 240, 63, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT).isEmpty());
 		double greenHueY = 40.0 + 85.0 / 3.0;
 		PackedColor green = clickControl(popup, area, 221, greenHueY);
 
@@ -86,7 +86,7 @@ class ColorPickerModelTest {
 		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.rgb(0xFF0000));
 		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
 
-		assertTrue(popup.getClickedValue(area, 240, 83, 0).isEmpty());
+		assertTrue(popup.getClickedValue(area, 240, 83, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT).isEmpty());
 		PackedColor white = clickControl(popup, area, 221, 125);
 
 		assertEquals(PackedColor.rgb(0xFFFFFF), white);
@@ -97,7 +97,7 @@ class ColorPickerModelTest {
 		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.rgb(0xFF0000));
 		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
 
-		popup.getClickedValue(area, 240, 63, 0);
+		popup.getClickedValue(area, 240, 63, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT);
 		PackedColor red = clickControl(popup, area, 210, 40);
 		PackedColor black = clickControl(popup, area, 210, 125);
 
@@ -127,7 +127,7 @@ class ColorPickerModelTest {
 		AtomicReference<PackedColor> editedColor = new AtomicReference<>();
 
 		PackedColor noRed = clickControl(popup, area, 14, 90);
-		popup.getClickedValue(area, 90, 135, 0);
+		popup.getClickedValue(area, 90, 135, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT);
 		for (char character : "#112233".toCharArray()) {
 			assertTrue(popup.charTyped(character, 0, editedColor::set));
 		}
@@ -155,8 +155,8 @@ class ColorPickerModelTest {
 		Rect2i area = new Rect2i(0, 0, size.width(), size.height());
 		AtomicReference<PackedColor> editedColor = new AtomicReference<>();
 
-		PackedColor transparent = popup.getClickedValue(area, 14, 130, 0).orElseThrow();
-		popup.getClickedValue(area, 90, 147, 0);
+		PackedColor transparent = popup.getClickedValue(area, 14, 130, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT).orElseThrow();
+		popup.getClickedValue(area, 90, 147, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT);
 		for (char character : "#80112233".toCharArray()) {
 			assertTrue(popup.charTyped(character, 0, editedColor::set));
 		}
@@ -170,7 +170,7 @@ class ColorPickerModelTest {
 		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.argb(0xFFFF0000));
 		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
 
-		PackedColor transparentRed = popup.getClickedValue(area, 21, 180, 0).orElseThrow();
+		PackedColor transparentRed = popup.getClickedValue(area, 21, 180, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT).orElseThrow();
 
 		assertEquals(PackedColor.argb(0x00FF0000), transparentRed);
 		assertFalse(popup.closesAfterValueSelected());
@@ -181,8 +181,8 @@ class ColorPickerModelTest {
 		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.rgb(0xFF0000));
 		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
 
-		popup.getClickedValue(area, 221, 40, 0).orElseThrow();
-		PackedColor halfValueRed = popup.getDraggedValue(area, -20, 82.5, 0).orElseThrow();
+		popup.getClickedValue(area, 221, 40, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT).orElseThrow();
+		PackedColor halfValueRed = popup.getDraggedValue(area, -20, 82.5, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT).orElseThrow();
 
 		assertEquals(PackedColor.rgb(0x800000), halfValueRed);
 	}
@@ -201,7 +201,7 @@ class ColorPickerModelTest {
 		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
 		AtomicReference<PackedColor> editedColor = new AtomicReference<>();
 
-		popup.getClickedValue(area, 180, 200, 0);
+		popup.getClickedValue(area, 180, 200, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT);
 		for (char character : "#804477DD".toCharArray()) {
 			assertTrue(popup.charTyped(character, 0, editedColor::set));
 		}
@@ -215,7 +215,7 @@ class ColorPickerModelTest {
 		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
 		AtomicReference<PackedColor> editedColor = new AtomicReference<>();
 
-		popup.getClickedValue(area, 180, 185, 0);
+		popup.getClickedValue(area, 180, 185, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT);
 		for (char character : "#336699".toCharArray()) {
 			assertTrue(popup.charTyped(character, 0, editedColor::set));
 		}
@@ -252,8 +252,8 @@ class ColorPickerModelTest {
 	}
 
 	private static PackedColor clickControl(ColorPickerPopup popup, Rect2i area, double mouseX, double mouseY) {
-		PackedColor value = popup.getClickedValue(area, mouseX, mouseY, 0).orElseThrow();
-		popup.getClickedValue(area, mouseX, mouseY, 0).orElseThrow();
+		PackedColor value = popup.getClickedValue(area, mouseX, mouseY, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT).orElseThrow();
+		popup.getClickedValue(area, mouseX, mouseY, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT).orElseThrow();
 		return value;
 	}
 }

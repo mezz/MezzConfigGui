@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui.textures;
 
 import net.mezzdev.config.gui.util.ImmutableRect2i;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.Rect2i;
 
 /**
@@ -14,16 +14,16 @@ public final class ConfigCheckbox {
 
 	}
 
-	public static void draw(GuiGraphics guiGraphics, ImmutableRect2i area, boolean checked, boolean hovered) {
+	public static void draw(GuiGraphicsExtractor guiGraphics, ImmutableRect2i area, boolean checked, boolean hovered) {
 		draw(guiGraphics, area.getX(), area.getY(), area.getWidth(), area.getHeight(), checked, hovered);
 	}
 
-	public static void draw(GuiGraphics guiGraphics, Rect2i area, boolean checked, boolean hovered) {
+	public static void draw(GuiGraphicsExtractor guiGraphics, Rect2i area, boolean checked, boolean hovered) {
 		draw(guiGraphics, area.getX(), area.getY(), area.getWidth(), area.getHeight(), checked, hovered);
 	}
 
 	private static void draw(
-		GuiGraphics guiGraphics,
+		GuiGraphicsExtractor guiGraphics,
 		int areaX,
 		int areaY,
 		int areaWidth,

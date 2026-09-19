@@ -15,11 +15,10 @@ import net.mezzdev.config.gui.api.IConfigValueEditor;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.common.ModConfigSpec;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,15 +27,15 @@ import java.util.Optional;
 public final class NeoForgeNativeCustomTestGuiPlugin implements IConfigGuiPlugin {
 	private static final KeyMapping OPEN_NATIVE_SCREEN_KEY = new KeyMapping(
 		"key.%s.openNativeScreen".formatted(NeoForgeNativeCustomTestMod.MOD_ID),
-		InputConstants.Type.KEYSYM,
-		GLFW.GLFW_KEY_J,
-		"key.categories.%s".formatted(NeoForgeNativeCustomTestMod.MOD_ID)
+		InputConstants.Type.KEYBOARD,
+		com.mojang.blaze3d.platform.InputConstants.KEY_J,
+		net.mezzdev.config.gui.ConfigInputUtil.keyCategory(NeoForgeNativeCustomTestMod.MOD_ID)
 	);
 	private static final KeyMapping TOGGLE_NATIVE_OVERLAY_KEY = new KeyMapping(
 		"key.%s.toggleNativeOverlay".formatted(NeoForgeNativeCustomTestMod.MOD_ID),
-		InputConstants.Type.KEYSYM,
-		GLFW.GLFW_KEY_O,
-		"key.categories.%s".formatted(NeoForgeNativeCustomTestMod.MOD_ID)
+		InputConstants.Type.KEYBOARD,
+		com.mojang.blaze3d.platform.InputConstants.KEY_O,
+		net.mezzdev.config.gui.ConfigInputUtil.keyCategory(NeoForgeNativeCustomTestMod.MOD_ID)
 	);
 
 	@Override
@@ -137,7 +136,7 @@ public final class NeoForgeNativeCustomTestGuiPlugin implements IConfigGuiPlugin
 
 		@Override
 		public void draw(
-			GuiGraphics guiGraphics,
+			GuiGraphicsExtractor guiGraphics,
 			Rect2i area,
 			IConfigScreenValue<T> configValue,
 			T value,
@@ -148,7 +147,7 @@ public final class NeoForgeNativeCustomTestGuiPlugin implements IConfigGuiPlugin
 			guiGraphics.fill(area.getX(), area.getY(), area.getX() + area.getWidth(), area.getY() + area.getHeight(), backgroundColor);
 			Font font = Minecraft.getInstance().font;
 			Component valueName = ConfigValueLocalization.getValueName(configValue, value);
-			guiGraphics.drawString(font, valueName, area.getX() + 4, area.getY() + 5, 0xFFFFFFFF, false);
+			guiGraphics.text(font, valueName, area.getX() + 4, area.getY() + 5, 0xFFFFFFFF, false);
 		}
 
 		private static int getBackgroundColor(boolean hovered) {
@@ -182,7 +181,7 @@ public final class NeoForgeNativeCustomTestGuiPlugin implements IConfigGuiPlugin
 			double mouseY,
 			int button
 		) {
-			if (button != 0) {
+			if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
 				return Optional.empty();
 			}
 			List<T> values = configValue.getSerializer()

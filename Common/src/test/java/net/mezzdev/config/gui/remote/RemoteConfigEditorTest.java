@@ -58,35 +58,35 @@ class RemoteConfigEditorTest {
 		ConfigScreenSchema screenSchema = ConfigScreenSchema.from(schema);
 		ConfigServerInfo info = new ConfigServerInfo(screenSchema);
 		var descriptions = info.forValues(Stream.of(screenValue, screenValue));
-		ConfigCategoryWidget category = new ConfigCategoryWidget(screenSchema.getCategories().getFirst(), List.of(),
+		ConfigCategoryWidget category = new ConfigCategoryWidget(screenSchema.getCategories().get(0), List.of(),
 			List.of(new ConfigCategoryWidget.Section(0, Component.literal("Nested"), Component.empty())), () -> {}, descriptions);
 
-		assertEquals(ServerConfigAccess.CHECKING.getDescription(), category.getInfo().lines().getFirst());
+		assertEquals(ServerConfigAccess.CHECKING.getDescription(), category.getInfo().lines().get(0));
 		assertFalse(editor.isEditable(schema));
 		RemoteConfigMessage.SnapshotRequest request = (RemoteConfigMessage.SnapshotRequest) capture.take();
 		sendResponse(new RemoteConfigMessage.SnapshotResponse(request.requestId(), SCHEMA_KEY, true, false, "", 0, List.of()));
-		assertEquals(ServerConfigAccess.OP_REQUIRED.getDescription(), category.getInfo().lines().getFirst());
+		assertEquals(ServerConfigAccess.OP_REQUIRED.getDescription(), category.getInfo().lines().get(0));
 		assertFalse(editor.isEditable(schema));
 
 		editor.ensureSnapshot(schema);
 		request = (RemoteConfigMessage.SnapshotRequest) capture.take();
 		sendResponse(new RemoteConfigMessage.SnapshotResponse(request.requestId(), SCHEMA_KEY, true, true, "", 1, List.of(valueData("effective"))));
 		assertEquals(List.of(ServerConfigAccess.EDITABLE.getDescription()), descriptions.get());
-		assertEquals(ServerConfigAccess.EDITABLE.getDescription(), category.getCategoryHeader().getInfo().lines().getFirst());
-		assertEquals(ServerConfigAccess.EDITABLE.getDescription(), category.getSectionHeader(0).getInfo().lines().getFirst());
+		assertEquals(ServerConfigAccess.EDITABLE.getDescription(), category.getCategoryHeader().getInfo().lines().get(0));
+		assertEquals(ServerConfigAccess.EDITABLE.getDescription(), category.getSectionHeader(0).getInfo().lines().get(0));
 		assertTrue(editor.isEditable(schema));
 
 		CompletableFuture<Void> update = editor.requestUpdate(schema, List.of(new ConfigValueChange<>(screenValue, "changed")));
 		RemoteConfigMessage.UpdateRequest updateRequest = (RemoteConfigMessage.UpdateRequest) capture.take();
 		sendResponse(new RemoteConfigMessage.UpdateResponse(updateRequest.requestId(), SCHEMA_KEY, false, false, "Permission revoked", 1, List.of()));
 		assertTrue(update.isCompletedExceptionally());
-		assertEquals(ServerConfigAccess.OP_REQUIRED.getDescription(), category.getInfo().lines().getFirst());
+		assertEquals(ServerConfigAccess.OP_REQUIRED.getDescription(), category.getInfo().lines().get(0));
 		assertFalse(editor.isEditable(schema));
 
 		RemoteConfigEditor.onClientTick(false);
-		assertEquals(ServerConfigAccess.READ_ONLY.getDescription(), category.getInfo().lines().getFirst());
+		assertEquals(ServerConfigAccess.READ_ONLY.getDescription(), category.getInfo().lines().get(0));
 		RemoteConfigEditor.onClientDisconnect();
-		assertEquals(ServerConfigAccess.UNAVAILABLE.getDescription(), category.getInfo().lines().getFirst());
+		assertEquals(ServerConfigAccess.UNAVAILABLE.getDescription(), category.getInfo().lines().get(0));
 	}
 
 	@Test

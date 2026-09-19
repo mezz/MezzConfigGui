@@ -180,7 +180,7 @@ neoForge {
         }
         create("client") {
             client()
-            gameDirectory = file("run/client/Dev")
+            gameDirectory = file("run/client")
             logLevel = Level.DEBUG
         }
         create("server") {
@@ -195,6 +195,10 @@ neoForge {
             logLevel = Level.INFO
         }
     }
+}
+
+sourceSets.named("defaultsTestMod") {
+    compileClasspath += sourceSets["customTestMod"].output
 }
 
 val testModClassesTasks = testModSourceSets.map {
@@ -226,6 +230,11 @@ sourceSets {
 }
 
 dependencies {
+        runtimeOnly("net.neoforged:testframework:$neoforgeVersion") { isTransitive = false }
+    for (testModSourceSet in testModSourceSets) {
+        add(testModSourceSet.implementationConfigurationName, "net.neoforged:testframework:$neoforgeVersion") { isTransitive = false }
+    }
+
     compileOnly(mezzConfigApiDependency)
     mezzConfigRun(mezzConfigNeoForgeDependency)
     dependencyProjects.forEach {
@@ -294,19 +303,6 @@ val sourcesJarTask = tasks.named<Jar>("sourcesJar") {
     archiveClassifier.set("sources")
 }
 
-val mavenJarTask = tasks.register<Jar>("mavenJar") {
-    from(sourceSets.main.get().output)
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    destinationDirectory.set(layout.buildDirectory.dir("maven-libs"))
-}
-
-val mavenSourcesJarTask = tasks.register<Jar>("mavenSourcesJar") {
-    from(sourceSets.main.get().allJava)
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    archiveClassifier.set("sources")
-    destinationDirectory.set(layout.buildDirectory.dir("maven-libs"))
-}
-
 tasks.assemble {
     dependsOn(sourcesJarTask)
 }
@@ -315,16 +311,10 @@ publishing {
     publications {
         register<MavenPublication>("configGuiNeoForgeJar") {
             artifactId = baseArchivesName
-            artifact(mavenJarTask.get())
-            artifact(mavenSourcesJarTask.get())
+            artifact(tasks.jar)
+            artifact(sourcesJarTask)
 
-            val dependencyInfos = listOf(dependencyInfo(mezzConfigNeoForgeDependency)) + dependencyProjects.map {
-                mapOf(
-                    "groupId" to it.group,
-                    "artifactId" to it.base.archivesName.get(),
-                    "version" to it.version
-                )
-            }
+            val dependencyInfos = listOf(dependencyInfo(mezzConfigNeoForgeDependency))
 
             pom.withXml {
                 val dependenciesNode = asNode().appendNode("dependencies")

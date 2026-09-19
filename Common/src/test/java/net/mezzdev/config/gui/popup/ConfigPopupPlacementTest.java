@@ -5,7 +5,7 @@ import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValuePopup;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.Rect2i;
 import org.junit.jupiter.api.Test;
 
@@ -68,7 +68,7 @@ class ConfigPopupPlacementTest {
 		}
 
 		@Override
-		public void draw(GuiGraphics guiGraphics, Rect2i area, double mouseX, double mouseY) {
+		public void draw(GuiGraphicsExtractor guiGraphics, Rect2i area, double mouseX, double mouseY) {
 
 		}
 	}

@@ -10,7 +10,7 @@ import net.mezzdev.config.gui.textures.ConfigButtonIcon;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 
@@ -41,7 +41,7 @@ final class SelectionConfigValueEditor<T> implements IConfigValueEditor<T> {
 
 	@Override
 	public void draw(
-		GuiGraphics guiGraphics,
+		GuiGraphicsExtractor guiGraphics,
 		Rect2i area,
 		IConfigScreenValue<T> configValue,
 		T value,
@@ -85,7 +85,7 @@ final class SelectionConfigValueEditor<T> implements IConfigValueEditor<T> {
 		double mouseY,
 		int button
 	) {
-		if (button != 0) {
+		if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
 			return Optional.empty();
 		}
 		List<T> validValues = getValidValues(configValue);

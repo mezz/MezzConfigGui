@@ -1,5 +1,5 @@
 // Load the real Jenkins helper methods without running the pipeline or its shell steps.
-def env = [BRANCH_NAME: '1.21.1', CHANGE_ID: null, RELEASE_TAG: 'v0.3.0']
+def env = [BRANCH_NAME: '26.3', CHANGE_ID: null, RELEASE_TAG: 'mc26.3/v0.3.0']
 def currentBuild = [previousBuild: null]
 def binding = new Binding([
     env: env,
@@ -24,10 +24,10 @@ try {
     assert expected.message.contains('No release tag')
 }
 
-env.RELEASE_TAG = 'v0.3.0'
+env.RELEASE_TAG = 'mc26.3/v0.3.0'
 env.BRANCH_NAME = 'feature/config-screen'
 assert !jenkins.shouldPublishRelease()
-env.BRANCH_NAME = '1.21.1'
+env.BRANCH_NAME = '26.3'
 env.CHANGE_ID = '123'
 assert !jenkins.shouldPublishRelease()
 env.CHANGE_ID = null
@@ -39,13 +39,13 @@ assert jenkins.shouldPublishRelease()
 // Search beyond intervening builds for the completed release of this exact tag.
 currentBuild.previousBuild.previousBuild = [
     result: 'SUCCESS',
-    description: jenkins.releaseMarker('v0.3.0'),
+    description: jenkins.releaseMarker('mc26.3/v0.3.0'),
     previousBuild: null
 ]
 assert !jenkins.shouldPublishRelease()
-env.RELEASE_TAG = 'v0.3.1'
+env.RELEASE_TAG = 'mc26.3/v0.3.1'
 assert jenkins.shouldPublishRelease()
-env.RELEASE_TAG = 'v0.3.0'
+env.RELEASE_TAG = 'mc26.3/v0.3.0'
 
 // Failed releases may be retried; only a successful release record is authoritative.
 currentBuild.previousBuild.previousBuild.result = 'FAILURE'
@@ -53,8 +53,17 @@ assert jenkins.shouldPublishRelease()
 currentBuild.previousBuild.previousBuild.description = null
 assert jenkins.shouldPublishRelease()
 
-env.RELEASE_TAG = 'refs/tags/v0.3.0'
+env.RELEASE_TAG = 'refs/tags/mc26.3/v0.3.0'
 assert jenkins.getReleaseVersion() == '0.3.0'
 assert jenkins.shellQuote("path with 'quotes'") == "'path with '\"'\"'quotes'\"'\"''"
 
 println 'Jenkins release policy passed: new tags, ordinary builds, branches, pull requests, completed releases, and retries.'
+
+env.RELEASE_TAG = 'mc1.21.1/v0.3.0'
+assert !jenkins.shouldPublishRelease()
+try {
+    jenkins.getReleaseVersion()
+    assert false: 'A tag from another Minecraft branch must be rejected'
+} catch (IllegalStateException expected) {
+    assert expected.message.contains('Could not determine release version')
+}

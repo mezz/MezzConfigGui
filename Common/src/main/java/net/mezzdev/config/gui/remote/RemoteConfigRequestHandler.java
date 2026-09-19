@@ -223,7 +223,7 @@ final class RemoteConfigRequestHandler implements AutoCloseable {
 				"Expected one server schema match but found " + matches.size() + "."
 			);
 		}
-		IConfigSchema schema = matches.getFirst();
+		IConfigSchema schema = matches.get(0);
 		if (!schema.isActive() || schema.getPath().isEmpty()) {
 			throw new RequestRejectedException(SCHEMA_UNAVAILABLE, "The server schema is not locally authoritative and active.");
 		}
@@ -318,7 +318,7 @@ final class RemoteConfigRequestHandler implements AutoCloseable {
 		if (categories.size() != 1) {
 			throw new IllegalArgumentException("Unknown or duplicate config category: " + key.categoryName());
 		}
-		List<? extends IConfigValue<?>> values = categories.getFirst()
+		List<? extends IConfigValue<?>> values = categories.get(0)
 			.getConfigValues()
 			.stream()
 			.filter(value -> value.getEditorInfo().getName().equals(key.valueName()))
@@ -326,7 +326,7 @@ final class RemoteConfigRequestHandler implements AutoCloseable {
 		if (values.size() != 1) {
 			throw new IllegalArgumentException("Unknown or duplicate config value: " + key.valueName());
 		}
-		return values.getFirst();
+		return values.get(0);
 	}
 
 	@SuppressWarnings("unchecked")

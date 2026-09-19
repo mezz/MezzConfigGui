@@ -4,7 +4,7 @@ import net.mezzdev.config.gui.util.Pair;
 import net.mezzdev.config.gui.util.StringUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
@@ -22,7 +22,7 @@ final class ConfigTooltip {
 		lines.add(component);
 	}
 
-	public void draw(GuiGraphics guiGraphics, int x, int y) {
+	public void draw(GuiGraphicsExtractor guiGraphics, int x, int y) {
 		if (!lines.isEmpty()) {
 			Font font = Minecraft.getInstance().font;
 			List<FormattedText> formattedLines = lines.stream()
@@ -35,10 +35,10 @@ final class ConfigTooltip {
 				Integer.MAX_VALUE
 			);
 			List<FormattedCharSequence> visibleLines = Language.getInstance().getVisualOrder(splitLines.first());
-			if (Minecraft.getInstance().screen instanceof MezzConfigScreen screen) {
+			if (net.mezzdev.config.gui.ConfigClientUtil.screen() instanceof MezzConfigScreen screen) {
 				screen.setTooltipForNextRenderPass(visibleLines);
 			} else {
-				guiGraphics.renderTooltip(font, visibleLines, x, y);
+				ConfigRenderUtil.tooltip(guiGraphics, font, visibleLines, x, y);
 			}
 		}
 	}

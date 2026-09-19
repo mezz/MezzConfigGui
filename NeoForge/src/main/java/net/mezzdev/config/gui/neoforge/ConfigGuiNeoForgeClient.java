@@ -18,12 +18,11 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
+import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.network.PacketDistributor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -56,7 +55,7 @@ public final class ConfigGuiNeoForgeClient {
 			if (connection == null || !connection.hasChannel(payload.type())) {
 				return false;
 			}
-			PacketDistributor.sendToServer(payload);
+			connection.send(payload);
 			return true;
 		});
 		NeoForge.EVENT_BUS.addListener(
@@ -108,9 +107,9 @@ public final class ConfigGuiNeoForgeClient {
 			);
 	}
 
-	private static void onRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {
-		event.registerReloadListener(ConfigTextures.get().getGuiSpriteManager());
-		event.registerReloadListener(ConfigGuiColors.createReloadListener());
+	private static void onRegisterClientReloadListeners(AddClientReloadListenersEvent event) {
+		event.addListener(net.minecraft.resources.Identifier.fromNamespaceAndPath("mezz_config_gui", "sprites"), ConfigTextures.get().getGuiSpriteManager());
+		event.addListener(net.minecraft.resources.Identifier.fromNamespaceAndPath("mezz_config_gui", "colors"), ConfigGuiColors.createReloadListener());
 	}
 
 	private static boolean isChannelAvailable() {

@@ -1,8 +1,10 @@
-# Dependency Setup for Minecraft 1.21.1
+# Dependency Setup
 
 Compile only against the MezzConfig GUI API, then load the full artifact for your platform at runtime.
 This keeps implementation classes off your compile classpath, to avoid having your mod depend on unstable internal classes that will change over time.
 
+Select a supported Minecraft and loader combination from the [branch table](BRANCHES.md).
+Every artifact name includes its exact Minecraft target; a jar is not shared across game versions.
 The examples use Gradle Kotlin DSL. Set the versions in `gradle.properties`:
 
 ```properties
@@ -76,7 +78,10 @@ dependencies {
 }
 ```
 
-## ForgeGradle
+For unobfuscated Minecraft 26.x with Fabric Loom, use `runtimeOnly` instead of
+`modRuntimeOnly`; there is no Minecraft remapping step.
+
+## ForgeGradle (1.19.2 and 1.20.1)
 
 Pass both artifacts through ForgeGradle's deobfuscation helper:
 

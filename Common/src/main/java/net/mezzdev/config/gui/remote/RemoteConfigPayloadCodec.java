@@ -33,35 +33,32 @@ final class RemoteConfigPayloadCodec {
 
 	static byte[] encode(RemoteConfigMessage message) {
 		return encode(output -> {
-			switch (message) {
-				case RemoteConfigMessage.SnapshotRequest request -> {
-					output.writeByte(SNAPSHOT_REQUEST);
-					writeHeader(output, request);
-				}
-				case RemoteConfigMessage.SnapshotResponse response -> {
-					output.writeByte(SNAPSHOT_RESPONSE);
-					writeHeader(output, response);
-					writeBoolean(output, response.available());
-					writeBoolean(output, response.canEdit());
-					writeString(output, response.error(), MAX_ERROR_MESSAGE_BYTES, "error message");
-					output.writeLong(response.revision());
-					writeValues(output, response.pendingValues());
-				}
-				case RemoteConfigMessage.UpdateRequest request -> {
-					output.writeByte(UPDATE_REQUEST);
-					writeHeader(output, request);
-					output.writeLong(request.expectedRevision());
-					writeValues(output, request.proposedValues());
-				}
-				case RemoteConfigMessage.UpdateResponse response -> {
-					output.writeByte(UPDATE_RESPONSE);
-					writeHeader(output, response);
-					writeBoolean(output, response.accepted());
-					writeBoolean(output, response.canEdit());
-					writeString(output, response.error(), MAX_ERROR_MESSAGE_BYTES, "error message");
-					output.writeLong(response.revision());
-					writeValues(output, response.pendingValues());
-				}
+			if (message instanceof RemoteConfigMessage.SnapshotRequest request) {
+				output.writeByte(SNAPSHOT_REQUEST);
+				writeHeader(output, request);
+			} else if (message instanceof RemoteConfigMessage.SnapshotResponse response) {
+				output.writeByte(SNAPSHOT_RESPONSE);
+				writeHeader(output, response);
+				writeBoolean(output, response.available());
+				writeBoolean(output, response.canEdit());
+				writeString(output, response.error(), MAX_ERROR_MESSAGE_BYTES, "error message");
+				output.writeLong(response.revision());
+				writeValues(output, response.pendingValues());
+			} else if (message instanceof RemoteConfigMessage.UpdateRequest request) {
+				output.writeByte(UPDATE_REQUEST);
+				writeHeader(output, request);
+				output.writeLong(request.expectedRevision());
+				writeValues(output, request.proposedValues());
+			} else if (message instanceof RemoteConfigMessage.UpdateResponse response) {
+				output.writeByte(UPDATE_RESPONSE);
+				writeHeader(output, response);
+				writeBoolean(output, response.accepted());
+				writeBoolean(output, response.canEdit());
+				writeString(output, response.error(), MAX_ERROR_MESSAGE_BYTES, "error message");
+				output.writeLong(response.revision());
+				writeValues(output, response.pendingValues());
+			} else {
+				throw new IllegalArgumentException("Unknown remote config message: " + message);
 			}
 		});
 	}

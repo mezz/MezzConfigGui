@@ -97,12 +97,12 @@ class RemoteConfigPayloadTest {
 		assertArrayEquals(data, result);
 		assertTrue(reassembler.isEmpty());
 
-		byte[] first = RemoteConfigPayloadChunker.split(data, 11).getFirst();
+		byte[] first = RemoteConfigPayloadChunker.split(data, 11).get(0);
 		reassembler.accept(first, 0);
 		assertThrows(IllegalArgumentException.class, () -> reassembler.accept(first, 0));
 		assertTrue(reassembler.isEmpty());
 
-		reassembler.accept(RemoteConfigPayloadChunker.split(data, 12).getFirst(), 0);
+		reassembler.accept(RemoteConfigPayloadChunker.split(data, 12).get(0), 0);
 		assertEquals(1, reassembler.expire(RemoteConfigPayloadReassembler.INCOMPLETE_MESSAGE_TIMEOUT.toNanos()));
 		assertEquals(0, reassembler.pendingBytes());
 	}
@@ -111,11 +111,11 @@ class RemoteConfigPayloadTest {
 	void boundsBufferedFragmentsAndCompletePayloads() {
 		byte[] maximum = new byte[RemoteConfigPayloadChunker.MAX_REASSEMBLED_PAYLOAD_LENGTH];
 		RemoteConfigPayloadReassembler reassembler = new RemoteConfigPayloadReassembler();
-		reassembler.accept(RemoteConfigPayloadChunker.split(maximum, 20).getFirst(), 0);
-		reassembler.accept(RemoteConfigPayloadChunker.split(maximum, 21).getFirst(), 0);
+		reassembler.accept(RemoteConfigPayloadChunker.split(maximum, 20).get(0), 0);
+		reassembler.accept(RemoteConfigPayloadChunker.split(maximum, 21).get(0), 0);
 		assertThrows(
 			IllegalArgumentException.class,
-			() -> reassembler.accept(RemoteConfigPayloadChunker.split(maximum, 22).getFirst(), 0)
+			() -> reassembler.accept(RemoteConfigPayloadChunker.split(maximum, 22).get(0), 0)
 		);
 		assertEquals(RemoteConfigPayloadReassembler.MAX_PENDING_BYTES, reassembler.pendingBytes());
 

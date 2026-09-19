@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui.popup;
 
 import net.mezzdev.config.gui.api.IConfigValuePopup;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.Rect2i;
 
 import java.util.Optional;
@@ -51,7 +51,7 @@ public final class MappedConfigValuePopup<S, T> implements IConfigValuePopup<T> 
 	}
 
 	@Override
-	public void draw(GuiGraphics guiGraphics, Rect2i area, double mouseX, double mouseY) {
+	public void draw(GuiGraphicsExtractor guiGraphics, Rect2i area, double mouseX, double mouseY) {
 		delegate.draw(guiGraphics, area, mouseX, mouseY);
 	}
 

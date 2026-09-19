@@ -1,6 +1,6 @@
 package net.mezzdev.config.gui.api;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.Objects;
 
@@ -23,7 +23,7 @@ public final class ConfigValueEditorType<T> {
 	 * @since 0.1.0
 	 */
 	public static <T> ConfigValueEditorType<T> create(String namespace, String path) {
-		ResourceLocation uid = ResourceLocation.fromNamespaceAndPath(namespace, path);
+		Identifier uid = Identifier.fromNamespaceAndPath(namespace, path);
 		return create(uid);
 	}
 
@@ -34,13 +34,13 @@ public final class ConfigValueEditorType<T> {
 	 *
 	 * @since 0.1.0
 	 */
-	public static <T> ConfigValueEditorType<T> create(ResourceLocation uid) {
+	public static <T> ConfigValueEditorType<T> create(Identifier uid) {
 		return new ConfigValueEditorType<>(uid);
 	}
 
-	private final ResourceLocation uid;
+	private final Identifier uid;
 
-	private ConfigValueEditorType(ResourceLocation uid) {
+	private ConfigValueEditorType(Identifier uid) {
 		this.uid = Objects.requireNonNull(uid, "uid");
 	}
 
@@ -49,7 +49,7 @@ public final class ConfigValueEditorType<T> {
 	 *
 	 * @since 0.1.0
 	 */
-	public ResourceLocation getUid() {
+	public Identifier getUid() {
 		return uid;
 	}
 

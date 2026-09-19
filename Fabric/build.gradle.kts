@@ -1,17 +1,20 @@
-import net.fabricmc.loom.task.RemapJarTask
-import net.fabricmc.loom.task.RemapSourcesJarTask
+import net.fabricmc.loom.api.LoomGradleExtensionAPI
 
 plugins {
     java
     idea
     `maven-publish`
-    id("fabric-loom")
+    id("net.fabricmc.fabric-loom") apply false
     id("me.modmuss50.mod-publish-plugin")
 }
 
-publishMods {
-    file.set(tasks.named<RemapJarTask>("remapJar").flatMap { it.archiveFile })
-}
+pluginManager.apply("net.fabricmc.fabric-loom")
+val loom = extensions.getByType<LoomGradleExtensionAPI>()
+val runtimeJar = tasks.named<AbstractArchiveTask>("jar")
+publishMods { file.set(runtimeJar.flatMap { it.archiveFile }) }
+val modDependencyConfiguration = "implementation"
+val modCompileConfiguration = "compileOnly"
+val modRuntimeConfiguration = "runtimeOnly"
 
 repositories {
     val deployDir = rootProject.findProperty("DEPLOY_DIR")
@@ -29,12 +32,6 @@ repositories {
         }
     exclusiveMaven("https://maven.parchmentmc.org") {
         includeGroupByRegex("org\\.parchmentmc.*")
-    }
-    maven("https://maven.siphalor.de/") {
-        // for optional AMECS integration
-        content {
-            includeGroup("de.siphalor")
-        }
     }
     maven("https://maven.terraformersmc.com/releases/") {
         // for optional Mod Menu integration
@@ -62,11 +59,7 @@ val configGuiModId: String by extra
 val configModGroup: String by extra
 val configModId: String by extra
 val modJavaVersion: String by extra
-val amecsVersionFabric: String by extra
-val amecsMinecraftVersion: String by extra
 val modMenuVersionFabric: String by extra
-val parchmentMinecraftVersion: String by extra
-val parchmentVersionFabric: String by extra
 val jsr305Version: String by extra
 val mezzConfigApiDependency: String by rootProject.extra
 val mezzConfigFabricDependency: String by rootProject.extra
@@ -126,27 +119,24 @@ tasks.withType<JavaCompile> {
 }
 
 dependencies {
-    minecraft("com.mojang:minecraft:$minecraftVersion")
-    @Suppress("UnstableApiUsage")
-    mappings(loom.layered {
-        officialMojangMappings()
-        parchment("org.parchmentmc.data:parchment-${parchmentMinecraftVersion}:${parchmentVersionFabric}@zip")
-    })
-    modImplementation("net.fabricmc:fabric-loader:$fabricLoaderVersion")
-    modImplementation("net.fabricmc.fabric-api:fabric-api:$fabricApiVersion")
-    modCompileOnly("de.siphalor:amecsapi-${amecsMinecraftVersion}:$amecsVersionFabric")
-    modCompileOnly("com.terraformersmc:modmenu:$modMenuVersionFabric")
+    add("minecraft", "com.mojang:minecraft:$minecraftVersion")
+    add(modDependencyConfiguration, "net.fabricmc:fabric-loader:$fabricLoaderVersion")
+    add(modDependencyConfiguration, "net.fabricmc.fabric-api:fabric-api:$fabricApiVersion")
+
+    add(modCompileConfiguration, "com.terraformersmc:modmenu:$modMenuVersionFabric") { isTransitive = false }
     compileOnly("com.google.code.findbugs:jsr305:$jsr305Version")
     compileOnly(mezzConfigApiDependency)
-    modRuntimeOnly(mezzConfigFabricDependency)
-    modLocalRuntime("com.terraformersmc:modmenu:$modMenuVersionFabric")
+    add(modRuntimeConfiguration, mezzConfigFabricDependency)
+    add("localRuntime", "com.terraformersmc:modmenu:$modMenuVersionFabric") { isTransitive = false }
     dependencyProjects.forEach {
         implementation(it)
     }
     compileOnly(commonApiSourceSet.output)
 }
 
-loom {
+val configGuiAccessWidener = file("src/main/resources/mezz_config.accesswidener")
+
+configure<LoomGradleExtensionAPI> {
     mods {
         create(configGuiModId) {
             sourceSet(sourceSets.main.get())
@@ -204,7 +194,7 @@ loom {
         create("serverSmokeTest") {
             server()
             configName = "MezzConfig GUI Fabric Server Smoke Test"
-            runDir("build/run/server-smoke")
+            runDir(serverSmokeTestRunDir.get().asFile.relativeTo(projectDir).path)
             programArgs("--nogui")
             vmArgs(
                 "-Dfabric.classPathGroups=${classPathGroupsString}",
@@ -214,7 +204,7 @@ loom {
         }
     }
 
-    accessWidenerPath.set(file("src/main/resources/mezz_config.accesswidener"))
+    accessWidenerPath.set(configGuiAccessWidener)
 }
 
 tasks.jar {
@@ -239,36 +229,8 @@ tasks.named<Jar>("sourcesJar") {
     archiveClassifier.set("sources")
 }
 
-val mavenJarTask = tasks.register<Jar>("mavenJar") {
-    from(sourceSets.main.get().output)
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    destinationDirectory.set(layout.buildDirectory.dir("maven-intermediates"))
-}
-
-val remapMavenJarTask = tasks.register<RemapJarTask>("remapMavenJar") {
-    inputFile.set(mavenJarTask.flatMap { it.archiveFile })
-    addNestedDependencies.set(false)
-    archiveBaseName.set(baseArchivesName)
-    archiveClassifier.set("")
-    destinationDirectory.set(layout.buildDirectory.dir("maven-libs"))
-}
-
-val mavenSourcesJarTask = tasks.register<Jar>("mavenSourcesJar") {
-    from(sourceSets.main.get().allJava)
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    archiveClassifier.set("sources")
-    destinationDirectory.set(layout.buildDirectory.dir("maven-intermediates"))
-}
-
-val remapMavenSourcesJarTask = tasks.register<RemapSourcesJarTask>("remapMavenSourcesJar") {
-    inputFile.set(mavenSourcesJarTask.flatMap { it.archiveFile })
-    archiveBaseName.set(baseArchivesName)
-    archiveClassifier.set("sources")
-    destinationDirectory.set(layout.buildDirectory.dir("maven-libs"))
-}
-
 tasks.assemble {
-    dependsOn(tasks.remapJar, tasks.remapSourcesJar)
+    dependsOn(runtimeJar, tasks.named("sourcesJar"))
 }
 
 val testModClassesTasks = testModSourceSets.map {
@@ -325,19 +287,11 @@ tasks.check {
 publishing {
     publications {
         register<MavenPublication>("configGuiFabricJar") {
-            @Suppress("UnstableApiUsage")
-            loom.disableDeprecatedPomGeneration(this)
             artifactId = baseArchivesName
-            artifact(remapMavenJarTask)
-            artifact(remapMavenSourcesJarTask)
+            artifact(runtimeJar)
+            artifact(tasks.named("sourcesJar"))
 
-            val dependencyInfos = listOf(dependencyInfo(mezzConfigFabricDependency)) + dependencyProjects.map {
-                mapOf(
-                    "groupId" to it.group,
-                    "artifactId" to it.base.archivesName.get(),
-                    "version" to it.version
-                )
-            }
+            val dependencyInfos = listOf(dependencyInfo(mezzConfigFabricDependency))
 
             pom.withXml {
                 val dependenciesNode = asNode().appendNode("dependencies")

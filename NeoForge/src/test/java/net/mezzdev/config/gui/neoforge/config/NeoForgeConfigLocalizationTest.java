@@ -46,7 +46,7 @@ class NeoForgeConfigLocalizationTest {
 
 		assertEquals("Cancel", getValueName(value));
 		assertEquals(List.of("Done"), getSectionTitles(spec, value));
-		assertEquals("Controls these settings.", NeoForgeConfigLocalization.getSections("test", spec, value.getPath()).getFirst().description().getString());
+		assertEquals("Controls these settings.", NeoForgeConfigLocalization.getSections("test", spec, value.getPath()).get(0).description().getString());
 	}
 
 	@Test
@@ -149,7 +149,7 @@ class NeoForgeConfigLocalizationTest {
 				new NeoForgeConfigLocalization.CategoryName(first, List.of(Component.literal("Animals"))),
 				new NeoForgeConfigLocalization.CategoryName(second, List.of(Component.literal("Items")))
 			));
-			assertEquals(first.getString() + " · Animals", names.getFirst().getString());
+			assertEquals(first.getString() + " · Animals", names.get(0).getString());
 			assertEquals(second.getString() + " · Items", names.getLast().getString());
 		}
 	}
@@ -194,7 +194,7 @@ class NeoForgeConfigLocalizationTest {
 			new NeoForgeConfigLocalization.CategoryName(Component.literal("Client"), List.of(translatedSection)),
 			categoryName("Client", "Items")
 		));
-		assertEquals("Client · Done", names.getFirst().getString());
+		assertEquals("Client · Done", names.get(0).getString());
 	}
 
 	@Test

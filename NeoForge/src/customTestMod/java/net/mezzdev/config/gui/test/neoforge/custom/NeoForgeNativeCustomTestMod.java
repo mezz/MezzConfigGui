@@ -5,7 +5,6 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.ModConfigSpec;
-import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 
 import java.util.List;
 
@@ -100,13 +99,9 @@ public final class NeoForgeNativeCustomTestMod {
 
 	public NeoForgeNativeCustomTestMod(IEventBus modEventBus, ModContainer modContainer) {
 		NeoForgeNativeCustomTestMezzConfig.register();
-		modEventBus.addListener(NeoForgeNativeCustomTestMod::registerGameTests);
+
 		modContainer.registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC, CLIENT_FILE_NAME);
 		modContainer.registerConfig(ModConfig.Type.COMMON, COMMON_SPEC, COMMON_FILE_NAME);
-	}
-
-	private static void registerGameTests(RegisterGameTestsEvent event) {
-		event.register(NeoForgeNativeCustomTestGameTests.class);
 	}
 
 	public enum TestMode {

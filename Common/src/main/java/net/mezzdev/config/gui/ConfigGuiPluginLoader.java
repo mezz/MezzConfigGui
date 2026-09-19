@@ -30,7 +30,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -195,7 +195,7 @@ final class ConfigGuiPluginLoader {
 	private static final class ConfigGuiRegistration implements IConfigGuiRegistration {
 		private final String modId;
 		private final Map<ConfigValueEditorType<?>, IConfigValueEditorFactory<?>> valueEditorFactories = new LinkedHashMap<>();
-		private final Map<ResourceLocation, ConfigValueEditorType<?>> valueEditorTypesByUid = new LinkedHashMap<>();
+		private final Map<Identifier, ConfigValueEditorType<?>> valueEditorTypesByUid = new LinkedHashMap<>();
 		private final List<Consumer<IConfigScreenBuilder>> screenCustomizers = new ArrayList<>();
 		@Nullable
 		private final ConfigScreenConfig configScreen;
@@ -1733,7 +1733,7 @@ final class ConfigGuiPluginLoader {
 		Component message = Component.translatable("mezz_config.config.screen.saveFailed", valueName, reason);
 		Minecraft minecraft = Minecraft.getInstance();
 		if (minecraft.player != null) {
-			minecraft.player.displayClientMessage(message, false);
+			ConfigClientUtil.sendMessage(message);
 		}
 		LOGGER.error("Failed to save config value {} for {}.", failure.change().configValue().getName(), modId, exception);
 	}
@@ -1751,7 +1751,7 @@ final class ConfigGuiPluginLoader {
 		Component message = Component.translatable(translationKey, title);
 		Minecraft minecraft = Minecraft.getInstance();
 		if (minecraft.player != null) {
-			minecraft.player.displayClientMessage(message, false);
+			ConfigClientUtil.sendMessage(message);
 		}
 		if (restartRequirement == ConfigValueRestartRequirement.WORLD_RESTART) {
 			LOGGER.info("Config changes for {} were saved and will be applied the next time a world is opened.", modId);

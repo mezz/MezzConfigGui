@@ -47,16 +47,16 @@ class ConfigScreenModTabsTest {
 		tabs.updateLayout(SCREEN_AREA);
 		tabs.mouseScrolled(80, 25, -2);
 		assertEquals(List.of("mod2", "mod3", "mod4", "mod5"), tabs.getVisibleModIds());
-		assertTrue(tabs.mouseClicked(84, 130, 0));
-		ConfigScreenListEntry clicked = tabs.mouseReleased(84, 130, 0).entry().orElseThrow();
+		assertTrue(tabs.mouseClicked(84, 130, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT));
+		ConfigScreenListEntry clicked = tabs.mouseReleased(84, 130, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT).entry().orElseThrow();
 		assertEquals("mod4", clicked.modId());
 
 		ConfigScreenModTabs next = new ConfigScreenModTabs(clicked.modId(), entries);
 		next.copyScrollPositionFrom(tabs);
 		next.updateLayout(SCREEN_AREA);
 		assertEquals(tabs.getVisibleModIds(), next.getVisibleModIds());
-		assertTrue(next.mouseClicked(84, 60, 0));
-		assertEquals("mod2", next.mouseReleased(84, 60, 0).entry().orElseThrow().modId());
+		assertTrue(next.mouseClicked(84, 60, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT));
+		assertEquals("mod2", next.mouseReleased(84, 60, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT).entry().orElseThrow().modId());
 		ConfigScreenModTabs back = new ConfigScreenModTabs("mod2", entries);
 		back.copyScrollPositionFrom(next);
 		back.updateLayout(SCREEN_AREA);
@@ -111,10 +111,10 @@ class ConfigScreenModTabsTest {
 		tabs.updateLayout(SCREEN_AREA);
 		for (int event = 0; event < 3; event++) {
 			assertTrue(tabs.mouseScrolled(80, 25, -0.25));
-			assertEquals("mod0", tabs.getVisibleModIds().getFirst());
+			assertEquals("mod0", tabs.getVisibleModIds().get(0));
 		}
 		tabs.mouseScrolled(80, 25, -0.25);
-		assertEquals("mod1", tabs.getVisibleModIds().getFirst());
+		assertEquals("mod1", tabs.getVisibleModIds().get(0));
 		assertFalse(tabs.mouseScrolled(80, 25, Double.NaN));
 	}
 
@@ -123,16 +123,16 @@ class ConfigScreenModTabsTest {
 		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod0", createEntries(10));
 		tabs.updateLayout(SCREEN_AREA);
 
-		assertFalse(tabs.mouseClicked(SCREEN_AREA.getX(), 25, 0));
-		assertFalse(tabs.mouseClicked(SCREEN_AREA.getX(), 180, 0));
+		assertFalse(tabs.mouseClicked(SCREEN_AREA.getX(), 25, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT));
+		assertFalse(tabs.mouseClicked(SCREEN_AREA.getX(), 180, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT));
 		for (int firstIndex = 1; firstIndex <= 8; firstIndex++) {
-			assertTrue(tabs.mouseClicked(90, 190, 0));
-			assertTrue(tabs.mouseReleased(90, 190, 0).handled());
-			assertEquals("mod" + Math.min(firstIndex, 6), tabs.getVisibleModIds().getFirst());
+			assertTrue(tabs.mouseClicked(90, 190, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT));
+			assertTrue(tabs.mouseReleased(90, 190, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT).handled());
+			assertEquals("mod" + Math.min(firstIndex, 6), tabs.getVisibleModIds().get(0));
 		}
-		assertTrue(tabs.mouseClicked(90, 25, 0));
-		tabs.mouseReleased(90, 25, 0);
-		assertEquals("mod5", tabs.getVisibleModIds().getFirst());
+		assertTrue(tabs.mouseClicked(90, 25, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT));
+		tabs.mouseReleased(90, 25, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT);
+		assertEquals("mod5", tabs.getVisibleModIds().get(0));
 	}
 
 	@Test
@@ -141,12 +141,12 @@ class ConfigScreenModTabsTest {
 		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod0", entries);
 		tabs.updateLayout(SCREEN_AREA);
 		tabs.mouseScrolled(80, 25, -2);
-		assertTrue(tabs.mouseClicked(84, 60, 0));
+		assertTrue(tabs.mouseClicked(84, 60, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT));
 
 		tabs.updateEntries(entries.subList(3, entries.size()));
 
 		assertFalse(tabs.isPressing());
-		assertFalse(tabs.mouseReleased(84, 60, 0).handled());
+		assertFalse(tabs.mouseReleased(84, 60, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT).handled());
 		assertFalse(tabs.getVisibleModIds().contains("mod2"));
 		tabs.updateEntries(List.of());
 		assertTrue(tabs.getTabsArea().isEmpty());
@@ -161,8 +161,8 @@ class ConfigScreenModTabsTest {
 		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod1", createEntries(4));
 		tabs.updateLayout(new ImmutableRect2i(100, 0, 500, 176));
 
-		assertTrue(tabs.mouseClicked(84, 5, 0));
-		ConfigScreenModTabs.ClickResult result = tabs.mouseReleased(84, 5, 0);
+		assertTrue(tabs.mouseClicked(84, 5, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT));
+		ConfigScreenModTabs.ClickResult result = tabs.mouseReleased(84, 5, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT);
 
 		assertTrue(result.handled());
 		assertTrue(result.playSound());
@@ -174,12 +174,12 @@ class ConfigScreenModTabsTest {
 		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod1", createEntries(3));
 		tabs.updateLayout(SCREEN_AREA);
 
-		assertFalse(tabs.mouseClicked(68, 25, 0));
-		assertTrue(tabs.mouseClicked(68, 57, 0));
-		assertTrue(tabs.mouseReleased(68, 57, 0).handled());
-		assertFalse(tabs.mouseClicked(68, 89, 0));
-		assertTrue(tabs.mouseClicked(72, 89, 0));
-		assertEquals("mod2", tabs.mouseReleased(72, 89, 0).entry().orElseThrow().modId());
+		assertFalse(tabs.mouseClicked(68, 25, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT));
+		assertTrue(tabs.mouseClicked(68, 57, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT));
+		assertTrue(tabs.mouseReleased(68, 57, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT).handled());
+		assertFalse(tabs.mouseClicked(68, 89, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT));
+		assertTrue(tabs.mouseClicked(72, 89, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT));
+		assertEquals("mod2", tabs.mouseReleased(72, 89, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT).entry().orElseThrow().modId());
 	}
 
 	@Test
@@ -200,16 +200,16 @@ class ConfigScreenModTabsTest {
 		ConfigScreenModTabs tabs = new ConfigScreenModTabs("mod0", createEntries(10));
 		tabs.updateLayout(SCREEN_AREA);
 
-		assertTrue(tabs.mouseClicked(94, 203, 0));
-		assertTrue(tabs.mouseReleased(94, 203, 0).playSound());
-		assertEquals("mod1", tabs.getVisibleModIds().getFirst());
-		assertTrue(tabs.mouseClicked(94, 43, 0));
-		assertTrue(tabs.mouseReleased(94, 43, 0).playSound());
-		assertEquals("mod0", tabs.getVisibleModIds().getFirst());
-		assertFalse(tabs.mouseClicked(95, 43, 0));
-		assertFalse(tabs.mouseClicked(74, 43, 0));
-		assertFalse(tabs.mouseClicked(94, 44, 0));
-		assertFalse(tabs.mouseClicked(94, 183, 0));
+		assertTrue(tabs.mouseClicked(94, 203, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT));
+		assertTrue(tabs.mouseReleased(94, 203, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT).playSound());
+		assertEquals("mod1", tabs.getVisibleModIds().get(0));
+		assertTrue(tabs.mouseClicked(94, 43, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT));
+		assertTrue(tabs.mouseReleased(94, 43, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT).playSound());
+		assertEquals("mod0", tabs.getVisibleModIds().get(0));
+		assertFalse(tabs.mouseClicked(95, 43, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT));
+		assertFalse(tabs.mouseClicked(74, 43, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT));
+		assertFalse(tabs.mouseClicked(94, 44, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT));
+		assertFalse(tabs.mouseClicked(94, 183, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT));
 	}
 
 	private static List<ConfigScreenListEntry> createEntries(int count) {

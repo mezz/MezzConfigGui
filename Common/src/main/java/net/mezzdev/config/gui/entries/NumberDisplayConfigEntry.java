@@ -9,7 +9,7 @@ import net.mezzdev.config.gui.model.ConfigValueChange;
 import net.mezzdev.config.gui.model.PendingConfigChange;
 import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import org.jetbrains.annotations.Nullable;
 
@@ -183,12 +183,12 @@ final class NumberDisplayConfigEntry<T> extends ConfigEntryWidget<T> {
 	}
 
 	@Override
-	public void draw(GuiGraphics guiGraphics, double mouseX, double mouseY, boolean allowHover) {
+	public void draw(GuiGraphicsExtractor guiGraphics, double mouseX, double mouseY, boolean allowHover) {
 		getActiveEntry().draw(guiGraphics, mouseX, mouseY, allowHover);
 	}
 
 	@Override
-	public void draw(GuiGraphics guiGraphics, double mouseX, double mouseY, boolean allowHover, int rowIndex) {
+	public void draw(GuiGraphicsExtractor guiGraphics, double mouseX, double mouseY, boolean allowHover, int rowIndex) {
 		getActiveEntry().draw(guiGraphics, mouseX, mouseY, allowHover, rowIndex);
 	}
 
@@ -249,7 +249,7 @@ final class NumberDisplayConfigEntry<T> extends ConfigEntryWidget<T> {
 	}
 
 	@Override
-	protected void drawContent(GuiGraphics guiGraphics, double mouseX, double mouseY) {
+	protected void drawContent(GuiGraphicsExtractor guiGraphics, double mouseX, double mouseY) {
 		throw new UnsupportedOperationException("NumberDisplayConfigEntry delegates drawing to its active entry.");
 	}
 }
