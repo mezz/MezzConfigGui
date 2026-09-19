@@ -1,3 +1,5 @@
+import groovy.lang.Binding
+import groovy.lang.GroovyShell
 import me.modmuss50.mpp.ModPublishExtension
 import me.modmuss50.mpp.PublishModTask
 import org.gradle.api.DefaultTask
@@ -7,6 +9,9 @@ import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 
 import java.util.Locale
@@ -117,6 +122,22 @@ abstract class ValidateReleaseVersion : DefaultTask() {
     }
 }
 
+abstract class ValidateReleasePipeline : DefaultTask() {
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val pipelineFile: RegularFileProperty
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val testFile: RegularFileProperty
+
+    @TaskAction
+    fun validate() {
+        val binding = Binding(mapOf("pipelineFile" to pipelineFile.get().asFile))
+        GroovyShell(binding).evaluate(testFile.get().asFile)
+    }
+}
+
 fun normalizeReleaseVersion(value: String): String {
     val tagName = value.trim().substringAfterLast('/')
     return tagName.removePrefix("v")
@@ -159,17 +180,28 @@ val validatePublishing = tasks.register("validatePublishing") {
     description = "Publishes every Maven publication to a local validation repository."
 }
 
+val publishMavenRelease = tasks.register("publishMavenRelease") {
+    group = "publishing"
+    description = "Publishes the supported Maven artifacts to the release repository."
+    dependsOn(tasks.named("validateReleaseVersion"))
+}
+
+val validateReleasePipeline = tasks.register<ValidateReleasePipeline>("validateReleasePipeline") {
+    group = "verification"
+    description = "Checks Jenkins release eligibility and repeated-tag handling without publishing."
+    pipelineFile.set(layout.projectDirectory.file(".jenkins/Jenkinsfile"))
+    testFile.set(layout.projectDirectory.file(".jenkins/tests/ReleasePipelineTest.groovy"))
+}
+
 tasks.assemble {
     dependsOn(subprojects.map { "${it.path}:assemble" })
 }
 
 tasks.check {
-    description = "Runs all project and release verification."
+    description = "Runs project checks and validates Maven publications locally."
     dependsOn(subprojects.map { "${it.path}:check" })
     dependsOn(validatePublishing)
-    if (modPublishDryRun) {
-        dependsOn(":Fabric:publishMods", ":Forge:publishMods", ":NeoForge:publishMods")
-    }
+    dependsOn(validateReleasePipeline)
 }
 
 subprojects {
@@ -255,6 +287,12 @@ subprojects {
                     name = "validation"
                     url = rootProject.layout.buildDirectory.dir("publication-validation").get().asFile.toURI()
                 }
+                providers.gradleProperty("DEPLOY_DIR").orNull?.let { deployDir ->
+                    maven {
+                        name = "release"
+                        url = uri(deployDir)
+                    }
+                }
             }
             publications.withType<MavenPublication>().configureEach {
                 pom {
@@ -294,10 +332,7 @@ subprojects {
         // The compatibility baseline may come from the same local validation repository.
         // Finish reading it before any publication task can replace the artifact.
         dependsOn(":Common:checkJarCompatibility")
-    }
-
-    if (configuredReleaseVersion != null) {
-        tasks.withType<PublishToMavenRepository>().configureEach {
+        if (name.endsWith("ToReleaseRepository")) {
             dependsOn(rootProject.tasks.named("validateReleaseVersion"))
         }
     }
@@ -371,6 +406,21 @@ subprojects {
     tasks.withType<AbstractArchiveTask>().configureEach {
         isPreserveFileTimestamps = false
         isReproducibleFileOrder = true
+    }
+}
+
+publishMavenRelease.configure {
+    if (providers.gradleProperty("DEPLOY_DIR").isPresent) {
+        // Platform Maven jars depend on the shared implementation as well as the public API.
+        dependsOn(":Common:publishConfigGuiApiJarPublicationToReleaseRepository")
+        dependsOn(":Common:publishConfigGuiJarPublicationToReleaseRepository")
+        listOf("Fabric", "Forge", "NeoForge").forEach {
+            dependsOn(":$it:publishConfigGui${it}JarPublicationToReleaseRepository")
+        }
+    } else {
+        doFirst {
+            throw GradleException("No Maven release repository was provided; set DEPLOY_DIR.")
+        }
     }
 }
 

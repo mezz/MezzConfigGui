@@ -261,12 +261,6 @@ publishing {
             }
         }
     }
-    repositories {
-        val deployDir = project.findProperty("DEPLOY_DIR")
-        if (deployDir != null) {
-            maven(deployDir)
-        }
-    }
 }
 
 fun dependencyInfo(notation: String): Map<String, String> {

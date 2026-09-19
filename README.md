@@ -24,15 +24,21 @@ See [Dependency Setup for Minecraft 1.21.1](docs/DEPENDENCY_SETUP.md) for Fabric
 ./gradlew build
 ```
 
-`build` assembles every artifact and runs the complete release verification used
-by CI. Run the verification lifecycle directly with:
+`build` assembles every artifact, runs the tests and API checks, and validates
+Maven publications in a local build directory. Run the verification lifecycle
+directly with:
 
 ```console
 ./gradlew check
 ```
 
+CI also checks platform release metadata separately with
+`./gradlew publishMods -PpublishDryRun=true`.
+
 See [automatic changelogs](Changelog/README.md) to preview the Git-based changelog
 shared by CurseForge and Modrinth.
+
+See [releasing](docs/RELEASING.md) for the Jenkins tag-based publishing flow.
 
 ## Contributing
 

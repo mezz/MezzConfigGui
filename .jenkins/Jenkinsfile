@@ -39,8 +39,31 @@ def getReleaseGradleArgs() {
     return ''
 }
 
+def releaseMarker(String tagName) {
+    return "mezzconfiggui-release:v1:${tagName}"
+}
+
+def wasReleasePublished(String tagName) {
+    def previousBuild = currentBuild.previousBuild
+    while (previousBuild != null) {
+        if (previousBuild.result == 'SUCCESS' && previousBuild.description == releaseMarker(tagName)) {
+            return true
+        }
+        previousBuild = previousBuild.previousBuild
+    }
+    return false
+}
+
+def shouldPublishRelease() {
+    return env.BRANCH_NAME == '1.21.1' && !env.CHANGE_ID && env.RELEASE_TAG?.trim() &&
+        !wasReleasePublished(env.RELEASE_TAG)
+}
+
 pipeline {
     agent any
+    options {
+        disableConcurrentBuilds()
+    }
     tools {
         jdk "jdk-21"
     }
@@ -79,10 +102,25 @@ pipeline {
                         returnStdout: true
                     ).trim()
                     if (env.RELEASE_TAG) {
-                        echo "Release tag found on HEAD: ${env.RELEASE_TAG}"
+                        if (wasReleasePublished(env.RELEASE_TAG)) {
+                            echo "Release tag ${env.RELEASE_TAG} was already published successfully; publishing will be skipped."
+                        } else {
+                            echo "New release tag found on HEAD: ${env.RELEASE_TAG}"
+                        }
                     } else {
                         echo 'No release tag found on HEAD; publishing will be skipped.'
                     }
+                }
+            }
+        }
+
+        stage('Validate Release Version') {
+            when {
+                expression { env.RELEASE_TAG?.trim() }
+            }
+            steps {
+                script {
+                    sh "./gradlew validateReleaseVersion ${getReleaseGradleArgs()} --no-daemon"
                 }
             }
         }
@@ -91,7 +129,15 @@ pipeline {
             steps {
                 script {
                     sh './gradlew clean --no-daemon'
-                    sh "./gradlew build -PpublishDryRun=true ${getReleaseGradleArgs()} --no-daemon"
+                    sh "./gradlew spotlessCheck build :Common:apiJavadoc :Common:checkJarCompatibility ${getReleaseGradleArgs()} --no-daemon"
+                }
+            }
+        }
+
+        stage('Check Release Metadata') {
+            steps {
+                script {
+                    sh "./gradlew publishMods -PpublishDryRun=true ${getReleaseGradleArgs()} --no-daemon"
                 }
             }
         }
@@ -106,10 +152,7 @@ pipeline {
 
         stage('Publish Maven') {
             when {
-                allOf {
-                    branch '1.21.1'
-                    expression { env.RELEASE_TAG?.trim() }
-                }
+                expression { shouldPublishRelease() }
             }
             steps {
                 script {
@@ -118,17 +161,14 @@ pipeline {
                     if (!deployDir) {
                         error 'Jared Maven environment is not set; expected MAVEN_DEPLOY_DIR, local_maven_url, or local_maven.'
                     }
-                    sh "./gradlew validateReleaseVersion publish -PDEPLOY_DIR=${shellQuote(deployDir)} -PRELEASE_VERSION=${shellQuote(releaseVersion)} --no-daemon"
+                    sh "./gradlew publishMavenRelease -PDEPLOY_DIR=${shellQuote(deployDir)} -PRELEASE_VERSION=${shellQuote(releaseVersion)} --no-daemon"
                 }
             }
         }
 
         stage('Publish CurseForge') {
             when {
-                allOf {
-                    branch '1.21.1'
-                    expression { env.RELEASE_TAG?.trim() }
-                }
+                expression { shouldPublishRelease() }
             }
             environment {
                 ORG_GRADLE_PROJECT_curseforgeApikey = credentials('jei-curseforge-key')
@@ -142,10 +182,7 @@ pipeline {
 
         stage('Publish Modrinth') {
             when {
-                allOf {
-                    branch '1.21.1'
-                    expression { env.RELEASE_TAG?.trim() }
-                }
+                expression { shouldPublishRelease() }
             }
             environment {
                 ORG_GRADLE_PROJECT_modrinthToken = credentials('modrinth-auth-token')
@@ -153,6 +190,15 @@ pipeline {
             steps {
                 script {
                     sh "./gradlew --no-configuration-cache :Fabric:publishModrinth :Forge:publishModrinth :NeoForge:publishModrinth -PpublishDryRun=false ${getReleaseGradleArgs()} --no-daemon"
+                }
+            }
+        }
+    }
+    post {
+        success {
+            script {
+                if (shouldPublishRelease()) {
+                    currentBuild.description = releaseMarker(env.RELEASE_TAG)
                 }
             }
         }

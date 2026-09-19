@@ -29,4 +29,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
 
       - name: Build and check
-        run: ./gradlew --stacktrace build -PpublishDryRun=true
+        run: ./gradlew --stacktrace spotlessCheck build :Common:apiJavadoc :Common:checkJarCompatibility
+
+      - name: Check release metadata without publishing
+        run: ./gradlew --stacktrace publishMods -PpublishDryRun=true
