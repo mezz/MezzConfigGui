@@ -1,5 +1,9 @@
 package net.mezzdev.config.gui.entries;
 
+import net.mezzdev.config.gui.ConfigRenderUtil;
+
+import net.mezzdev.config.gui.util.ConfigMath;
+
 import net.mezzdev.config.gui.info.ConfigNumberInfo;
 
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
@@ -35,7 +39,7 @@ import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.mezzdev.config.gui.util.HexColorString;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
@@ -43,7 +47,6 @@ import net.minecraft.util.StringUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -267,7 +270,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	}
 
 	@Override
-	protected void drawContent(GuiGraphics guiGraphics, double mouseX, double mouseY) {
+	protected void drawContent(GuiGraphicsExtractor guiGraphics, double mouseX, double mouseY) {
 		if (isVisible(headerArea)) {
 			drawName(guiGraphics);
 		}
@@ -287,12 +290,12 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		}
 		drawAddValueRow(guiGraphics, mouseX, mouseY);
 		if (dragSession != null) {
-			guiGraphics.flush();
-			guiGraphics.pose().pushPose();
-			guiGraphics.pose().translate(0, 0, ORDERED_ROW_DRAG_FLOAT_Z_OFFSET);
+			ConfigRenderUtil.flush(guiGraphics);
+			ConfigRenderUtil.pushPose(guiGraphics);
+			ConfigRenderUtil.translate(guiGraphics, 0, 0, ORDERED_ROW_DRAG_FLOAT_Z_OFFSET);
 			dragSession.drawFloatingRow(guiGraphics);
-			guiGraphics.pose().popPose();
-			guiGraphics.flush();
+			ConfigRenderUtil.popPose(guiGraphics);
+			ConfigRenderUtil.flush(guiGraphics);
 		}
 	}
 
@@ -301,7 +304,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		if (viewport == null || rows.isEmpty()) {
 			return rows;
 		}
-		RowRange range = getVisibleRowRange(rows.getFirst().area.getY(), getEntryRowHeight(), rows.size(), viewport, overscan);
+		RowRange range = getVisibleRowRange(rows.get(0).area.getY(), getEntryRowHeight(), rows.size(), viewport, overscan);
 		return rows.subList(range.first(), range.end());
 	}
 
@@ -311,13 +314,13 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		}
 		long first = Math.floorDiv((long) viewport.getY() - firstY, rowHeight) - overscan;
 		long end = -Math.floorDiv((long) firstY - viewport.getY() - viewport.getHeight(), rowHeight) + overscan;
-		return new RowRange(Math.clamp(first, 0, rowCount), Math.clamp(end, 0, rowCount));
+		return new RowRange(ConfigMath.clamp(first, 0, rowCount), ConfigMath.clamp(end, 0, rowCount));
 	}
 
 	record RowRange(int first, int end) {
 	}
 
-	private void drawAddValueRow(GuiGraphics guiGraphics, double mouseX, double mouseY) {
+	private void drawAddValueRow(GuiGraphicsExtractor guiGraphics, double mouseX, double mouseY) {
 		if (!allowsTypedInput || !isVisible(addValueRowArea)) {
 			return;
 		}
@@ -362,7 +365,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_UNUSED_ROW_TEXT);
 	}
 
-	private void drawAddValueText(GuiGraphics guiGraphics, Font font, String text, int color) {
+	private void drawAddValueText(GuiGraphicsExtractor guiGraphics, Font font, String text, int color) {
 		ImmutableRect2i textArea = addValueTextArea.cropLeft(ADD_VALUE_TEXT_PADDING).cropRight(ADD_VALUE_TEXT_PADDING);
 		int y = getCenteredTextY(font, textArea);
 		String visibleText = getVisibleText(font, text, textArea.getWidth());
@@ -376,7 +379,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		return font.plainSubstrByWidth(text, maxWidth, true);
 	}
 
-	private void drawValueGroup(GuiGraphics guiGraphics, ImmutableRect2i groupArea) {
+	private void drawValueGroup(GuiGraphicsExtractor guiGraphics, ImmutableRect2i groupArea) {
 		if (groupArea.isEmpty()) {
 			return;
 		}
@@ -393,7 +396,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		guiGraphics.fill(x, bottom - 1, right, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_ORDERED_GROUP_BORDER_LIGHT));
 	}
 
-	private static void fillRowHover(GuiGraphics guiGraphics, ImmutableRect2i rowArea) {
+	private static void fillRowHover(GuiGraphicsExtractor guiGraphics, ImmutableRect2i rowArea) {
 		guiGraphics.fill(
 			rowArea.getX(),
 			rowArea.getY(),
@@ -570,23 +573,23 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	}
 
 	private boolean keyPressedAddValue(int keyCode) {
-		if (Screen.isPaste(keyCode)) {
+		if (ConfigInputUtil.isPaste(keyCode)) {
 			appendAddValueText(Minecraft.getInstance().keyboardHandler.getClipboard());
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_RETURN || keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_NUMPADENTER) {
 			commitAddValue();
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
 			cancelAddValue();
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_BACKSPACE && !addValueText.isEmpty()) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_BACKSPACE && !addValueText.isEmpty()) {
 			addValueText = addValueText.substring(0, addValueText.length() - 1);
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_DELETE) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_DELETE) {
 			addValueText = "";
 			return true;
 		}
@@ -594,28 +597,28 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	}
 
 	private boolean keyPressedComponentEdit(int keyCode) {
-		if (Screen.isPaste(keyCode)) {
+		if (ConfigInputUtil.isPaste(keyCode)) {
 			appendComponentEditText(Minecraft.getInstance().keyboardHandler.getClipboard());
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_RETURN || keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_NUMPADENTER) {
 			commitComponentEdit();
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_TAB) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_TAB) {
 			commitComponentEdit();
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
 			cancelComponentEdit();
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_BACKSPACE && !componentEditSession.editText.isEmpty()) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_BACKSPACE && !componentEditSession.editText.isEmpty()) {
 			String editText = componentEditSession.editText;
 			componentEditSession.editText = editText.substring(0, editText.length() - 1);
 			return true;
 		}
-		if (keyCode == GLFW.GLFW_KEY_DELETE) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_DELETE) {
 			componentEditSession.editText = "";
 			return true;
 		}
@@ -1257,7 +1260,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			double dragX,
 			double dragY
 		) {
-			if (button != 0) {
+			if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
 				stop();
 				return Optional.empty();
 			}
@@ -1311,7 +1314,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			return active && row.selected && row.index == sourceIndex;
 		}
 
-		public void drawReorderedRows(GuiGraphics guiGraphics) {
+		public void drawReorderedRows(GuiGraphicsExtractor guiGraphics) {
 			// Reordering shifts neighboring rows by one row height, so include that margin.
 			for (ListValueRow row : getVisibleRows(valueRows, 1)) {
 				if (!isDragging(row)) {
@@ -1335,7 +1338,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			);
 		}
 
-		public void drawFloatingRow(GuiGraphics guiGraphics) {
+		public void drawFloatingRow(GuiGraphicsExtractor guiGraphics) {
 			@Nullable
 			ListValueRow row = getDraggingRow();
 			if (row != null) {
@@ -1354,7 +1357,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			}
 			int minY = valueRows.get(0).area.getY();
 			int maxY = valueRows.get(valueRows.size() - 1).area.getY();
-			return Math.clamp(y, minY, maxY);
+			return ConfigMath.clamp(y, minY, maxY);
 		}
 
 		@Nullable
@@ -1376,7 +1379,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 
 	static int getDragRowX(int originalX, double mouseX, double grabOffsetX) {
 		int desiredX = (int) Math.round(mouseX - grabOffsetX);
-		return Math.clamp(
+		return ConfigMath.clamp(
 			desiredX,
 			originalX - ORDERED_ROW_MAX_HORIZONTAL_DRAG_OFFSET,
 			originalX + ORDERED_ROW_MAX_HORIZONTAL_DRAG_OFFSET
@@ -1523,15 +1526,15 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			return BUTTON_SIZE;
 		}
 
-		void draw(GuiGraphics guiGraphics, double mouseX, double mouseY, boolean dropTarget, boolean recentlyMoved) {
+		void draw(GuiGraphicsExtractor guiGraphics, double mouseX, double mouseY, boolean dropTarget, boolean recentlyMoved) {
 			draw(guiGraphics, area, mouseX, mouseY, true, false, dropTarget, recentlyMoved);
 		}
 
-		void drawDuringDrag(GuiGraphics guiGraphics, ImmutableRect2i rowArea) {
+		void drawDuringDrag(GuiGraphicsExtractor guiGraphics, ImmutableRect2i rowArea) {
 			draw(guiGraphics, rowArea, 0, 0, false, false, false, false);
 		}
 
-		void drawDragGap(GuiGraphics guiGraphics, boolean dropTarget) {
+		void drawDragGap(GuiGraphicsExtractor guiGraphics, boolean dropTarget) {
 			if (!isVisible(area)) {
 				return;
 			}
@@ -1549,7 +1552,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			}
 		}
 
-		void drawFloating(GuiGraphics guiGraphics, int x, int y) {
+		void drawFloating(GuiGraphicsExtractor guiGraphics, int x, int y) {
 			ImmutableRect2i floatingArea = new ImmutableRect2i(x, y, area.getWidth(), area.getHeight());
 			if (!isVisible(new ImmutableRect2i(x, y, area.getWidth(), area.getHeight() + 2))) {
 				return;
@@ -1567,7 +1570,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		}
 
 		private void draw(
-			GuiGraphics guiGraphics,
+			GuiGraphicsExtractor guiGraphics,
 			ImmutableRect2i rowArea,
 			double mouseX,
 			double mouseY,
@@ -1627,7 +1630,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			}
 		}
 
-		private void drawSingleValue(GuiGraphics guiGraphics, Font font, ImmutableRect2i rowArea) {
+		private void drawSingleValue(GuiGraphicsExtractor guiGraphics, Font font, ImmutableRect2i rowArea) {
 			Component valueName = ConfigValueLocalization.getValueName(elementSerializer, configValue.getLocalizationKey(), value);
 			ImmutableRect2i contentArea = getContentArea(rowArea);
 			int textX = contentArea.getX();
@@ -1650,7 +1653,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		}
 
 		private void drawKeyValue(
-			GuiGraphics guiGraphics,
+			GuiGraphicsExtractor guiGraphics,
 			Font font,
 			ConfigTextures textures,
 			ImmutableRect2i rowArea,
@@ -1700,7 +1703,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		}
 
 		private void drawKeyValueComponent(
-			GuiGraphics guiGraphics,
+			GuiGraphicsExtractor guiGraphics,
 			Font font,
 			ConfigTextures textures,
 			ImmutableRect2i componentArea,
@@ -1757,7 +1760,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		}
 
 		private void drawColorComponent(
-			GuiGraphics guiGraphics,
+			GuiGraphicsExtractor guiGraphics,
 			Font font,
 			ConfigTextures textures,
 			ImmutableRect2i componentArea,
@@ -1811,14 +1814,14 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_UNUSED_ROW_BACKGROUND);
 		}
 
-		private void drawMovedHighlight(GuiGraphics guiGraphics, ImmutableRect2i rowArea) {
+		private void drawMovedHighlight(GuiGraphicsExtractor guiGraphics, ImmutableRect2i rowArea) {
 			int x = rowArea.getX();
 			int y = rowArea.getY();
 			int bottom = y + rowArea.getHeight();
 			guiGraphics.fill(x, y, x + 2, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.LIST_ORDERED_ROW_MOVED_ACCENT));
 		}
 
-		private void drawFloatingHighlight(GuiGraphics guiGraphics, ImmutableRect2i rowArea) {
+		private void drawFloatingHighlight(GuiGraphicsExtractor guiGraphics, ImmutableRect2i rowArea) {
 			int x = rowArea.getX();
 			int y = rowArea.getY();
 			int right = x + rowArea.getWidth();
@@ -1831,7 +1834,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		}
 
 		private void drawMoveButton(
-			GuiGraphics guiGraphics,
+			GuiGraphicsExtractor guiGraphics,
 			ConfigTextures textures,
 			ImmutableRect2i buttonArea,
 			ConfigButtonIcon icon,
@@ -1844,20 +1847,20 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			icon.draw(guiGraphics, buttonArea, active);
 		}
 
-		private void drawDeleteButton(GuiGraphics guiGraphics, ConfigTextures textures, double mouseX, double mouseY) {
+		private void drawDeleteButton(GuiGraphicsExtractor guiGraphics, ConfigTextures textures, double mouseX, double mouseY) {
 			boolean deleteHovered = deleteArea.contains(mouseX, mouseY);
 			ConfigEntryWidget.drawButtonBackground(guiGraphics, textures, deleteArea, true, deleteHovered);
 			ConfigButtonIcon.X.draw(guiGraphics, deleteArea, true);
 		}
 
-		private void drawResetButton(GuiGraphics guiGraphics, ConfigTextures textures, double mouseX, double mouseY) {
+		private void drawResetButton(GuiGraphicsExtractor guiGraphics, ConfigTextures textures, double mouseX, double mouseY) {
 			boolean active = canResetComponentValue(value);
 			boolean hovered = active && resetArea.contains(mouseX, mouseY);
 			ConfigEntryWidget.drawButtonBackground(guiGraphics, textures, resetArea, active, hovered);
 			ConfigResetIcon.draw(guiGraphics, resetArea, active);
 		}
 
-		private void drawAddButton(GuiGraphics guiGraphics, ConfigTextures textures, double mouseX, double mouseY) {
+		private void drawAddButton(GuiGraphicsExtractor guiGraphics, ConfigTextures textures, double mouseX, double mouseY) {
 			boolean addHovered = addArea.contains(mouseX, mouseY);
 			ConfigEntryWidget.drawButtonBackground(guiGraphics, textures, addArea, true, addHovered);
 			ConfigButtonIcon.ADD.draw(guiGraphics, addArea, true);

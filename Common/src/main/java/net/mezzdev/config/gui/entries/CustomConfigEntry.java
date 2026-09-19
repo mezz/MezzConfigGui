@@ -11,7 +11,7 @@ import net.mezzdev.config.gui.popup.ConfigPopupSelector;
 import net.mezzdev.config.gui.popup.ConfigValuePopupSelector;
 import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.Rect2i;
 import org.jetbrains.annotations.Nullable;
 
@@ -71,7 +71,7 @@ final class CustomConfigEntry<T> extends ConfigEntryWidget<T> {
 	}
 
 	@Override
-	protected void drawContent(GuiGraphics guiGraphics, double mouseX, double mouseY) {
+	protected void drawContent(GuiGraphicsExtractor guiGraphics, double mouseX, double mouseY) {
 		drawName(guiGraphics);
 
 		boolean hovered = valueArea.contains(mouseX, mouseY);

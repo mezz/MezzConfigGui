@@ -3,11 +3,11 @@ package net.mezzdev.config.gui.remote;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public record RemoteConfigRequestChunkPayload(byte[] payload) implements CustomPacketPayload {
 	public static final Type<RemoteConfigRequestChunkPayload> TYPE = new Type<>(
-		ResourceLocation.fromNamespaceAndPath("mezz_config_gui", "remote_config_request")
+		Identifier.fromNamespaceAndPath("mezz_config_gui", "remote_config_request")
 	);
 	public static final StreamCodec<RegistryFriendlyByteBuf, RemoteConfigRequestChunkPayload> STREAM_CODEC = StreamCodec.ofMember(
 		RemoteConfigRequestChunkPayload::write,

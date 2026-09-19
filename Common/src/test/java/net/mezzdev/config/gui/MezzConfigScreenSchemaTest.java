@@ -45,7 +45,7 @@ class MezzConfigScreenSchemaTest {
 		assertEquals(0, unopened.categoryReads().get());
 		ConfigScreenConfig config = configs.stream().filter(c -> c.getModId().equals("test")).findFirst().orElseThrow();
 		ConfigScreenSchema screen = config.getSchema();
-		List<? extends IConfigScreenValue<?>> screenValues = List.copyOf(screen.getCategories().getFirst().getConfigValues());
+		List<? extends IConfigScreenValue<?>> screenValues = List.copyOf(screen.getCategories().get(0).getConfigValues());
 		int initialReads = schema.categoryReads().get();
 		for (IConfigScreenValue<?> value : screenValues) {
 			assertSame(schema, screen.findBackingSchema(value).orElseThrow());
@@ -124,13 +124,13 @@ class MezzConfigScreenSchemaTest {
 		List<? extends ConfigScreenCategory> categories = ConfigScreenSchema.from(schema).getCategories();
 
 		assertEquals(List.of("general", "quick", "advanced"), categoryNames(categories));
-		assertEquals("label", List.copyOf(categories.get(0).getConfigValues()).getFirst().getName());
+		assertEquals("label", List.copyOf(categories.get(0).getConfigValues()).get(0).getName());
 		assertEquals("test.config.quick", categories.get(1).getLocalizationKey());
 		assertEquals(Component.translatable("test.config.quick"), categories.get(1).getLocalizedName());
 		assertEquals(Component.translatable("test.config.quick.description"), categories.get(1).getLocalizedDescription());
 		assertEquals("test.config.advanced", categories.get(2).getLocalizationKey());
-		IConfigScreenValue<?> quickValue = List.copyOf(categories.get(1).getConfigValues()).getFirst();
-		IConfigScreenValue<?> advancedValue = List.copyOf(categories.get(2).getConfigValues()).getFirst();
+		IConfigScreenValue<?> quickValue = List.copyOf(categories.get(1).getConfigValues()).get(0);
+		IConfigScreenValue<?> advancedValue = List.copyOf(categories.get(2).getConfigValues()).get(0);
 		assertSame(quickValue, advancedValue);
 		assertEquals("enabled", quickValue.getName());
 		assertEquals(ConfigValueApplyMode.IMMEDIATE, quickValue.getApplyMode());
@@ -148,7 +148,7 @@ class MezzConfigScreenSchemaTest {
 		List<? extends ConfigScreenCategory> categories = ConfigScreenSchema.from(schema).getCategories();
 
 		assertEquals(List.of("quick"), categoryNames(categories));
-		assertEquals(List.of("enabled"), valueNames(categories.getFirst()));
+		assertEquals(List.of("enabled"), valueNames(categories.get(0)));
 	}
 
 	@Test
@@ -179,15 +179,15 @@ class MezzConfigScreenSchemaTest {
 		assertEquals(List.of("first_mod", "second_mod"), screenModIds(screens));
 		assertEquals(
 			Component.translatableWithFallback("first_mod.config.screen.title", "First Mod Configuration"),
-			screens.getFirst().getTitle()
+			screens.get(0).getTitle()
 		);
 		assertEquals(
 			Component.translatableWithFallback("second_mod.config.screen.title", "Second Mod Configuration"),
 			screens.get(1).getTitle()
 		);
-		List<? extends ConfigScreenCategory> categories = screens.getFirst().getSchema().getCategories();
+		List<? extends ConfigScreenCategory> categories = screens.get(0).getSchema().getCategories();
 		assertEquals(List.of("general"), categoryNames(categories));
-		assertEquals(List.of("first", "second"), valueNames(categories.getFirst()));
+		assertEquals(List.of("first", "second"), valueNames(categories.get(0)));
 	}
 
 	@Test
@@ -208,10 +208,10 @@ class MezzConfigScreenSchemaTest {
 		);
 
 		List<ConfigScreenConfig> screens = MezzConfigScreenConfigs.getConfigScreens(schemas);
-		List<? extends ConfigScreenCategory> categories = screens.getFirst().getSchema().getCategories();
+		List<? extends ConfigScreenCategory> categories = screens.get(0).getSchema().getCategories();
 
 		assertEquals(List.of("general"), categoryNames(categories));
-		assertEquals(List.of("active"), valueNames(categories.getFirst()));
+		assertEquals(List.of("active"), valueNames(categories.get(0)));
 	}
 
 	@Test
@@ -233,12 +233,12 @@ class MezzConfigScreenSchemaTest {
 		);
 
 		List<? extends ConfigScreenCategory> categories = MezzConfigScreenConfigs.getConfigScreens(schemas)
-			.getFirst()
+			.get(0)
 			.getSchema()
 			.getCategories();
 
 		assertEquals(List.of("server"), categoryNames(categories));
-		assertEquals(List.of("serverValue"), valueNames(categories.getFirst()));
+		assertEquals(List.of("serverValue"), valueNames(categories.get(0)));
 	}
 
 	@Test
@@ -248,7 +248,7 @@ class MezzConfigScreenSchemaTest {
 		TestConfigSchema schema = new TestConfigSchema(List.of(category), List.of(category));
 		ConfigScreenSchema screenSchema = ConfigScreenSchema.from(schema);
 		IConfigScreenValue<?> screenValue = screenSchema.getCategories()
-			.getFirst()
+			.get(0)
 			.getConfigValues()
 			.iterator()
 			.next();

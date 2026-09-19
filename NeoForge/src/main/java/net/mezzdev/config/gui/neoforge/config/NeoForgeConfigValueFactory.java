@@ -246,7 +246,7 @@ final class NeoForgeConfigValueFactory {
 		if (defaultValues.stream().anyMatch(value -> value == null)) {
 			return "list default contains null elements";
 		}
-		return "list element type is %s".formatted(defaultValues.getFirst().getClass().getName());
+		return "list element type is %s".formatted(defaultValues.get(0).getClass().getName());
 	}
 
 	@SuppressWarnings("unchecked")

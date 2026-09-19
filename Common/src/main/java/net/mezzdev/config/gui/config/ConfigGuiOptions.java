@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui.config;
 
+import net.mezzdev.config.gui.util.ConfigMath;
+
 import net.mezzdev.config.api.Configs;
 import net.mezzdev.config.api.IConfigRegistration;
 import net.mezzdev.config.api.schema.builder.IConfigCategoryBuilder;
@@ -204,7 +206,7 @@ public final class ConfigGuiOptions {
 	}
 
 	public static void setNavigationWidth(int width) {
-		setValue(navigationWidth, Math.clamp(width, MIN_NAVIGATION_WIDTH, MAX_WINDOW_SIZE));
+		setValue(navigationWidth, ConfigMath.clamp(width, MIN_NAVIGATION_WIDTH, MAX_WINDOW_SIZE));
 	}
 
 	public static int getGuiWidth(int screenWidth) {
@@ -213,7 +215,7 @@ public final class ConfigGuiOptions {
 			return maxWidth;
 		}
 		int minWidth = Math.min(MIN_WINDOW_WIDTH, maxWidth);
-		return Math.clamp(getWindowWidth(), minWidth, maxWidth);
+		return ConfigMath.clamp(getWindowWidth(), minWidth, maxWidth);
 	}
 
 	public static int getGuiHeight(int screenHeight) {
@@ -222,12 +224,12 @@ public final class ConfigGuiOptions {
 			return maxHeight;
 		}
 		int minHeight = Math.min(MIN_WINDOW_HEIGHT, maxHeight);
-		return Math.clamp(getWindowHeight(), minHeight, maxHeight);
+		return ConfigMath.clamp(getWindowHeight(), minHeight, maxHeight);
 	}
 
 	public static void setWindowSize(int width, int height) {
-		int clampedWidth = Math.clamp(width, MIN_WINDOW_WIDTH, MAX_WINDOW_SIZE);
-		int clampedHeight = Math.clamp(height, MIN_WINDOW_HEIGHT, MAX_WINDOW_SIZE);
+		int clampedWidth = ConfigMath.clamp(width, MIN_WINDOW_WIDTH, MAX_WINDOW_SIZE);
+		int clampedHeight = ConfigMath.clamp(height, MIN_WINDOW_HEIGHT, MAX_WINDOW_SIZE);
 		IConfigSchema schema = ConfigGuiOptions.schema;
 		IConfigValue<Integer> windowWidth = ConfigGuiOptions.windowWidth;
 		IConfigValue<Integer> windowHeight = ConfigGuiOptions.windowHeight;

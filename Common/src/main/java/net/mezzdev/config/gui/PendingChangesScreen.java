@@ -1,19 +1,18 @@
 package net.mezzdev.config.gui;
 
+import net.mezzdev.config.gui.util.ConfigMath;
+
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
 import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.model.PendingConfigChange;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 
@@ -66,48 +65,40 @@ final class PendingChangesScreen extends MezzConfigScreen {
 		int actionButtonY = screenLayout.actionButtonY();
 		int totalWidth = BUTTON_WIDTH * 2 + BUTTON_GAP;
 		int x = (width - totalWidth) / 2;
-		addRenderableWidget(Button.builder(
-				Component.translatable("mezz_config.config.screen.apply"),
-				button -> callback.accept(true)
-			)
-			.bounds(x, actionButtonY, BUTTON_WIDTH, BUTTON_HEIGHT)
-			.tooltip(Tooltip.create(getApplyInfo(restartRequirement)))
-			.build());
-		addRenderableWidget(Button.builder(
-				Component.translatable("mezz_config.config.screen.discard"),
-				button -> callback.accept(false)
-			)
-			.bounds(x + BUTTON_WIDTH + BUTTON_GAP, actionButtonY, BUTTON_WIDTH, BUTTON_HEIGHT)
-			.tooltip(Tooltip.create(Component.translatable("mezz_config.config.screen.discard.info")))
-			.build());
-		addRenderableWidget(Button.builder(CommonComponents.GUI_BACK, button -> backAction.run())
-			.bounds((width - BUTTON_WIDTH) / 2, actionButtonY + BUTTON_HEIGHT + BACK_BUTTON_TOP_MARGIN, BUTTON_WIDTH, BUTTON_HEIGHT)
-			.tooltip(Tooltip.create(Component.translatable("mezz_config.config.screen.back.info")))
-			.build());
+		addRenderableWidget(ConfigWidgets.button(
+			Component.translatable("mezz_config.config.screen.apply"), button -> callback.accept(true),
+			x, actionButtonY, BUTTON_WIDTH, BUTTON_HEIGHT, getApplyInfo(restartRequirement)));
+		addRenderableWidget(ConfigWidgets.button(
+			Component.translatable("mezz_config.config.screen.discard"), button -> callback.accept(false),
+			x + BUTTON_WIDTH + BUTTON_GAP, actionButtonY, BUTTON_WIDTH, BUTTON_HEIGHT,
+			Component.translatable("mezz_config.config.screen.discard.info")));
+		addRenderableWidget(ConfigWidgets.button(CommonComponents.GUI_BACK, button -> backAction.run(),
+			(width - BUTTON_WIDTH) / 2, actionButtonY + BUTTON_HEIGHT + BACK_BUTTON_TOP_MARGIN, BUTTON_WIDTH, BUTTON_HEIGHT,
+			Component.translatable("mezz_config.config.screen.back.info")));
 	}
 
 	@Override
-	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-		renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+	public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+		extractBackground(guiGraphics, mouseX, mouseY, partialTick);
 		@Nullable
 		PendingConfigChange hoveredChange = drawContent(guiGraphics, mouseX, mouseY);
-		super.render(guiGraphics, mouseX, mouseY, partialTick);
+		super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
 		drawTooltip(guiGraphics, mouseX, mouseY, hoveredChange);
 	}
 
 	@Override
-	public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+	public void extractBackground(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
 		guiGraphics.fill(0, 0, width, height, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.PENDING_CHANGES_BACKGROUND));
 	}
 
 	@Nullable
-	private PendingConfigChange drawContent(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+	private PendingConfigChange drawContent(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
 		ScreenLayout screenLayout = getScreenLayout();
 		Component message = getPendingChangesMessage(restartRequirement);
 		List<FormattedCharSequence> messageLines = font.split(message, screenLayout.contentWidth());
 		int messageY = screenLayout.messageY();
 
-		guiGraphics.drawCenteredString(
+		guiGraphics.centeredText(
 			font,
 			title,
 			width / 2,
@@ -115,7 +106,7 @@ final class PendingChangesScreen extends MezzConfigScreen {
 			ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.PENDING_CHANGES_TITLE_TEXT)
 		);
 		for (FormattedCharSequence line : messageLines) {
-			guiGraphics.drawString(
+			guiGraphics.text(
 				font,
 				line,
 				screenLayout.contentX(),
@@ -135,7 +126,7 @@ final class PendingChangesScreen extends MezzConfigScreen {
 	}
 
 	@Nullable
-	private PendingConfigChange drawChangeList(GuiGraphics guiGraphics, ImmutableRect2i area, int mouseX, int mouseY) {
+	private PendingConfigChange drawChangeList(GuiGraphicsExtractor guiGraphics, ImmutableRect2i area, int mouseX, int mouseY) {
 		guiGraphics.fill(
 			area.getX(),
 			area.getY(),
@@ -184,7 +175,7 @@ final class PendingChangesScreen extends MezzConfigScreen {
 	}
 
 	private void drawChangeRow(
-		GuiGraphics guiGraphics,
+		GuiGraphicsExtractor guiGraphics,
 		PendingConfigChange change,
 		int index,
 		int x,
@@ -200,12 +191,12 @@ final class PendingChangesScreen extends MezzConfigScreen {
 		int textY = y + ROW_PADDING;
 		int textWidth = width - ROW_PADDING * 2;
 		for (FormattedCharSequence line : font.split(change.name(), textWidth)) {
-			guiGraphics.drawString(font, line, textX, textY, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.PENDING_CHANGES_ROW_TEXT));
+			guiGraphics.text(font, line, textX, textY, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.PENDING_CHANGES_ROW_TEXT));
 			textY += font.lineHeight;
 		}
 
 		for (FormattedCharSequence line : font.split(change.valueChange(), textWidth)) {
-			guiGraphics.drawString(font, line, textX, textY, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.PENDING_CHANGES_CHANGE_TEXT));
+			guiGraphics.text(font, line, textX, textY, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.PENDING_CHANGES_CHANGE_TEXT));
 			textY += font.lineHeight;
 		}
 	}
@@ -238,7 +229,7 @@ final class PendingChangesScreen extends MezzConfigScreen {
 		return ROW_PADDING * 2 + (nameLines + valueLines) * font.lineHeight;
 	}
 
-	private void drawScrollbar(GuiGraphics guiGraphics, ImmutableRect2i innerArea) {
+	private void drawScrollbar(GuiGraphicsExtractor guiGraphics, ImmutableRect2i innerArea) {
 		if (!hasScrollbar()) {
 			return;
 		}
@@ -283,7 +274,7 @@ final class PendingChangesScreen extends MezzConfigScreen {
 		return Math.max(0, changeListArea.getHeight() - PANEL_PADDING * 2);
 	}
 
-	private static void drawTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY, @Nullable PendingConfigChange hoveredChange) {
+	private static void drawTooltip(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, @Nullable PendingConfigChange hoveredChange) {
 		if (hoveredChange == null) {
 			return;
 		}
@@ -303,10 +294,10 @@ final class PendingChangesScreen extends MezzConfigScreen {
 	}
 
 	private void clampScrollOffset() {
-		scrollOffset = Math.clamp(scrollOffset, 0, getMaxScroll());
+		scrollOffset = ConfigMath.clamp(scrollOffset, 0, getMaxScroll());
 	}
 
-	private static void drawBorder(GuiGraphics guiGraphics, ImmutableRect2i area, int color) {
+	private static void drawBorder(GuiGraphicsExtractor guiGraphics, ImmutableRect2i area, int color) {
 		guiGraphics.fill(area.getX(), area.getY(), area.getX() + area.getWidth(), area.getY() + 1, color);
 		guiGraphics.fill(area.getX(), area.getY(), area.getX() + 1, area.getY() + area.getHeight(), color);
 		guiGraphics.fill(area.getX(), area.getY() + area.getHeight() - 1, area.getX() + area.getWidth(), area.getY() + area.getHeight(), color);
@@ -354,13 +345,13 @@ final class PendingChangesScreen extends MezzConfigScreen {
 		int contentHeight = calculateChangeListHeight(innerWidth);
 		int preferredPanelHeight = contentHeight + PANEL_PADDING * 2;
 		if (preferredPanelHeight <= maxPanelHeight) {
-			return Math.clamp(preferredPanelHeight, MIN_PANEL_HEIGHT, maxPanelHeight);
+			return ConfigMath.clamp(preferredPanelHeight, MIN_PANEL_HEIGHT, maxPanelHeight);
 		}
 
 		int scrolledInnerWidth = Math.max(1, innerWidth - SCROLLBAR_WIDTH - PANEL_PADDING);
 		contentHeight = calculateChangeListHeight(scrolledInnerWidth);
 		preferredPanelHeight = contentHeight + PANEL_PADDING * 2;
-		return Math.clamp(preferredPanelHeight, MIN_PANEL_HEIGHT, maxPanelHeight);
+		return ConfigMath.clamp(preferredPanelHeight, MIN_PANEL_HEIGHT, maxPanelHeight);
 	}
 
 	@Override
@@ -375,7 +366,7 @@ final class PendingChangesScreen extends MezzConfigScreen {
 
 	@Override
 	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-		if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
 			backAction.run();
 			return true;
 		}

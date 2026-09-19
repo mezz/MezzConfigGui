@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui.screenlist;
 
+import net.mezzdev.config.gui.ConfigInputUtil;
+
 import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.ConfigScreenResizer;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
@@ -13,7 +15,7 @@ import net.mezzdev.config.gui.util.ConfigLocale;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.Rect2i;
@@ -194,13 +196,13 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 	@Override
 	public void onClose() {
 		if (minecraft != null) {
-			minecraft.setScreen(parent);
+			net.mezzdev.config.gui.ConfigClientUtil.setScreen(parent);
 		}
 	}
 
 	@Override
 	public boolean charTyped(char codePoint, int modifiers) {
-		if (searchBox.isFocused() && searchBox.charTyped(codePoint, modifiers)) {
+		if (searchBox.isFocused() && ConfigInputUtil.charTyped(searchBox, codePoint, modifiers)) {
 			return true;
 		}
 		return super.charTyped(codePoint, modifiers);
@@ -210,7 +212,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
 		UserInput input = UserInput.fromVanilla(keyCode, scanCode, modifiers, InputType.IMMEDIATE);
 		if (searchBox.isFocused()) {
-			if (searchBox.keyPressed(keyCode, scanCode, modifiers)) {
+			if (ConfigInputUtil.keyPressed(searchBox, keyCode, scanCode, modifiers)) {
 				return true;
 			}
 			if (input.is(Minecraft.getInstance().options.keyInventory)) {
@@ -226,22 +228,22 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
-		if (button == 0 && resizer.startResizeDrag(mouseX, mouseY)) {
+		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && resizer.startResizeDrag(mouseX, mouseY)) {
 			pressedEntry = null;
 			return true;
 		}
-		if (button == 1 && searchBox.isMouseOver(mouseX, mouseY)) {
+		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT && searchBox.isMouseOver(mouseX, mouseY)) {
 			if (!searchBox.getValue().isEmpty()) {
 				searchBox.setValue("");
 			}
 			searchBox.setFocused(true);
 			return true;
 		}
-		if (button == 0 && startScrollDrag(mouseX, mouseY)) {
+		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && startScrollDrag(mouseX, mouseY)) {
 			pressedEntry = null;
 			return true;
 		}
-		if (button == 0 && listArea.contains(mouseX, mouseY)) {
+		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && listArea.contains(mouseX, mouseY)) {
 			pressedEntry = getEntryAt(mouseX, mouseY).orElse(null);
 			if (pressedEntry != null) {
 				return true;
@@ -255,18 +257,18 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
-		if (button == 0 && resizer.isResizing()) {
+		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && resizer.isResizing()) {
 			resizer.finishResizeDrag()
 				.ifPresent(resizedArea -> ConfigGuiOptions.setWindowSize(resizedArea.getWidth(), resizedArea.getHeight()));
 			return true;
 		}
-		if (button == 0 && draggingScroll) {
+		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && draggingScroll) {
 			draggingScroll = false;
 			return true;
 		}
 		ConfigScreenListEntry pressedEntry = this.pressedEntry;
 		this.pressedEntry = null;
-		if (button == 0 && pressedEntry != null && listArea.contains(mouseX, mouseY)) {
+		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && pressedEntry != null && listArea.contains(mouseX, mouseY)) {
 			Optional<ConfigScreenListEntry> clickedEntry = getEntryAt(mouseX, mouseY);
 			if (clickedEntry.isPresent() && clickedEntry.get() == pressedEntry) {
 				openEntry(pressedEntry);
@@ -290,19 +292,19 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 
 	private void openEntry(ConfigScreenListEntry entry) {
 		if (minecraft != null) {
-			minecraft.setScreen(entry.factory().create(this));
+			net.mezzdev.config.gui.ConfigClientUtil.setScreen(entry.factory().create(this));
 		}
 	}
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		if (button == 0 && resizer.isResizing()) {
+		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && resizer.isResizing()) {
 			if (resizer.dragResize(mouseX, mouseY, width, height)) {
 				updateLayout();
 			}
 			return true;
 		}
-		if (button == 0 && draggingScroll) {
+		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && draggingScroll) {
 			setScrollFromMarkerY(mouseY - scrollDragOffsetY);
 			return true;
 		}
@@ -349,9 +351,9 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 	}
 
 	@Override
-	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+	public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
 		updateSearchTextColor(searchBox.getValue());
-		renderTransparentBackground(guiGraphics);
+		extractTransparentBackground(guiGraphics);
 		stepScroll();
 		draw(guiGraphics, mouseX, mouseY, partialTick);
 	}
@@ -368,7 +370,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 		}
 	}
 
-	private void draw(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+	private void draw(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
 		Font font = Minecraft.getInstance().font;
 		background.draw(guiGraphics, area);
 		ConfigScreenResizer.drawResizeHandles(guiGraphics, area, resizer.getActiveResizeHandle(mouseX, mouseY));
@@ -378,7 +380,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 		drawScrollBar(guiGraphics);
 	}
 
-	private void drawTitle(GuiGraphics guiGraphics, Font font) {
+	private void drawTitle(GuiGraphicsExtractor guiGraphics, Font font) {
 		ConfigEntryWidget.drawFittedText(
 			guiGraphics,
 			font,
@@ -389,13 +391,13 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 		);
 	}
 
-	private void drawSearch(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+	private void drawSearch(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
 		textures.getSearchBackground()
 			.draw(guiGraphics, searchArea);
-		searchBox.render(guiGraphics, mouseX, mouseY, partialTick);
+		net.mezzdev.config.gui.ConfigRenderUtil.renderEditBox(searchBox, guiGraphics, mouseX, mouseY, partialTick);
 	}
 
-	private void drawList(GuiGraphics guiGraphics, Font font, int mouseX, int mouseY) {
+	private void drawList(GuiGraphicsExtractor guiGraphics, Font font, int mouseX, int mouseY) {
 		guiGraphics.fill(
 			listArea.getX(),
 			listArea.getY(),
@@ -426,7 +428,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 		guiGraphics.disableScissor();
 	}
 
-	private void drawEmptyListMessage(GuiGraphics guiGraphics, Font font) {
+	private void drawEmptyListMessage(GuiGraphicsExtractor guiGraphics, Font font) {
 		Component message = Component.translatable("mezz_config.config.screen.list.empty");
 		ConfigEntryWidget.drawFittedText(
 			guiGraphics,
@@ -439,7 +441,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 	}
 
 	private void drawEntry(
-		GuiGraphics guiGraphics,
+		GuiGraphicsExtractor guiGraphics,
 		Font font,
 		ImmutableRect2i rowArea,
 		ConfigScreenListEntry entry,
@@ -488,7 +490,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 		ConfigEntryWidget.drawFittedText(guiGraphics, font, entry.title(), titleTextArea, ConfigEntryWidget.getConfiguredTextColor(), false);
 	}
 
-	private static void drawInsetBorder(GuiGraphics guiGraphics, ImmutableRect2i area) {
+	private static void drawInsetBorder(GuiGraphicsExtractor guiGraphics, ImmutableRect2i area) {
 		if (area.isEmpty()) {
 			return;
 		}
@@ -502,7 +504,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 		guiGraphics.fill(right - 1, y, right, bottom, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SCREEN_LIST_INSET_BORDER_LIGHT));
 	}
 
-	private void drawScrollBar(GuiGraphics guiGraphics) {
+	private void drawScrollBar(GuiGraphicsExtractor guiGraphics) {
 		ImmutableRect2i markerArea = getScrollMarkerArea();
 		if (!markerArea.isEmpty()) {
 			scrollbarBackground.draw(guiGraphics, scrollBarArea);

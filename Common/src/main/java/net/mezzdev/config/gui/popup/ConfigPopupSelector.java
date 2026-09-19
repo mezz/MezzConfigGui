@@ -3,7 +3,7 @@ package net.mezzdev.config.gui.popup;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.input.UserInput;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -21,7 +21,7 @@ public interface ConfigPopupSelector {
 	@Nullable
 	ConfigInfo getTooltipInfo(double mouseX, double mouseY);
 
-	void draw(GuiGraphics guiGraphics, double mouseX, double mouseY);
+	void draw(GuiGraphicsExtractor guiGraphics, double mouseX, double mouseY);
 
 	boolean onMouseClicked(UserInput input);
 

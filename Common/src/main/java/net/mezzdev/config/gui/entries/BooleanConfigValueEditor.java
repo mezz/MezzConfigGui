@@ -5,7 +5,7 @@ import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueEditor;
 import net.mezzdev.config.gui.info.ConfigValueInfoFactory;
 import net.mezzdev.config.gui.textures.ConfigCheckbox;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.Rect2i;
 
 import java.util.Optional;
@@ -28,7 +28,7 @@ final class BooleanConfigValueEditor implements IConfigValueEditor<Boolean> {
 
 	@Override
 	public void draw(
-		GuiGraphics guiGraphics,
+		GuiGraphicsExtractor guiGraphics,
 		Rect2i area,
 		IConfigScreenValue<Boolean> configValue,
 		Boolean value,
@@ -59,7 +59,7 @@ final class BooleanConfigValueEditor implements IConfigValueEditor<Boolean> {
 		double mouseY,
 		int button
 	) {
-		if (button != 0) {
+		if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
 			return Optional.empty();
 		}
 		return Optional.of(!value);

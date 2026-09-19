@@ -9,7 +9,7 @@ import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.mezzdev.config.gui.util.StringUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
@@ -84,7 +84,7 @@ public final class ConfigSectionHeader implements ConfigInputHandler {
 		return info.get();
 	}
 
-	public void draw(GuiGraphics guiGraphics, ImmutableRect2i viewport) {
+	public void draw(GuiGraphicsExtractor guiGraphics, ImmutableRect2i viewport) {
 		ImmutableRect2i railArea = new ImmutableRect2i(
 			area.getX() + 1,
 			area.getY() + area.getHeight(),
@@ -111,10 +111,10 @@ public final class ConfigSectionHeader implements ConfigInputHandler {
 			disclosure = "▶";
 		}
 		int disclosureY = y + TOP_PADDING;
-		guiGraphics.drawString(font, disclosure, x + HORIZONTAL_PADDING, disclosureY, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SECTION_HEADER_TEXT), false);
+		guiGraphics.text(font, disclosure, x + HORIZONTAL_PADDING, disclosureY, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SECTION_HEADER_TEXT), false);
 		int textY = y + TOP_PADDING;
 		for (FormattedCharSequence line : lines) {
-			guiGraphics.drawString(font, line, x + HORIZONTAL_PADDING + DISCLOSURE_WIDTH, textY, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SECTION_HEADER_TEXT), false);
+			guiGraphics.text(font, line, x + HORIZONTAL_PADDING + DISCLOSURE_WIDTH, textY, ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.SECTION_HEADER_TEXT), false);
 			textY += font.lineHeight;
 		}
 	}

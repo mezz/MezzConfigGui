@@ -2,7 +2,6 @@ package net.mezzdev.config.gui;
 
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.minecraft.client.StringSplitter;
-import net.minecraft.client.gui.Font;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
@@ -84,12 +83,12 @@ class ConfigInfoPanelTest {
 		return new ConfigInfo(Component.literal("Long option title"), Component.literal("A description that wraps across several lines"));
 	}
 
-	private static class TestFont extends Font {
+	private static class TestFont extends TestFontBase {
 		private final StringSplitter splitter = new StringSplitter((codePoint, style) -> 1);
 		private int splitCalls;
 
 		private TestFont() {
-			super(location -> null, false);
+			super();
 		}
 
 		@Override
