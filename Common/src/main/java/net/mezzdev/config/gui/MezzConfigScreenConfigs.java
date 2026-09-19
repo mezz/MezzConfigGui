@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -80,18 +81,23 @@ public final class MezzConfigScreenConfigs {
 		}
 	}
 
-	private record MergedMezzConfigScreenSchema(
-		List<IConfigSchema> schemas
-	) implements ConfigScreenSchema {
-		private MergedMezzConfigScreenSchema {
-			schemas = List.copyOf(schemas);
+	private static final class MergedMezzConfigScreenSchema implements ConfigScreenSchema {
+		private final List<IConfigSchema> schemas;
+		private final Map<IConfigSchema, ConfigScreenSchema> screenSchemas = new IdentityHashMap<>();
+
+		private MergedMezzConfigScreenSchema(List<IConfigSchema> schemas) {
+			this.schemas = List.copyOf(schemas);
+		}
+
+		private ConfigScreenSchema getScreenSchema(IConfigSchema schema) {
+			return screenSchemas.computeIfAbsent(schema, ConfigScreenSchema::from);
 		}
 
 		@Override
 		public List<? extends ConfigScreenCategory> getCategories() {
 			List<ConfigScreenSchema> activeSchemas = schemas.stream()
 				.filter(IConfigSchema::isActive)
-				.map(ConfigScreenSchema::from)
+				.map(this::getScreenSchema)
 				.toList();
 			return new MergedConfigScreenSchema(activeSchemas)
 				.getCategories();
@@ -100,7 +106,7 @@ public final class MezzConfigScreenConfigs {
 		@Override
 		public Optional<IConfigSchema> findBackingSchema(IConfigScreenValue<?> value) {
 			return schemas.stream()
-				.map(ConfigScreenSchema::from)
+				.map(this::getScreenSchema)
 				.map(schema -> schema.findBackingSchema(value))
 				.flatMap(Optional::stream)
 				.findFirst();

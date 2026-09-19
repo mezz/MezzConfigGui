@@ -24,12 +24,39 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 class MezzConfigScreenSchemaTest {
+	@Test
+	void automaticScreensReuseValueIndexesAndKeepThemScopedToEachScreen() {
+		List<TestConfigValue> values = new ArrayList<>();
+		for (int i = 0; i < 1000; i++) {
+			values.add(new TestConfigValue("value" + i, ConfigValueEditMode.BATCH));
+		}
+		TestConfigCategory category = new TestConfigCategory("general", "test.config.general", values);
+		TestConfigSchema schema = new TestConfigSchema(List.of(category), List.of(category));
+		TestConfigSchema unopened = new TestConfigSchema("other", Path.of("other.ini"), true, List.of(category), List.of(category));
+		List<ConfigScreenConfig> configs = MezzConfigScreenConfigs.getConfigScreens(List.of(schema, unopened));
+		assertEquals(0, schema.categoryReads().get());
+		assertEquals(0, unopened.categoryReads().get());
+		ConfigScreenConfig config = configs.stream().filter(c -> c.getModId().equals("test")).findFirst().orElseThrow();
+		ConfigScreenSchema screen = config.getSchema();
+		List<? extends IConfigScreenValue<?>> screenValues = List.copyOf(screen.getCategories().getFirst().getConfigValues());
+		int initialReads = schema.categoryReads().get();
+		for (IConfigScreenValue<?> value : screenValues) {
+			assertSame(schema, screen.findBackingSchema(value).orElseThrow());
+			assertSame(schema, screen.findBackingSchema(IConfigScreenValue.withApplyMode(value, ConfigValueApplyMode.IMMEDIATE)).orElseThrow());
+		}
+		assertEquals(initialReads, schema.categoryReads().get(), "Lookups must reuse the value index");
+		assertEquals(0, unopened.categoryReads().get());
+		config.getSchema().getCategories();
+		assertEquals(initialReads * 2, schema.categoryReads().get(), "Reopening builds fresh screen adapters");
+	}
+
 	@Test
 	void configValueUsesMezzConfigEditMode() {
 		IConfigScreenValue<String> immediateValue = IConfigScreenValue.configValue(new TestConfigValue("immediate", ConfigValueEditMode.IMMEDIATE));
@@ -267,8 +294,14 @@ class MezzConfigScreenSchemaTest {
 		boolean active,
 		List<TestConfigCategory> categories,
 		List<IConfigEditorCategory> editorCategories,
-		ConfigSchemaType type
+		ConfigSchemaType type,
+		AtomicInteger categoryReads
 	) implements IConfigSchema {
+		private TestConfigSchema(String modId, Path path, boolean active, List<TestConfigCategory> categories,
+			List<IConfigEditorCategory> editorCategories, ConfigSchemaType type) {
+			this(modId, path, active, categories, editorCategories, type, new AtomicInteger());
+		}
+
 		private TestConfigSchema(
 			String modId,
 			Path path,
@@ -330,6 +363,7 @@ class MezzConfigScreenSchemaTest {
 
 		@Override
 		public List<? extends IConfigCategory> getCategories() {
+			categoryReads.incrementAndGet();
 			return categories;
 		}
 
