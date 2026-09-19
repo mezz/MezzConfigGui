@@ -3,7 +3,6 @@ package net.mezzdev.config.gui;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.config.ConfigGuiOptionsTestUtil;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
-import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +15,7 @@ class ConfigInfoPanelLayoutTest {
 	void growingInfoLeavesTheWindowAndRowOriginsInPlaceAndUpdatesScrolling() {
 		try (var ignored = ConfigGuiOptionsTestUtil.setValue("guiMode", ConfigGuiOptions.GuiMode.FULLSCREEN)) {
 			ConfigScreenLayout layout = new ConfigScreenLayout();
-			EditBox searchBox = new EditBox(null, 0, 0, 100, 18, Component.empty());
+			LegacyEditBox searchBox = new LegacyEditBox(null, 0, 0, 100, 18, Component.empty());
 			layout.updateScreenBounds(800, 600, searchBox);
 			ImmutableRect2i window = layout.getArea();
 			ImmutableRect2i content = layout.getContentArea();
@@ -49,7 +48,7 @@ class ConfigInfoPanelLayoutTest {
 	void longDescriptionsAreCappedAndTheCapFollowsWindowResizing() {
 		try (var ignored = ConfigGuiOptionsTestUtil.setValue("guiMode", ConfigGuiOptions.GuiMode.FULLSCREEN)) {
 			ConfigScreenLayout layout = new ConfigScreenLayout();
-			EditBox searchBox = new EditBox(null, 0, 0, 100, 18, Component.empty());
+			LegacyEditBox searchBox = new LegacyEditBox(null, 0, 0, 100, 18, Component.empty());
 			layout.updateScreenBounds(800, 600, searchBox);
 			assertTrue(layout.requestInfoAreaHeight(10000));
 			layout.updateScreenBounds(800, 600, searchBox);

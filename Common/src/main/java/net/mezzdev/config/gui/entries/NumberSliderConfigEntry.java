@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui.entries;
 
+import net.mezzdev.config.gui.ConfigRenderUtil;
+
 import net.mezzdev.config.gui.info.ConfigNumberInfo;
 
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
@@ -13,7 +15,7 @@ import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.mezzdev.config.gui.api.LegacyGuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -71,17 +73,17 @@ final class NumberSliderConfigEntry<T> extends ConfigEntryWidget<T> {
 	}
 
 	@Override
-	protected void drawContent(GuiGraphics guiGraphics, double mouseX, double mouseY) {
+	protected void drawContent(LegacyGuiGraphics guiGraphics, double mouseX, double mouseY) {
 		drawName(guiGraphics);
 		boolean hovered = sliderArea.contains(mouseX, mouseY);
-		guiGraphics.blitSprite(SLIDER_SPRITE, sliderArea.getX(), sliderArea.getY(), sliderArea.getWidth(), sliderArea.getHeight());
+		ConfigRenderUtil.blitSprite(guiGraphics, SLIDER_SPRITE, sliderArea.getX(), sliderArea.getY(), sliderArea.getWidth(), sliderArea.getHeight());
 		double position = model.getPosition(getValue());
 		int handleX = sliderArea.getX() + (int) Math.round(position * (sliderArea.getWidth() - HANDLE_WIDTH));
 		ResourceLocation handleSprite = SLIDER_HANDLE_SPRITE;
 		if (hovered || sliding) {
 			handleSprite = SLIDER_HANDLE_HIGHLIGHTED_SPRITE;
 		}
-		guiGraphics.blitSprite(handleSprite, handleX, sliderArea.getY(), HANDLE_WIDTH, sliderArea.getHeight());
+		ConfigRenderUtil.blitSprite(guiGraphics, handleSprite, handleX, sliderArea.getY(), HANDLE_WIDTH, sliderArea.getHeight());
 
 		Font font = Minecraft.getInstance().font;
 		drawCenteredButtonText(guiGraphics, font, getValueName(getValue()), sliderArea, getConfiguredTextColor());
@@ -118,7 +120,7 @@ final class NumberSliderConfigEntry<T> extends ConfigEntryWidget<T> {
 
 	private void updateValueFromMouse(double mouseX) {
 		T value;
-		if (Screen.hasShiftDown()) {
+		if (ConfigInputUtil.hasShiftDown()) {
 			if (fineValueAnchor == null) {
 				beginFineControl(mouseX);
 			}
@@ -161,7 +163,7 @@ final class NumberSliderConfigEntry<T> extends ConfigEntryWidget<T> {
 		dragSliderArea = sliderArea;
 		fineValueAnchor = null;
 		normalPointerOffset = 0.0;
-		if (Screen.hasShiftDown()) {
+		if (ConfigInputUtil.hasShiftDown()) {
 			beginFineControl(mouseX);
 		}
 	}
@@ -238,7 +240,7 @@ final class NumberSliderConfigEntry<T> extends ConfigEntryWidget<T> {
 			double dragX,
 			double dragY
 		) {
-			if (!sliding || button != 0) {
+			if (!sliding || button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
 				stopSliding();
 				return Optional.empty();
 			}

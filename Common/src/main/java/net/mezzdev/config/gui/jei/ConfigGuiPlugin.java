@@ -20,7 +20,7 @@ public class ConfigGuiPlugin implements IModPlugin {
 
 	@Override
 	public ResourceLocation getPluginUid() {
-		return ResourceLocation.fromNamespaceAndPath(CONFIG_GUI_MOD_ID, "config_gui");
+		return new ResourceLocation(CONFIG_GUI_MOD_ID, "config_gui");
 	}
 
 	@Override
@@ -62,6 +62,27 @@ public class ConfigGuiPlugin implements IModPlugin {
 		int screenWidth,
 		int screenHeight
 	) implements IGuiProperties {
+
+		@Override
+		public Class<? extends Screen> getScreenClass() { return screenClass; }
+
+		@Override
+		public int getGuiLeft() { return guiLeft; }
+
+		@Override
+		public int getGuiTop() { return guiTop; }
+
+		@Override
+		public int getGuiXSize() { return guiXSize; }
+
+		@Override
+		public int getGuiYSize() { return guiYSize; }
+
+		@Override
+		public int getScreenWidth() { return screenWidth; }
+
+		@Override
+		public int getScreenHeight() { return screenHeight; }
 
 	}
 }

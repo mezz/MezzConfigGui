@@ -12,7 +12,6 @@ import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.Connection;
-import net.minecraft.network.protocol.Packet;
 import net.minecraftforge.client.ConfigScreenHandler;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
@@ -23,8 +22,7 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.network.Channel;
-import net.minecraftforge.network.NetworkDirection;
+import net.minecraftforge.network.simple.SimpleChannel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -45,7 +43,7 @@ public final class ConfigGuiForgeClient {
 		// JEI renders its overlay in Render.Post, before this final tooltip pass.
 		MinecraftForge.EVENT_BUS.addListener(EventPriority.LOWEST, (ScreenEvent.Render.Post event) -> {
 			if (event.getScreen() instanceof MezzConfigScreen screen) {
-				screen.renderDeferredTooltip(event.getGuiGraphics(), event.getMouseX(), event.getMouseY());
+				screen.renderDeferredTooltip(new net.mezzdev.config.gui.api.LegacyGuiGraphics(event.getPoseStack()), event.getMouseX(), event.getMouseY());
 			}
 		});
 		RemoteConfigNetworking.setClientSender(payload -> {
@@ -54,12 +52,11 @@ public final class ConfigGuiForgeClient {
 				return false;
 			}
 			Connection connection = listener.getConnection();
-			Channel<?> channel = network.getChannel();
+			SimpleChannel channel = network.getChannel();
 			if (!connection.isConnected() || !channel.isRemotePresent(connection)) {
 				return false;
 			}
-			Packet<?> packet = NetworkDirection.PLAY_TO_SERVER.buildPacket(network.getChannel(), payload);
-			listener.send(packet);
+			channel.sendToServer(payload);
 			return true;
 		});
 		MinecraftForge.EVENT_BUS.addListener((TickEvent.ClientTickEvent event) -> {

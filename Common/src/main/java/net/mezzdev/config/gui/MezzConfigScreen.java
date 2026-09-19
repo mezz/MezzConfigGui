@@ -1,8 +1,6 @@
 package net.mezzdev.config.gui;
 
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
+import net.mezzdev.config.gui.api.LegacyGuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
@@ -13,9 +11,8 @@ import java.util.List;
 /**
  * Base class for MezzConfig screens that exposes their occupied area to optional GUI integrations.
  */
-public abstract class MezzConfigScreen extends Screen {
-	@Nullable
-	private DeferredTooltip deferredTooltip;
+public abstract class MezzConfigScreen extends ConfigScreenBase {
+	private final ConfigTooltipState<LegacyTooltipPositioner> tooltipState = new ConfigTooltipState<>();
 
 	protected MezzConfigScreen(Component title) {
 		super(title);
@@ -27,34 +24,24 @@ public abstract class MezzConfigScreen extends Screen {
 	@Nullable
 	public abstract Rect2i getScreenArea();
 
-	@Override
-	public void setTooltipForNextRenderPass(List<FormattedCharSequence> tooltip, ClientTooltipPositioner positioner, boolean override) {
-		if (deferredTooltip == null || override) {
-			deferredTooltip = new DeferredTooltip(List.copyOf(tooltip), positioner);
-		}
+	public void setTooltipForNextRenderPass(List<FormattedCharSequence> tooltip) {
+		setTooltipForNextRenderPass(tooltip, net.mezzdev.config.gui.LegacyTooltipPositioner.INSTANCE, true);
 	}
 
-	@Override
+	public void setTooltipForNextRenderPass(List<FormattedCharSequence> tooltip, LegacyTooltipPositioner positioner, boolean override) {
+		tooltipState.set(tooltip, positioner, override);
+	}
+
 	public void clearTooltipForNextRenderPass() {
-		super.clearTooltipForNextRenderPass();
-		deferredTooltip = null;
+		tooltipState.clear();
 	}
 
 	/** Called by each loader after screen overlays, which render after vanilla's tooltip pass. */
-	public void renderDeferredTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-		DeferredTooltip tooltip = takeDeferredTooltip();
+	public void renderDeferredTooltip(LegacyGuiGraphics guiGraphics, int mouseX, int mouseY) {
+		ConfigTooltipState.Tooltip<LegacyTooltipPositioner> tooltip = tooltipState.take();
 		if (tooltip != null) {
-			guiGraphics.renderTooltip(font, tooltip.lines(), tooltip.positioner(), mouseX, mouseY);
+			ConfigRenderUtil.renderTooltip(guiGraphics, font, tooltip.lines(), tooltip.positioner(), mouseX, mouseY);
 		}
 	}
 
-	@Nullable
-	DeferredTooltip takeDeferredTooltip() {
-		DeferredTooltip tooltip = deferredTooltip;
-		deferredTooltip = null;
-		return tooltip;
-	}
-
-	record DeferredTooltip(List<FormattedCharSequence> lines, ClientTooltipPositioner positioner) {
-	}
 }

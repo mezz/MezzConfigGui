@@ -7,7 +7,7 @@ import net.mezzdev.config.gui.api.IConfigValuePopup;
 import net.mezzdev.config.gui.input.InputType;
 import net.mezzdev.config.gui.input.UserInput;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
-import net.minecraft.client.gui.GuiGraphics;
+import net.mezzdev.config.gui.api.LegacyGuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
 import org.junit.jupiter.api.Test;
 
@@ -56,11 +56,11 @@ class ConfigValueSelectorTest {
 			() -> {}
 		);
 
-		UserInput simulate = UserInput.fromVanilla(15.0, 35.0, 1, InputType.SIMULATE).orElseThrow();
-		UserInput execute = UserInput.fromVanilla(15.0, 35.0, 1, InputType.EXECUTE).orElseThrow();
+		UserInput simulate = UserInput.fromVanilla(15.0, 35.0, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT, InputType.SIMULATE).orElseThrow();
+		UserInput execute = UserInput.fromVanilla(15.0, 35.0, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT, InputType.EXECUTE).orElseThrow();
 		assertTrue(inputHandler.handleUserInput(null, simulate).isPresent());
 		assertTrue(inputHandler.handleUserInput(null, execute).isPresent());
-		assertEquals(1, clickedButton.get());
+		assertEquals(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT, clickedButton.get());
 		assertEquals("selected", selectedValue.get());
 	}
 
@@ -83,10 +83,10 @@ class ConfigValueSelectorTest {
 			() -> {}
 		);
 
-		UserInput simulate = UserInput.fromVanilla(15.0, 35.0, 0, InputType.SIMULATE).orElseThrow();
-		UserInput execute = UserInput.fromVanilla(18.0, 38.0, 0, InputType.EXECUTE).orElseThrow();
+		UserInput simulate = UserInput.fromVanilla(15.0, 35.0, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT, InputType.SIMULATE).orElseThrow();
+		UserInput execute = UserInput.fromVanilla(18.0, 38.0, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT, InputType.EXECUTE).orElseThrow();
 		assertTrue(inputHandler.handleUserInput(null, simulate).isPresent());
-		assertTrue(inputHandler.handleMouseDragged(null, 18.0, 38.0, 0, 3.0, 3.0).isPresent());
+		assertTrue(inputHandler.handleMouseDragged(null, 18.0, 38.0, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT, 3.0, 3.0).isPresent());
 		assertTrue(inputHandler.handleUserInput(null, execute).isPresent());
 
 		assertEquals(List.of("dragged"), selectedValues);
@@ -117,7 +117,7 @@ class ConfigValueSelectorTest {
 		}
 
 		@Override
-		public void draw(GuiGraphics guiGraphics, Rect2i area, double mouseX, double mouseY) {
+		public void draw(LegacyGuiGraphics guiGraphics, Rect2i area, double mouseX, double mouseY) {
 
 		}
 
@@ -148,7 +148,7 @@ class ConfigValueSelectorTest {
 		}
 
 		@Override
-		public void draw(GuiGraphics guiGraphics, Rect2i area, double mouseX, double mouseY) {
+		public void draw(LegacyGuiGraphics guiGraphics, Rect2i area, double mouseX, double mouseY) {
 
 		}
 

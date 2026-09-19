@@ -1,3 +1,4 @@
+import net.neoforged.moddevgradle.legacyforge.dsl.LegacyForgeExtension
 import net.neoforged.jarcompatibilitychecker.gradle.CompatibilityTask
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
@@ -5,7 +6,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 plugins {
     id("idea")
     id("java")
-    id("net.neoforged.moddev")
+    id("net.neoforged.moddev.legacyforge")
     id("net.neoforged.jarcompatibilitychecker")
     id("maven-publish")
 }
@@ -43,7 +44,6 @@ repositories {
 // gradle.properties
 val jUnitVersion: String by extra
 val targetMinecraftVersion = providers.gradleProperty("minecraftVersion").get()
-val neoformTimestamp: String by extra
 val configGuiModId: String by extra
 val configModGroup: String by extra
 val modJavaVersion: String by extra
@@ -51,7 +51,7 @@ val mixinVersion: String by extra
 val jetbrainsAnnotationsVersion: String by extra
 val fastutilVersion: String by extra
 val mezzConfigApiDependency: String by rootProject.extra
-val mezzConfigNeoForgeDependency: String by rootProject.extra
+val mezzConfigRuntimeDependency = rootProject.extra["mezzConfigForgeDependency"].toString()
 val jeiApiDependency: String by rootProject.extra
 val apiBaselineVersion: String by extra
 val specificationVersion: String by extra
@@ -67,19 +67,10 @@ base {
 
 val apiSourceSet = sourceSets.create("api")
 
-neoForge {
-    neoFormVersion = "$targetMinecraftVersion-$neoformTimestamp"
-    accessTransformers {
-        from("src/main/accesstransformer.cfg")
-    }
-    addModdingDependenciesTo(apiSourceSet)
-    addModdingDependenciesTo(sourceSets.test.get())
-}
-
-sourceSets {
-    named("test") {
-        // The test source set has no resources.
-        resources.setSrcDirs(emptyList<String>())
+configure<LegacyForgeExtension> {
+    enable {
+        setForgeVersion("$targetMinecraftVersion-${project.extra["forgeVersion"]}")
+        setEnabledSourceSets(setOf(sourceSets.main.get(), apiSourceSet, sourceSets.test.get()))
     }
 }
 
@@ -96,7 +87,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:$jUnitVersion")
     testImplementation(mezzConfigApiDependency)
     // Exercise sorting persistence with the released implementation, not a reimplementation in a test double.
-    testImplementation(mezzConfigNeoForgeDependency) {
+    testImplementation(mezzConfigRuntimeDependency) {
         isTransitive = false
     }
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -213,6 +204,7 @@ publishing {
             }
 
             val dependencyInfos = listOf(
+                dependencyInfo("org.jspecify:jspecify:${rootProject.extra["jspecifyVersion"]}"),
                 mapOf(
                     "groupId" to "org.jetbrains",
                     "artifactId" to "annotations",
@@ -237,6 +229,7 @@ publishing {
             artifact(sourcesJarTask)
 
             val dependencyInfos = listOf(
+                dependencyInfo("org.jspecify:jspecify:${rootProject.extra["jspecifyVersion"]}"),
                 mapOf(
                     "groupId" to "org.jetbrains",
                     "artifactId" to "annotations",

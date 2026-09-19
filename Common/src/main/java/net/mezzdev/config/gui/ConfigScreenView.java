@@ -12,8 +12,7 @@ import net.mezzdev.config.gui.popup.ConfigPopupSelector;
 import net.mezzdev.config.gui.ConfigGuiColors.GuiColor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.EditBox;
+import net.mezzdev.config.gui.api.LegacyGuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import org.jetbrains.annotations.Nullable;
@@ -29,7 +28,7 @@ final class ConfigScreenView {
 	private final ConfigInfoPanel infoPanel = new ConfigInfoPanel();
 
 	private final Component title;
-	private final EditBox searchBox;
+	private final LegacyEditBox searchBox;
 	private final ConfigScreenModel model;
 	private final ConfigScreenLayout layout;
 	private final ConfigScreenController controller;
@@ -41,7 +40,7 @@ final class ConfigScreenView {
 
 	ConfigScreenView(
 		Component title,
-		EditBox searchBox,
+		LegacyEditBox searchBox,
 		ConfigScreenModel model,
 		ConfigScreenLayout layout,
 		ConfigScreenController controller,
@@ -61,7 +60,7 @@ final class ConfigScreenView {
 	}
 
 	boolean render(
-		GuiGraphics guiGraphics,
+		LegacyGuiGraphics guiGraphics,
 		int mouseX,
 		int mouseY,
 		float partialTick,
@@ -104,7 +103,7 @@ final class ConfigScreenView {
 			mouseY
 		);
 
-		guiGraphics.pose().pushPose();
+		ConfigRenderUtil.pushPose(guiGraphics);
 		background.draw(guiGraphics, area);
 		ConfigScreenResizer.drawResizeHandles(guiGraphics, area, resizeHandle);
 		modTabs.draw(guiGraphics, font, textures, mouseX, mouseY);
@@ -129,7 +128,7 @@ final class ConfigScreenView {
 			infoArea.contains(mouseX, mouseY)
 		);
 		infoPanel.draw(guiGraphics, font, infoArea);
-		guiGraphics.pose().popPose();
+		ConfigRenderUtil.popPose(guiGraphics);
 
 		drawContentScrollBar(guiGraphics);
 		drawValueSelector(guiGraphics, valueSelector, valueSelectorClipArea, mouseX, mouseY);
@@ -150,7 +149,7 @@ final class ConfigScreenView {
 		return valueSelector.getInfo();
 	}
 
-	private static void drawTitle(GuiGraphics guiGraphics, Font font, ImmutableRect2i titleArea, Component title) {
+	private static void drawTitle(LegacyGuiGraphics guiGraphics, Font font, ImmutableRect2i titleArea, Component title) {
 		ConfigEntryWidget.drawFittedText(
 			guiGraphics,
 			font,
@@ -162,7 +161,7 @@ final class ConfigScreenView {
 	}
 
 	private void drawActionButtons(
-		GuiGraphics guiGraphics,
+		LegacyGuiGraphics guiGraphics,
 		ImmutableRect2i screenListButtonArea,
 		ImmutableRect2i applyPendingChangesButtonArea,
 		ImmutableRect2i undoChangesButtonArea,
@@ -193,7 +192,7 @@ final class ConfigScreenView {
 	}
 
 	private void drawActionButton(
-		GuiGraphics guiGraphics,
+		LegacyGuiGraphics guiGraphics,
 		ImmutableRect2i area,
 		ConfigButtonIcon icon,
 		boolean active,
@@ -206,7 +205,7 @@ final class ConfigScreenView {
 		icon.draw(guiGraphics, area, active);
 	}
 
-	private static void drawNavBackground(GuiGraphics guiGraphics, ImmutableRect2i navArea) {
+	private static void drawNavBackground(LegacyGuiGraphics guiGraphics, ImmutableRect2i navArea) {
 		guiGraphics.fill(
 			navArea.getX(),
 			navArea.getY(),
@@ -216,7 +215,7 @@ final class ConfigScreenView {
 		);
 	}
 
-	private void drawNavigationDivider(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+	private void drawNavigationDivider(LegacyGuiGraphics guiGraphics, int mouseX, int mouseY) {
 		ImmutableRect2i divider = layout.getNavDividerArea();
 		if (divider.isEmpty()) {
 			return;
@@ -238,7 +237,7 @@ final class ConfigScreenView {
 	}
 
 	@Nullable
-	private ConfigNavItem drawNavItems(GuiGraphics guiGraphics, ImmutableRect2i navArea, int mouseX, int mouseY) {
+	private ConfigNavItem drawNavItems(LegacyGuiGraphics guiGraphics, ImmutableRect2i navArea, int mouseX, int mouseY) {
 		@Nullable
 		ConfigNavItem hoveredNavItem = null;
 		guiGraphics.enableScissor(
@@ -260,7 +259,7 @@ final class ConfigScreenView {
 	}
 
 	private void drawSearch(
-		GuiGraphics guiGraphics,
+		LegacyGuiGraphics guiGraphics,
 		ConfigTextures textures,
 		ImmutableRect2i searchBackgroundArea,
 		int mouseX,
@@ -269,10 +268,10 @@ final class ConfigScreenView {
 	) {
 		textures.getSearchBackground()
 			.draw(guiGraphics, searchBackgroundArea);
-		searchBox.render(guiGraphics, mouseX, mouseY, partialTick);
+		net.mezzdev.config.gui.ConfigRenderUtil.renderEditBox(searchBox, guiGraphics, mouseX, mouseY, partialTick);
 	}
 
-	private static void drawValueAreaBackground(GuiGraphics guiGraphics, ImmutableRect2i contentArea) {
+	private static void drawValueAreaBackground(LegacyGuiGraphics guiGraphics, ImmutableRect2i contentArea) {
 		guiGraphics.fill(
 			contentArea.getX(),
 			contentArea.getY(),
@@ -282,7 +281,7 @@ final class ConfigScreenView {
 		);
 	}
 
-	private static void drawInsetBorder(GuiGraphics guiGraphics, ImmutableRect2i area) {
+	private static void drawInsetBorder(LegacyGuiGraphics guiGraphics, ImmutableRect2i area) {
 		if (area.isEmpty()) {
 			return;
 		}
@@ -311,7 +310,7 @@ final class ConfigScreenView {
 
 	@Nullable
 	private Supplier<ConfigInfo> drawEntries(
-		GuiGraphics guiGraphics,
+		LegacyGuiGraphics guiGraphics,
 		ImmutableRect2i contentArea,
 		int mouseX,
 		int mouseY,
@@ -434,15 +433,15 @@ final class ConfigScreenView {
 		return null;
 	}
 
-	private void drawNavScrollBar(GuiGraphics guiGraphics) {
+	private void drawNavScrollBar(LegacyGuiGraphics guiGraphics) {
 		drawScrollBar(guiGraphics, layout.getNavScrollBarArea(), layout.getNavScrollMarkerArea());
 	}
 
-	private void drawContentScrollBar(GuiGraphics guiGraphics) {
+	private void drawContentScrollBar(LegacyGuiGraphics guiGraphics) {
 		drawScrollBar(guiGraphics, layout.getScrollBarArea(), layout.getScrollMarkerArea());
 	}
 
-	private void drawScrollBar(GuiGraphics guiGraphics, ImmutableRect2i scrollBarArea, ImmutableRect2i scrollMarkerArea) {
+	private void drawScrollBar(LegacyGuiGraphics guiGraphics, ImmutableRect2i scrollBarArea, ImmutableRect2i scrollMarkerArea) {
 		if (!scrollMarkerArea.isEmpty()) {
 			scrollbarBackground.draw(guiGraphics, scrollBarArea);
 			scrollbarMarker.draw(guiGraphics, scrollMarkerArea);
@@ -554,7 +553,7 @@ final class ConfigScreenView {
 	}
 
 	private static void drawValueSelector(
-		GuiGraphics guiGraphics,
+		LegacyGuiGraphics guiGraphics,
 		@Nullable ConfigPopupSelector valueSelector,
 		ImmutableRect2i valueSelectorClipArea,
 		int mouseX,
@@ -569,14 +568,14 @@ final class ConfigScreenView {
 			valueSelectorClipArea.getX() + valueSelectorClipArea.getWidth(),
 			valueSelectorClipArea.getY() + valueSelectorClipArea.getHeight()
 		);
-		guiGraphics.pose().pushPose();
-		guiGraphics.pose().translate(0, 0, VALUE_SELECTOR_Z_OFFSET);
+		ConfigRenderUtil.pushPose(guiGraphics);
+		ConfigRenderUtil.translate(guiGraphics, 0, 0, VALUE_SELECTOR_Z_OFFSET);
 		valueSelector.draw(guiGraphics, mouseX, mouseY);
-		guiGraphics.pose().popPose();
+		ConfigRenderUtil.popPose(guiGraphics);
 		guiGraphics.disableScissor();
 	}
 
-	private static void drawTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY, @Nullable ConfigInfo info) {
+	private static void drawTooltip(LegacyGuiGraphics guiGraphics, int mouseX, int mouseY, @Nullable ConfigInfo info) {
 		if (info == null) {
 			return;
 		}

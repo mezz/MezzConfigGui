@@ -11,7 +11,7 @@ import net.mezzdev.config.gui.ConfigInputHandler;
 import net.mezzdev.config.gui.input.UserInput;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.mezzdev.config.gui.api.LegacyGuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
@@ -94,7 +94,7 @@ public final class ConfigNavItem implements ConfigInputHandler {
 		return hoverArea.contains(mouseX, mouseY);
 	}
 
-	public void draw(GuiGraphics guiGraphics, int mouseX, int mouseY, boolean active) {
+	public void draw(LegacyGuiGraphics guiGraphics, int mouseX, int mouseY, boolean active) {
 		Font font = Minecraft.getInstance().font;
 		ImmutableRect2i navArea = navAreaSupplier.get();
 		boolean hovered = isMouseOver(mouseX, mouseY) && navArea.contains(mouseX, mouseY);

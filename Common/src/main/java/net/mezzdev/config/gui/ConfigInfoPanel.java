@@ -4,7 +4,7 @@ import net.mezzdev.config.gui.ConfigGuiColors.GuiColor;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.mezzdev.config.gui.api.LegacyGuiGraphics;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
@@ -73,7 +73,7 @@ final class ConfigInfoPanel {
 		return height;
 	}
 
-	void draw(GuiGraphics guiGraphics, Font font, ImmutableRect2i area) {
+	void draw(LegacyGuiGraphics guiGraphics, Font font, ImmutableRect2i area) {
 		guiGraphics.fill(area.getX(), area.getY(), area.getX() + area.getWidth(), area.getY() + area.getHeight(),
 			ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_INFO_BACKGROUND));
 		guiGraphics.fill(area.getX(), area.getY(), area.getX() + area.getWidth(), area.getY() + 1,
@@ -90,7 +90,7 @@ final class ConfigInfoPanel {
 		guiGraphics.disableScissor();
 	}
 
-	private static int drawLines(GuiGraphics guiGraphics, Font font, List<FormattedCharSequence> lines, int x, int y, int bottom, GuiColor color) {
+	private static int drawLines(LegacyGuiGraphics guiGraphics, Font font, List<FormattedCharSequence> lines, int x, int y, int bottom, GuiColor color) {
 		for (FormattedCharSequence line : lines) {
 			if (y + font.lineHeight > bottom) {
 				break;

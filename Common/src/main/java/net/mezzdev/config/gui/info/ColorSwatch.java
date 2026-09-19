@@ -4,7 +4,7 @@ import net.mezzdev.config.api.value.color.ConfigColorFormat;
 import net.mezzdev.config.api.value.color.PackedColor;
 import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
-import net.minecraft.client.gui.GuiGraphics;
+import net.mezzdev.config.gui.api.LegacyGuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
 
 /**
@@ -17,11 +17,11 @@ public final class ColorSwatch {
 
 	}
 
-	public static void draw(GuiGraphics guiGraphics, Rect2i area, PackedColor color) {
+	public static void draw(LegacyGuiGraphics guiGraphics, Rect2i area, PackedColor color) {
 		draw(guiGraphics, area, color.packedValue(), color.format());
 	}
 
-	public static void draw(GuiGraphics guiGraphics, ImmutableRect2i area, PackedColor color) {
+	public static void draw(LegacyGuiGraphics guiGraphics, ImmutableRect2i area, PackedColor color) {
 		draw(guiGraphics, new Rect2i(area.getX(), area.getY(), area.getWidth(), area.getHeight()), color);
 	}
 
@@ -32,7 +32,7 @@ public final class ColorSwatch {
 		};
 	}
 
-	public static void draw(GuiGraphics guiGraphics, Rect2i area, int color, ConfigColorFormat format) {
+	public static void draw(LegacyGuiGraphics guiGraphics, Rect2i area, int color, ConfigColorFormat format) {
 		if (area.getWidth() <= 0 || area.getHeight() <= 0) {
 			return;
 		}
@@ -48,7 +48,7 @@ public final class ColorSwatch {
 		guiGraphics.fill(x, y, innerRight, innerBottom, toArgb(color, format));
 	}
 
-	public static void drawCheckerboard(GuiGraphics guiGraphics, int x, int y, int right, int bottom) {
+	public static void drawCheckerboard(LegacyGuiGraphics guiGraphics, int x, int y, int right, int bottom) {
 		for (int tileY = y; tileY < bottom; tileY += CHECKER_SIZE) {
 			for (int tileX = x; tileX < right; tileX += CHECKER_SIZE) {
 				int column = (tileX - x) / CHECKER_SIZE;

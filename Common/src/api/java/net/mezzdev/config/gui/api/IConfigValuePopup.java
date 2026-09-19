@@ -1,6 +1,5 @@
 package net.mezzdev.config.gui.api;
 
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
 
 import java.util.Optional;
@@ -86,7 +85,7 @@ public interface IConfigValuePopup<T> {
 	 *
 	 * @since 0.1.0
 	 */
-	void draw(GuiGraphics guiGraphics, Rect2i area, double mouseX, double mouseY);
+	void draw(LegacyGuiGraphics guiGraphics, Rect2i area, double mouseX, double mouseY);
 
 	/**
 	 * Get the value selected by a mouse click, or {@link Optional#empty()} when the click did not select a value.
@@ -102,7 +101,7 @@ public interface IConfigValuePopup<T> {
 	 * @since 0.1.0
 	 */
 	default Optional<T> getClickedValue(Rect2i area, double mouseX, double mouseY, int button) {
-		if (button != 0) {
+		if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
 			return Optional.empty();
 		}
 		return getHoveredValue(area, mouseX, mouseY);

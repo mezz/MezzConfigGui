@@ -1,42 +1,19 @@
 package net.mezzdev.config.gui.textures;
 
-import net.minecraft.client.renderer.texture.SpriteContents;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.resources.TextureAtlasHolder;
-import net.minecraft.client.resources.metadata.animation.AnimationMetadataSection;
-import net.minecraft.client.resources.metadata.gui.GuiMetadataSection;
-import net.minecraft.client.resources.metadata.gui.GuiSpriteScaling;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.ResourceMetadata;
 
-import java.util.Set;
-
-public class ConfigGuiSpriteManager extends TextureAtlasHolder {
+public final class ConfigGuiSpriteManager extends TextureAtlasHolder {
 	static final String TEXTURE_NAMESPACE = "mezz_config";
-	private static final ResourceLocation CONFIG_GUI_TEXTURE_ATLAS_LOCATION = ResourceLocation.fromNamespaceAndPath(TEXTURE_NAMESPACE, "textures/atlas/gui.png");
-	private static final ResourceLocation CONFIG_GUI_TEXTURE_ATLAS_ID = ResourceLocation.fromNamespaceAndPath(TEXTURE_NAMESPACE, "gui");
-
-	public ConfigGuiSpriteManager(TextureManager textureManager) {
-		super(textureManager, CONFIG_GUI_TEXTURE_ATLAS_LOCATION, CONFIG_GUI_TEXTURE_ATLAS_ID, Set.of(AnimationMetadataSection.SERIALIZER, GuiMetadataSection.TYPE));
+	public ConfigGuiSpriteManager(TextureManager manager) {
+		super(manager, new ResourceLocation(TEXTURE_NAMESPACE, "textures/atlas/gui.png"), "mezz_config/atlas/gui");
 	}
-
-	/**
-	 * Overridden to make it public.
-	 */
 	@Override
-	public TextureAtlasSprite getSprite(ResourceLocation location) {
-		return super.getSprite(location);
+	protected java.util.stream.Stream<ResourceLocation> getResourcesToLoad() {
+		return java.util.stream.Stream.of("button_disabled", "button_enabled", "button_highlight", "button_pressed", "button_pressed_highlight", "checkbox", "checkbox_highlight", "gui_background", "icons/add", "icons/arrow_down", "icons/arrow_up", "icons/button_down", "icons/button_up", "icons/check", "icons/reset", "icons/screen_list", "icons/x", "mod_tab_selected", "mod_tab_unselected", "scrollbar_background", "scrollbar_marker", "search_background").map(name -> new ResourceLocation(TEXTURE_NAMESPACE, name));
 	}
-
-	public GuiSpriteScaling getSpriteScaling(TextureAtlasSprite sprite) {
-		return getMetadata(sprite).scaling();
-	}
-
-	private GuiMetadataSection getMetadata(TextureAtlasSprite sprite) {
-		SpriteContents contents = sprite.contents();
-		ResourceMetadata metadata = contents.metadata();
-		return metadata.getSection(GuiMetadataSection.TYPE)
-			.orElse(GuiMetadataSection.DEFAULT);
-	}
+	@Override
+	public TextureAtlasSprite getSprite(ResourceLocation location) { return super.getSprite(location); }
 }

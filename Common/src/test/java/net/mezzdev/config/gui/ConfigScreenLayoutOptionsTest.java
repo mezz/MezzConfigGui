@@ -3,7 +3,6 @@ package net.mezzdev.config.gui;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.config.ConfigGuiOptionsTestUtil;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
-import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +31,7 @@ class ConfigScreenLayoutOptionsTest {
 	@Test
 	void windowModeUsesConfiguredDimensions() {
 		ConfigScreenLayout layout = new ConfigScreenLayout();
-		EditBox searchBox = createSearchBox();
+		LegacyEditBox searchBox = createSearchBox();
 
 		try (ConfigGuiOptionsTestUtil.OptionOverride mode = ConfigGuiOptionsTestUtil.setValue("guiMode", ConfigGuiOptions.GuiMode.WINDOW);
 			ConfigGuiOptionsTestUtil.OptionOverride width = ConfigGuiOptionsTestUtil.setValue("windowWidth", 540);
@@ -51,7 +50,7 @@ class ConfigScreenLayoutOptionsTest {
 	@Test
 	void windowModeClampsConfiguredDimensionsToScreenBounds() {
 		ConfigScreenLayout layout = new ConfigScreenLayout();
-		EditBox searchBox = createSearchBox();
+		LegacyEditBox searchBox = createSearchBox();
 
 		try (ConfigGuiOptionsTestUtil.OptionOverride mode = ConfigGuiOptionsTestUtil.setValue("guiMode", ConfigGuiOptions.GuiMode.WINDOW);
 			ConfigGuiOptionsTestUtil.OptionOverride width = ConfigGuiOptionsTestUtil.setValue("windowWidth", 1200);
@@ -70,7 +69,7 @@ class ConfigScreenLayoutOptionsTest {
 	@Test
 	void fullscreenGuiModeFillsScreenBounds() {
 		ConfigScreenLayout layout = new ConfigScreenLayout();
-		EditBox searchBox = createSearchBox();
+		LegacyEditBox searchBox = createSearchBox();
 
 		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("guiMode", ConfigGuiOptions.GuiMode.FULLSCREEN)) {
 			layout.updateScreenBounds(1000, 800, searchBox);
@@ -86,7 +85,7 @@ class ConfigScreenLayoutOptionsTest {
 	@Test
 	void screenInsetsReserveSpaceForTabsOnSmallScreens() {
 		ConfigScreenLayout layout = new ConfigScreenLayout();
-		EditBox searchBox = createSearchBox();
+		LegacyEditBox searchBox = createSearchBox();
 
 		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("guiMode", ConfigGuiOptions.GuiMode.FULLSCREEN)) {
 			layout.updateScreenBounds(320, 240, searchBox, true, 23, 2);
@@ -102,7 +101,7 @@ class ConfigScreenLayoutOptionsTest {
 	@Test
 	void draggingResizeHandleKeepsScreenCentered() {
 		ConfigScreenLayout layout = new ConfigScreenLayout();
-		EditBox searchBox = createSearchBox();
+		LegacyEditBox searchBox = createSearchBox();
 
 		try (ConfigGuiOptionsTestUtil.OptionOverride mode = ConfigGuiOptionsTestUtil.setValue("guiMode", ConfigGuiOptions.GuiMode.WINDOW);
 			ConfigGuiOptionsTestUtil.OptionOverride width = ConfigGuiOptionsTestUtil.setValue("windowWidth", 380);
@@ -130,7 +129,7 @@ class ConfigScreenLayoutOptionsTest {
 	@Test
 	void draggingResizeEdgeKeepsScreenCentered() {
 		ConfigScreenLayout layout = new ConfigScreenLayout();
-		EditBox searchBox = createSearchBox();
+		LegacyEditBox searchBox = createSearchBox();
 
 		try (ConfigGuiOptionsTestUtil.OptionOverride mode = ConfigGuiOptionsTestUtil.setValue("guiMode", ConfigGuiOptions.GuiMode.WINDOW);
 			ConfigGuiOptionsTestUtil.OptionOverride width = ConfigGuiOptionsTestUtil.setValue("windowWidth", 380);
@@ -158,7 +157,7 @@ class ConfigScreenLayoutOptionsTest {
 	@Test
 	void overlappingModTabPreventsResizeHoverAndDrag() {
 		ConfigScreenLayout layout = new ConfigScreenLayout();
-		EditBox searchBox = createSearchBox();
+		LegacyEditBox searchBox = createSearchBox();
 		layout.updateScreenBounds(1000, 800, searchBox);
 
 		ImmutableRect2i area = layout.getArea();
@@ -175,7 +174,7 @@ class ConfigScreenLayoutOptionsTest {
 	@Test
 	void finishedResizeUpdatesPersistedWindowModeAndDimensions() {
 		ConfigScreenLayout layout = new ConfigScreenLayout();
-		EditBox searchBox = createSearchBox();
+		LegacyEditBox searchBox = createSearchBox();
 
 		try (ConfigGuiOptionsTestUtil.OptionOverride mode = ConfigGuiOptionsTestUtil.setValue("guiMode", ConfigGuiOptions.GuiMode.FULLSCREEN);
 			ConfigGuiOptionsTestUtil.OptionOverride width = ConfigGuiOptionsTestUtil.setValue("windowWidth", 380);
@@ -206,7 +205,7 @@ class ConfigScreenLayoutOptionsTest {
 	@Test
 	void clickingResizeHandleWithoutDraggingDoesNotChangeSize() {
 		ConfigScreenLayout layout = new ConfigScreenLayout();
-		EditBox searchBox = createSearchBox();
+		LegacyEditBox searchBox = createSearchBox();
 
 		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("guiMode", ConfigGuiOptions.GuiMode.FULLSCREEN)) {
 			layout.updateScreenBounds(1000, 800, searchBox);
@@ -223,7 +222,7 @@ class ConfigScreenLayoutOptionsTest {
 	@Test
 	void disabledWindowResizingIgnoresEdges() {
 		ConfigScreenLayout layout = new ConfigScreenLayout();
-		EditBox searchBox = createSearchBox();
+		LegacyEditBox searchBox = createSearchBox();
 
 		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("enableWindowResizing", false)) {
 			layout.updateScreenBounds(1000, 800, searchBox);
@@ -240,7 +239,7 @@ class ConfigScreenLayoutOptionsTest {
 	@Test
 	void headerControlsUseRequestedRowsAndKeepTitleCentered() {
 		ConfigScreenLayout layout = new ConfigScreenLayout();
-		EditBox searchBox = createSearchBox();
+		LegacyEditBox searchBox = createSearchBox();
 
 		layout.updateScreenBounds(1000, 800, searchBox);
 		assertTrue(layout.getScreenListButtonArea().isEmpty());
@@ -309,7 +308,7 @@ class ConfigScreenLayoutOptionsTest {
 	}
 
 	@SuppressWarnings("DataFlowIssue")
-	private static EditBox createSearchBox() {
-		return new EditBox(null, 0, 0, 0, 0, Component.empty());
+	private static LegacyEditBox createSearchBox() {
+		return new LegacyEditBox(null, 0, 0, 0, 0, Component.empty());
 	}
 }

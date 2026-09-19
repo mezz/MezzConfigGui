@@ -69,7 +69,7 @@ public final class RemoteConfigEditorServer {
 		} catch (RuntimeException exception) {
 			LOGGER.warn(
 				"Rejected malformed remote config fragment from {}: {}",
-				player.getGameProfile().getName(),
+				player.getName().getString(),
 				getExceptionMessage(exception)
 			);
 			LOGGER.debug("Malformed remote config fragment details.", exception);
@@ -84,10 +84,10 @@ public final class RemoteConfigEditorServer {
 		if (!(message instanceof RemoteConfigMessage.SnapshotRequest) &&
 			!(message instanceof RemoteConfigMessage.UpdateRequest)
 		) {
-			LOGGER.warn("Rejected a remote config response sent in the serverbound channel by {}.", player.getGameProfile().getName());
+			LOGGER.warn("Rejected a remote config response sent in the serverbound channel by {}.", player.getName().getString());
 			return;
 		}
-		MinecraftServer server = player.getServer();
+		MinecraftServer server = player.level.getServer();
 		RemoteConfigRequestHandler handler = requestHandler;
 		if (server == null || server != activeServer || handler == null) {
 			return;
@@ -112,16 +112,19 @@ public final class RemoteConfigEditorServer {
 			return;
 		}
 		boolean canEdit = hasEditPermission(server, player);
-		RemoteConfigMessage response = switch (message) {
-			case RemoteConfigMessage.SnapshotRequest request -> handler.handleSnapshot(request, canEdit);
-			case RemoteConfigMessage.UpdateRequest request -> handler.handleUpdate(request, canEdit);
-			default -> throw new IllegalArgumentException("Unexpected serverbound remote config message.");
-		};
+		RemoteConfigMessage response;
+		if (message instanceof RemoteConfigMessage.SnapshotRequest request) {
+			response = handler.handleSnapshot(request, canEdit);
+		} else if (message instanceof RemoteConfigMessage.UpdateRequest request) {
+			response = handler.handleUpdate(request, canEdit);
+		} else {
+			throw new IllegalArgumentException("Unexpected serverbound remote config message.");
+		}
 		sendResponse(player, response);
 	}
 
 	private static boolean hasEditPermission(MinecraftServer server, ServerPlayer player) {
-		return player.createCommandSourceStack().hasPermission(server.getOperatorUserPermissionLevel());
+		return ConfigServerPermissions.canEdit(server, player);
 	}
 
 	private static void sendResponse(ServerPlayer player, RemoteConfigMessage response) {
@@ -137,8 +140,8 @@ public final class RemoteConfigEditorServer {
 
 	private static RemoteConfigMessage createUnavailableFallback(RemoteConfigMessage response) {
 		String error = "This server config is not available for remote editing.";
-		return switch (response) {
-			case RemoteConfigMessage.SnapshotResponse snapshot -> new RemoteConfigMessage.SnapshotResponse(
+		if (response instanceof RemoteConfigMessage.SnapshotResponse snapshot) {
+			return new RemoteConfigMessage.SnapshotResponse(
 				snapshot.requestId(),
 				snapshot.schemaKey(),
 				false,
@@ -147,7 +150,9 @@ public final class RemoteConfigEditorServer {
 				0,
 				java.util.List.of()
 			);
-			case RemoteConfigMessage.UpdateResponse update -> new RemoteConfigMessage.UpdateResponse(
+		}
+		if (response instanceof RemoteConfigMessage.UpdateResponse update) {
+			return new RemoteConfigMessage.UpdateResponse(
 				update.requestId(),
 				update.schemaKey(),
 				false,
@@ -156,8 +161,8 @@ public final class RemoteConfigEditorServer {
 				0,
 				java.util.List.of()
 			);
-			default -> throw new IllegalArgumentException("A request cannot be sent as a remote config response.");
-		};
+		}
+		throw new IllegalArgumentException("A request cannot be sent as a remote config response.");
 	}
 
 	private static synchronized void closeRequestHandler() {

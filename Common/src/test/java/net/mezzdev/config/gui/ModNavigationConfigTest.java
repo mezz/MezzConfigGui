@@ -112,7 +112,7 @@ class ModNavigationConfigTest {
 			"mezz_config_gui", List.of(legacyCategory), screen -> config.configureCategory(screen.configureCategory("modList")), lookup -> List.of()
 		);
 		assertEquals(1, categories.size());
-		assertEquals(List.of("modOrder"), categories.getFirst().getConfigValues().stream().map(IConfigScreenValue::getName).toList());
+		assertEquals(List.of("modOrder"), categories.get(0).getConfigValues().stream().map(IConfigScreenValue::getName).toList());
 	}
 
 	private static ModNavigationConfig createConfig(Path path) {
@@ -124,7 +124,7 @@ class ModNavigationConfigTest {
 		List<ConfigScreenCategory> categories = ConfigGuiPluginLoader.createScreenCategoriesForTests(
 			"mezz_config_gui", List.of(), screen -> config.configureCategory(screen.configureCategory("modList")), lookup -> List.of()
 		);
-		return (IConfigScreenValue<List<String>>) categories.getFirst().getConfigValues().iterator().next();
+		return (IConfigScreenValue<List<String>>) categories.get(0).getConfigValues().iterator().next();
 	}
 
 	@SuppressWarnings("unchecked")

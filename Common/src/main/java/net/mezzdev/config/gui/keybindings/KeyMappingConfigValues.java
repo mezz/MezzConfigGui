@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui.keybindings;
 
+import net.mezzdev.config.gui.ConfigInputUtil;
+
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -43,7 +45,7 @@ public final class KeyMappingConfigValues {
 			return true;
 		}
 
-		String category = keyMapping.getCategory().toLowerCase(Locale.ROOT);
+		String category = ConfigInputUtil.category(keyMapping).toLowerCase(Locale.ROOT);
 		return category.equals("key.categories." + checkedModId) ||
 			category.startsWith("key.categories." + checkedModId + ".") ||
 			category.equals("key.category." + checkedModId) ||

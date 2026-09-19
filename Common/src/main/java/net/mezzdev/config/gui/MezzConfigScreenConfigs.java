@@ -72,7 +72,7 @@ public final class MezzConfigScreenConfigs {
 		public Component getTitle() {
 			String localizationKey = modId + ".config.screen.title";
 			String fallback = "%s Configuration".formatted(ConfigNameUtil.getDisplayNameFallback(modId));
-			return Component.translatableWithFallback(localizationKey, fallback);
+			return net.mezzdev.config.gui.internal.LegacyTranslations.translatableWithFallback(localizationKey, fallback);
 		}
 
 		@Override

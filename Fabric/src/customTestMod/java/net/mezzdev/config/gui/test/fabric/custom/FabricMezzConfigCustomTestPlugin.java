@@ -28,11 +28,10 @@ import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.mezzdev.config.gui.api.LegacyGuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,14 +48,14 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 	private static final KeyMapping OPEN_SCREEN_KEY = new KeyMapping(
 		"key.%s.openScreen".formatted(MOD_ID),
 		InputConstants.Type.KEYSYM,
-		GLFW.GLFW_KEY_G,
-		"key.categories.%s".formatted(MOD_ID)
+		com.mojang.blaze3d.platform.InputConstants.KEY_G,
+		net.mezzdev.config.gui.ConfigInputUtil.keyCategory(MOD_ID)
 	);
 	private static final KeyMapping TOGGLE_OVERLAY_KEY = new KeyMapping(
 		"key.%s.toggleOverlay".formatted(MOD_ID),
 		InputConstants.Type.KEYSYM,
-		GLFW.GLFW_KEY_H,
-		"key.categories.%s".formatted(MOD_ID)
+		com.mojang.blaze3d.platform.InputConstants.KEY_H,
+		net.mezzdev.config.gui.ConfigInputUtil.keyCategory(MOD_ID)
 	);
 
 	@Nullable
@@ -268,7 +267,7 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 		@Override
 		public Component getLocalizedValueName(String configValueLocalizationKey, TestColor value) {
 			String key = "%s.%s".formatted(configValueLocalizationKey, value.name().toLowerCase(Locale.ROOT));
-			return Component.translatableWithFallback(key, getDisplayName(value.name()));
+			return net.mezzdev.config.gui.internal.LegacyTranslations.translatableWithFallback(key, getDisplayName(value.name()));
 		}
 
 		@Override
@@ -312,7 +311,7 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 		@Override
 		public Component getLocalizedValueName(String configValueLocalizationKey, CombinedEnabled value) {
 			String key = "%s.%s".formatted(configValueLocalizationKey, value.name().toLowerCase(Locale.ROOT));
-			return Component.translatableWithFallback(key, getDisplayName(value.name()));
+			return net.mezzdev.config.gui.internal.LegacyTranslations.translatableWithFallback(key, getDisplayName(value.name()));
 		}
 
 		@Override
@@ -356,7 +355,7 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 		@Override
 		public Component getLocalizedValueName(String configValueLocalizationKey, TestMode value) {
 			String key = "%s.%s".formatted(configValueLocalizationKey, value.name().toLowerCase(Locale.ROOT));
-			return Component.translatableWithFallback(key, getDisplayName(value.name()));
+			return net.mezzdev.config.gui.internal.LegacyTranslations.translatableWithFallback(key, getDisplayName(value.name()));
 		}
 
 		@Override
@@ -507,7 +506,7 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 
 		@Override
 		public void draw(
-			GuiGraphics guiGraphics,
+			LegacyGuiGraphics guiGraphics,
 			Rect2i area,
 			IConfigScreenValue<TestColor> configValue,
 			TestColor value,
@@ -544,7 +543,7 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 			double mouseY,
 			int button
 		) {
-			if (button != 0) {
+			if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
 				return Optional.empty();
 			}
 			return Optional.of(new TestColorPopup(configValue));
@@ -578,7 +577,7 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 		}
 
 		@Override
-		public void draw(GuiGraphics guiGraphics, Rect2i area, double mouseX, double mouseY) {
+		public void draw(LegacyGuiGraphics guiGraphics, Rect2i area, double mouseX, double mouseY) {
 			Font font = Minecraft.getInstance().font;
 			for (int i = 0; i < TestColor.values().length; i++) {
 				TestColor color = TestColor.values()[i];

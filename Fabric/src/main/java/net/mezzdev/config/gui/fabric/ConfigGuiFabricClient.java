@@ -9,6 +9,7 @@ import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.MezzConfigScreen;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.mezzdev.config.gui.remote.RemoteConfigEditor;
 import net.mezzdev.config.gui.remote.RemoteConfigNetworking;
 import net.mezzdev.config.gui.remote.RemoteConfigRequestChunkPayload;
@@ -28,19 +29,21 @@ public final class ConfigGuiFabricClient implements ClientModInitializer {
 				ScreenEvents.beforeRender(screen).register((renderedScreen, graphics, mouseX, mouseY, tickDelta) -> configScreen.clearTooltipForNextRenderPass());
 				// Runs after renderWithTooltip, including JEI's foreground injection.
 				ScreenEvents.afterRender(screen).register(
-					(renderedScreen, graphics, mouseX, mouseY, tickDelta) -> configScreen.renderDeferredTooltip(graphics, mouseX, mouseY)
+					(renderedScreen, graphics, mouseX, mouseY, tickDelta) -> configScreen.renderDeferredTooltip(new net.mezzdev.config.gui.api.LegacyGuiGraphics(graphics), mouseX, mouseY)
 				);
 			}
 		});
-		ClientPlayNetworking.registerGlobalReceiver(
-			RemoteConfigResponseChunkPayload.TYPE,
-			(payload, context) -> RemoteConfigEditor.handleResponseChunk(payload)
-		);
+		ClientPlayNetworking.registerGlobalReceiver(RemoteConfigResponseChunkPayload.ID, (client, handler, buffer, sender) -> {
+			var payload = new RemoteConfigResponseChunkPayload(buffer.readByteArray(RemoteConfigResponseChunkPayload.MAX_NETWORK_PAYLOAD_LENGTH));
+			client.execute(() -> RemoteConfigEditor.handleResponseChunk(payload));
+		});
 		RemoteConfigNetworking.setClientSender(payload -> {
-			if (!ClientPlayNetworking.canSend(payload.type())) {
+			if (!ClientPlayNetworking.canSend(RemoteConfigRequestChunkPayload.ID)) {
 				return false;
 			}
-			ClientPlayNetworking.send(payload);
+			var buffer = PacketByteBufs.create();
+			buffer.writeByteArray(payload.payload());
+			ClientPlayNetworking.send(RemoteConfigRequestChunkPayload.ID, buffer);
 			return true;
 		});
 		ClientTickEvents.END_CLIENT_TICK.register(client -> RemoteConfigEditor.onClientTick(isChannelAvailable()));
@@ -61,6 +64,6 @@ public final class ConfigGuiFabricClient implements ClientModInitializer {
 	}
 
 	private static boolean isChannelAvailable() {
-		return ClientPlayNetworking.canSend(RemoteConfigRequestChunkPayload.TYPE);
+		return ClientPlayNetworking.canSend(RemoteConfigRequestChunkPayload.ID);
 	}
 }

@@ -17,7 +17,7 @@ public final class ConfigGuiIdentifiableResourceReloadListener implements Identi
 	private final Supplier<PreparableReloadListener> listenerSupplier;
 
 	public ConfigGuiIdentifiableResourceReloadListener(String id, Supplier<PreparableReloadListener> listenerSupplier) {
-		this.fabricId = ResourceLocation.fromNamespaceAndPath(CONFIG_GUI_MOD_ID, id);
+		this.fabricId = new ResourceLocation(CONFIG_GUI_MOD_ID, id);
 		this.listenerSupplier = listenerSupplier;
 	}
 

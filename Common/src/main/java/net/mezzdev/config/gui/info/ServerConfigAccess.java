@@ -22,6 +22,6 @@ public enum ServerConfigAccess {
 	}
 
 	public Component getDescription() {
-		return Component.translatableWithFallback(key, fallback);
+		return net.mezzdev.config.gui.internal.LegacyTranslations.translatableWithFallback(key, fallback);
 	}
 }

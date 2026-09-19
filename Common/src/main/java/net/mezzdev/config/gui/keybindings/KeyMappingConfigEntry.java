@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui.keybindings;
 
+import net.mezzdev.config.gui.ConfigInputUtil;
+
 import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
@@ -12,11 +14,10 @@ import net.mezzdev.config.gui.input.UserInput;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.mezzdev.config.gui.api.LegacyGuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +56,7 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 	}
 
 	@Override
-	protected void drawContent(GuiGraphics guiGraphics, double mouseX, double mouseY) {
+	protected void drawContent(LegacyGuiGraphics guiGraphics, double mouseX, double mouseY) {
 		drawName(guiGraphics);
 		boolean hasConflict = !getConflicts().isEmpty();
 		if (hasConflict) {
@@ -172,12 +173,12 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 		if (!listening) {
 			return false;
 		}
-		if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
 			setBindingValue(ConfigKeyBinding.UNKNOWN);
 			stopListening();
 			return true;
 		}
-		InputConstants.Key key = InputConstants.getKey(keyCode, scanCode);
+		InputConstants.Key key = ConfigInputUtil.getKey(keyCode, scanCode);
 		String keyName = key.getName();
 		ConfigKeyModifier keyModifier = configKeyMapping.getKeyModifier(keyName);
 		if (keyModifier != ConfigKeyModifier.NONE) {
@@ -199,7 +200,7 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 		if (!listening) {
 			return false;
 		}
-		InputConstants.Key key = InputConstants.getKey(keyCode, scanCode);
+		InputConstants.Key key = ConfigInputUtil.getKey(keyCode, scanCode);
 		String keyName = key.getName();
 		if (lastPressedKey.equals(keyName)) {
 			lastKeyHeldDown = false;

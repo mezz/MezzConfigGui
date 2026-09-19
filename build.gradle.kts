@@ -20,10 +20,13 @@ plugins {
 	base
 
 	// https://github.com/modmuss50/mod-publish-plugin
-	id("me.modmuss50.mod-publish-plugin") version("2.2.0") apply(false)
+	id("me.modmuss50.mod-publish-plugin") apply(false)
 
 	// https://github.com/mezz/JavaFormatting
 	id("net.mezzdev.java-formatting") version("0.4.0")
+
+    id("net.fabricmc.fabric-loom") apply false
+    id("net.neoforged.moddev.legacyforge") apply false
 
     // https://plugins.gradle.org/plugin/com.dorongold.task-tree
     id("com.dorongold.task-tree") version("4.0.2")
@@ -31,17 +34,6 @@ plugins {
     // https://github.com/neoforged/JarCompatibilityChecker
     id("net.neoforged.jarcompatibilitychecker") version("0.1.19") apply(false)
 
-    // https://maven.fabricmc.net/fabric-loom/fabric-loom.gradle.plugin/maven-metadata.xml
-    id("fabric-loom") version("1.13.6") apply(false)
-
-    // https://projects.neoforged.net/neoforged/moddevgradle
-    id("net.neoforged.moddev") version("2.0.146") apply(false)
-
-    // https://files.minecraftforge.net/net/minecraftforge/gradle/ForgeGradle/index.html
-    id("net.minecraftforge.gradle") version("6.0.54") apply(false)
-
-    // https://mvnrepository.com/artifact/org.parchmentmc.librarian.forgegradle/org.parchmentmc.librarian.forgegradle.gradle.plugin
-    id("org.parchmentmc.librarian.forgegradle") version("1.2.0") apply(false)
 }
 apply {
 	from("buildtools/ColoredOutput.gradle")
@@ -78,9 +70,9 @@ val fabricApiVersion: String by extra
 val fabricApiVersionRange: String by extra
 val fabricLoaderVersion: String by extra
 val fabricLoaderVersionRange: String by extra
-val forgeVersionRange: String by extra
+val forgeVersionRange = findProperty("forgeVersionRange")?.toString().orEmpty()
 val githubUrl: String by extra
-val forgeLoaderVersionRange: String by extra
+val forgeLoaderVersionRange = findProperty("forgeLoaderVersionRange")?.toString().orEmpty()
 val mezzConfigVersion: String by extra
 val mezzConfigFabricVersionRange: String by extra
 val mezzConfigVersionRange: String by extra
@@ -92,8 +84,6 @@ val modGroup: String by extra
 val modId: String by extra
 val modJavaVersion: String by extra
 val modName: String by extra
-val neoforgeVersionRange: String by extra
-val neoforgeLoaderVersionRange: String by extra
 val jeiVersion: String by extra
 val specificationVersion: String by extra
 val releaseSpecificationVersion = specificationVersion
@@ -159,7 +149,6 @@ val projectVersion = configuredReleaseVersion ?: "${releaseSpecificationVersion}
 extra["mezzConfigApiDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-config-api:$mezzConfigVersion"
 extra["mezzConfigFabricDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-fabric:$mezzConfigVersion"
 extra["mezzConfigForgeDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-forge:$mezzConfigVersion"
-extra["mezzConfigNeoForgeDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-neoforge:$mezzConfigVersion"
 extra["jeiApiDependency"] = "mezz.jei:jei-${minecraftVersion}-common-api:$jeiVersion"
 
 javaFormatting {
@@ -205,6 +194,11 @@ tasks.check {
 }
 
 subprojects {
+    plugins.withId("java") {
+        extensions.getByType<SourceSetContainer>().configureEach {
+            dependencies.add(compileOnlyConfigurationName, "org.jspecify:jspecify:${rootProject.extra["jspecifyVersion"]}")
+        }
+    }
     version = projectVersion
     group = modGroup
 
@@ -382,8 +376,6 @@ subprojects {
             "forgeVersionRange" to forgeVersionRange,
             "githubUrl" to githubUrl,
             "forgeLoaderVersionRange" to forgeLoaderVersionRange,
-            "neoforgeVersionRange" to neoforgeVersionRange,
-            "neoforgeLoaderVersionRange" to neoforgeLoaderVersionRange,
             "minecraftVersion" to minecraftVersion,
             "minecraftVersionRange" to minecraftVersionRange,
             "mezzConfigFabricVersionRange" to mezzConfigFabricVersionRange,
@@ -415,7 +407,7 @@ publishMavenRelease.configure {
         // Platform Maven jars depend on the shared implementation as well as the public API.
         dependsOn(":Common:publishConfigGuiApiJarPublicationToReleaseRepository")
         dependsOn(":Common:publishConfigGuiJarPublicationToReleaseRepository")
-        listOf("Fabric", "Forge", "NeoForge").forEach {
+        subprojects.filter { it.name in setOf("Fabric", "Forge", "NeoForge") }.map { it.name }.forEach {
             dependsOn(":$it:publishConfigGui${it}JarPublicationToReleaseRepository")
         }
     } else {

@@ -14,7 +14,7 @@ import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.mezzdev.config.gui.api.LegacyGuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
@@ -63,7 +63,7 @@ final class ColorConfigEntry extends ConfigEntryWidget<PackedColor> {
 	}
 
 	@Override
-	protected void drawContent(GuiGraphics guiGraphics, double mouseX, double mouseY) {
+	protected void drawContent(LegacyGuiGraphics guiGraphics, double mouseX, double mouseY) {
 		Font font = Minecraft.getInstance().font;
 		drawName(guiGraphics);
 
@@ -72,7 +72,7 @@ final class ColorConfigEntry extends ConfigEntryWidget<PackedColor> {
 		drawHexText(guiGraphics, font, ColorSwatch.formatHex(getValue()));
 	}
 
-	private void drawHexText(GuiGraphics guiGraphics, Font font, String text) {
+	private void drawHexText(LegacyGuiGraphics guiGraphics, Font font, String text) {
 		ImmutableRect2i textArea = hexArea.cropLeft(HEX_TEXT_PADDING).cropRight(HEX_TEXT_PADDING);
 		int y = getCenteredTextY(font, textArea);
 		String visibleText = text;

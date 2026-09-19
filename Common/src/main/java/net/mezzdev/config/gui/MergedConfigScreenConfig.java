@@ -33,7 +33,7 @@ final class MergedConfigScreenConfig implements ConfigScreenConfig {
 
 	@Override
 	public Component getTitle() {
-		return configScreens.getFirst().getTitle();
+		return configScreens.get(0).getTitle();
 	}
 
 	@Override

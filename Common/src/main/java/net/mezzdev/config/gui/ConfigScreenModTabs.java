@@ -1,11 +1,13 @@
 package net.mezzdev.config.gui;
 
+import net.mezzdev.config.gui.util.ConfigMath;
+
 import net.mezzdev.config.gui.screenlist.ConfigScreenListEntry;
 import net.mezzdev.config.gui.textures.ConfigDrawableStatic;
 import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.mezzdev.config.gui.api.LegacyGuiGraphics;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -54,7 +56,7 @@ final class ConfigScreenModTabs {
 		}
 		String firstModId = activeModId;
 		if (!visibleTabs.isEmpty()) {
-			firstModId = visibleTabs.getFirst().entry().modId();
+			firstModId = visibleTabs.get(0).entry().modId();
 		}
 		this.entries = List.copyOf(entries);
 		int firstIndex = getEntryIndex(firstModId);
@@ -134,7 +136,7 @@ final class ConfigScreenModTabs {
 				firstVisibleIndex = activeIndex - visibleTabCount + 1;
 			}
 		}
-		firstVisibleIndex = Math.clamp(firstVisibleIndex, 0, getMaximumScroll());
+		firstVisibleIndex = ConfigMath.clamp(firstVisibleIndex, 0, getMaximumScroll());
 		updateVisibleTabs();
 	}
 
@@ -184,7 +186,7 @@ final class ConfigScreenModTabs {
 		return -1;
 	}
 
-	public void draw(GuiGraphics guiGraphics, Font font, ConfigTextures textures, int mouseX, int mouseY) {
+	public void draw(LegacyGuiGraphics guiGraphics, Font font, ConfigTextures textures, int mouseX, int mouseY) {
 		if (!scrollUpArea.isEmpty()) {
 			drawScrollButton(guiGraphics, textures, scrollUpArea, textures.getArrowUp(), firstVisibleIndex > 0, mouseX, mouseY);
 		}
@@ -197,7 +199,7 @@ final class ConfigScreenModTabs {
 	}
 
 	private void drawModTab(
-		GuiGraphics guiGraphics,
+		LegacyGuiGraphics guiGraphics,
 		Font font,
 		ConfigTextures textures,
 		ModTab tab
@@ -214,7 +216,7 @@ final class ConfigScreenModTabs {
 	}
 
 	private void drawScrollButton(
-		GuiGraphics guiGraphics,
+		LegacyGuiGraphics guiGraphics,
 		ConfigTextures textures,
 		ImmutableRect2i area,
 		ConfigDrawableStatic arrow,
@@ -235,7 +237,7 @@ final class ConfigScreenModTabs {
 		return pressedTarget != null && pressedTarget.entry() == entry && pressedTarget.area().equals(area);
 	}
 
-	public void drawTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+	public void drawTooltip(LegacyGuiGraphics guiGraphics, int mouseX, int mouseY) {
 		findHoveredTab(mouseX, mouseY)
 			.map(ModTab::entry)
 			.map(ConfigScreenListEntry::title)
@@ -247,7 +249,7 @@ final class ConfigScreenModTabs {
 	}
 
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
-		if (button != 0) {
+		if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
 			return false;
 		}
 		@Nullable
@@ -262,7 +264,7 @@ final class ConfigScreenModTabs {
 	public ClickResult mouseReleased(double mouseX, double mouseY, int button) {
 		ClickTarget pressedTarget = this.pressedTarget;
 		this.pressedTarget = null;
-		if (button != 0 || pressedTarget == null) {
+		if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT || pressedTarget == null) {
 			return ClickResult.NOT_HANDLED;
 		}
 		if (!pressedTarget.area().contains(mouseX, mouseY)) {
@@ -310,7 +312,7 @@ final class ConfigScreenModTabs {
 	}
 
 	private boolean scrollBy(long steps) {
-		int nextIndex = (int) Math.clamp(firstVisibleIndex + steps, 0, getMaximumScroll());
+		int nextIndex = (int) ConfigMath.clamp(firstVisibleIndex + steps, 0, getMaximumScroll());
 		if (nextIndex == firstVisibleIndex) {
 			return false;
 		}

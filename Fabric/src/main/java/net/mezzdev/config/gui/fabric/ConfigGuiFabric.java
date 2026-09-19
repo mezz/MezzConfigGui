@@ -1,9 +1,9 @@
 package net.mezzdev.config.gui.fabric;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.mezzdev.config.gui.remote.RemoteConfigEditorServer;
@@ -17,23 +17,17 @@ import net.mezzdev.config.gui.remote.RemoteConfigResponseChunkPayload;
 public final class ConfigGuiFabric implements ModInitializer {
 	@Override
 	public void onInitialize() {
-		PayloadTypeRegistry.playC2S().register(
-			RemoteConfigRequestChunkPayload.TYPE,
-			RemoteConfigRequestChunkPayload.STREAM_CODEC
-		);
-		PayloadTypeRegistry.playS2C().register(
-			RemoteConfigResponseChunkPayload.TYPE,
-			RemoteConfigResponseChunkPayload.STREAM_CODEC
-		);
-		ServerPlayNetworking.registerGlobalReceiver(
-			RemoteConfigRequestChunkPayload.TYPE,
-			(payload, context) -> RemoteConfigEditorServer.handleRequestChunk(context.player(), payload)
-		);
+		ServerPlayNetworking.registerGlobalReceiver(RemoteConfigRequestChunkPayload.ID, (server, player, handler, buffer, sender) -> {
+			var payload = new RemoteConfigRequestChunkPayload(buffer.readByteArray(RemoteConfigRequestChunkPayload.MAX_NETWORK_PAYLOAD_LENGTH));
+			server.execute(() -> RemoteConfigEditorServer.handleRequestChunk(player, payload));
+		});
 		RemoteConfigNetworking.setServerSender((player, payload) -> {
-			if (!ServerPlayNetworking.canSend(player, payload.type())) {
+			if (!ServerPlayNetworking.canSend(player, RemoteConfigResponseChunkPayload.ID)) {
 				return false;
 			}
-			ServerPlayNetworking.send(player, payload);
+			var buffer = PacketByteBufs.create();
+			buffer.writeByteArray(payload.payload());
+			ServerPlayNetworking.send(player, RemoteConfigResponseChunkPayload.ID, buffer);
 			return true;
 		});
 		ServerLifecycleEvents.SERVER_STARTED.register(RemoteConfigEditorServer::onServerStarted);

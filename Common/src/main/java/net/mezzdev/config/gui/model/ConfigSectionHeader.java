@@ -9,7 +9,7 @@ import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.mezzdev.config.gui.util.StringUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.mezzdev.config.gui.api.LegacyGuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
@@ -84,7 +84,7 @@ public final class ConfigSectionHeader implements ConfigInputHandler {
 		return info.get();
 	}
 
-	public void draw(GuiGraphics guiGraphics, ImmutableRect2i viewport) {
+	public void draw(LegacyGuiGraphics guiGraphics, ImmutableRect2i viewport) {
 		ImmutableRect2i railArea = new ImmutableRect2i(
 			area.getX() + 1,
 			area.getY() + area.getHeight(),

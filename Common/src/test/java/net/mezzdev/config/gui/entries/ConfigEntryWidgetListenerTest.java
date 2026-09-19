@@ -5,7 +5,7 @@ import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
-import net.minecraft.client.gui.GuiGraphics;
+import net.mezzdev.config.gui.api.LegacyGuiGraphics;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayDeque;
@@ -47,14 +47,14 @@ class ConfigEntryWidgetListenerTest {
 		}
 
 		@Override
-		public void draw(GuiGraphics graphics, double mouseX, double mouseY, boolean allowHover, int rowIndex) {
+		public void draw(LegacyGuiGraphics graphics, double mouseX, double mouseY, boolean allowHover, int rowIndex) {
 			renderCount++;
 			lastViewport = getViewport();
 			lastRowIndex = rowIndex;
 		}
 
 		@Override
-		protected void drawContent(GuiGraphics graphics, double mouseX, double mouseY) {
+		protected void drawContent(LegacyGuiGraphics graphics, double mouseX, double mouseY) {
 			throw new AssertionError("Unexpected drawContent call");
 		}
 	}
@@ -208,7 +208,7 @@ class ConfigEntryWidgetListenerTest {
 		}
 
 		@Override
-		protected void drawContent(GuiGraphics guiGraphics, double mouseX, double mouseY) {
+		protected void drawContent(LegacyGuiGraphics guiGraphics, double mouseX, double mouseY) {
 
 		}
 	}

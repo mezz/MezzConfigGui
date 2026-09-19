@@ -33,7 +33,7 @@ final class ConfigCategoryTree {
 			Optional<ConfigValueSections.CategoryGroup> grouping = getCategoryGroup(category);
 			if (grouping.isPresent() && groupedCategories.get(grouping.get().name()).size() > 1) {
 				List<ConfigScreenCategory> members = groupedCategories.get(grouping.get().name());
-				if (members.getFirst() == category) {
+				if (members.get(0) == category) {
 					MutableNode root = createGroup(grouping.get(), members);
 					appendNodes(result, root, category.getGroup(), -1, 0, inlineSubsectionLimit);
 				}
@@ -71,12 +71,12 @@ final class ConfigCategoryTree {
 			MutableNode fileRoot = createRoot(member);
 			if (!fileRoot.values.isEmpty()) {
 				MutableNode settings = new MutableNode(fileRoot.name + "/@values",
-					Component.translatableWithFallback("mezz_config.config.screen.sectionSettings", "Settings"), fileRoot.description);
+					net.mezzdev.config.gui.internal.LegacyTranslations.translatableWithFallback("mezz_config.config.screen.sectionSettings", "Settings"), fileRoot.description);
 				settings.values.addAll(fileRoot.values);
 				root.children.put(settings.name, settings);
 			}
 			for (MutableNode child : fileRoot.children.values()) {
-				Component source = Component.translatableWithFallback("mezz_config.config.screen.configFile", "File: %s", member.getName());
+				Component source = net.mezzdev.config.gui.internal.LegacyTranslations.translatableWithFallback("mezz_config.config.screen.configFile", "File: %s", member.getName());
 				if (child.description.getString().isBlank()) {
 					child.description = source;
 				} else {
@@ -97,7 +97,7 @@ final class ConfigCategoryTree {
 					MutableNode child = duplicates.get(i);
 					Component title;
 					do {
-						title = Component.translatableWithFallback("mezz_config.config.native.numbered.title", "%s (%s)", child.title, suffix++);
+						title = net.mezzdev.config.gui.internal.LegacyTranslations.translatableWithFallback("mezz_config.config.native.numbered.title", "%s (%s)", child.title, suffix++);
 					} while (!usedTitles.add(title.getString()));
 					child.title = title;
 				}
@@ -157,7 +157,7 @@ final class ConfigCategoryTree {
 			result.add(new Node(category, parentIndex, depth, true, List.of()));
 			if (!values.isEmpty()) {
 				ConfigScreenCategory settings = new SectionCategory(node.name + "/@values",
-					Component.translatableWithFallback("mezz_config.config.screen.sectionSettings", "Settings"), node.description, group, List.copyOf(values));
+					net.mezzdev.config.gui.internal.LegacyTranslations.translatableWithFallback("mezz_config.config.screen.sectionSettings", "Settings"), node.description, group, List.copyOf(values));
 				result.add(new Node(settings, index, depth + 1, false, List.copyOf(inlineSections)));
 			}
 		} else {

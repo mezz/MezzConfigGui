@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui.keybindings;
 
+import net.mezzdev.config.gui.ConfigInputUtil;
+
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -33,12 +35,12 @@ record ConfigKeyMapping(
 
 	@Override
 	public Component getLocalizedContext() {
-		return Component.translatableWithFallback(keyMapping.getName() + ".context", "");
+		return net.mezzdev.config.gui.internal.LegacyTranslations.translatableWithFallback(keyMapping.getName() + ".context", "");
 	}
 
 	@Override
 	public Component getLocalizedDescription() {
-		return Component.translatableWithFallback(keyMapping.getName() + ".description", "");
+		return net.mezzdev.config.gui.internal.LegacyTranslations.translatableWithFallback(keyMapping.getName() + ".description", "");
 	}
 
 	@Override
@@ -97,7 +99,7 @@ record ConfigKeyMapping(
 			getLocalized(conflict, conflict.getName(), "conflict name"),
 			conflictInput,
 			Component.literal(getModName(platformHelper, conflict)),
-			getLocalized(conflict, conflict.getCategory(), "conflict category")
+			getLocalized(conflict, ConfigInputUtil.category(conflict), "conflict category")
 		);
 	}
 
@@ -135,7 +137,7 @@ record ConfigKeyMapping(
 				return parts[1].toLowerCase(Locale.ROOT);
 			}
 		}
-		return getModIdFromCategory(keyMapping.getCategory());
+		return getModIdFromCategory(ConfigInputUtil.category(keyMapping));
 	}
 
 	private static String getModIdFromCategory(String category) {

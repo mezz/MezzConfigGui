@@ -36,12 +36,12 @@ public final class ConfigValueInfoFactory {
 
 	static Component getBooleanToggleAction(boolean value) {
 		if (value) {
-			return Component.translatableWithFallback(
+			return net.mezzdev.config.gui.internal.LegacyTranslations.translatableWithFallback(
 				"mezz_config.config.value.boolean.action.disable",
 				"Click to disable this setting."
 			);
 		}
-		return Component.translatableWithFallback(
+		return net.mezzdev.config.gui.internal.LegacyTranslations.translatableWithFallback(
 			"mezz_config.config.value.boolean.action.enable",
 			"Click to enable this setting."
 		);

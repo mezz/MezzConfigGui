@@ -130,7 +130,7 @@ public final class ConfigValueLocalization {
 		}
 		if (value instanceof Enum<?> enumValue) {
 			String key = getEnumValueLocalizationKey(configValueLocalizationKey, enumValue);
-			return Component.translatableWithFallback(key, getDisplayNameFallback(enumValue.name()));
+			return net.mezzdev.config.gui.internal.LegacyTranslations.translatableWithFallback(key, getDisplayNameFallback(enumValue.name()));
 		}
 		if (value instanceof Number number) {
 			return Component.literal(NumberFormatting.format(number));
