@@ -8,10 +8,32 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ConfigNumberInfoTest {
 	@Test
-	void typeLimitsHaveReadableNamesWithoutClaimingInfinity() {
-		assertEquals("Range: 0 ~ maximum supported", ConfigNumberInfo.getRange(new ConfigValueRange<>(0, Integer.MAX_VALUE)).getString());
-		assertEquals("Range: minimum supported ~ maximum supported", ConfigNumberInfo.getRange(new ConfigValueRange<>(Long.MIN_VALUE, Long.MAX_VALUE)).getString());
-		assertEquals("Range: 0 ~ maximum supported", ConfigNumberInfo.getRange(new ConfigValueRange<>(0.0, Double.MAX_VALUE)).getString());
+	void upperTypeLimitsUseAnInclusiveLowerBound() {
+		assertEquals("Range: >= 0", ConfigNumberInfo.getRange(new ConfigValueRange<>(0, Integer.MAX_VALUE)).getString());
+		assertEquals("Range: >= 0", ConfigNumberInfo.getRange(new ConfigValueRange<>(0L, Long.MAX_VALUE)).getString());
+		assertEquals("Range: >= 0", ConfigNumberInfo.getRange(new ConfigValueRange<>(0.0, Double.MAX_VALUE)).getString());
+		assertEquals("Range: >= 0", ConfigNumberInfo.getRange(new ConfigValueRange<>(0.0f, Float.MAX_VALUE)).getString());
+	}
+
+	@Test
+	void lowerTypeLimitsUseAnInclusiveUpperBound() {
+		assertEquals("Range: <= 50", ConfigNumberInfo.getRange(new ConfigValueRange<>(Integer.MIN_VALUE, 50)).getString());
+		assertEquals("Range: <= 50", ConfigNumberInfo.getRange(new ConfigValueRange<>(Long.MIN_VALUE, 50L)).getString());
+		assertEquals("Range: <= 50", ConfigNumberInfo.getRange(new ConfigValueRange<>(-Double.MAX_VALUE, 50.0)).getString());
+		assertEquals("Range: <= 50", ConfigNumberInfo.getRange(new ConfigValueRange<>(-Float.MAX_VALUE, 50.0f)).getString());
+	}
+
+	@Test
+	void fullTypeRangesDoNotClaimInfinity() {
+		assertEquals("Range: any supported value", ConfigNumberInfo.getRange(new ConfigValueRange<>(Integer.MIN_VALUE, Integer.MAX_VALUE)).getString());
+		assertEquals("Range: any supported value", ConfigNumberInfo.getRange(new ConfigValueRange<>(Long.MIN_VALUE, Long.MAX_VALUE)).getString());
+		assertEquals("Range: any supported value", ConfigNumberInfo.getRange(new ConfigValueRange<>(-Double.MAX_VALUE, Double.MAX_VALUE)).getString());
+	}
+
+	@Test
+	void oneSidedBoundsKeepLocalizedNumberFormatting() {
+		assertEquals("Range: >= " + NumberFormatting.format(10000), ConfigNumberInfo.getRange(new ConfigValueRange<>(10000, Integer.MAX_VALUE)).getString());
+		assertEquals("Range: <= " + NumberFormatting.format(10000), ConfigNumberInfo.getRange(new ConfigValueRange<>(Integer.MIN_VALUE, 10000)).getString());
 	}
 
 	@Test
