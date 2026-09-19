@@ -58,7 +58,7 @@ import java.util.function.Consumer;
 final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	private static final Logger LOGGER = LogManager.getLogger();
 
-	private static final int BUTTON_SIZE = 18;
+	private static final int BUTTON_SIZE = 20;
 	private static final int BUTTON_GAP = 2;
 	private static final int VALUE_GROUP_TOP_GAP = 3;
 	private static final int VALUE_GROUP_BOTTOM_PADDING = 3;
@@ -214,7 +214,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	}
 
 	private static int getEntryRowHeight() {
-		return ConfigGuiOptions.getRowDensity().getListRowHeight();
+		return Math.max(BUTTON_SIZE, ConfigGuiOptions.getRowDensity().getListRowHeight());
 	}
 
 	static int getDragRowOffset(int rowIndex, int sourceIndex, int targetIndex, int rowHeight) {

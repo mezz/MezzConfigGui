@@ -15,8 +15,8 @@ public enum ConfigButtonIcon {
 	CHECK("icons/check", 12, 10),
 	RESET("icons/reset", 12, 10),
 	ADD("icons/add", 10, 10),
-	UP("icons/button_up", 8, 8),
-	DOWN("icons/button_down", 8, 8);
+	UP("icons/arrow_up", 9, 9),
+	DOWN("icons/arrow_down", 9, 9);
 
 	private final int width;
 	private final int height;
