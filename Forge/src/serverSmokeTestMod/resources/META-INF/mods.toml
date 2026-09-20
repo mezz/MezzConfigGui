@@ -1,0 +1,38 @@
+modLoader="javafml"
+loaderVersion="${forgeLoaderVersionRange}"
+license="The MIT License (MIT)"
+
+[[mods]]
+modId="mezz_config_gui_test_forge_smoke"
+version="${version}"
+displayName="MezzConfig GUI Forge Server Smoke Test"
+authors="${modAuthor}"
+description='''Dedicated-server loader smoke test for MezzConfig GUI on Forge.'''
+
+[[dependencies.mezz_config_gui_test_forge_smoke]]
+    modId="forge"
+    mandatory=true
+    versionRange="${forgeVersionRange}"
+    ordering="NONE"
+    side="SERVER"
+
+[[dependencies.mezz_config_gui_test_forge_smoke]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="${minecraftVersionRange}"
+    ordering="NONE"
+    side="SERVER"
+
+[[dependencies.mezz_config_gui_test_forge_smoke]]
+    modId="${configModId}"
+    mandatory=true
+    versionRange="${mezzConfigForgeVersionRange}"
+    ordering="AFTER"
+    side="SERVER"
+
+[[dependencies.mezz_config_gui_test_forge_smoke]]
+    modId="${configGuiModId}"
+    mandatory=true
+    versionRange="[${specificationVersion},)"
+    ordering="AFTER"
+    side="SERVER"

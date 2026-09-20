@@ -2,6 +2,7 @@ pluginManagement {
     plugins {
         id("net.fabricmc.fabric-loom") version providers.gradleProperty("loomVersion").get()
         id("net.neoforged.moddev") version providers.gradleProperty("moddevVersion").get()
+        id("net.minecraftforge.gradle") version providers.gradleProperty("forgeGradleVersion").get()
         id("me.modmuss50.mod-publish-plugin") version providers.gradleProperty("publishPluginVersion").get()
     }
 	repositories {
@@ -30,4 +31,4 @@ pluginManagement {
 }
 
 rootProject.name = "MezzConfigGui"
-include("Changelog", "Common", "Fabric", "NeoForge")
+include("Changelog", "Common", "Fabric", "Forge", "NeoForge")

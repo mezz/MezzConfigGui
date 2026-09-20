@@ -81,7 +81,22 @@ dependencies {
 For unobfuscated Minecraft 26.x with Fabric Loom, use `runtimeOnly` instead of
 `modRuntimeOnly`; there is no Minecraft remapping step.
 
-## ForgeGradle (1.19.2 and 1.20.1)
+## ForgeGradle 7 (1.21.1)
+
+Forge 1.21.1 uses official mappings at runtime. Declare the API and complete
+Forge runtime as ordinary dependencies:
+
+```kotlin
+dependencies {
+    compileOnly("net.mezzdev.config:mezz_config_gui-$minecraftVersion-config-gui-api:$mezzConfigGuiVersion")
+    runtimeOnly("net.mezzdev.config:mezz_config_gui-$minecraftVersion-forge:$mezzConfigGuiVersion")
+}
+```
+
+The Forge runtime currently depends on MezzConfig 0.5.9, the latest published
+Forge 1.21.1 artifact. Fabric and NeoForge use MezzConfig 0.5.11.
+
+## ForgeGradle 6 (1.19.2 and 1.20.1)
 
 Pass both artifacts through ForgeGradle's deobfuscation helper:
 

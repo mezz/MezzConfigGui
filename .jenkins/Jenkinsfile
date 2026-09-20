@@ -172,7 +172,7 @@ pipeline {
             }
             steps {
                 script {
-                    sh "./gradlew --no-configuration-cache :Fabric:publishCurseforge :NeoForge:publishCurseforge -PpublishDryRun=false ${getReleaseGradleArgs()} --no-daemon"
+                    sh "./gradlew --no-configuration-cache :Fabric:publishCurseforge :Forge:publishCurseforge :NeoForge:publishCurseforge -PpublishDryRun=false ${getReleaseGradleArgs()} --no-daemon"
                 }
             }
         }
@@ -186,7 +186,7 @@ pipeline {
             }
             steps {
                 script {
-                    sh "./gradlew --no-configuration-cache :Fabric:publishModrinth :NeoForge:publishModrinth -PpublishDryRun=false ${getReleaseGradleArgs()} --no-daemon"
+                    sh "./gradlew --no-configuration-cache :Fabric:publishModrinth :Forge:publishModrinth :NeoForge:publishModrinth -PpublishDryRun=false ${getReleaseGradleArgs()} --no-daemon"
                 }
             }
         }

@@ -27,6 +27,7 @@ plugins {
 
     id("net.fabricmc.fabric-loom") apply false
     id("net.neoforged.moddev") apply false
+    id("net.minecraftforge.gradle") apply false
 
     // https://plugins.gradle.org/plugin/com.dorongold.task-tree
     id("com.dorongold.task-tree") version("4.0.2")
@@ -70,10 +71,14 @@ val fabricApiVersion: String by extra
 val fabricApiVersionRange: String by extra
 val fabricLoaderVersion: String by extra
 val fabricLoaderVersionRange: String by extra
+val forgeLoaderVersionRange: String by extra
+val forgeVersionRange: String by extra
 val githubUrl: String by extra
 val mezzConfigVersion: String by extra
 val mezzConfigFabricVersionRange: String by extra
 val mezzConfigVersionRange: String by extra
+val mezzConfigForgeVersion: String by extra
+val mezzConfigForgeVersionRange: String by extra
 val minecraftVersion: String by extra
 val minecraftVersionRange: String by extra
 val modAuthor: String by extra
@@ -151,6 +156,7 @@ val projectVersion = configuredReleaseVersion ?: "${releaseSpecificationVersion}
 extra["mezzConfigApiDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-config-api:$mezzConfigVersion"
 extra["mezzConfigFabricDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-fabric:$mezzConfigVersion"
 extra["mezzConfigNeoForgeDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-neoforge:$mezzConfigVersion"
+extra["mezzConfigForgeDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-forge:$mezzConfigForgeVersion"
 extra["jeiApiDependency"] = "mezz.jei:jei-${minecraftVersion}-common-api:$jeiVersion"
 
 javaFormatting {
@@ -375,6 +381,8 @@ subprojects {
             "fabricApiVersionRange" to fabricApiVersionRange,
             "fabricLoaderVersion" to fabricLoaderVersion,
             "fabricLoaderVersionRange" to fabricLoaderVersionRange,
+            "forgeLoaderVersionRange" to forgeLoaderVersionRange,
+            "forgeVersionRange" to forgeVersionRange,
             "githubUrl" to githubUrl,
             "neoforgeVersionRange" to neoforgeVersionRange,
             "neoforgeLoaderVersionRange" to neoforgeLoaderVersionRange,
@@ -382,6 +390,7 @@ subprojects {
             "minecraftVersionRange" to minecraftVersionRange,
             "mezzConfigFabricVersionRange" to mezzConfigFabricVersionRange,
             "mezzConfigVersionRange" to mezzConfigVersionRange,
+            "mezzConfigForgeVersionRange" to mezzConfigForgeVersionRange,
             "modAuthor" to modAuthor,
             "modDescription" to modDescription,
             "modId" to modId,

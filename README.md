@@ -16,9 +16,11 @@ See [server configuration support](docs/SERVER_CONFIGS.md) for the difference
 between MezzConfig remote editing and native NeoForge configs.
 
 See [Dependency Setup](docs/DEPENDENCY_SETUP.md) for loader-specific Gradle examples.
-This branch builds Minecraft 1.21.1 for Fabric and NeoForge.
+This branch builds Minecraft 1.21.1 for Fabric, Forge, and NeoForge.
 See [Minecraft branches](docs/BRANCHES.md) for the other supported versions.
 Run Gradle with Java 21.
+Forge uses ForgeGradle 7. Run `./gradlew :Forge:runClient` or
+`./gradlew :Forge:runServer` for development.
 
 ## Building
 

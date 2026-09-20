@@ -1,0 +1,43 @@
+modLoader="javafml"
+loaderVersion="${forgeLoaderVersionRange}"
+issueTrackerURL="${githubUrl}/issues?q=is%3Aissue"
+license="The MIT License (MIT)"
+
+[[mods]]
+modId="${configGuiModId}"
+version="${version}"
+displayName="MezzConfig GUI"
+displayURL="${githubUrl}"
+logoFile="mezz_config_gui-icon.png"
+authors="${modAuthor}"
+description='''
+Shared config GUI support for Minecraft mods.
+'''
+
+[[dependencies.${configGuiModId}]]
+    modId="forge"
+    mandatory=true
+    versionRange="${forgeVersionRange}"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${configGuiModId}]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="${minecraftVersionRange}"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${configGuiModId}]]
+    modId="${configModId}"
+    mandatory=true
+    versionRange="${mezzConfigForgeVersionRange}"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.${configGuiModId}]]
+    modId="jei"
+    mandatory=false
+    versionRange="[0,)"
+    ordering="NONE"
+    side="BOTH"
