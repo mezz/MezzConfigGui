@@ -129,7 +129,9 @@ abstract class ValidateReleasePipeline : DefaultTask() {
 }
 
 fun normalizeReleaseVersion(value: String): String {
-    val tagName = value.trim().substringAfterLast('/')
+    val tagName = value.trim().removePrefix("refs/tags/")
+        .removePrefix("mc$minecraftVersion/")
+        .removeSuffix("/mc$minecraftVersion")
     return tagName.removePrefix("v")
 }
 
@@ -404,7 +406,7 @@ subprojects {
 
 publishMavenRelease.configure {
     if (providers.gradleProperty("DEPLOY_DIR").isPresent) {
-        // Platform Maven jars depend on the shared implementation as well as the public API.
+        // Keep standalone common/API artifacts available alongside the complete platform jars.
         dependsOn(":Common:publishConfigGuiApiJarPublicationToReleaseRepository")
         dependsOn(":Common:publishConfigGuiJarPublicationToReleaseRepository")
         subprojects.filter { it.name in setOf("Fabric", "Forge", "NeoForge") }.map { it.name }.forEach {
