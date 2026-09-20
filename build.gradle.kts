@@ -86,7 +86,8 @@ val modJavaVersion: String by extra
 val modName: String by extra
 val jeiVersion: String by extra
 val specificationVersion: String by extra
-val releaseSpecificationVersion = specificationVersion
+val expectedReleaseVersion = "mc$minecraftVersion-$specificationVersion"
+extra["releaseVersion"] = expectedReleaseVersion
 val modPublishDryRun = providers.gradleProperty("publishDryRun").orElse("true")
     .map { it.toBooleanStrict() }.get()
 
@@ -95,18 +96,18 @@ abstract class ValidateReleaseVersion : DefaultTask() {
     abstract val releaseVersion: Property<String>
 
     @get:Input
-    abstract val specificationVersion: Property<String>
+    abstract val expectedVersion: Property<String>
 
     @TaskAction
     fun validate() {
         val releaseVersion = releaseVersion.get()
-        val specificationVersion = specificationVersion.get()
+        val expectedVersion = expectedVersion.get()
         if (releaseVersion.isBlank()) {
             throw GradleException("No release version was provided; set RELEASE_VERSION or TAG_NAME.")
         }
-        if (releaseVersion != specificationVersion) {
+        if (releaseVersion != expectedVersion) {
             throw GradleException(
-                "Release version '$releaseVersion' does not match specificationVersion '$specificationVersion'."
+                "Release version '$releaseVersion' does not match this branch's expected version '$expectedVersion'."
             )
         }
     }
@@ -129,10 +130,7 @@ abstract class ValidateReleasePipeline : DefaultTask() {
 }
 
 fun normalizeReleaseVersion(value: String): String {
-    val tagName = value.trim().removePrefix("refs/tags/")
-        .removePrefix("mc$minecraftVersion/")
-        .removeSuffix("/mc$minecraftVersion")
-    return tagName.removePrefix("v")
+    return value.trim().removePrefix("refs/tags/")
 }
 
 fun Configuration.singleFileContents(): Provider<String> =
@@ -146,7 +144,9 @@ val configuredReleaseVersion = providers.gradleProperty("RELEASE_VERSION")
 val buildNumber = providers.gradleProperty("BUILD_NUMBER")
     .orElse("9999")
     .get()
-val projectVersion = configuredReleaseVersion ?: "${releaseSpecificationVersion}.${buildNumber}"
+// Loader dependency ranges use the numeric mod version; published versions identify Minecraft too.
+val modVersion = if (configuredReleaseVersion == null) "$specificationVersion.$buildNumber" else specificationVersion
+val projectVersion = configuredReleaseVersion ?: "mc$minecraftVersion-$modVersion"
 
 extra["mezzConfigApiDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-config-api:$mezzConfigVersion"
 extra["mezzConfigFabricDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-fabric:$mezzConfigVersion"
@@ -160,10 +160,10 @@ javaFormatting {
 
 tasks.register<ValidateReleaseVersion>("validateReleaseVersion") {
     group = "verification"
-    description = "Checks that a release tag matches specificationVersion."
+    description = "Checks that a release tag matches this branch's Minecraft and mod versions."
 
     releaseVersion.set(configuredReleaseVersion ?: "")
-    specificationVersion.set(releaseSpecificationVersion)
+    expectedVersion.set(expectedReleaseVersion)
 }
 
 val validatePublishing = tasks.register("validatePublishing") {
@@ -231,7 +231,7 @@ subprojects {
         extensions.configure<ModPublishExtension> {
             dryRun.set(modPublishDryRun)
             version.set(projectVersion)
-            displayName.set("$modName $projectVersion for $loaderName $minecraftVersion")
+            displayName.set("$modName $projectVersion for $loaderName")
             type.set(BETA)
             modLoaders.add(loaderName.lowercase(Locale.ROOT))
             changelog.set(changelogMarkdown.singleFileContents())
@@ -388,7 +388,7 @@ subprojects {
             "modJavaVersion" to modJavaVersion,
             "modName" to modName,
             "specificationVersion" to specificationVersion,
-            "version" to version,
+            "version" to modVersion,
         )
         inputs.properties(properties)
         filesMatching(listOf("META-INF/mods.toml", "META-INF/neoforge.mods.toml", "pack.mcmeta", "fabric.mod.json")) {
