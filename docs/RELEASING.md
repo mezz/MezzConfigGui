@@ -1,14 +1,15 @@
 # Releasing MezzConfig GUI
 
-Jenkins builds and publishes each Minecraft branch separately. Release tags include
-the Minecraft version so every branch can release the same MezzConfig GUI version.
+Jenkins builds and publishes each Minecraft branch separately. Release tags put
+the mod version first, followed by the Minecraft version, so tags group each mod
+release's supported Minecraft versions together.
 
 1. Update `specificationVersion` in `gradle.properties` on each branch being released.
    Keep `apiBaselineVersion` pinned to the first API release: 0.4.0 on 1.21.1 and
-   0.5.0 on the six new branches.
+   0.5.1 on the six new branches.
 2. Commit and push each branch, then wait for its CI checks to pass.
-3. Tag each verified commit `mc<minecraft>/v<version>`. This branch uses
-   `mc26.3/v0.5.0` for version 0.5.0. Push the intended tags.
+3. Tag each verified commit `v<version>/mc<minecraft>`. This branch uses
+   `v0.5.1/mc26.3` for version 0.5.1. Push the intended tags.
 4. Trigger or rescan the corresponding Jenkins branch jobs.
 
 To coordinate all seven releases, use the same `specificationVersion` on all seven

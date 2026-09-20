@@ -19,10 +19,10 @@ def getReleaseVersion() {
     if (tagName.startsWith('refs/tags/')) {
         tagName = tagName.substring('refs/tags/'.length())
     }
-    if (!(tagName ==~ /mc26\.3\/v[0-9]+\.[0-9]+\.[0-9]+/)) {
+    if (!(tagName ==~ /v[0-9]+\.[0-9]+\.[0-9]+\/mc26\.3/)) {
         error "Could not determine release version from RELEASE_TAG='${env.RELEASE_TAG}'."
     }
-    return tagName.substring(tagName.lastIndexOf('/v') + 2)
+    return tagName.substring(1, tagName.indexOf('/'))
 }
 
 def shellQuote(String value) {
@@ -52,7 +52,7 @@ def wasReleasePublished(String tagName) {
 }
 
 def shouldPublishRelease() {
-    return env.BRANCH_NAME == '26.3' && !env.CHANGE_ID && (env.RELEASE_TAG?.trim()?.replaceFirst('^refs/tags/', '') ==~ /mc26\.3\/v[0-9]+\.[0-9]+\.[0-9]+/) &&
+    return env.BRANCH_NAME == '26.3' && !env.CHANGE_ID && (env.RELEASE_TAG?.trim()?.replaceFirst('^refs/tags/', '') ==~ /v[0-9]+\.[0-9]+\.[0-9]+\/mc26\.3/) &&
         !wasReleasePublished(env.RELEASE_TAG)
 }
 
@@ -87,7 +87,7 @@ pipeline {
                     env.RELEASE_TAG = sh(
                         script: '''
                             head_commit="$(git rev-parse HEAD)"
-                            git for-each-ref --sort=-v:refname --format='%(refname:short)' 'refs/tags/mc26.3/v[0-9]*.[0-9]*.[0-9]*' |
+                            git for-each-ref --sort=-v:refname --format='%(refname:short)' 'refs/tags/v[0-9]*.[0-9]*.[0-9]*/mc26.3' |
                                 while IFS= read -r tag; do
                                     tag_commit="$(git rev-list -n 1 "$tag")"
                                     if [ "$tag_commit" = "$head_commit" ]; then
