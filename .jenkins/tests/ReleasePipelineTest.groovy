@@ -1,10 +1,21 @@
 // Load the real Jenkins helper methods without running the pipeline or its shell steps.
-def env = [BRANCH_NAME: '1.21.1', CHANGE_ID: null, RELEASE_TAG: 'mc1.21.1-0.3.0']
+def releaseCommit = '1111111111111111111111111111111111111111'
+def previousReleaseCommit = '2222222222222222222222222222222222222222'
+def previousSuccessfulCommit = '3333333333333333333333333333333333333333'
+def env = [
+    BRANCH_NAME: '1.21.1',
+    CHANGE_ID: null,
+    RELEASE_TAG: 'mc1.21.1-0.3.0',
+    GIT_COMMIT: releaseCommit,
+    GIT_PREVIOUS_SUCCESSFUL_COMMIT: previousSuccessfulCommit
+]
 def currentBuild = [previousBuild: null]
 def binding = new Binding([
     env: env,
     currentBuild: currentBuild,
     pipeline: { Closure ignored -> },
+    modernSCM: { Map scm -> scm },
+    library: { Map ignored -> },
     error: { String message -> throw new IllegalStateException(message) }
 ])
 def jenkins = new GroovyShell(binding).parse(pipelineFile)
@@ -43,6 +54,18 @@ currentBuild.previousBuild.previousBuild = [
     previousBuild: null
 ]
 assert !jenkins.shouldPublishRelease()
+assert jenkins.findPreviousReleaseCommit() == previousSuccessfulCommit
+
+// New release records also retain the source commit used by the notifier.
+def completedDescription = jenkins.completedReleaseDescription('mc1.21.1-0.3.0', previousReleaseCommit)
+assert jenkins.buildDescriptionMarkers(completedDescription) == [
+    jenkins.releaseMarker('mc1.21.1-0.3.0'),
+    jenkins.notifierSourceMarker(previousReleaseCommit)
+]
+currentBuild.previousBuild.previousBuild.description = completedDescription
+assert jenkins.wasReleasePublished('mc1.21.1-0.3.0'): "currentBuild=${currentBuild.inspect()}"
+assert !jenkins.shouldPublishRelease()
+assert jenkins.findPreviousReleaseCommit() == previousReleaseCommit
 env.RELEASE_TAG = 'mc1.21.1-0.3.1'
 assert jenkins.shouldPublishRelease()
 env.RELEASE_TAG = 'mc1.21.1-0.3.0'
@@ -52,6 +75,10 @@ currentBuild.previousBuild.previousBuild.result = 'FAILURE'
 assert jenkins.shouldPublishRelease()
 currentBuild.previousBuild.previousBuild.description = null
 assert jenkins.shouldPublishRelease()
+assert jenkins.findPreviousReleaseCommit() == previousSuccessfulCommit
+
+env.GIT_PREVIOUS_SUCCESSFUL_COMMIT = null
+assert jenkins.findPreviousReleaseCommit() == releaseCommit
 
 env.RELEASE_TAG = 'refs/tags/mc1.21.1-0.3.0'
 assert jenkins.getReleaseVersion() == 'mc1.21.1-0.3.0'
