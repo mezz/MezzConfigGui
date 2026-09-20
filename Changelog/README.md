@@ -5,10 +5,11 @@ Modrinth receives the generated Markdown; CurseForge receives HTML rendered from
 that same content.
 
 The commit list includes changes since the nearest reachable
-`v<major>.<minor>.<patch>/mc<minecraft>` release tag for this Minecraft branch,
-excluding the version being built. Legacy `mc<minecraft>/v<version>` and plain
-`v<version>` tags remain valid changelog boundaries. With no previous tag, it
-includes all history. Successful CI builds
+`mc<minecraft>-<major>.<minor>.<patch>` release tag for this Minecraft branch,
+excluding the version being built. Legacy `v<version>/mc<minecraft>`,
+`mc<minecraft>/v<version>`, and plain `v<version>` tags remain valid changelog
+boundaries. Tags for other Minecraft branches are excluded. With no previous tag,
+it includes all history. Successful CI builds
 do not shorten the release notes. Fetch full history and tags before generating
 them; GitHub Actions and Jenkins already do this. To select an explicit starting
 revision, pass `-PchangelogFromRevision=<tag-or-sha>`.

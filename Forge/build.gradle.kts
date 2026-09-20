@@ -76,11 +76,26 @@ sourceSets.main {
 
 val serverSmokeTestModSourceSet = sourceSets.create("serverSmokeTestMod") {
     compileClasspath += sourceSets.main.get().output
-    runtimeClasspath += configGuiRunSourceSet.output
-    val combinedOutput = layout.buildDirectory.dir("sourceSets/$name")
-    java.destinationDirectory.set(combinedOutput)
-    output.setResourcesDir(combinedOutput)
 }
+// Keep compiler and resource-task outputs separate. Restoring either task from
+// Gradle's cache can replace a shared output directory and discard the other's files.
+val serverSmokeTestModRunOutput = layout.buildDirectory.dir("sourceSets/serverSmokeTestModRun")
+val serverSmokeTestModRunSourceSet = sourceSets.create("serverSmokeTestModRun") {
+    java.setSrcDirs(emptyList<String>())
+    resources.setSrcDirs(emptyList<String>())
+    java.destinationDirectory.set(serverSmokeTestModRunOutput)
+    output.setResourcesDir(serverSmokeTestModRunOutput)
+}
+val prepareServerSmokeTestModRun = tasks.register<Sync>("prepareServerSmokeTestModRun") {
+    from(serverSmokeTestModSourceSet.output)
+    into(serverSmokeTestModRunOutput)
+}
+tasks.named(serverSmokeTestModRunSourceSet.compileJavaTaskName) { enabled = false }
+tasks.named(serverSmokeTestModRunSourceSet.processResourcesTaskName) { enabled = false }
+tasks.named(serverSmokeTestModRunSourceSet.classesTaskName) { dependsOn(prepareServerSmokeTestModRun) }
+serverSmokeTestModSourceSet.runtimeClasspath =
+    configurations[serverSmokeTestModSourceSet.runtimeClasspathConfigurationName] +
+    configGuiRunSourceSet.output + serverSmokeTestModRunSourceSet.output
 configurations.named(serverSmokeTestModSourceSet.implementationConfigurationName) {
     extendsFrom(configurations.implementation.get())
 }
@@ -117,7 +132,7 @@ minecraft {
             with(serverSmokeTestModSourceSet) {
                 workingDir.set(serverSmokeTestRunDir)
                 systemProperty("mezzConfigGui.loaderSmokeTest.successFile", serverSmokeTestSuccessFile.get().asFile.absolutePath)
-                mods.create(forgeServerSmokeTestModId) { source(serverSmokeTestModSourceSet) }
+                mods.create(forgeServerSmokeTestModId) { source(serverSmokeTestModRunSourceSet) }
             }
         }
     }
