@@ -9,8 +9,13 @@ The examples use Gradle Kotlin DSL. Set the versions in `gradle.properties`:
 
 ```properties
 minecraftVersion=1.21.1
-mezzConfigGuiVersion=<version>
+mezzConfigGuiVersion=mc1.21.1-0.5.2
 ```
+
+Use the complete Minecraft-prefixed release version for Maven dependencies.
+Loader dependency ranges use the numeric mod version instead, such as `>=0.5.2`
+on Fabric or `[0.5.2,)` on Forge and NeoForge. Each Minecraft branch releases
+independently; select an available release for your target.
 
 Add the Maven repository to `build.gradle.kts`:
 
