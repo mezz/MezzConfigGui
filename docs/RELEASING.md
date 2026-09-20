@@ -1,8 +1,8 @@
 # Releasing MezzConfig GUI
 
 Release each Minecraft branch independently. Maven versions, platform release
-versions, and Git tags use `mc<minecraft>-<mod-version>`, for example `mc26.1.2-0.5.1`.
-`specificationVersion` and loader metadata keep the numeric mod version (`0.5.1`)
+versions, and Git tags use `mc<minecraft>-<mod-version>`, for example `mc26.1.2-0.5.2`.
+`specificationVersion` and loader metadata keep the numeric mod version (`0.5.2`)
 so API and loader dependency ranges continue to work.
 
 1. Update `specificationVersion` on the branch being released. Increase the minor
@@ -14,7 +14,7 @@ so API and loader dependency ranges continue to work.
    its first full release version as the baseline. Never reset a published baseline.
 2. Commit and push that branch, then wait for its CI checks to pass.
 3. Tag the verified commit `mc<minecraft>-<mod-version>`. This branch uses
-   `mc26.1.2-0.5.1`. Push the intended tag.
+   `mc26.1.2-0.5.2`. Push the intended tag.
 4. Trigger or rescan the corresponding Jenkins branch job.
 
 A fix on one branch does not require releases on unaffected branches. Backport and
@@ -24,8 +24,8 @@ Existing release tags keep their original targets and are never moved or reused.
 
 Each job accepts only the new tag format for its own branch and skips tags already
 published successfully. Ordinary branch and pull request builds do not publish.
-To validate a release locally, pass `-PRELEASE_VERSION=mc26.1.2-0.5.1` to Gradle.
-Untagged development builds append the build number, such as `mc26.1.2-0.5.1.9999`.
+To validate a release locally, pass `-PRELEASE_VERSION=mc26.1.2-0.5.2` to Gradle.
+Untagged development builds append the build number, such as `mc26.1.2-0.5.2.9999`.
 
 This branch needs a Jenkins `jdk-25` installation.
 Jenkins validates complete Maven jars and platform release metadata, then publishes
