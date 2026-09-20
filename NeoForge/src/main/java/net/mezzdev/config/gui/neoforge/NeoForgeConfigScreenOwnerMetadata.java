@@ -3,6 +3,7 @@ package net.mezzdev.config.gui.neoforge;
 import net.mezzdev.config.gui.screenlist.ConfigScreenOwnerMetadata;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
+import net.neoforged.neoforgespi.language.IConfigurable;
 import net.neoforged.neoforgespi.language.IModInfo;
 
 import java.nio.file.Files;
@@ -27,10 +28,23 @@ final class NeoForgeConfigScreenOwnerMetadata {
 	}
 
 	private static Optional<Path> getIconPath(IModInfo modInfo) {
-		return modInfo.getLogoFile()
+		return getPreferredIconFile(modInfo.getConfig(), modInfo.getOwningFile().getConfig(), modInfo.getLogoFile())
 			.map(NeoForgeConfigScreenOwnerMetadata::toPathParts)
 			.map(pathParts -> modInfo.getOwningFile().getFile().findResource(pathParts))
 			.filter(Files::exists);
+	}
+
+	static Optional<String> getPreferredIconFile(
+		IConfigurable modConfig,
+		IConfigurable fileConfig,
+		Optional<String> legacyLogoFile
+	) {
+		return modConfig.<String>getConfigElement("iconFile")
+			.or(() -> fileConfig.getConfigElement("iconFile"))
+			.or(() -> legacyLogoFile)
+			.or(() -> fileConfig.getConfigElement("logoFile"))
+			.or(() -> modConfig.getConfigElement("bannerFile"))
+			.or(() -> fileConfig.getConfigElement("bannerFile"));
 	}
 
 	private static String[] toPathParts(String path) {
