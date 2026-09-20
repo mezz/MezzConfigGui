@@ -1,26 +1,36 @@
 # Releasing MezzConfig GUI
 
-Jenkins builds and publishes each Minecraft branch separately. Release tags put
-the mod version first, followed by the Minecraft version, so tags group each mod
-release's supported Minecraft versions together.
+Release each Minecraft branch independently. Maven versions, platform release
+versions, and Git tags use `mc<minecraft>-<mod-version>`, for example `mc1.19.2-0.5.1`.
+`specificationVersion` and loader metadata keep the numeric mod version (`0.5.1`)
+so API and loader dependency ranges continue to work.
 
-1. Update `specificationVersion` in `gradle.properties` on each branch being released.
-   Keep `apiBaselineVersion` pinned to the first API release: 0.4.0 on 1.21.1 and
-   0.5.1 on the six new branches.
-2. Commit and push each branch, then wait for its CI checks to pass.
-3. Tag each verified commit `v<version>/mc<minecraft>`. This branch uses
-   `v0.5.1/mc1.19.2` for version 0.5.1. Push the intended tags.
-4. Trigger or rescan the corresponding Jenkins branch jobs.
+1. Update `specificationVersion` on the branch being released. Increase the minor
+   version for public API additions and the patch version for fixes or dependency
+   updates. Preserve API compatibility; breaking API changes require a major bump
+   and are only allowed with a Minecraft update.
+   Keep `apiBaselineVersion` pinned to the first published API's exact Maven version:
+   `0.4.0` on 1.21.1 and `0.5.1` on 26.3. A branch with no published API starts with
+   its first full release version as the baseline. Never reset a published baseline.
+2. Commit and push that branch, then wait for its CI checks to pass.
+3. Tag the verified commit `mc<minecraft>-<mod-version>`. This branch uses
+   `mc1.19.2-0.5.1`. Push the intended tag.
+4. Trigger or rescan the corresponding Jenkins branch job.
 
-To coordinate all seven releases, use the same `specificationVersion` on all seven
-[branches](BRANCHES.md), verify them all, and then push their seven scoped tags.
-Each job accepts only tags for its own branch and skips tags already published
-successfully. Ordinary branch and pull request builds do not publish.
+A fix on one branch does not require releases on unaffected branches. Backport and
+validate shared fixes separately, retaining each target's own versions and pins.
+Adding support for an older Minecraft version needs no global version allocation.
+Existing release tags keep their original targets and are never moved or reused.
+
+Each job accepts only the new tag format for its own branch and skips tags already
+published successfully. Ordinary branch and pull request builds do not publish.
+To validate a release locally, pass `-PRELEASE_VERSION=mc1.19.2-0.5.1` to Gradle.
+Untagged development builds append the build number, such as `mc1.19.2-0.5.1.9999`.
 
 This branch needs a Jenkins `jdk-21` installation and an installed Java 17 toolchain.
 Jenkins validates complete Maven jars and platform release metadata, then publishes
 Maven artifacts and beta files to CurseForge and Modrinth. Changelogs come from Git
-history since this Minecraft branch's previous release tag.
+history since this Minecraft branch's previous release tag, including legacy tags.
 
 Before retrying a partially failed release, check which destinations already
 received files. Keep successful release build records when pruning Jenkins history

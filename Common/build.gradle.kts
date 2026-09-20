@@ -54,8 +54,8 @@ val mezzConfigApiDependency: String by rootProject.extra
 val mezzConfigRuntimeDependency = rootProject.extra["mezzConfigForgeDependency"].toString()
 val jeiApiDependency: String by rootProject.extra
 val apiBaselineVersion: String by extra
-val specificationVersion: String by extra
-val isInitialApiRelease = apiBaselineVersion == specificationVersion
+val releaseVersion: String by rootProject.extra
+val isInitialApiRelease = apiBaselineVersion == releaseVersion
 
 group = configModGroup
 
