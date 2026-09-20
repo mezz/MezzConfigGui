@@ -71,6 +71,8 @@ configure<LegacyForgeExtension> {
     enable {
         setForgeVersion("$targetMinecraftVersion-${project.extra["forgeVersion"]}")
         setEnabledSourceSets(setOf(sourceSets.main.get(), apiSourceSet, sourceSets.test.get()))
+        // Forge 1.19.2's signed universal jar fails signature verification after the no-recompile CI transforms.
+        setDisableRecompilation(false)
     }
 }
 

@@ -81,6 +81,8 @@ legacyForge {
     enable {
         setForgeVersion(targetForgeArtifact)
         setEnabledSourceSets(setOf(sourceSets.main.get(), smokeMod))
+        // Forge 1.19.2's signed universal jar fails signature verification after the no-recompile CI transforms.
+        setDisableRecompilation(false)
     }
     mods {
         create(configModId) { sourceSet(configRun) }
