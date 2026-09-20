@@ -26,7 +26,7 @@ description='''Dedicated-server loader smoke test for MezzConfig GUI on Forge.''
 [[dependencies.mezz_config_gui_test_forge_smoke]]
     modId="${configModId}"
     mandatory=true
-    versionRange="${mezzConfigForgeVersionRange}"
+    versionRange="${mezzConfigVersionRange}"
     ordering="AFTER"
     side="SERVER"
 

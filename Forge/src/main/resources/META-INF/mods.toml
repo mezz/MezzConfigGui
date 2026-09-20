@@ -31,7 +31,7 @@ Shared config GUI support for Minecraft mods.
 [[dependencies.${configGuiModId}]]
     modId="${configModId}"
     mandatory=true
-    versionRange="${mezzConfigForgeVersionRange}"
+    versionRange="${mezzConfigVersionRange}"
     ordering="AFTER"
     side="BOTH"
 

@@ -77,8 +77,6 @@ val githubUrl: String by extra
 val mezzConfigVersion: String by extra
 val mezzConfigFabricVersionRange: String by extra
 val mezzConfigVersionRange: String by extra
-val mezzConfigForgeVersion: String by extra
-val mezzConfigForgeVersionRange: String by extra
 val minecraftVersion: String by extra
 val minecraftVersionRange: String by extra
 val modAuthor: String by extra
@@ -156,7 +154,7 @@ val projectVersion = configuredReleaseVersion ?: "${releaseSpecificationVersion}
 extra["mezzConfigApiDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-config-api:$mezzConfigVersion"
 extra["mezzConfigFabricDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-fabric:$mezzConfigVersion"
 extra["mezzConfigNeoForgeDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-neoforge:$mezzConfigVersion"
-extra["mezzConfigForgeDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-forge:$mezzConfigForgeVersion"
+extra["mezzConfigForgeDependency"] = "$configModGroup:${configModId}-${minecraftVersion}-forge:$mezzConfigVersion"
 extra["jeiApiDependency"] = "mezz.jei:jei-${minecraftVersion}-common-api:$jeiVersion"
 
 javaFormatting {
@@ -390,7 +388,6 @@ subprojects {
             "minecraftVersionRange" to minecraftVersionRange,
             "mezzConfigFabricVersionRange" to mezzConfigFabricVersionRange,
             "mezzConfigVersionRange" to mezzConfigVersionRange,
-            "mezzConfigForgeVersionRange" to mezzConfigForgeVersionRange,
             "modAuthor" to modAuthor,
             "modDescription" to modDescription,
             "modId" to modId,

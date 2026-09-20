@@ -93,9 +93,6 @@ dependencies {
 }
 ```
 
-The Forge runtime currently depends on MezzConfig 0.5.9, the latest published
-Forge 1.21.1 artifact. Fabric and NeoForge use MezzConfig 0.5.11.
-
 ## ForgeGradle 6 (1.19.2 and 1.20.1)
 
 Pass both artifacts through ForgeGradle's deobfuscation helper:
