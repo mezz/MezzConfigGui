@@ -31,6 +31,10 @@ This branch needs a Jenkins `jdk-25` installation.
 Jenkins validates complete Maven jars and platform release metadata, then publishes
 Maven artifacts and beta files to CurseForge and Modrinth. Changelogs come from Git
 history since this Minecraft branch's previous release tag, including legacy tags.
+After publishing, Jenkins schedules released-issue and pull-request updates and sends
+a Discord build summary through the shared notifier worker. See
+[Jenkins release notifications](../.jenkins/releaseComments.md) for the integration
+and worker setup.
 
 Before retrying a partially failed release, check which destinations already
 received files. Keep successful release build records when pruning Jenkins history
