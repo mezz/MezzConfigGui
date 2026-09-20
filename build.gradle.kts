@@ -129,7 +129,9 @@ abstract class ValidateReleasePipeline : DefaultTask() {
 }
 
 fun normalizeReleaseVersion(value: String): String {
-    val tagName = value.trim().substringAfterLast('/')
+    val tagName = value.trim().removePrefix("refs/tags/")
+        .removePrefix("mc$minecraftVersion/")
+        .removeSuffix("/mc$minecraftVersion")
     return tagName.removePrefix("v")
 }
 

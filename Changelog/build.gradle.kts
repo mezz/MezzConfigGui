@@ -18,14 +18,35 @@ val specificationVersion: String by extra
 val minecraftVersion: String by extra
 val changelogUntaggedName = "Current release $specificationVersion"
 
+// Match complete tag names so legacy v* tags cannot also match another Minecraft
+// version's v*/mc* tags. Keep both legacy formats as changelog boundaries.
+val previousReleaseTags = providers.exec {
+    workingDir(rootProject.rootDir)
+    commandLine("git", "tag", "--list")
+}.standardOutput.asText.map { output ->
+    output.lineSequence().filter { tag ->
+        val versionTag = if (tag.startsWith("mc$minecraftVersion/")) {
+            tag.removePrefix("mc$minecraftVersion/")
+        } else {
+            tag.removeSuffix("/mc$minecraftVersion")
+        }
+        Regex("v[0-9]+\\.[0-9]+\\.[0-9]+").matches(versionTag) && versionTag != "v$specificationVersion"
+    }.toList()
+}
+
 // Exclude the version being built so tagged releases and their preceding CI
 // builds use the same range. An empty result includes all history for a first release.
-val previousRelease = providers.exec {
-    workingDir(rootProject.rootDir)
-    commandLine("git", "describe", "--tags", "--abbrev=0", "--match", "mc$minecraftVersion/v[0-9]*.[0-9]*.[0-9]*",
-        "--exclude", "mc$minecraftVersion/v$specificationVersion", "--match", "v[0-9]*.[0-9]*.[0-9]*", "--exclude", "v$specificationVersion", "HEAD")
-    isIgnoreExitValue = true
-}.standardOutput.asText.map { it.trim() }
+val previousRelease = previousReleaseTags.map { tags ->
+    if (tags.isEmpty()) {
+        ""
+    } else {
+        providers.exec {
+            workingDir(rootProject.rootDir)
+            commandLine(listOf("git", "describe", "--tags", "--abbrev=0") + tags.flatMap { listOf("--match", it) } + "HEAD")
+            isIgnoreExitValue = true
+        }.standardOutput.asText.get().trim()
+    }
+}
 
 val makeMarkdownChangelog = tasks.register<GitChangelogTask>("makeMarkdownChangelog") {
     val output = layout.buildDirectory.file("changelog.md")
