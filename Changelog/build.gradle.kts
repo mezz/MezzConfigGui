@@ -16,19 +16,19 @@ plugins {
 
 val specificationVersion: String by extra
 val minecraftVersion: String by extra
-val changelogUntaggedName = "Current release $specificationVersion"
+val releaseVersion: String by rootProject.extra
+val changelogUntaggedName = "Current release $releaseVersion"
 
-// Match complete tag names so legacy v* tags cannot also match another Minecraft
-// version's v*/mc* tags. Keep both legacy formats as changelog boundaries.
+// Match complete tag names for this Minecraft branch, including legacy formats.
 val previousReleaseTags = providers.exec {
     workingDir(rootProject.rootDir)
     commandLine("git", "tag", "--list")
 }.standardOutput.asText.map { output ->
     output.lineSequence().filter { tag ->
-        val versionTag = if (tag.startsWith("mc$minecraftVersion/")) {
-            tag.removePrefix("mc$minecraftVersion/")
-        } else {
-            tag.removeSuffix("/mc$minecraftVersion")
+        val versionTag = when {
+            tag.startsWith("mc$minecraftVersion-") -> "v" + tag.removePrefix("mc$minecraftVersion-")
+            tag.startsWith("mc$minecraftVersion/") -> tag.removePrefix("mc$minecraftVersion/")
+            else -> tag.removeSuffix("/mc$minecraftVersion")
         }
         Regex("v[0-9]+\\.[0-9]+\\.[0-9]+").matches(versionTag) && versionTag != "v$specificationVersion"
     }.toList()

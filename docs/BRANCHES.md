@@ -8,13 +8,13 @@ Run `./gradlew clean` after switching, then reload the Gradle project in the IDE
 | --- | --- | --- | --- |
 | `1.19.2` | Fabric, Forge | 21 | 17 |
 | `1.20.1` | Fabric, Forge | 21 | 17 |
-| `1.21.1` | Fabric, NeoForge | 21 | 21 |
+| `1.21.1` | Fabric, Forge, NeoForge | 21 | 21 |
 | `1.21.11` | Fabric, NeoForge | 21 | 21 |
 | `26.1.2` | Fabric, NeoForge | 25 | 25 |
 | `26.2` | Fabric, NeoForge | 25 | 25 |
 | `26.3` | Fabric, NeoForge | 25 | 25 |
 
-Forge 1.21.1 is intentionally omitted. AMECS integration is available through 26.2;
+Forge 1.21.1 uses ForgeGradle 7. AMECS integration is available through 26.2;
 26.3 currently uses vanilla Fabric key bindings because AMECS has no SDL port.
 
 Apply shared fixes across branches as normal commits and adapt them to each branch's
@@ -22,5 +22,16 @@ Minecraft API. There are no version overlays or generated Java source rewrites.
 The `api`, `test`, and loader test-mod source sets serve their usual roles within
 one Minecraft version.
 
+Release identifiers put Minecraft first: `mc1.21.1-0.5.2`. Each branch advances its
+mod version independently; unaffected branches do not need a matching release.
+The Minecraft prefix identifies compatibility, so adding an older Minecraft branch
+does not require renumbering any existing release line. Start a new branch from
+the mod version it ports, then advance it independently.
+
+Backport shared fixes as branch-level changes. Preserve the target branch's version,
+API baseline, dependencies, loaders, and Java requirements, then bump its own mod
+version when releasing. Matching numeric versions on different Minecraft branches
+do not imply identical changes; consult each branch's changelog.
+
 Every branch runs the same verification and publishing flow. See [releasing](RELEASING.md)
-to coordinate a release across all seven branches.
+for the branch-specific release process.
