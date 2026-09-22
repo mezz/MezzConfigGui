@@ -6,6 +6,7 @@ import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.mezzdev.config.gui.api.LegacyGuiGraphics;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayDeque;
@@ -39,6 +40,7 @@ class ConfigEntryWidgetListenerTest {
 
 	private static final class RenderCountingWidget extends ConfigEntryWidget<String> {
 		private int renderCount;
+		@Nullable
 		private ImmutableRect2i lastViewport;
 		private int lastRowIndex;
 
