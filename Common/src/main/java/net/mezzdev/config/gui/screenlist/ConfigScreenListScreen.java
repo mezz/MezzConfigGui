@@ -163,7 +163,6 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 		searchBox.setX(searchArea.getX() + SEARCH_TEXT_LEFT_PADDING);
 		searchBox.setY(searchArea.getY() + (searchArea.getHeight() - SEARCH_TEXT_HEIGHT) / 2);
 		searchBox.setWidth(searchArea.getWidth() - SEARCH_TEXT_LEFT_PADDING - SEARCH_TEXT_RIGHT_PADDING);
-		searchBox.setHeight(SEARCH_HEIGHT);
 		clampScroll();
 	}
 

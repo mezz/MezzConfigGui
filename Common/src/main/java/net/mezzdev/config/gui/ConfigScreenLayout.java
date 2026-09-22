@@ -113,7 +113,6 @@ public final class ConfigScreenLayout {
 		searchBox.setX(searchBackgroundArea.getX() + SEARCH_TEXT_LEFT_PADDING);
 		searchBox.setY(searchBackgroundArea.getY() + (searchBackgroundArea.getHeight() - SEARCH_TEXT_HEIGHT) / 2);
 		searchBox.setWidth(searchBackgroundArea.getWidth() - SEARCH_TEXT_LEFT_PADDING - SEARCH_TEXT_RIGHT_PADDING);
-		searchBox.setHeight(SEARCH_HEIGHT);
 
 		updateContentAndScrollBarAreas();
 	}
