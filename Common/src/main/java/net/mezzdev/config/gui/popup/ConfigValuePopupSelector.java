@@ -66,11 +66,9 @@ public final class ConfigValuePopupSelector<T> implements ConfigPopupSelector {
 	@Override
 	@Nullable
 	public ConfigInfo getTooltipInfo(double mouseX, double mouseY) {
-		Optional<T> hoveredValue = popup.getHoveredValue(toRect2i(area), mouseX, mouseY);
-		if (hoveredValue.isEmpty()) {
-			return null;
-		}
-		return ConfigValueInfoFactory.create(configValue, hoveredValue.get(), pendingChangeSupplier.getAsBoolean());
+		return popup.getHoveredValue(toRect2i(area), mouseX, mouseY)
+			.map(hoveredValue -> ConfigValueInfoFactory.create(configValue, hoveredValue, pendingChangeSupplier.getAsBoolean()))
+			.orElse(null);
 	}
 
 	@Override
