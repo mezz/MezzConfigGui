@@ -9,6 +9,7 @@ import net.mezzdev.config.gui.input.UserInput;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.mezzdev.config.gui.api.LegacyGuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -39,7 +40,7 @@ class ConfigValueSelectorTest {
 	@Test
 	void routesNonLeftClicksToThePopupContract() {
 		AtomicInteger clickedButton = new AtomicInteger(-1);
-		AtomicReference<String> selectedValue = new AtomicReference<>();
+		AtomicReference<@Nullable String> selectedValue = new AtomicReference<>();
 		IConfigValuePopup<String> popup = new TestPopup(clickedButton);
 		ConfigValuePopupSelector<String> selector = new ConfigValuePopupSelector<>(
 			new TestConfigValue(),
