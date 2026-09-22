@@ -46,7 +46,6 @@ public final class ConfigNavItem implements ConfigInputHandler {
 	private ImmutableRect2i area = ImmutableRect2i.EMPTY;
 	private ImmutableRect2i hoverArea = ImmutableRect2i.EMPTY;
 	private List<FormattedCharSequence> visibleNameLines = List.of(FormattedCharSequence.EMPTY);
-	private int cachedHeight = ConfigScreenLayout.NAV_ITEM_HEIGHT;
 
 	public ConfigNavItem(
 		Component displayName,
@@ -75,8 +74,8 @@ public final class ConfigNavItem implements ConfigInputHandler {
 		Pair<List<FormattedText>, Boolean> splitLines = StringUtil.splitLines(font, List.of(fullName), textWidth, maxLines);
 		visibleNameLines = Language.getInstance().getVisualOrder(splitLines.first());
 		int textHeight = visibleNameLines.size() * font.lineHeight;
-		cachedHeight = Math.max(ConfigScreenLayout.NAV_ITEM_HEIGHT, textHeight + TEXT_VERTICAL_PADDING);
-		return cachedHeight;
+		int height = Math.max(ConfigScreenLayout.NAV_ITEM_HEIGHT, textHeight + TEXT_VERTICAL_PADDING);
+		return height;
 	}
 
 	public void updateBounds(ImmutableRect2i area, int hoverHeight) {
