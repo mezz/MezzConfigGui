@@ -270,11 +270,6 @@ final class ConfigGuiPluginLoader {
 			config = new ConfigScreenFactoryConfig(title, createScreenSchemaSupplier(schemaSupplier));
 		}
 
-		public Optional<IConfigScreenFactory> createFactory() {
-			return createFactoryEntry(new ConfigScreenNavigation())
-				.map(ConfigScreenFactoryEntry::factory);
-		}
-
 		public Optional<ConfigScreenFactoryEntry> createFactoryEntry(ConfigScreenNavigation navigation) {
 			ConfigScreenFactoryConfig config = getConfigScreenFactoryConfig();
 			if (config == null) {
@@ -999,21 +994,6 @@ final class ConfigGuiPluginLoader {
 		public Collection<? extends IConfigScreenValue<?>> getConfigValues() {
 			return values;
 		}
-	}
-
-	private static List<ConfigScreenCategory> createScreenCategories(
-		String modId,
-		List<? extends ConfigScreenCategory> originalCategories,
-		List<ConfiguredScreenCategory> configuredCategories,
-		boolean clearDefaultCategories
-	) {
-		return createScreenCategories(
-			modId,
-			originalCategories,
-			configuredCategories,
-			clearDefaultCategories,
-			DEFAULT_KEY_MAPPINGS_PROVIDER
-		);
 	}
 
 	static List<ConfigScreenCategory> createScreenCategoriesForTests(
