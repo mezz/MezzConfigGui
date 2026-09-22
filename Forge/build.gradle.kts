@@ -5,6 +5,7 @@ plugins {
     `maven-publish`
     id("net.minecraftforge.gradle")
     id("me.modmuss50.mod-publish-plugin")
+    id("net.mezzdev.config-language-resources")
 }
 
 val forgeVersion: String by extra
@@ -164,8 +165,9 @@ val runServerSmokeTest = tasks.register("runServerSmokeTest") {
 }
 tasks.check { dependsOn(runServerSmokeTest) }
 
-extra["configLanguageDependencyProjects"] = listOf(commonProject)
-apply(from = rootProject.file("buildtools/ConfigLanguageResources.gradle.kts"))
+configLanguageResources {
+    from(commonProject)
+}
 val mergedConfigLanguageResources = tasks.named("mergeConfigLanguageResources")
 
 tasks.jar {
