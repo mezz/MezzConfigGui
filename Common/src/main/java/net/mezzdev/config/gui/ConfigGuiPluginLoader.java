@@ -1063,7 +1063,8 @@ final class ConfigGuiPluginLoader {
 		List<ResolvedScreenCategory> resolvedCategories = originalCategories.stream()
 			.map(ConfigGuiPluginLoader::resolve)
 			.toList();
-		Optional<String> categoryLocalizationPrefix = getCategoryLocalizationPrefix(resolvedCategories);
+		@Nullable
+		String categoryLocalizationPrefix = getCategoryLocalizationPrefix(resolvedCategories).orElse(null);
 		Set<String> emittedCategoryNames = new HashSet<>();
 		List<ConfigScreenCategory> screenCategories = new ArrayList<>();
 		for (ConfiguredScreenCategory configuredCategory : configuredCategories) {
@@ -1166,7 +1167,7 @@ final class ConfigGuiPluginLoader {
 
 	private static void addConfiguredScreenCategory(
 		String modId,
-		Optional<String> categoryLocalizationPrefix,
+		@Nullable String categoryLocalizationPrefix,
 		List<ResolvedScreenCategory> resolvedCategories,
 		List<ConfigScreenCategory> screenCategories,
 		ConfiguredScreenCategory configuredCategory
@@ -1339,7 +1340,7 @@ final class ConfigGuiPluginLoader {
 
 	private static Component getCategoryTitle(
 		String modId,
-		Optional<String> categoryLocalizationPrefix,
+		@Nullable String categoryLocalizationPrefix,
 		List<ResolvedScreenCategory> resolvedCategories,
 		ConfiguredScreenCategory configuredCategory
 	) {
@@ -1357,7 +1358,7 @@ final class ConfigGuiPluginLoader {
 
 	private static Component getCategoryDescription(
 		String modId,
-		Optional<String> categoryLocalizationPrefix,
+		@Nullable String categoryLocalizationPrefix,
 		List<ResolvedScreenCategory> resolvedCategories,
 		ConfiguredScreenCategory configuredCategory
 	) {
@@ -1384,12 +1385,13 @@ final class ConfigGuiPluginLoader {
 
 	private static String getDefaultCategoryLocalizationKey(
 		String modId,
-		Optional<String> categoryLocalizationPrefix,
+		@Nullable String categoryLocalizationPrefix,
 		String name
 	) {
-		return categoryLocalizationPrefix
-			.map(prefix -> prefix + "." + name)
-			.orElseGet(() -> modId + ".config." + name);
+		if (categoryLocalizationPrefix != null) {
+			return categoryLocalizationPrefix + "." + name;
+		}
+		return modId + ".config." + name;
 	}
 
 	private static Optional<String> getCategoryLocalizationPrefix(List<ResolvedScreenCategory> resolvedCategories) {
@@ -1700,7 +1702,10 @@ final class ConfigGuiPluginLoader {
 		if (restartRequirement != ConfigValueRestartRequirement.NONE) {
 			notifyRestartDeferred(modId, title, restartRequirement);
 		}
-		result.failure().ifPresent(failure -> notifyChangeFailure(modId, failure));
+		ConfigChangeFailure failure = result.failure();
+		if (failure != null) {
+			notifyChangeFailure(modId, failure);
+		}
 		return result;
 	}
 
