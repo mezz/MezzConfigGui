@@ -120,10 +120,6 @@ public final class ConfigScreenModel {
 		this.searchText = ConfigLocale.toLowercase(searchText);
 	}
 
-	public String getSearchText() {
-		return searchText;
-	}
-
 	public boolean isSearching() {
 		return !searchText.isEmpty();
 	}
