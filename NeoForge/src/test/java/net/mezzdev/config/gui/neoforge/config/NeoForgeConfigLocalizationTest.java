@@ -1,7 +1,8 @@
 package net.mezzdev.config.gui.neoforge.config;
 
 import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
-import net.mezzdev.config.gui.ConfigValueSections;
+import net.mezzdev.config.gui.ConfigScreenCategoryNavigationGroup;
+import net.mezzdev.config.gui.ConfigValueCategoryPath;
 import net.minecraft.network.chat.Component;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
@@ -10,22 +11,26 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NeoForgeConfigLocalizationTest {
 	@Test
 	void onlyCommonFilesOptIntoSharedNavigationWithoutChangingTheirValueCategories() {
-		ConfigValueSections.CategoryGroup first = NeoForgeConfigLocalization.getCategoryGroup("test", ModConfig.Type.COMMON, "test.first").orElseThrow();
-		ConfigValueSections.CategoryGroup second = NeoForgeConfigLocalization.getCategoryGroup("test", ModConfig.Type.COMMON, "test.second").orElseThrow();
+		ConfigScreenCategoryNavigationGroup first = NeoForgeConfigLocalization.getNavigationGroup("test", ModConfig.Type.COMMON, "test.first");
+		ConfigScreenCategoryNavigationGroup second = NeoForgeConfigLocalization.getNavigationGroup("test", ModConfig.Type.COMMON, "test.second");
+		assertNotNull(first);
+		assertNotNull(second);
 		assertEquals(first.name(), second.name());
 		assertEquals("Common (local)", first.title().getString());
 		for (ModConfig.Type type : List.of(ModConfig.Type.CLIENT, ModConfig.Type.SERVER, ModConfig.Type.STARTUP)) {
-			assertTrue(NeoForgeConfigLocalization.getCategoryGroup("test", type, "test.first").isEmpty());
+			assertNull(NeoForgeConfigLocalization.getNavigationGroup("test", type, "test.first"));
 		}
 	}
 
 	@Test
-	void repeatedOptionNamesHaveShortLabelsAndSeparateSectionMetadata() {
+	void repeatedOptionNamesHaveShortLabelsAndSeparateCategoryPaths() {
 		ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 		ModConfigSpec.BooleanValue cowValue = builder.define("animals.cow.behavior.removeAI", false);
 		ModConfigSpec.BooleanValue pigValue = builder.define("animals.pig.behavior.removeAI", false);
@@ -33,35 +38,35 @@ class NeoForgeConfigLocalizationTest {
 
 		assertEquals("Remove Ai", getValueName(cowValue));
 		assertEquals("Remove Ai", getValueName(pigValue));
-		assertEquals(List.of("Animals", "Cow", "Behavior"), getSectionTitles(spec, cowValue));
-		assertEquals(List.of("Animals", "Pig", "Behavior"), getSectionTitles(spec, pigValue));
+		assertEquals(List.of("Animals", "Cow", "Behavior"), getCategoryTitles(spec, cowValue));
+		assertEquals(List.of("Animals", "Pig", "Behavior"), getCategoryTitles(spec, pigValue));
 	}
 
 	@Test
-	void sectionAndOptionTranslationsArePreserved() {
+	void nestedCategoryAndOptionTranslationsArePreserved() {
 		ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
-		builder.comment("Controls these settings.").translation("gui.done").push("section");
+		builder.comment("Controls these settings.").translation("gui.done").push("category");
 		ModConfigSpec.BooleanValue value = builder.translation("gui.cancel").define("option", false);
 		ModConfigSpec spec = builder.build();
 
 		assertEquals("Cancel", getValueName(value));
-		assertEquals(List.of("Done"), getSectionTitles(spec, value));
-		assertEquals("Controls these settings.", NeoForgeConfigLocalization.getSections("test", spec, value.getPath()).get(0).description().getString());
+		assertEquals(List.of("Done"), getCategoryTitles(spec, value));
+		assertEquals("Controls these settings.", NeoForgeConfigLocalization.getCategoryPath("test", spec, value.getPath()).get(0).description().getString());
 	}
 
 	@Test
-	void topLevelOptionsDoNotHaveAnEmptySectionPrefix() {
+	void topLevelOptionsDoNotHaveAnEmptyCategoryPrefix() {
 		ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 		ModConfigSpec.BooleanValue value = builder.define("enabled", false);
 		ModConfigSpec spec = builder.build();
 
 		assertEquals("Enabled", getValueName(value));
-		assertTrue(NeoForgeConfigLocalization.getSections("test", spec, value.getPath()).isEmpty());
+		assertTrue(NeoForgeConfigLocalization.getCategoryPath("test", spec, value.getPath()).isEmpty());
 	}
 
-	private static List<String> getSectionTitles(ModConfigSpec spec, ModConfigSpec.ConfigValue<?> value) {
-		return NeoForgeConfigLocalization.getSections("test", spec, value.getPath()).stream()
-			.map(ConfigValueSections.Section::title)
+	private static List<String> getCategoryTitles(ModConfigSpec spec, ModConfigSpec.ConfigValue<?> value) {
+		return NeoForgeConfigLocalization.getCategoryPath("test", spec, value.getPath()).stream()
+			.map(ConfigValueCategoryPath.Category::title)
 			.map(title -> title.getString())
 			.toList();
 	}
@@ -141,7 +146,7 @@ class NeoForgeConfigLocalizationTest {
 	}
 
 	@Test
-	void repeatedCategoryNamesUseDistinctSectionTitlesInsteadOfFileNames() {
+	void repeatedCategoryNamesUseDistinctNestedCategoryTitlesInsteadOfFileNames() {
 		for (ModConfig.Type type : ModConfig.Type.values()) {
 			Component first = NeoForgeConfigLocalization.getCategoryName("test.first", type);
 			Component second = NeoForgeConfigLocalization.getCategoryName("test.second", type);
@@ -165,7 +170,7 @@ class NeoForgeConfigLocalizationTest {
 	}
 
 	@Test
-	void commonSectionNamesAreSkippedAndRepeatedValuesDoNotCountAsDifferentFiles() {
+	void commonNestedCategoryNamesAreSkippedAndRepeatedValuesDoNotCountAsDifferentFiles() {
 		assertEquals(List.of("Common · Animals", "Common · Items"), distinctNames(
 			categoryName("Common", "General", "Animals", "Animals"),
 			categoryName("Common", "General", "Items")
@@ -173,7 +178,7 @@ class NeoForgeConfigLocalizationTest {
 	}
 
 	@Test
-	void identicalOrMissingSectionsGetCompactNumbersInFileOrder() {
+	void identicalOrMissingNestedCategoriesGetCompactNumbersInFileOrder() {
 		assertEquals(List.of("Common (1)", "Common (2)", "Common (3)", "Common (4)"), distinctNames(
 			categoryName("Common", "General"),
 			categoryName("Common", "General"),
@@ -183,15 +188,15 @@ class NeoForgeConfigLocalizationTest {
 	}
 
 	@Test
-	void distinctModProvidedTitlesArePreservedAndDoNotCompeteForSectionNames() {
+	void distinctModProvidedTitlesArePreservedAndDoNotCompeteForNestedCategoryNames() {
 		assertEquals(List.of("Animal Settings", "Common · Animals", "Common · Items"), distinctNames(
 			categoryName("Animal Settings", "Animals"),
 			categoryName("Common", "Animals"),
 			categoryName("Common", "Items")
 		));
-		Component translatedSection = Component.translatable("gui.done");
+		Component translatedCategory = Component.translatable("gui.done");
 		List<Component> names = NeoForgeConfigLocalization.getDistinctCategoryNames(List.of(
-			new NeoForgeConfigLocalization.CategoryName(Component.literal("Client"), List.of(translatedSection)),
+			new NeoForgeConfigLocalization.CategoryName(Component.literal("Client"), List.of(translatedCategory)),
 			categoryName("Client", "Items")
 		));
 		assertEquals("Client · Done", names.get(0).getString());
@@ -212,19 +217,19 @@ class NeoForgeConfigLocalizationTest {
 	}
 
 	@Test
-	void broadSectionsArePreferredBeforeDistinctNestedSections() {
+	void broadCategoriesArePreferredBeforeDistinctNestedCategories() {
 		ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 		ModConfigSpec.BooleanValue cow = builder.define("general.animals.cow.enabled", false);
 		ModConfigSpec.BooleanValue items = builder.define("items.enabled", false);
 		ModConfigSpec spec = builder.build();
-		List<Component> sections = NeoForgeConfigLocalization.getSectionNames(List.of(
-			NeoForgeConfigLocalization.getSections("test", spec, cow.getPath()),
-			NeoForgeConfigLocalization.getSections("test", spec, items.getPath()),
-			NeoForgeConfigLocalization.getSections("test", spec, cow.getPath())
+		List<Component> categories = NeoForgeConfigLocalization.getNestedCategoryNames(List.of(
+			NeoForgeConfigLocalization.getCategoryPath("test", spec, cow.getPath()),
+			NeoForgeConfigLocalization.getCategoryPath("test", spec, items.getPath()),
+			NeoForgeConfigLocalization.getCategoryPath("test", spec, cow.getPath())
 		));
-		assertEquals(List.of("General", "Items", "Animals", "Cow"), sections.stream().map(Component::getString).toList());
+		assertEquals(List.of("General", "Items", "Animals", "Cow"), categories.stream().map(Component::getString).toList());
 		assertEquals(List.of("Common · Items", "Common (2)"), distinctNames(
-			new NeoForgeConfigLocalization.CategoryName(Component.literal("Common"), sections),
+			new NeoForgeConfigLocalization.CategoryName(Component.literal("Common"), categories),
 			categoryName("Common", "General")
 		));
 		assertEquals(List.of("Common · Animals", "Common · Blocks"), distinctNames(
@@ -233,8 +238,8 @@ class NeoForgeConfigLocalizationTest {
 		));
 	}
 
-	private static NeoForgeConfigLocalization.CategoryName categoryName(String title, String... sections) {
-		return new NeoForgeConfigLocalization.CategoryName(Component.literal(title), List.of(sections).stream()
+	private static NeoForgeConfigLocalization.CategoryName categoryName(String title, String... nestedCategories) {
+		return new NeoForgeConfigLocalization.CategoryName(Component.literal(title), List.of(nestedCategories).stream()
 			.<Component>map(Component::literal)
 			.toList());
 	}
