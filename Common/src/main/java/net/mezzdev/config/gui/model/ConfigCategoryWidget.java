@@ -7,7 +7,6 @@ import net.mezzdev.config.gui.info.ConfigServerInfo;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,10 +75,6 @@ public final class ConfigCategoryWidget {
 	@Nullable
 	public ConfigSectionHeader getSectionHeader(int entryIndex) {
 		return sectionHeaders.get(entryIndex);
-	}
-
-	public Collection<ConfigSectionHeader> getSectionHeaders() {
-		return sectionHeaders.values();
 	}
 
 	public Stream<ConfigSectionHeader> getAllSectionHeaders() {

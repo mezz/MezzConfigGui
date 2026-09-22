@@ -68,10 +68,6 @@ public class UserInput {
 		return inputType;
 	}
 
-	public int getModifiers() {
-		return modifiers;
-	}
-
 	public boolean isSimulate() {
 		return inputType == InputType.SIMULATE;
 	}
