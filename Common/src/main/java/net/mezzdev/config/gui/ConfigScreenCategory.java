@@ -2,6 +2,7 @@ package net.mezzdev.config.gui;
 
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.minecraft.network.chat.Component;
+import org.jspecify.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.Collection;
@@ -14,6 +15,14 @@ public interface ConfigScreenCategory {
 	 * Get the broad group that controls this category's position in a merged config screen.
 	 */
 	ConfigScreenCategoryGroup getGroup();
+
+	/**
+	 * Get the shared navigation root for this category, when it can be grouped with compatible categories.
+	 *
+	 * @return the navigation group, or {@code null} when this category is not grouped
+	 */
+	@Nullable
+	ConfigScreenCategoryNavigationGroup getNavigationGroup();
 
 	/**
 	 * The name of the category.
