@@ -14,6 +14,7 @@ import net.mezzdev.config.api.value.change.IConfigValueBatchChangeListener;
 import net.mezzdev.config.api.value.change.IConfigValueChangeListener;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
@@ -265,6 +266,7 @@ class RemoteConfigRequestHandlerTest {
 			});
 			List<IAppliedConfigValueChange<?>> changes = new ArrayList<>();
 			for (PendingSet<?> pendingSet : pendingSets) {
+				@Nullable
 				IAppliedConfigValueChange<?> change = pendingSet.apply();
 				if (change != null) {
 					changes.add(change);
@@ -397,6 +399,7 @@ class RemoteConfigRequestHandlerTest {
 			return apply(value) != null;
 		}
 
+		@Nullable
 		private IAppliedConfigValueChange<String> apply(String value) {
 			String oldValue = pendingValue;
 			if (Objects.equals(oldValue, value)) {
@@ -436,10 +439,11 @@ class RemoteConfigRequestHandlerTest {
 	}
 
 	private record PendingSet<T>(IConfigValue<T> value, T proposedValue) {
+		@Nullable
 		private IAppliedConfigValueChange<T> apply() {
 			@SuppressWarnings("unchecked")
 			TestConfigValue testValue = (TestConfigValue) value;
-			@SuppressWarnings("unchecked")
+			@SuppressWarnings("unchecked") @Nullable
 			IAppliedConfigValueChange<T> change = (IAppliedConfigValueChange<T>) testValue.apply((String) proposedValue);
 			return change;
 		}
