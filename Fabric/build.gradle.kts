@@ -134,7 +134,7 @@ dependencies {
     compileOnly(commonApiSourceSet.output)
 }
 
-val configGuiAccessWidener = file("src/main/resources/mezz_config.accesswidener")
+val configGuiAccessWidener = commonProject.file("src/main/resources/mezz_config.accesswidener")
 
 configure<LoomGradleExtensionAPI> {
     mods {
