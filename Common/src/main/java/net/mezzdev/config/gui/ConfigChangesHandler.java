@@ -81,6 +81,7 @@ interface ConfigChangesHandler {
 		List<ConfigChangeBatch> batches = new ArrayList<>();
 		IdentityHashMap<IConfigSchema, ConfigChangeBatch> batchesBySchema = new IdentityHashMap<>();
 		for (ConfigValueChange<?> change : changes) {
+			@Nullable
 			IConfigSchema schema = schemaResolver.apply(change.configValue())
 				.orElse(null);
 			if (schema == null) {
@@ -226,7 +227,7 @@ interface ConfigChangesHandler {
 	}
 
 	record ConfigChangeBatch(
-		IConfigSchema schema,
+		@Nullable IConfigSchema schema,
 		List<ConfigValueChange<?>> changes
 	) {
 		private CompletableFuture<ConfigChangesResult> apply(RemoteChangesHandler remoteChangesHandler) {
