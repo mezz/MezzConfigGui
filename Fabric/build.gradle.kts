@@ -6,6 +6,7 @@ plugins {
     `maven-publish`
     id("net.fabricmc.fabric-loom") apply false
     id("me.modmuss50.mod-publish-plugin")
+    id("net.mezzdev.config-language-resources")
 }
 
 pluginManager.apply("net.fabricmc.fabric-loom")
@@ -105,8 +106,9 @@ val serverSmokeTestModSourceSet = sourceSets.create("serverSmokeTestMod") {
 val serverSmokeTestRunDir = layout.buildDirectory.dir("run/server-smoke")
 val serverSmokeTestSuccessFile = serverSmokeTestRunDir.map { it.file("smoke-test-passed") }
 
-extra["configLanguageDependencyProjects"] = dependencyProjects
-apply(from = rootProject.file("buildtools/ConfigLanguageResources.gradle.kts"))
+configLanguageResources {
+    from(*dependencyProjects.toTypedArray())
+}
 
 val mergedConfigLanguageResources = tasks.named("mergeConfigLanguageResources")
 
