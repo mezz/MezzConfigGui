@@ -286,14 +286,6 @@ public final class ConfigScreenLayout {
 		return getScrollMarkerArea(navScrollBarArea, getNavScrollMarkerHeight(), navCurrentScrollY, maxScroll);
 	}
 
-	public int getTotalContentHeight() {
-		return totalContentHeight;
-	}
-
-	public int getTotalNavHeight() {
-		return totalNavHeight;
-	}
-
 	public double getCurrentScrollY() {
 		return currentScrollY;
 	}

@@ -6,7 +6,6 @@ import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueIcon;
 import net.mezzdev.config.gui.api.IConfigValueIconProvider;
 import net.mezzdev.config.gui.textures.ConfigCheckbox;
-import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
 
@@ -18,7 +17,6 @@ import java.util.Optional;
 public final class ConfigValueIcon {
 	public static final int ICON_SIZE = 18;
 	static final int TEXT_GAP = 3;
-	private static final int BUTTON_ICON_SIZE = 16;
 
 	private ConfigValueIcon() {
 
@@ -42,15 +40,6 @@ public final class ConfigValueIcon {
 	public static <T> void draw(GuiGraphics guiGraphics, IConfigValueSerializer<T> serializer, T value, int x, int y) {
 		getIcon(serializer, value)
 			.ifPresent(icon -> icon.draw(guiGraphics, new Rect2i(x, y, ICON_SIZE, ICON_SIZE)));
-	}
-
-	public static <T> void drawInButton(GuiGraphics guiGraphics, IConfigScreenValue<T> configValue, T value, ImmutableRect2i buttonArea) {
-		getIcon(configValue.getSerializer(), value)
-			.ifPresent(icon -> {
-				int x = buttonArea.getX() + Math.round((buttonArea.getWidth() - BUTTON_ICON_SIZE) / 2.0f);
-				int y = buttonArea.getY() + Math.round((buttonArea.getHeight() - BUTTON_ICON_SIZE) / 2.0f);
-				icon.draw(guiGraphics, new Rect2i(x, y, BUTTON_ICON_SIZE, BUTTON_ICON_SIZE));
-			});
 	}
 
 	private static <T> Optional<IConfigValueIcon> getIcon(IConfigValueSerializer<T> serializer, T value) {

@@ -1,7 +1,6 @@
 package net.mezzdev.config.gui.entries;
 
 import net.mezzdev.config.api.value.serializer.ConfigValueRange;
-import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;
@@ -38,7 +37,6 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 	private static final int NORMAL_STEP = 1;
 	private static final int SHIFT_STEP = 10;
 
-	private final IConfigValueSerializer<Integer> serializer;
 	private final int min;
 	private final int max;
 	private ImmutableRect2i valueBoxArea = ImmutableRect2i.EMPTY;
@@ -50,12 +48,10 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 
 	IntegerConfigEntry(
 		IConfigScreenValue<Integer> value,
-		IConfigValueSerializer<Integer> serializer,
 		ConfigValueRange<Integer> range,
 		ConfigTextures textures
 	) {
 		super(value, textures);
-		this.serializer = serializer;
 		this.min = range.min();
 		this.max = range.max();
 	}

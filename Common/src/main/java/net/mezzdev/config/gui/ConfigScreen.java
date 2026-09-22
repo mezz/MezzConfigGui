@@ -141,8 +141,7 @@ public class ConfigScreen extends MezzConfigScreen {
 				clientSchema,
 				entryWidgetsByValueKey,
 				allEntryWidgets,
-				entryWidgetFactory,
-				controller
+				entryWidgetFactory
 			);
 			ConfigCategoryWidget widget = new ConfigCategoryWidget(
 				category,
@@ -189,12 +188,11 @@ public class ConfigScreen extends MezzConfigScreen {
 		ConfigScreenSchema schema,
 		Map<Object, ConfigEntryWidget<?>> entryWidgetsByValueKey,
 		List<ConfigEntryWidget<?>> allEntryWidgets,
-		ConfigEntryWidgetFactory entryWidgetFactory,
-		ConfigScreenController controller
+		ConfigEntryWidgetFactory entryWidgetFactory
 	) {
 		List<ConfigEntryWidget<?>> entryWidgets = new ArrayList<>();
 		for (IConfigScreenValue<?> configValue : category.getConfigValues()) {
-			entryWidgets.add(getOrCreateEntryWidget(schema, entryWidgetsByValueKey, allEntryWidgets, entryWidgetFactory, controller, configValue));
+			entryWidgets.add(getOrCreateEntryWidget(schema, entryWidgetsByValueKey, allEntryWidgets, entryWidgetFactory, configValue));
 		}
 		return entryWidgets;
 	}
@@ -208,7 +206,6 @@ public class ConfigScreen extends MezzConfigScreen {
 		Map<Object, ConfigEntryWidget<?>> entryWidgetsByValueKey,
 		List<ConfigEntryWidget<?>> allEntryWidgets,
 		ConfigEntryWidgetFactory entryWidgetFactory,
-		ConfigScreenController controller,
 		IConfigScreenValue<?> configValue
 	) {
 		Optional<IConfigSchema> backingSchema = schema.findBackingSchema(configValue);
