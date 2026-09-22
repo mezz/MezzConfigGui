@@ -209,7 +209,7 @@ public class ConfigScreen extends MezzConfigScreen {
 		IConfigScreenValue<?> configValue
 	) {
 		Optional<IConfigSchema> backingSchema = schema.findBackingSchema(configValue);
-		configValue = useSupportedApplyMode(configValue, backingSchema);
+		configValue = useSupportedApplyMode(configValue, backingSchema.orElse(null));
 		Object identityKey = configValue.getIdentityKey();
 		ConfigEntryWidget<?> entryWidget = entryWidgetsByValueKey.get(identityKey);
 		if (entryWidget == null) {
@@ -226,12 +226,9 @@ public class ConfigScreen extends MezzConfigScreen {
 
 	private static IConfigScreenValue<?> useSupportedApplyMode(
 		IConfigScreenValue<?> configValue,
-		Optional<IConfigSchema> backingSchema
+		@Nullable IConfigSchema backingSchema
 	) {
-		if (backingSchema
-			.filter(ConfigScreen::requiresOnApply)
-			.isPresent()
-		) {
+		if (backingSchema != null && requiresOnApply(backingSchema)) {
 			return withApplyMode(configValue, ConfigValueApplyMode.ON_APPLY);
 		}
 		return configValue;
@@ -687,7 +684,10 @@ public class ConfigScreen extends MezzConfigScreen {
 			if (modTabResult.playSound()) {
 				Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
 			}
-			modTabResult.entry().ifPresent(this::requestOpenConfigScreen);
+			ConfigScreenListEntry entry = modTabResult.entry();
+			if (entry != null) {
+				requestOpenConfigScreen(entry);
+			}
 			return true;
 		}
 		if (button == 0 && layout.isResizing()) {

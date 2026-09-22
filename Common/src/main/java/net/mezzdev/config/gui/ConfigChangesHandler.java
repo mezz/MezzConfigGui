@@ -9,6 +9,7 @@ import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.model.AppliedConfigValueChange;
 import net.mezzdev.config.gui.model.ConfigValueChange;
 import net.mezzdev.config.gui.remote.RemoteConfigEditor;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -114,11 +115,11 @@ interface ConfigChangesHandler {
 				return new ConfigChangesResult(
 					appliedChanges,
 					restartRequirement,
-					Optional.of(new ConfigChangeFailure(change, exception))
+					new ConfigChangeFailure(change, exception)
 				);
 			}
 		}
-		return new ConfigChangesResult(appliedChanges, restartRequirement, Optional.empty());
+		return new ConfigChangesResult(appliedChanges, restartRequirement, null);
 	}
 
 	private static CompletableFuture<ConfigChangesResult> applySchemaChanges(
@@ -258,20 +259,19 @@ interface ConfigChangesHandler {
 record ConfigChangesResult(
 	List<AppliedConfigValueChange<?>> appliedChanges,
 	ConfigValueRestartRequirement restartRequirement,
-	Optional<ConfigChangeFailure> failure
+	@Nullable ConfigChangeFailure failure
 ) {
 	ConfigChangesResult {
 		appliedChanges = List.copyOf(appliedChanges);
 		Objects.requireNonNull(restartRequirement, "restartRequirement");
-		Objects.requireNonNull(failure, "failure");
 	}
 
 	boolean succeeded() {
-		return failure.isEmpty();
+		return failure == null;
 	}
 
 	static ConfigChangesResult success() {
-		return new ConfigChangesResult(List.of(), ConfigValueRestartRequirement.NONE, Optional.empty());
+		return new ConfigChangesResult(List.of(), ConfigValueRestartRequirement.NONE, null);
 	}
 
 	static ConfigChangesResult success(List<AppliedConfigValueChange<?>> appliedChanges) {
@@ -282,22 +282,23 @@ record ConfigChangesResult(
 				change.configValue().getRestartRequirement()
 			);
 		}
-		return new ConfigChangesResult(appliedChanges, restartRequirement, Optional.empty());
+		return new ConfigChangesResult(appliedChanges, restartRequirement, null);
 	}
 
 	static ConfigChangesResult failure(ConfigValueChange<?> change, RuntimeException exception) {
 		return new ConfigChangesResult(
 			List.of(),
 			ConfigValueRestartRequirement.NONE,
-			Optional.of(new ConfigChangeFailure(change, exception))
+			new ConfigChangeFailure(change, exception)
 		);
 	}
 
 	ConfigChangesResult append(ConfigChangesResult other) {
 		List<AppliedConfigValueChange<?>> combinedChanges = new ArrayList<>(appliedChanges);
 		combinedChanges.addAll(other.appliedChanges);
-		Optional<ConfigChangeFailure> combinedFailure = failure;
-		if (other.failure.isPresent()) {
+		@Nullable
+		ConfigChangeFailure combinedFailure = failure;
+		if (other.failure != null) {
 			combinedFailure = other.failure;
 		}
 		return new ConfigChangesResult(

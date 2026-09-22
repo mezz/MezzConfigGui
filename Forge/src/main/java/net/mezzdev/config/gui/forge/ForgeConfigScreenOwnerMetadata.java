@@ -4,10 +4,10 @@ import net.mezzdev.config.gui.screenlist.ConfigScreenOwnerMetadata;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.forgespi.language.IModInfo;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
 
 final class ForgeConfigScreenOwnerMetadata {
 	private ForgeConfigScreenOwnerMetadata() {
@@ -26,11 +26,13 @@ final class ForgeConfigScreenOwnerMetadata {
 		return new ConfigScreenOwnerMetadata(getIconPath(modInfo));
 	}
 
-	private static Optional<Path> getIconPath(IModInfo modInfo) {
+	@Nullable
+	private static Path getIconPath(IModInfo modInfo) {
 		return modInfo.getLogoFile()
 			.map(ForgeConfigScreenOwnerMetadata::toPathParts)
 			.map(pathParts -> modInfo.getOwningFile().getFile().findResource(pathParts))
-			.filter(Files::exists);
+			.filter(Files::exists)
+			.orElse(null);
 	}
 
 	private static String[] toPathParts(String path) {

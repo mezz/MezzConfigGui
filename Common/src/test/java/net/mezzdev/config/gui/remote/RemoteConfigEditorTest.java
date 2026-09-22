@@ -24,6 +24,7 @@ import net.mezzdev.config.gui.info.ConfigServerInfo;
 import net.mezzdev.config.gui.info.ServerConfigAccess;
 import net.mezzdev.config.gui.model.ConfigCategoryWidget;
 import net.minecraft.network.chat.Component;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -107,7 +108,7 @@ class RemoteConfigEditorTest {
 	void localServerInfoTracksWorldAvailabilityAndClientConfigsHaveNoServerInfo() {
 		TestConfigValue value = new TestConfigValue("effective");
 		TestConfigSchema schema = new TestConfigSchema(value);
-		schema.path = Optional.of(Path.of("serverconfig", "test.ini"));
+		schema.path = Path.of("serverconfig", "test.ini");
 		ConfigScreenSchema screenSchema = ConfigScreenSchema.from(schema);
 		var descriptions = new ConfigServerInfo(screenSchema).forValues(Stream.of(IConfigScreenValue.configValue(value)));
 		assertEquals(List.of(ServerConfigAccess.LOCAL.getDescription()), descriptions.get());
@@ -336,7 +337,8 @@ class RemoteConfigEditorTest {
 		private final TestConfigCategory category;
 		private int batchCount;
 		private boolean active = true;
-		private Optional<Path> path = Optional.empty();
+		@Nullable
+		private Path path;
 		private ConfigSchemaType type = ConfigSchemaType.SERVER;
 
 		private TestConfigSchema(TestConfigValue value) {
@@ -365,7 +367,7 @@ class RemoteConfigEditorTest {
 
 		@Override
 		public Optional<Path> getPath() {
-			return path;
+			return Optional.ofNullable(path);
 		}
 
 		@Override

@@ -18,6 +18,7 @@ import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.model.AppliedConfigValueChange;
 import net.mezzdev.config.gui.model.ConfigValueChange;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
@@ -54,7 +55,7 @@ class ConfigChangesHandlerTest {
 		AppliedConfigValueChange<?> appliedChange = result.appliedChanges().getFirst();
 		assertEquals("first", appliedChange.oldValue());
 		assertEquals("first changed", appliedChange.newValue());
-		assertSame(failing, result.failure().orElseThrow().change().configValue());
+		assertSame(failing, Objects.requireNonNull(result.failure()).change().configValue());
 	}
 
 	@Test
@@ -63,7 +64,7 @@ class ConfigChangesHandlerTest {
 		TestMezzConfigValue second = new TestMezzConfigValue("second");
 		IConfigScreenValue<String> firstScreenValue = new IdentityOnlyScreenValue(IConfigScreenValue.configValue(first));
 		IConfigScreenValue<String> secondScreenValue = IConfigScreenValue.configValue(second);
-		TestConfigSchema schema = new TestConfigSchema(ConfigSchemaType.CLIENT, Optional.of(Path.of("client.ini")), first, second);
+		TestConfigSchema schema = new TestConfigSchema(ConfigSchemaType.CLIENT, Path.of("client.ini"), first, second);
 
 		CompletableFuture<ConfigChangesResult> resultFuture = ConfigChangesHandler.applyBySchema(
 			List.of(
@@ -89,7 +90,7 @@ class ConfigChangesHandlerTest {
 		IConfigScreenValue<String> screenValue = IConfigScreenValue.configValue(value);
 		TestConfigSchema schema = new TestConfigSchema(
 			ConfigSchemaType.SERVER,
-			Optional.of(Path.of("serverconfig/server.ini")),
+			Path.of("serverconfig/server.ini"),
 			value
 		);
 
@@ -110,7 +111,7 @@ class ConfigChangesHandlerTest {
 		IConfigScreenValue<String> screenValue = IConfigScreenValue.configValue(restartRequiredValue);
 		TestConfigSchema schema = new TestConfigSchema(
 			ConfigSchemaType.CLIENT,
-			Optional.of(Path.of("client.ini")),
+			Path.of("client.ini"),
 			restartRequiredValue
 		);
 
@@ -140,7 +141,7 @@ class ConfigChangesHandlerTest {
 			ConfigValueRestartRequirement.NONE,
 			false
 		);
-		TestConfigSchema schema = new TestConfigSchema(ConfigSchemaType.SERVER, Optional.empty(), remote);
+		TestConfigSchema schema = new TestConfigSchema(ConfigSchemaType.SERVER, null, remote);
 		List<Runnable> continuationTasks = new ArrayList<>();
 		CompletableFuture<Void> remoteRequest = new CompletableFuture<>();
 
@@ -236,13 +237,14 @@ class ConfigChangesHandlerTest {
 
 	private static final class TestConfigSchema implements IConfigSchema {
 		private final ConfigSchemaType type;
-		private final Optional<Path> path;
+		@Nullable
+		private final Path path;
 		private final List<IConfigValue<?>> configValues;
 		private int batchCount;
 
 		private TestConfigSchema(
 			ConfigSchemaType type,
-			Optional<Path> path,
+			@Nullable Path path,
 			IConfigValue<?>... configValues
 		) {
 			this.type = type;
@@ -272,7 +274,7 @@ class ConfigChangesHandlerTest {
 
 		@Override
 		public Optional<Path> getPath() {
-			return path;
+			return Optional.ofNullable(path);
 		}
 
 		@Override

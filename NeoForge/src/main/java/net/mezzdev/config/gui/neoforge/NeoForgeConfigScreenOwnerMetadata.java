@@ -5,6 +5,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforgespi.language.IConfigurable;
 import net.neoforged.neoforgespi.language.IModInfo;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,21 +28,23 @@ final class NeoForgeConfigScreenOwnerMetadata {
 		return new ConfigScreenOwnerMetadata(getIconPath(modInfo));
 	}
 
-	private static Optional<Path> getIconPath(IModInfo modInfo) {
-		return getPreferredIconFile(modInfo.getConfig(), modInfo.getOwningFile().getConfig(), modInfo.getLogoFile())
+	@Nullable
+	private static Path getIconPath(IModInfo modInfo) {
+		return getPreferredIconFile(modInfo.getConfig(), modInfo.getOwningFile().getConfig(), modInfo.getLogoFile().orElse(null))
 			.map(NeoForgeConfigScreenOwnerMetadata::toPathParts)
 			.map(pathParts -> modInfo.getOwningFile().getFile().findResource(pathParts))
-			.filter(Files::exists);
+			.filter(Files::exists)
+			.orElse(null);
 	}
 
 	static Optional<String> getPreferredIconFile(
 		IConfigurable modConfig,
 		IConfigurable fileConfig,
-		Optional<String> legacyLogoFile
+		@Nullable String legacyLogoFile
 	) {
 		return modConfig.<String>getConfigElement("iconFile")
 			.or(() -> fileConfig.getConfigElement("iconFile"))
-			.or(() -> legacyLogoFile)
+			.or(() -> Optional.ofNullable(legacyLogoFile))
 			.or(() -> fileConfig.getConfigElement("logoFile"))
 			.or(() -> modConfig.getConfigElement("bannerFile"))
 			.or(() -> fileConfig.getConfigElement("bannerFile"));

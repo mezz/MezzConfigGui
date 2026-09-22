@@ -7,8 +7,8 @@ import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.IntStream;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -48,7 +48,7 @@ class ConfigScreenModTabsTest {
 		tabs.mouseScrolled(80, 25, -2);
 		assertEquals(List.of("mod2", "mod3", "mod4", "mod5"), tabs.getVisibleModIds());
 		assertTrue(tabs.mouseClicked(84, 130, 0));
-		ConfigScreenListEntry clicked = tabs.mouseReleased(84, 130, 0).entry().orElseThrow();
+		ConfigScreenListEntry clicked = Objects.requireNonNull(tabs.mouseReleased(84, 130, 0).entry());
 		assertEquals("mod4", clicked.modId());
 
 		ConfigScreenModTabs next = new ConfigScreenModTabs(clicked.modId(), entries);
@@ -56,7 +56,7 @@ class ConfigScreenModTabsTest {
 		next.updateLayout(SCREEN_AREA);
 		assertEquals(tabs.getVisibleModIds(), next.getVisibleModIds());
 		assertTrue(next.mouseClicked(84, 60, 0));
-		assertEquals("mod2", next.mouseReleased(84, 60, 0).entry().orElseThrow().modId());
+		assertEquals("mod2", Objects.requireNonNull(next.mouseReleased(84, 60, 0).entry()).modId());
 		ConfigScreenModTabs back = new ConfigScreenModTabs("mod2", entries);
 		back.copyScrollPositionFrom(next);
 		back.updateLayout(SCREEN_AREA);
@@ -166,7 +166,7 @@ class ConfigScreenModTabsTest {
 
 		assertTrue(result.handled());
 		assertTrue(result.playSound());
-		assertEquals("mod0", result.entry().orElseThrow().modId());
+		assertEquals("mod0", Objects.requireNonNull(result.entry()).modId());
 	}
 
 	@Test
@@ -179,7 +179,7 @@ class ConfigScreenModTabsTest {
 		assertTrue(tabs.mouseReleased(68, 57, 0).handled());
 		assertFalse(tabs.mouseClicked(68, 89, 0));
 		assertTrue(tabs.mouseClicked(72, 89, 0));
-		assertEquals("mod2", tabs.mouseReleased(72, 89, 0).entry().orElseThrow().modId());
+		assertEquals("mod2", Objects.requireNonNull(tabs.mouseReleased(72, 89, 0).entry()).modId());
 	}
 
 	@Test
@@ -227,7 +227,7 @@ class ConfigScreenModTabsTest {
 			parent -> {
 				throw new AssertionError("Factory must not be called by tab layout tests");
 			},
-			new ConfigScreenOwnerIcon(modId, title, Optional.empty())
+			new ConfigScreenOwnerIcon(modId, title, null)
 		);
 	}
 }
