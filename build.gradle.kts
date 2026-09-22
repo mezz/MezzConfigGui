@@ -32,7 +32,7 @@ plugins {
     id("com.dorongold.task-tree") version("4.0.2")
 
     // https://github.com/neoforged/JarCompatibilityChecker
-    id("net.neoforged.jarcompatibilitychecker") version("0.1.19") apply(false)
+    id("net.neoforged.jarcompatibilitychecker") version("0.1.22") apply(false)
 
 }
 apply {
