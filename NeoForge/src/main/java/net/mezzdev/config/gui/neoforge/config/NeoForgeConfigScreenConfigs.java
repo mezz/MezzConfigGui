@@ -1,7 +1,11 @@
 package net.mezzdev.config.gui.neoforge.config;
 
 import com.electronwill.nightconfig.core.UnmodifiableConfig;
+import net.mezzdev.config.gui.ConfigScreenCategoryGroup;
+import net.mezzdev.config.gui.ConfigScreenCategoryNavigationGroup;
 import net.mezzdev.config.gui.ConfigScreenConfig;
+import net.mezzdev.config.gui.ConfigValueCategoryPath;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.minecraft.network.chat.Component;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
@@ -76,8 +80,8 @@ public final class NeoForgeConfigScreenConfigs {
 			List<NeoForgeConfigLocalization.CategoryName> categoryNames = typeCategories.stream()
 				.map(category -> new NeoForgeConfigLocalization.CategoryName(
 					category.localizedName(),
-					NeoForgeConfigLocalization.getSectionNames(category.configValues().stream()
-						.map(NeoForgeConfigValue::getSections)
+					NeoForgeConfigLocalization.getNestedCategoryNames(category.configValues().stream()
+						.map(ConfigValueCategoryPath::getCategories)
 						.toList())
 				))
 				.toList();
@@ -86,7 +90,7 @@ public final class NeoForgeConfigScreenConfigs {
 				NeoForgeConfigCategory category = typeCategories.get(index);
 				categories.add(new NeoForgeConfigCategory(
 					category.name(), category.localizationKey(), names.get(index), category.localizedDescription(),
-					category.modConfig(), category.modConfigSpec(), category.configValues()
+					category.group(), category.navigationGroup(), category.configValues()
 				));
 			}
 		}
@@ -101,25 +105,41 @@ public final class NeoForgeConfigScreenConfigs {
 			return Optional.empty();
 		}
 
-		List<NeoForgeConfigValue<?>> values = createValues(modId, modConfig, modConfigSpec);
+		String localizationKey = NeoForgeConfigLocalization.getCategoryLocalizationKey(modId, modConfig);
+		ConfigScreenCategoryNavigationGroup navigationGroup = NeoForgeConfigLocalization.getNavigationGroup(
+			modId,
+			modConfig.getType(),
+			localizationKey
+		);
+		List<IConfigScreenValue<?>> values = createValues(modId, modConfig, modConfigSpec);
 		if (values.isEmpty()) {
 			return Optional.empty();
 		}
 
-		String localizationKey = NeoForgeConfigLocalization.getCategoryLocalizationKey(modId, modConfig);
 		return Optional.of(new NeoForgeConfigCategory(
 			modConfig.getFileName(),
 			localizationKey,
 			NeoForgeConfigLocalization.getCategoryName(localizationKey, modConfig.getType()),
 			NeoForgeConfigLocalization.getCategoryDescription(localizationKey, modConfig),
-			modConfig,
-			modConfigSpec,
+			getScreenCategoryGroup(modConfig.getType()),
+			navigationGroup,
 			values
 		));
 	}
 
-	private static List<NeoForgeConfigValue<?>> createValues(String modId, ModConfig modConfig, ModConfigSpec modConfigSpec) {
-		List<NeoForgeConfigValue<?>> values = new ArrayList<>();
+	private static ConfigScreenCategoryGroup getScreenCategoryGroup(ModConfig.Type type) {
+		if (type == ModConfig.Type.SERVER) {
+			return ConfigScreenCategoryGroup.LOADER_NATIVE_SERVER;
+		}
+		return ConfigScreenCategoryGroup.LOADER_NATIVE;
+	}
+
+	private static List<IConfigScreenValue<?>> createValues(
+		String modId,
+		ModConfig modConfig,
+		ModConfigSpec modConfigSpec
+	) {
+		List<IConfigScreenValue<?>> values = new ArrayList<>();
 		visitValues(modConfigSpec, (path, configValue, valueSpec) -> {
 			Optional<NeoForgeConfigValue<?>> value = NeoForgeConfigValueFactory.create(
 				modId,
@@ -129,7 +149,11 @@ public final class NeoForgeConfigScreenConfigs {
 				valueSpec
 			);
 			if (value.isPresent()) {
-				values.add(value.get());
+				values.add(ConfigValueCategoryPath.withCategoryPath(
+					value.get(),
+					modConfig.getFileName(),
+					NeoForgeConfigLocalization.getCategoryPath(modId, modConfigSpec, path)
+				));
 			} else {
 				LOGGER.debug(
 					"Skipping unsupported NeoForge config value: {} {} ({})",

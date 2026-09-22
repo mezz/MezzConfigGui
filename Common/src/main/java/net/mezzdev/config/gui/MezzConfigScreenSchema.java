@@ -7,6 +7,7 @@ import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.minecraft.network.chat.Component;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -141,6 +142,12 @@ final class MezzConfigScreenSchema implements ConfigScreenSchema {
 		@Override
 		public ConfigScreenCategoryGroup getGroup() {
 			return ConfigScreenCategoryGroup.MOD_OWNED;
+		}
+
+		@Override
+		@Nullable
+		public ConfigScreenCategoryNavigationGroup getNavigationGroup() {
+			return null;
 		}
 
 		@Override
