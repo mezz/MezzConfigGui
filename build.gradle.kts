@@ -36,9 +36,6 @@ plugins {
     id("net.neoforged.jarcompatibilitychecker") version("0.1.22") apply(false)
 
 }
-apply {
-	from("buildtools/ColoredOutput.gradle")
-}
 repositories {
     val deployDir = findProperty("DEPLOY_DIR")
     if (deployDir != null) {
