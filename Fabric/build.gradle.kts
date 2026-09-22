@@ -145,7 +145,7 @@ dependencies {
     add(modRuntimeConfiguration, mezzConfigFabricDependency)
     add("modLocalRuntime", "com.terraformersmc:modmenu:$modMenuVersionFabric") { isTransitive = false }
     dependencyProjects.forEach {
-        implementation(it)
+        implementation(project(path = it.path, configuration = "namedElements"))
     }
     compileOnly(commonApiSourceSet.output)
 }

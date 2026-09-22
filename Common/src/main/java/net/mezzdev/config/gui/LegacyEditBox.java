@@ -11,6 +11,7 @@ public final class LegacyEditBox extends net.minecraft.client.gui.components.Edi
 	public void setHint(Component hint) { this.hint = hint; }
 	public int getX() { return x; }
 	public void setY(int y) { this.y = y; }
+	public void setHeight(int height) { this.height = height; }
 	@Override
 	public void setFocused(boolean focused) { super.setFocused(focused); }
 	@Override

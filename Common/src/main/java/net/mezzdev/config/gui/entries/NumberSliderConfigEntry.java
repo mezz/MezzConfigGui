@@ -29,9 +29,9 @@ import java.util.Optional;
  * Config entry widget for bounded number values displayed with a Minecraft-style slider.
  */
 final class NumberSliderConfigEntry<T> extends ConfigEntryWidget<T> {
-	private static final ResourceLocation SLIDER_SPRITE = ResourceLocation.withDefaultNamespace("widget/slider");
-	private static final ResourceLocation SLIDER_HANDLE_SPRITE = ResourceLocation.withDefaultNamespace("widget/slider_handle");
-	private static final ResourceLocation SLIDER_HANDLE_HIGHLIGHTED_SPRITE = ResourceLocation.withDefaultNamespace("widget/slider_handle_highlighted");
+	private static final ResourceLocation SLIDER_SPRITE = new ResourceLocation("minecraft", "widget/slider");
+	private static final ResourceLocation SLIDER_HANDLE_SPRITE = new ResourceLocation("minecraft", "widget/slider_handle");
+	private static final ResourceLocation SLIDER_HANDLE_HIGHLIGHTED_SPRITE = new ResourceLocation("minecraft", "widget/slider_handle_highlighted");
 	private static final int SLIDER_HEIGHT = 20;
 	private static final int HANDLE_WIDTH = 8;
 
