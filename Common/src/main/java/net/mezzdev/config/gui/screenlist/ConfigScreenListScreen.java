@@ -4,6 +4,7 @@ import net.mezzdev.config.gui.ConfigInputUtil;
 
 import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.ConfigScreenResizer;
+import net.mezzdev.config.gui.LegacyEditBox;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.entries.ConfigEntryWidget;
 import net.mezzdev.config.gui.input.InputType;
@@ -16,7 +17,6 @@ import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
@@ -50,7 +50,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 	private static final double SCROLL_LERP = 0.35;
 
 	private final List<ConfigScreenListEntry> entries;
-	private final EditBox searchBox;
+	private final LegacyEditBox searchBox;
 	private final ConfigTextures textures;
 	private final ConfigScalableDrawable background;
 	private final ConfigScalableDrawable scrollbarBackground;
@@ -88,7 +88,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 		this.scrollbarMarker = textures.getScrollbarMarker();
 
 		Font font = Minecraft.getInstance().font;
-		this.searchBox = new EditBox(font, 0, 0, 0, SEARCH_HEIGHT, SEARCH);
+		this.searchBox = new LegacyEditBox(font, 0, 0, 0, SEARCH_HEIGHT, SEARCH);
 		this.searchBox.setMaxLength(64);
 		this.searchBox.setBordered(false);
 		this.searchBox.setHint(SEARCH);
@@ -163,6 +163,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 		searchBox.setX(searchArea.getX() + SEARCH_TEXT_LEFT_PADDING);
 		searchBox.setY(searchArea.getY() + (searchArea.getHeight() - SEARCH_TEXT_HEIGHT) / 2);
 		searchBox.setWidth(searchArea.getWidth() - SEARCH_TEXT_LEFT_PADDING - SEARCH_TEXT_RIGHT_PADDING);
+		searchBox.setHeight(SEARCH_HEIGHT);
 		clampScroll();
 	}
 

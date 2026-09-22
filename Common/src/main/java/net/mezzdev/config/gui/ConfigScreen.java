@@ -27,7 +27,6 @@ import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -72,7 +71,7 @@ public class ConfigScreen extends MezzConfigScreen {
 	}
 
 	private final ConfigInputRouter inputHandler;
-	private final EditBox searchBox;
+	private final LegacyEditBox searchBox;
 	private final ConfigScreenLayout layout = new ConfigScreenLayout();
 	private final ConfigScreenModel model;
 	private final ConfigScreenController controller;
@@ -102,7 +101,7 @@ public class ConfigScreen extends MezzConfigScreen {
 		ConfigTextures textures = ConfigTextures.get();
 
 		Font font = Minecraft.getInstance().font;
-		this.searchBox = new EditBox(font, 0, 0, 0, ConfigScreenLayout.SEARCH_HEIGHT, Component.translatable("mezz_config.config.screen.search"));
+		this.searchBox = new LegacyEditBox(font, 0, 0, 0, ConfigScreenLayout.SEARCH_HEIGHT, Component.translatable("mezz_config.config.screen.search"));
 		this.searchBox.setMaxLength(64);
 		this.searchBox.setBordered(false);
 		this.searchBox.setHint(Component.translatable("mezz_config.config.screen.search"));

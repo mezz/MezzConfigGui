@@ -67,7 +67,7 @@ java {
     withSourcesJar()
 }
 dependencies {
-    compileOnly(common)
+    compileOnly(project(path = common.path, configuration = "namedElements"))
     compileOnly(commonSources["api"].output)
     compileOnly(mezzConfigApiDependency)
     compileOnly("org.jetbrains:annotations:${project.extra["jetbrainsAnnotationsVersion"]}")

@@ -3,7 +3,6 @@ package net.mezzdev.config.gui;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.config.ConfigGuiOptionsTestUtil;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
-import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
@@ -15,7 +14,7 @@ class ConfigScreenNavigationResizeTest {
 	@Test
 	void dividerDragRelayoutsBothColumnsWithoutMovingTheWindowOrJumpingOnClick() {
 		ConfigScreenLayout layout = new ConfigScreenLayout();
-		EditBox searchBox = createSearchBox();
+		LegacyEditBox searchBox = createSearchBox();
 		layout.updateScreenBounds(1000, 800, searchBox);
 		ImmutableRect2i area = layout.getArea();
 		ImmutableRect2i nav = layout.getNavArea();
@@ -41,7 +40,7 @@ class ConfigScreenNavigationResizeTest {
 	@Test
 	void draggingPastEitherEdgePreservesUsableColumnWidths() {
 		ConfigScreenLayout layout = new ConfigScreenLayout();
-		EditBox searchBox = createSearchBox();
+		LegacyEditBox searchBox = createSearchBox();
 		layout.updateScreenBounds(1000, 800, searchBox);
 		ImmutableRect2i divider = layout.getNavDividerArea();
 		assertTrue(layout.startNavigationResize(divider.getX(), divider.getY()));
@@ -64,7 +63,7 @@ class ConfigScreenNavigationResizeTest {
 			ConfigGuiOptionsTestUtil.OptionOverride width = ConfigGuiOptionsTestUtil.setValue("navigationWidth", 110)
 		) {
 			ConfigScreenLayout layout = new ConfigScreenLayout();
-			EditBox searchBox = createSearchBox();
+			LegacyEditBox searchBox = createSearchBox();
 			layout.updateScreenBounds(1000, 800, searchBox);
 			ImmutableRect2i divider = layout.getNavDividerArea();
 			assertTrue(layout.startNavigationResize(divider.getX(), divider.getY()));
@@ -130,7 +129,7 @@ class ConfigScreenNavigationResizeTest {
 	}
 
 	@SuppressWarnings("DataFlowIssue")
-	private static EditBox createSearchBox() {
-		return new EditBox(null, 0, 0, 0, 0, Component.empty());
+	private static LegacyEditBox createSearchBox() {
+		return new LegacyEditBox(null, 0, 0, 0, 0, Component.empty());
 	}
 }

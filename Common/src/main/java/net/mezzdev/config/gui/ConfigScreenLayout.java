@@ -4,7 +4,6 @@ import net.mezzdev.config.gui.util.ConfigMath;
 
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
-import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
 
@@ -69,18 +68,18 @@ public final class ConfigScreenLayout {
 	private double navScrollDragOffsetY = 0;
 	private boolean navScrollBarVisible = false;
 
-	public void updateScreenBounds(int screenWidth, int screenHeight, EditBox searchBox) {
+	public void updateScreenBounds(int screenWidth, int screenHeight, LegacyEditBox searchBox) {
 		updateScreenBounds(screenWidth, screenHeight, searchBox, false);
 	}
 
-	public void updateScreenBounds(int screenWidth, int screenHeight, EditBox searchBox, boolean hasScreenListButton) {
+	public void updateScreenBounds(int screenWidth, int screenHeight, LegacyEditBox searchBox, boolean hasScreenListButton) {
 		updateScreenBounds(screenWidth, screenHeight, searchBox, hasScreenListButton, 0, 0);
 	}
 
 	void updateScreenBounds(
 		int screenWidth,
 		int screenHeight,
-		EditBox searchBox,
+		LegacyEditBox searchBox,
 		boolean hasScreenListButton,
 		int screenLeftInset,
 		int screenRightInset
@@ -113,6 +112,7 @@ public final class ConfigScreenLayout {
 		searchBox.setX(searchBackgroundArea.getX() + SEARCH_TEXT_LEFT_PADDING);
 		searchBox.setY(searchBackgroundArea.getY() + (searchBackgroundArea.getHeight() - SEARCH_TEXT_HEIGHT) / 2);
 		searchBox.setWidth(searchBackgroundArea.getWidth() - SEARCH_TEXT_LEFT_PADDING - SEARCH_TEXT_RIGHT_PADDING);
+		searchBox.setHeight(SEARCH_HEIGHT);
 
 		updateContentAndScrollBarAreas();
 	}
