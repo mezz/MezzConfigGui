@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui.model;
 
 import net.mezzdev.config.gui.ConfigScreenCategory;
-import net.mezzdev.config.gui.ConfigValueSections;
+import net.mezzdev.config.gui.ConfigValueCategoryPath;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.entries.ConfigEntryWidget;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;
@@ -135,7 +135,7 @@ public final class ConfigScreenModel {
 		if (matches(entry.getFullName().getString())) {
 			return true;
 		}
-		if (matches(ConfigValueSections.getContextualName(entry.getConfigValue(), entry.getFullName()).getString())) {
+		if (matches(ConfigValueCategoryPath.getContextualName(entry.getConfigValue(), entry.getFullName()).getString())) {
 			return true;
 		}
 		return ConfigGuiOptions.searchDescriptions() &&

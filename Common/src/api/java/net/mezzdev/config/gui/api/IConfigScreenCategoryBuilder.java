@@ -12,6 +12,10 @@ import java.util.Collection;
 
 /**
  * Customizes one category in a config screen.
+ * <p>
+ * Categories can contain values and nested categories. Use {@link #addCategory(String)} to add or configure a child
+ * category. Value operations on a builder apply to that category's direct values and do not affect values in its
+ * children.
  *
  * @since 0.1.0
  */
@@ -20,8 +24,7 @@ public interface IConfigScreenCategoryBuilder {
 	/**
 	 * Override the title shown for this category.
 	 * <p>
-	 * If this is not called, the config GUI uses the existing schema category title or the default category
-	 * localization key.
+	 * If this is not called, the config GUI uses the existing schema category title or the inferred localization key.
 	 *
 	 * @param title category title
 	 * @return this builder
@@ -33,8 +36,8 @@ public interface IConfigScreenCategoryBuilder {
 	/**
 	 * Override the description shown for this category.
 	 * <p>
-	 * If this is not called, the config GUI uses the existing schema category description or the default category
-	 * description localization key.
+	 * If this is not called, the config GUI uses the existing schema category description or the inferred description
+	 * localization key.
 	 *
 	 * @param description category description
 	 * @return this builder
@@ -42,6 +45,21 @@ public interface IConfigScreenCategoryBuilder {
 	 * @since 0.1.0
 	 */
 	IConfigScreenCategoryBuilder setDescription(Component description);
+
+	/**
+	 * Add a nested category in the order it should appear in this category.
+	 * <p>
+	 * Values added to the nested category are moved from their existing category. The nested category's title and
+	 * description default to the parent's inferred localization path followed by {@code .} and {@code name}.
+	 * <p>
+	 * Repeated calls with the same name return the same child builder.
+	 *
+	 * @param name stable category name
+	 * @return the nested category builder
+	 *
+	 * @since 0.5.4
+	 */
+	IConfigScreenCategoryBuilder addCategory(String name);
 
 	/**
 	 * Remove this category's automatically detected values from the screen.

@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui.neoforge.config;
 
-import net.mezzdev.config.gui.ConfigValueSections;
+import net.mezzdev.config.gui.ConfigScreenCategoryNavigationGroup;
+import net.mezzdev.config.gui.ConfigValueCategoryPath;
 import net.mezzdev.config.gui.util.ConfigNameUtil;
 import net.minecraft.network.chat.Component;
 import net.neoforged.fml.ModContainer;
@@ -15,7 +16,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 final class NeoForgeConfigLocalization {
@@ -47,16 +47,17 @@ final class NeoForgeConfigLocalization {
 		return title;
 	}
 
-	static Optional<ConfigValueSections.CategoryGroup> getCategoryGroup(String modId, ModConfig.Type type, String localizationKey) {
+	@Nullable
+	static ConfigScreenCategoryNavigationGroup getNavigationGroup(String modId, ModConfig.Type type, String localizationKey) {
 		if (type != ModConfig.Type.COMMON || net.minecraft.locale.Language.getInstance().has(localizationKey + ".title")) {
-			return Optional.empty();
+			return null;
 		}
-		return Optional.of(new ConfigValueSections.CategoryGroup(
+		return new ConfigScreenCategoryNavigationGroup(
 			"@neoforge:" + modId + ":common",
 			getCategoryName(localizationKey, type),
 			Component.translatableWithFallback("mezz_config.config.native.description.common.group",
 				"These local configs may affect client or server behavior, depending on the mod. Changes here do not change a multiplayer server's config.")
-		));
+		);
 	}
 
 	static List<Component> getDistinctCategoryNames(List<CategoryName> categories) {
@@ -72,12 +73,12 @@ final class NeoForgeConfigLocalization {
 			if (group.size() < 2) {
 				continue;
 			}
-			Map<String, Integer> sectionCounts = new LinkedHashMap<>();
+			Map<String, Integer> nestedCategoryCounts = new LinkedHashMap<>();
 			for (int index : group) {
-				categories.get(index).sections().stream()
+				categories.get(index).nestedCategories().stream()
 					.map(Component::getString)
 					.distinct()
-					.forEach(name -> sectionCounts.merge(name, 1, Integer::sum));
+					.forEach(name -> nestedCategoryCounts.merge(name, 1, Integer::sum));
 			}
 			for (int ordinal = 0; ordinal < group.size(); ordinal++) {
 				int index = group.get(ordinal);
@@ -85,11 +86,11 @@ final class NeoForgeConfigLocalization {
 				Component numberedName = Component.translatableWithFallback(
 					"mezz_config.config.native.numbered.title", "%s (%s)", category.title(), ordinal + 1
 				);
-				Component name = category.sections().stream()
-					.filter(section -> !section.getString().isBlank() && sectionCounts.get(section.getString()) == 1)
+				Component name = category.nestedCategories().stream()
+					.filter(nestedCategory -> !nestedCategory.getString().isBlank() && nestedCategoryCounts.get(nestedCategory.getString()) == 1)
 					.findFirst()
-					.<Component>map(section -> Component.translatableWithFallback(
-						"mezz_config.config.native.section.title", "%s · %s", category.title(), section
+					.<Component>map(nestedCategory -> Component.translatableWithFallback(
+						"mezz_config.config.native.section.title", "%s · %s", category.title(), nestedCategory
 					))
 					.orElse(numberedName);
 				Component baseName = name;
@@ -103,12 +104,12 @@ final class NeoForgeConfigLocalization {
 		return List.copyOf(names);
 	}
 
-	static List<Component> getSectionNames(List<List<ConfigValueSections.Section>> paths) {
+	static List<Component> getNestedCategoryNames(List<List<ConfigValueCategoryPath.Category>> paths) {
 		Map<String, Component> names = new LinkedHashMap<>();
 		int maxDepth = paths.stream().mapToInt(List::size).max().orElse(0);
-		// Prefer broad sections before falling back to a distinguishing nested section.
+		// Prefer broad categories before falling back to a distinguishing nested category.
 		for (int depth = 0; depth < maxDepth; depth++) {
-			for (List<ConfigValueSections.Section> path : paths) {
+			for (List<ConfigValueCategoryPath.Category> path : paths) {
 				if (path.size() > depth) {
 					Component title = path.get(depth).title();
 					names.putIfAbsent(title.getString(), title);
@@ -118,9 +119,9 @@ final class NeoForgeConfigLocalization {
 		return List.copyOf(names.values());
 	}
 
-	record CategoryName(Component title, List<Component> sections) {
+	record CategoryName(Component title, List<Component> nestedCategories) {
 		CategoryName {
-			sections = List.copyOf(sections);
+			nestedCategories = List.copyOf(nestedCategories);
 		}
 	}
 
@@ -146,15 +147,15 @@ final class NeoForgeConfigLocalization {
 		return modId + ".configuration." + String.join(".", path);
 	}
 
-	public static List<ConfigValueSections.Section> getSections(String modId, ModConfigSpec modConfigSpec, List<String> path) {
-		List<ConfigValueSections.Section> result = new ArrayList<>();
+	public static List<ConfigValueCategoryPath.Category> getCategoryPath(String modId, ModConfigSpec modConfigSpec, List<String> path) {
+		List<ConfigValueCategoryPath.Category> result = new ArrayList<>();
 		for (int level = 1; level < path.size(); level++) {
-			List<String> sectionPath = path.subList(0, level);
-			String sectionKey = getValueLocalizationKey(modId, sectionPath, modConfigSpec.getLevelTranslationKey(sectionPath));
-			result.add(new ConfigValueSections.Section(
-				sectionPath.getLast(),
-				getValueName(sectionKey, sectionPath),
-				getDescription(sectionKey, modConfigSpec.getLevelComment(sectionPath))
+			List<String> categoryPath = path.subList(0, level);
+			String categoryKey = getValueLocalizationKey(modId, categoryPath, modConfigSpec.getLevelTranslationKey(categoryPath));
+			result.add(new ConfigValueCategoryPath.Category(
+				categoryPath.getLast(),
+				getValueName(categoryKey, categoryPath),
+				getDescription(categoryKey, modConfigSpec.getLevelComment(categoryPath))
 			));
 		}
 		return List.copyOf(result);

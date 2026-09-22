@@ -2,11 +2,11 @@ package net.mezzdev.config.gui.neoforge.config;
 
 import net.mezzdev.config.gui.ConfigScreenCategory;
 import net.mezzdev.config.gui.ConfigScreenCategoryGroup;
+import net.mezzdev.config.gui.ConfigScreenCategoryNavigationGroup;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigLocalizedCategory;
 import net.minecraft.network.chat.Component;
-import net.neoforged.fml.config.ModConfig;
-import net.neoforged.neoforge.common.ModConfigSpec;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.List;
@@ -16,9 +16,9 @@ record NeoForgeConfigCategory(
 	String localizationKey,
 	Component localizedName,
 	Component localizedDescription,
-	ModConfig modConfig,
-	ModConfigSpec modConfigSpec,
-	List<NeoForgeConfigValue<?>> configValues
+	ConfigScreenCategoryGroup group,
+	@Nullable ConfigScreenCategoryNavigationGroup navigationGroup,
+	List<IConfigScreenValue<?>> configValues
 ) implements ConfigScreenCategory, IConfigLocalizedCategory {
 	public NeoForgeConfigCategory {
 		configValues = List.copyOf(configValues);
@@ -26,10 +26,13 @@ record NeoForgeConfigCategory(
 
 	@Override
 	public ConfigScreenCategoryGroup getGroup() {
-		if (modConfig.getType() == ModConfig.Type.SERVER) {
-			return ConfigScreenCategoryGroup.LOADER_NATIVE_SERVER;
-		}
-		return ConfigScreenCategoryGroup.LOADER_NATIVE;
+		return group;
+	}
+
+	@Override
+	@Nullable
+	public ConfigScreenCategoryNavigationGroup getNavigationGroup() {
+		return navigationGroup;
 	}
 
 	@Override

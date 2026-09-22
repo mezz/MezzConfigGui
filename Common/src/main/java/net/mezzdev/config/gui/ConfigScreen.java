@@ -248,7 +248,8 @@ public class ConfigScreen extends MezzConfigScreen {
 		IConfigScreenValue<?> configValue,
 		ConfigValueApplyMode applyMode
 	) {
-		return IConfigScreenValue.withApplyMode((IConfigScreenValue<T>) configValue, applyMode);
+		IConfigScreenValue<T> typedValue = (IConfigScreenValue<T>) configValue;
+		return ConfigValueCategoryPath.copyTo(typedValue, IConfigScreenValue.withApplyMode(typedValue, applyMode));
 	}
 
 	private boolean applyImmediateChange(ConfigValueChange<?> change) {

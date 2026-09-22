@@ -3,6 +3,7 @@ package net.mezzdev.config.gui;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.minecraft.network.chat.Component;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,6 +58,8 @@ final class MergedConfigScreenSchema implements ConfigScreenSchema {
 		private final Component title;
 		private final Component description;
 		private ConfigScreenCategoryGroup group;
+		@Nullable
+		private ConfigScreenCategoryNavigationGroup navigationGroup;
 		private final List<IConfigScreenValue<?>> values = new ArrayList<>();
 
 		private MutableMergedConfigScreenCategory(ConfigScreenCategory category) {
@@ -65,11 +68,15 @@ final class MergedConfigScreenSchema implements ConfigScreenSchema {
 			this.title = category.getLocalizedName();
 			this.description = category.getLocalizedDescription();
 			this.group = category.getGroup();
+			this.navigationGroup = category.getNavigationGroup();
 		}
 
 		public void add(ConfigScreenCategory category) {
 			if (category.getGroup().compareTo(group) < 0) {
 				group = category.getGroup();
+			}
+			if (!Objects.equals(navigationGroup, category.getNavigationGroup())) {
+				navigationGroup = null;
 			}
 			this.values.addAll(category.getConfigValues());
 		}
@@ -81,6 +88,7 @@ final class MergedConfigScreenSchema implements ConfigScreenSchema {
 				title,
 				description,
 				group,
+				navigationGroup,
 				values
 			);
 		}
@@ -92,6 +100,7 @@ final class MergedConfigScreenSchema implements ConfigScreenSchema {
 		Component title,
 		Component description,
 		ConfigScreenCategoryGroup group,
+		@Nullable ConfigScreenCategoryNavigationGroup navigationGroup,
 		List<IConfigScreenValue<?>> values
 	) implements ConfigScreenCategory {
 		private MergedConfigScreenCategory {
@@ -106,6 +115,12 @@ final class MergedConfigScreenSchema implements ConfigScreenSchema {
 		@Override
 		public ConfigScreenCategoryGroup getGroup() {
 			return group;
+		}
+
+		@Override
+		@Nullable
+		public ConfigScreenCategoryNavigationGroup getNavigationGroup() {
+			return navigationGroup;
 		}
 
 		@Override

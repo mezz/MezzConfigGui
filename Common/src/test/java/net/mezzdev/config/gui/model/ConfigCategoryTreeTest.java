@@ -4,7 +4,8 @@ import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.ConfigScreenCategory;
 import net.mezzdev.config.gui.ConfigScreenCategoryGroup;
-import net.mezzdev.config.gui.ConfigValueSections;
+import net.mezzdev.config.gui.ConfigScreenCategoryNavigationGroup;
+import net.mezzdev.config.gui.ConfigValueCategoryPath;
 import net.mezzdev.config.gui.ConfigScreenSchema;
 import net.mezzdev.config.gui.ConfigValueAccess;
 import net.mezzdev.config.gui.info.ConfigServerInfo;
@@ -52,9 +53,9 @@ class ConfigCategoryTreeTest {
 		TestValue cow = value("server.toml", "Animals", "Cow");
 		TestValue pig = value("server.toml", "Animals", "Pig");
 		IConfigScreenValue<Boolean> wrappedCow = IConfigScreenValue.withApplyMode(
-			new TestValue(cow.category(), cow.sections(), cow.categoryGroup(), Optional.of(provider)), ConfigValueApplyMode.ON_APPLY);
+			new TestValue(cow.category(), cow.categories(), Optional.of(provider)), ConfigValueApplyMode.ON_APPLY);
 		IConfigScreenValue<Boolean> wrappedPig = IConfigScreenValue.withApplyMode(
-			new TestValue(pig.category(), pig.sections(), pig.categoryGroup(), Optional.of(provider)), ConfigValueApplyMode.ON_APPLY);
+			new TestValue(pig.category(), pig.categories(), Optional.of(provider)), ConfigValueApplyMode.ON_APPLY);
 		ConfigScreenSchema schema = () -> List.of(category("server.toml", wrappedCow, wrappedPig));
 		ConfigScreenModel model = navigationModel(List.copyOf(schema.getCategories()));
 		ConfigServerInfo info = new ConfigServerInfo(schema);
@@ -75,7 +76,7 @@ class ConfigCategoryTreeTest {
 
 	@Test
 	void compatibleNativeFilesShareOneRootButKeepTheirValuesAndStableSubsectionIdentities() {
-		ConfigValueSections.CategoryGroup group = new ConfigValueSections.CategoryGroup("common", Component.literal("Common (local)"), Component.literal("Local settings"));
+		ConfigScreenCategoryNavigationGroup group = new ConfigScreenCategoryNavigationGroup("common", Component.literal("Common (local)"), Component.literal("Local settings"));
 		TestCategory animals = groupedCategory("animals.toml", group, "Animals");
 		TestCategory items = groupedCategory("items.toml", group, "Items");
 		List<ConfigCategoryTree.Node> tree = ConfigCategoryTree.create(List.of(animals, items), 0);
@@ -96,7 +97,7 @@ class ConfigCategoryTreeTest {
 
 	@Test
 	void groupedFilesWithIdenticalSectionsOrDirectValuesRemainDistinguishable() {
-		ConfigValueSections.CategoryGroup group = new ConfigValueSections.CategoryGroup("common", Component.literal("Common (local)"), Component.empty());
+		ConfigScreenCategoryNavigationGroup group = new ConfigScreenCategoryNavigationGroup("common", Component.literal("Common (local)"), Component.empty());
 		List<ConfigCategoryTree.Node> tree = ConfigCategoryTree.create(List.of(
 			groupedCategory("first.toml", group, "General"), groupedCategory("second.toml", group, "General"),
 			groupedCategory("third.toml", group), groupedCategory("fourth.toml", group)
@@ -108,10 +109,10 @@ class ConfigCategoryTreeTest {
 
 	@Test
 	void pluginsCanRelocateOrRenameNativeCategoriesWithoutBeingRegrouped() {
-		ConfigValueSections.CategoryGroup group = new ConfigValueSections.CategoryGroup("common", Component.literal("Common (local)"), Component.empty());
+		ConfigScreenCategoryNavigationGroup group = new ConfigScreenCategoryNavigationGroup("common", Component.literal("Common (local)"), Component.empty());
 		TestCategory first = groupedCategory("first.toml", group, "Animals");
 		TestCategory second = groupedCategory("second.toml", group, "Items");
-		TestCategory renamed = new TestCategory(second.name(), second.values(), Component.literal("Quick Settings"));
+		TestCategory renamed = new TestCategory(second.name(), second.values(), Component.literal("Quick Settings"), second.navigationGroup());
 		List<ConfigCategoryTree.Node> tree = ConfigCategoryTree.create(List.of(first, renamed), 10);
 		assertEquals(List.of("Common (local)", "Quick Settings"), tree.stream().map(node -> node.category().getLocalizedName().getString()).toList());
 		TestCategory relocated = new TestCategory("quick", second.values(), group.title());
@@ -120,10 +121,9 @@ class ConfigCategoryTreeTest {
 		assertTrue(com.google.common.collect.Iterables.getLast(tree).inlineSections().isEmpty());
 	}
 
-	private static TestCategory groupedCategory(String file, ConfigValueSections.CategoryGroup group, String... sections) {
+	private static TestCategory groupedCategory(String file, ConfigScreenCategoryNavigationGroup group, String... sections) {
 		TestValue original = value(file, sections);
-		TestValue grouped = new TestValue(file, original.sections(), Optional.of(group));
-		return new TestCategory(file, List.of(grouped), group.title());
+		return new TestCategory(file, List.of(original), group.title(), group);
 	}
 
 	@Test
@@ -216,7 +216,7 @@ class ConfigCategoryTreeTest {
 	void inlineGroupsPreserveDescriptionsAndSearchContextForWrappedValues() {
 		Component title = Component.literal("Cows");
 		Component description = Component.literal("Settings that only affect cows.");
-		TestValue nativeValue = new TestValue("common.toml", List.of(new ConfigValueSections.Section("cow", title, description)));
+		TestValue nativeValue = new TestValue("common.toml", List.of(new ConfigValueCategoryPath.Category("cow", title, description)));
 		IConfigScreenValue<Boolean> wrapped = IConfigScreenValue.withApplyMode(nativeValue, ConfigValueApplyMode.IMMEDIATE);
 		ConfigScreenModel model = new ConfigScreenModel(List.of(category("common.toml", wrapped)));
 		TestEntry entry = new TestEntry(wrapped);
@@ -291,7 +291,7 @@ class ConfigCategoryTreeTest {
 		assertEquals(List.of(wrapped), com.google.common.collect.Iterables.getLast(nativeTree).category().getConfigValues());
 		assertEquals(1, customTree.size());
 		assertEquals(List.of(wrapped), customTree.get(0).category().getConfigValues());
-		assertEquals("Animals › Cow › Remove AI", ConfigValueSections.getContextualName(wrapped, Component.literal("Remove AI")).getString());
+		assertEquals("Animals › Cow › Remove AI", ConfigValueCategoryPath.getContextualName(wrapped, Component.literal("Remove AI")).getString());
 	}
 
 	@Test
@@ -450,17 +450,31 @@ class ConfigCategoryTreeTest {
 
 	private static TestValue value(String category, String... sections) {
 		return new TestValue(category, List.of(sections).stream()
-			.map(name -> new ConfigValueSections.Section(name, Component.literal(name), Component.empty()))
+			.map(name -> new ConfigValueCategoryPath.Category(name, Component.literal(name), Component.empty()))
 			.toList());
 	}
 
-	private record TestCategory(String name, List<IConfigScreenValue<?>> values, Component title) implements ConfigScreenCategory {
+	private record TestCategory(
+		String name,
+		List<IConfigScreenValue<?>> values,
+		Component title,
+		ConfigScreenCategoryNavigationGroup navigationGroup
+	) implements ConfigScreenCategory {
 		private TestCategory(String name, List<IConfigScreenValue<?>> values) {
-			this(name, values, Component.literal(name));
+			this(name, values, Component.literal(name), null);
+		}
+
+		private TestCategory(String name, List<IConfigScreenValue<?>> values, Component title) {
+			this(name, values, title, null);
 		}
 		@Override
 		public ConfigScreenCategoryGroup getGroup() {
 			return ConfigScreenCategoryGroup.LOADER_NATIVE;
+		}
+
+		@Override
+		public ConfigScreenCategoryNavigationGroup getNavigationGroup() {
+			return navigationGroup;
 		}
 
 		@Override
@@ -489,13 +503,9 @@ class ConfigCategoryTreeTest {
 		}
 	}
 
-	private record TestValue(String category, List<Section> sections, Optional<CategoryGroup> categoryGroup, Optional<Supplier<ServerConfigAccess>> serverAccess) implements IConfigScreenValue<Boolean>, IConfigLocalizedValue, ConfigValueSections, ConfigValueAccess {
-		private TestValue(String category, List<Section> sections, Optional<CategoryGroup> categoryGroup) {
-			this(category, sections, categoryGroup, Optional.empty());
-		}
-
-		private TestValue(String category, List<Section> sections) {
-			this(category, sections, Optional.empty());
+	private record TestValue(String category, List<ConfigValueCategoryPath.Category> categories, Optional<Supplier<ServerConfigAccess>> serverAccess) implements IConfigScreenValue<Boolean>, IConfigLocalizedValue, ConfigValueCategoryPath, ConfigValueAccess {
+		private TestValue(String category, List<ConfigValueCategoryPath.Category> categories) {
+			this(category, categories, Optional.empty());
 		}
 
 		@Override
@@ -509,17 +519,13 @@ class ConfigCategoryTreeTest {
 		}
 
 		@Override
-		public Optional<CategoryGroup> getCategoryGroup() {
-			return categoryGroup;
-		}
-		@Override
-		public String getSectionCategoryName() {
+		public String getRootCategoryName() {
 			return category;
 		}
 
 		@Override
-		public List<Section> getSections() {
-			return sections;
+		public List<ConfigValueCategoryPath.Category> getCategories() {
+			return categories;
 		}
 
 		@Override

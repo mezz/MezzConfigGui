@@ -21,6 +21,7 @@ import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigGuiRegistration;
 import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
+import net.mezzdev.config.gui.api.IConfigScreenCategoryBuilder;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueEditor;
 import net.mezzdev.config.gui.api.IConfigValuePopup;
@@ -115,9 +116,13 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 				.setTitle(Component.translatable("%s.config.category.keyMappings".formatted(MOD_ID)))
 				.setDescription(Component.translatable("%s.config.category.keyMappings.description".formatted(MOD_ID)))
 				.addKeyMappings(List.of(OPEN_SCREEN_KEY, TOGGLE_OVERLAY_KEY));
-			screenBuilder.configureCategory("advanced")
+			IConfigScreenCategoryBuilder advanced = screenBuilder.configureCategory("advanced")
 				.setTitle(Component.translatable("%s.config.category.advanced".formatted(MOD_ID)))
 				.setDescription(Component.translatable("%s.config.category.advanced.description".formatted(MOD_ID)));
+			IConfigScreenCategoryBuilder display = advanced.addCategory("display")
+				.addValuesByName(List.of("displayName", "favoriteModes"));
+			display.addCategory("timing")
+				.addValueByName("refreshTicks");
 		});
 		registration.registerScreen(
 			Component.translatable("%s.config.screen.title".formatted(MOD_ID)),

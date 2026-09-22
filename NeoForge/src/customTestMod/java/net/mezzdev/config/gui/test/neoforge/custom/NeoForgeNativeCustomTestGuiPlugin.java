@@ -86,13 +86,14 @@ public final class NeoForgeNativeCustomTestGuiPlugin implements IConfigGuiPlugin
 
 			IConfigScreenCategoryBuilder clientCategory = screenBuilder.configureCategory(NeoForgeNativeCustomTestMod.CLIENT_FILE_NAME)
 				.setTitle(Component.translatable("%s.configuration.category.native".formatted(NeoForgeNativeCustomTestMod.MOD_ID)))
-				.setDescription(Component.translatable("%s.configuration.category.native.tooltip".formatted(NeoForgeNativeCustomTestMod.MOD_ID)))
+				.setDescription(Component.translatable("%s.configuration.category.native.tooltip".formatted(NeoForgeNativeCustomTestMod.MOD_ID)));
+			IConfigScreenCategoryBuilder clientSettings = clientCategory.addCategory("client")
 				.setDefaultApplyMode(ConfigValueApplyMode.ON_APPLY);
-			clientCategory.getValueBuilderByName(configValueName(NeoForgeNativeCustomTestMod.EXTRA_EFFECTS))
+			clientSettings.getValueBuilderByName(configValueName(NeoForgeNativeCustomTestMod.EXTRA_EFFECTS))
 				.setApplyMode(ConfigValueApplyMode.IMMEDIATE);
-			clientCategory.getValueBuilderByName(configValueName(NeoForgeNativeCustomTestMod.LABEL))
+			clientSettings.getValueBuilderByName(configValueName(NeoForgeNativeCustomTestMod.LABEL))
 				.setRestartRequirement(ConfigValueRestartRequirement.GAME_RESTART);
-			clientCategory.hideValuesByName(List.of(
+			clientSettings.hideValuesByName(List.of(
 				configValueName(NeoForgeNativeCustomTestMod.ENABLED),
 				configValueName(NeoForgeNativeCustomTestMod.SECRET_DIAGNOSTICS),
 				configValueName(NeoForgeNativeCustomTestMod.MODE),
@@ -107,11 +108,12 @@ public final class NeoForgeNativeCustomTestGuiPlugin implements IConfigGuiPlugin
 
 			IConfigScreenCategoryBuilder commonCategory = screenBuilder.configureCategory(NeoForgeNativeCustomTestMod.COMMON_FILE_NAME)
 				.setTitle(Component.translatable("%s.configuration.category.common".formatted(NeoForgeNativeCustomTestMod.MOD_ID)))
-				.setDescription(Component.translatable("%s.configuration.category.common.tooltip".formatted(NeoForgeNativeCustomTestMod.MOD_ID)))
+				.setDescription(Component.translatable("%s.configuration.category.common.tooltip".formatted(NeoForgeNativeCustomTestMod.MOD_ID)));
+			IConfigScreenCategoryBuilder commonSettings = commonCategory.addCategory("common")
 				.setDefaultApplyMode(ConfigValueApplyMode.ON_APPLY);
-			commonCategory.getValueBuilderByName(configValueName(NeoForgeNativeCustomTestMod.COMMON_ENABLED))
+			commonSettings.getValueBuilderByName(configValueName(NeoForgeNativeCustomTestMod.COMMON_ENABLED))
 				.setApplyMode(ConfigValueApplyMode.IMMEDIATE);
-			commonCategory.getValueBuilderByName(configValueName(NeoForgeNativeCustomTestMod.COMMON_CACHE_BUDGET))
+			commonSettings.getValueBuilderByName(configValueName(NeoForgeNativeCustomTestMod.COMMON_CACHE_BUDGET))
 				.setRestartRequirement(ConfigValueRestartRequirement.GAME_RESTART);
 		});
 	}

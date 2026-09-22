@@ -96,6 +96,8 @@ class ModNavigationConfigTest {
 			@Override
 			public ConfigScreenCategoryGroup getGroup() { return ConfigScreenCategoryGroup.MOD_OWNED; }
 			@Override
+			public ConfigScreenCategoryNavigationGroup getNavigationGroup() { return null; }
+			@Override
 			public String getName() { return "modList"; }
 			@Override
 			public String getLocalizationKey() { return "test.modList"; }

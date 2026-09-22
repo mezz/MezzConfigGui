@@ -3,7 +3,7 @@ package net.mezzdev.config.gui.entries;
 import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.ConfigValueAccess;
-import net.mezzdev.config.gui.ConfigValueSections;
+import net.mezzdev.config.gui.ConfigValueCategoryPath;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.model.ConfigValueChange;
@@ -534,7 +534,7 @@ public abstract class ConfigEntryWidget<T> {
 
 	public Component getDisplayName() {
 		if (showSectionPath) {
-			return ConfigValueSections.getContextualName(configValue, fullName);
+			return ConfigValueCategoryPath.getContextualName(configValue, fullName);
 		}
 		return fullName;
 	}
@@ -548,7 +548,7 @@ public abstract class ConfigEntryWidget<T> {
 			T oldValue = configValue.getValue();
 			T newValue = value;
 			return Optional.of(PendingConfigChange.create(
-				ConfigValueSections.getContextualName(configValue, fullName),
+				ConfigValueCategoryPath.getContextualName(configValue, fullName),
 				getValueName(oldValue),
 				getValueName(newValue),
 				getInfo(),

@@ -2,9 +2,11 @@ package net.mezzdev.config.gui.model;
 
 import net.mezzdev.config.gui.ConfigScreenCategory;
 import net.mezzdev.config.gui.ConfigScreenCategoryGroup;
-import net.mezzdev.config.gui.ConfigValueSections;
+import net.mezzdev.config.gui.ConfigScreenCategoryNavigationGroup;
+import net.mezzdev.config.gui.ConfigValueCategoryPath;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.minecraft.network.chat.Component;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,14 +29,17 @@ final class ConfigCategoryTree {
 		List<Node> result = new ArrayList<>();
 		Map<String, List<ConfigScreenCategory>> groupedCategories = new LinkedHashMap<>();
 		for (ConfigScreenCategory category : categories) {
-			getCategoryGroup(category).ifPresent(group -> groupedCategories.computeIfAbsent(group.name(), ignored -> new ArrayList<>()).add(category));
+			ConfigScreenCategoryNavigationGroup group = getNavigationGroup(category);
+			if (group != null) {
+				groupedCategories.computeIfAbsent(group.name(), ignored -> new ArrayList<>()).add(category);
+			}
 		}
 		for (ConfigScreenCategory category : categories) {
-			Optional<ConfigValueSections.CategoryGroup> grouping = getCategoryGroup(category);
-			if (grouping.isPresent() && groupedCategories.get(grouping.get().name()).size() > 1) {
-				List<ConfigScreenCategory> members = groupedCategories.get(grouping.get().name());
+			ConfigScreenCategoryNavigationGroup grouping = getNavigationGroup(category);
+			if (grouping != null && groupedCategories.get(grouping.name()).size() > 1) {
+				List<ConfigScreenCategory> members = groupedCategories.get(grouping.name());
 				if (members.get(0) == category) {
-					MutableNode root = createGroup(grouping.get(), members);
+					MutableNode root = createGroup(grouping, members);
 					appendNodes(result, root, category.getGroup(), -1, 0, inlineSubsectionLimit);
 				}
 				continue;
@@ -44,28 +49,19 @@ final class ConfigCategoryTree {
 		return List.copyOf(result);
 	}
 
-	private static Optional<ConfigValueSections.CategoryGroup> getCategoryGroup(ConfigScreenCategory category) {
+	@Nullable
+	private static ConfigScreenCategoryNavigationGroup getNavigationGroup(ConfigScreenCategory category) {
 		if (category.getGroup() != ConfigScreenCategoryGroup.LOADER_NATIVE || category.getConfigValues().isEmpty()) {
-			return Optional.empty();
+			return null;
 		}
-		ConfigValueSections.CategoryGroup grouping = null;
-		for (IConfigScreenValue<?> value : category.getConfigValues()) {
-			if (!(value.getIdentityKey() instanceof ConfigValueSections sections) || !sections.getSectionCategoryName().equals(category.getName())) {
-				return Optional.empty();
-			}
-			Optional<ConfigValueSections.CategoryGroup> candidate = sections.getCategoryGroup();
-			if (candidate.isEmpty() || !candidate.get().title().getString().equals(category.getLocalizedName().getString())) {
-				return Optional.empty();
-			}
-			if (grouping != null && !grouping.name().equals(candidate.get().name())) {
-				return Optional.empty();
-			}
-			grouping = candidate.get();
+		ConfigScreenCategoryNavigationGroup group = category.getNavigationGroup();
+		if (group != null && group.title().getString().equals(category.getLocalizedName().getString())) {
+			return group;
 		}
-		return Optional.ofNullable(grouping);
+		return null;
 	}
 
-	private static MutableNode createGroup(ConfigValueSections.CategoryGroup group, List<ConfigScreenCategory> members) {
+	private static MutableNode createGroup(ConfigScreenCategoryNavigationGroup group, List<ConfigScreenCategory> members) {
 		MutableNode root = new MutableNode(group.name(), group.title(), group.description());
 		for (ConfigScreenCategory member : members) {
 			MutableNode fileRoot = createRoot(member);
@@ -110,12 +106,12 @@ final class ConfigCategoryTree {
 		MutableNode root = new MutableNode(category.getName(), category.getLocalizedName(), category.getLocalizedDescription());
 		for (IConfigScreenValue<?> value : category.getConfigValues()) {
 			MutableNode node = root;
-			if (value.getIdentityKey() instanceof ConfigValueSections sections &&
-				sections.getSectionCategoryName().equals(category.getName())
-			) {
-				for (ConfigValueSections.Section section : sections.getSections()) {
-					String childName = node.name + "/" + section.name().length() + ":" + section.name();
-					node = node.children.computeIfAbsent(section.name(), ignored -> new MutableNode(childName, section.title(), section.description()));
+			Optional<ConfigValueCategoryPath> metadata = ConfigValueCategoryPath.getMetadata(value);
+			if (metadata.isPresent() && metadata.get().getRootCategoryName().equals(category.getName())) {
+				ConfigValueCategoryPath categoryPath = metadata.get();
+				for (ConfigValueCategoryPath.Category child : categoryPath.getCategories()) {
+					String childName = node.name + "/" + child.name().length() + ":" + child.name();
+					node = node.children.computeIfAbsent(child.name(), ignored -> new MutableNode(childName, child.title(), child.description()));
 				}
 			}
 			node.values.add(value);
@@ -196,6 +192,12 @@ final class ConfigCategoryTree {
 		@Override
 		public ConfigScreenCategoryGroup getGroup() {
 			return group;
+		}
+
+		@Override
+		@Nullable
+		public ConfigScreenCategoryNavigationGroup getNavigationGroup() {
+			return null;
 		}
 
 		@Override

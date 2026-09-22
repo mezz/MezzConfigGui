@@ -32,6 +32,7 @@ import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigValueIcon;
 import net.mezzdev.config.gui.api.IConfigValueIconProvider;
 import net.mezzdev.config.gui.config.ConfigGuiOptionsTestUtil;
+import net.mezzdev.config.gui.model.ConfigScreenModel;
 import net.mezzdev.config.gui.model.ConfigValueChange;
 import net.mezzdev.config.gui.remote.RemoteConfigEditor;
 import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryRegistry;
@@ -55,6 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -120,6 +122,7 @@ class ConfigGuiPluginLoaderTest {
 			ConfigGuiPluginLoader.ConfigScreenValueLookup lookup = new ConfigGuiPluginLoader.ConfigScreenValueLookup(
 				MOD_ID,
 				"keyMappings",
+				List.of(),
 				List.of()
 			);
 
@@ -298,6 +301,7 @@ class ConfigGuiPluginLoaderTest {
 				() -> ConfigScreenSchema.from(backingSchema),
 				List.of(screenBuilder -> screenBuilder.configureCategory("general")
 					.clearDefaultValues()
+					.addCategory("advanced")
 					.addScreenValue(customizedValue)),
 				lookup -> List.of()
 			);
@@ -311,6 +315,7 @@ class ConfigGuiPluginLoaderTest {
 			assertNotSame(customizedValue, result);
 			assertSame(backingValue, result.getIdentityKey());
 			assertEquals(ConfigValueApplyMode.IMMEDIATE, result.getApplyMode());
+			assertEquals(List.of("Advanced"), categoryPathTitles(result));
 			assertSame(backingSchema, customizedSchema.findBackingSchema(result).orElseThrow());
 		} finally {
 			RemoteConfigEditor.onClientDisconnect();
@@ -678,6 +683,170 @@ class ConfigGuiPluginLoaderTest {
 	}
 
 	@Test
+	void nestedCategoriesMoveDetectedValuesAndPreserveTheirIdentityAndSettings() {
+		TestConfigValue direct = new TestConfigValue("direct");
+		TestConfigValue pig = new TestConfigValue("pig");
+		TestConfigValue cow = new TestConfigValue("cow");
+		TestCategory originalCategory = new TestCategory("general", List.of(direct, cow, pig));
+
+		List<ConfigScreenCategory> categories = createCategories(
+			List.of(originalCategory),
+			screenBuilder -> {
+				IConfigScreenCategoryBuilder category = screenBuilder.configureCategory("general");
+				IConfigScreenCategoryBuilder animals = category.addCategory("animals")
+					.setDescription(Component.literal("Animal settings"))
+					.setDefaultApplyMode(ConfigValueApplyMode.IMMEDIATE)
+					.addValueByName("pig");
+				animals.addCategory("cows")
+					.setTitle(Component.literal("Cattle"))
+					.addValueByName("cow");
+			},
+			lookup -> List.of()
+		);
+
+		ConfigScreenCategory category = categories.get(0);
+		assertEquals(List.of("direct", "pig", "cow"), valueNames(category));
+		IConfigScreenValue<?> configuredPig = valueByName(category, "pig");
+		IConfigScreenValue<?> configuredCow = valueByName(category, "cow");
+		assertSame(pig.getIdentityKey(), configuredPig.getIdentityKey());
+		assertSame(cow.getIdentityKey(), configuredCow.getIdentityKey());
+		assertEquals(ConfigValueApplyMode.ON_APPLY, valueByName(category, "direct").getApplyMode());
+		assertEquals(ConfigValueApplyMode.IMMEDIATE, configuredPig.getApplyMode());
+		assertEquals(ConfigValueApplyMode.ON_APPLY, configuredCow.getApplyMode());
+		assertEquals(List.of("Animals"), categoryPathTitles(configuredPig));
+		assertEquals(List.of("Animals", "Cattle"), categoryPathTitles(configuredCow));
+		assertEquals("Animal settings", ConfigValueCategoryPath.getCategories(configuredPig).get(0).description().getString());
+
+		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("inlineSubsectionLimit", 0)) {
+			ConfigScreenModel model = new ConfigScreenModel(categories);
+			assertEquals(
+				List.of("general", "Settings", "Animals", "Settings", "Cattle"),
+				model.getCategories().stream().map(ConfigScreenCategory::getLocalizedName).map(Component::getString).toList()
+			);
+		}
+	}
+
+	@Test
+	void nestedCategoryOperationsOnlyAffectThatCategory() {
+		TestConfigValue direct = new TestConfigValue("direct");
+		TestConfigValue pig = new TestConfigValue("pig");
+		TestConfigValue sheep = new TestConfigValue("sheep");
+		TestConfigValue cow = new TestConfigValue("cow");
+		ConfigValueCategoryPath.Category animals = new ConfigValueCategoryPath.Category(
+			"animals",
+			Component.literal("Animals"),
+			Component.empty()
+		);
+		ConfigValueCategoryPath.Category cows = new ConfigValueCategoryPath.Category(
+			"cows",
+			Component.literal("Cows"),
+			Component.empty()
+		);
+		TestCategory originalCategory = new TestCategory("general", List.of(
+			direct,
+			ConfigValueCategoryPath.withCategoryPath(pig, "general", List.of(animals)),
+			ConfigValueCategoryPath.withCategoryPath(sheep, "general", List.of(animals)),
+			ConfigValueCategoryPath.withCategoryPath(cow, "general", List.of(animals, cows))
+		));
+
+		List<ConfigScreenCategory> categories = createCategories(
+			List.of(originalCategory),
+			screenBuilder -> {
+				IConfigScreenCategoryBuilder animalCategory = screenBuilder.configureCategory("general")
+					.addCategory("animals")
+					.setDefaultApplyMode(ConfigValueApplyMode.IMMEDIATE)
+					.hideValueByName("pig");
+				animalCategory.addCategory("cows")
+					.setTitle(Component.literal("Cattle"))
+					.setValueRestartRequirementByName("cow", ConfigValueRestartRequirement.GAME_RESTART);
+			},
+			lookup -> List.of()
+		);
+
+		ConfigScreenCategory category = categories.get(0);
+		assertEquals(List.of("direct", "sheep", "cow"), valueNames(category));
+		assertEquals(ConfigValueApplyMode.ON_APPLY, valueByName(category, "direct").getApplyMode());
+		assertEquals(ConfigValueApplyMode.IMMEDIATE, valueByName(category, "sheep").getApplyMode());
+		assertEquals(ConfigValueApplyMode.ON_APPLY, valueByName(category, "cow").getApplyMode());
+		assertEquals(ConfigValueRestartRequirement.GAME_RESTART, valueByName(category, "cow").getRestartRequirement());
+		assertEquals(List.of("Animals"), categoryPathTitles(valueByName(category, "sheep")));
+		assertEquals(List.of("Animals", "Cattle"), categoryPathTitles(valueByName(category, "cow")));
+	}
+
+	@Test
+	void nativeNavigationGroupsSurviveValueCustomizationButNotCategoryRenaming() {
+		String categoryName = "test-common.toml";
+		ConfigScreenCategoryNavigationGroup navigationGroup = new ConfigScreenCategoryNavigationGroup(
+			"test:common",
+			Component.literal(categoryName),
+			Component.literal("Local settings")
+		);
+		IConfigScreenValue<String> nativeValue = ConfigValueCategoryPath.withCategoryPath(
+			new TestConfigValue("animals.enabled"),
+			categoryName,
+			List.of(new ConfigValueCategoryPath.Category("animals", Component.literal("Animals"), Component.empty()))
+		);
+		TestCategory nativeCategory = new TestCategory(
+			categoryName,
+			List.of(nativeValue),
+			ConfigScreenCategoryGroup.LOADER_NATIVE,
+			navigationGroup
+		);
+
+		List<ConfigScreenCategory> configured = createCategories(
+			List.of(nativeCategory),
+			screenBuilder -> screenBuilder.configureCategory(categoryName)
+				.setDefaultApplyMode(ConfigValueApplyMode.IMMEDIATE),
+			lookup -> List.of()
+		);
+		assertSame(navigationGroup, configured.get(0).getNavigationGroup());
+		assertEquals(List.of("Animals"), categoryPathTitles(valueByName(configured.get(0), "animals.enabled")));
+
+		List<ConfigScreenCategory> renamed = createCategories(
+			List.of(nativeCategory),
+			screenBuilder -> screenBuilder.configureCategory(categoryName)
+				.setTitle(Component.literal("Quick Settings")),
+			lookup -> List.of()
+		);
+		assertNull(renamed.get(0).getNavigationGroup());
+
+		List<ConfigScreenCategory> mixed = createCategories(
+			List.of(nativeCategory),
+			screenBuilder -> screenBuilder.configureCategory(categoryName)
+				.addScreenValue(new TestConfigValue("custom")),
+			lookup -> List.of()
+		);
+		assertSame(navigationGroup, mixed.get(0).getNavigationGroup());
+	}
+
+	@Test
+	void nestedNamesMayRepeatAtDifferentDepthsAndRepeatedCallsReuseTheChildBuilder() {
+		List<ConfigScreenCategory> categories = createCategories(
+			List.of(),
+			screenBuilder -> screenBuilder.addCategory("general")
+				.addCategory("advanced")
+				.addCategory("advanced")
+				.addScreenValue(new TestConfigValue("nested")),
+			lookup -> List.of()
+		);
+		assertEquals(List.of("Advanced", "Advanced"), categoryPathTitles(valueByName(categories.get(0), "nested")));
+
+		List<ConfigScreenCategory> reused = createCategories(
+			List.of(),
+			screenBuilder -> {
+				IConfigScreenCategoryBuilder category = screenBuilder.addCategory("general");
+				IConfigScreenCategoryBuilder advanced = category.addCategory("advanced")
+					.setTitle(Component.literal("Advanced Settings"));
+				assertSame(advanced, category.addCategory("advanced"));
+				category.addCategory("advanced")
+					.addScreenValue(new TestConfigValue("reused"));
+			},
+			lookup -> List.of()
+		);
+		assertEquals(List.of("Advanced Settings"), categoryPathTitles(valueByName(reused.get(0), "reused")));
+	}
+
+	@Test
 	void appliesConfiguredApplyModesToCategoryValues() {
 		TestConfigValue immediateValue = new TestConfigValue("enabled");
 		TestConfigValue onApplyValue = new TestConfigValue("mode");
@@ -982,6 +1151,14 @@ class ConfigGuiPluginLoaderTest {
 			.toList();
 	}
 
+	private static List<String> categoryPathTitles(IConfigScreenValue<?> value) {
+		return ConfigValueCategoryPath.getCategories(value)
+			.stream()
+			.map(ConfigValueCategoryPath.Category::title)
+			.map(Component::getString)
+			.toList();
+	}
+
 	private static IConfigScreenValue<?> valueByName(ConfigScreenCategory category, String name) {
 		return category.getConfigValues()
 			.stream()
@@ -1017,15 +1194,25 @@ class ConfigGuiPluginLoaderTest {
 	private record TestCategory(
 		String name,
 		List<IConfigScreenValue<?>> values,
-		ConfigScreenCategoryGroup group
+		ConfigScreenCategoryGroup group,
+		ConfigScreenCategoryNavigationGroup navigationGroup
 	) implements ConfigScreenCategory {
 		private TestCategory(String name, List<IConfigScreenValue<?>> values) {
-			this(name, values, ConfigScreenCategoryGroup.MOD_OWNED);
+			this(name, values, ConfigScreenCategoryGroup.MOD_OWNED, null);
+		}
+
+		private TestCategory(String name, List<IConfigScreenValue<?>> values, ConfigScreenCategoryGroup group) {
+			this(name, values, group, null);
 		}
 
 		@Override
 		public ConfigScreenCategoryGroup getGroup() {
 			return group;
+		}
+
+		@Override
+		public ConfigScreenCategoryNavigationGroup getNavigationGroup() {
+			return navigationGroup;
 		}
 
 		@Override
