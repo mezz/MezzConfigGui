@@ -1,4 +1,6 @@
 @ApiStatus.Internal
+@NullMarked
 package net.mezzdev.config.gui.screenlist;
 
+import org.jspecify.annotations.NullMarked;
 import org.jetbrains.annotations.ApiStatus;
