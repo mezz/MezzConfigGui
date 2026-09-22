@@ -20,7 +20,6 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -151,6 +150,6 @@ class ModNavigationConfigTest {
 		Component title = Component.literal(name);
 		return new ConfigScreenListEntry(modId, title, parent -> {
 			throw new AssertionError("Sorting must not open screens");
-		}, new ConfigScreenOwnerIcon(modId, title, Optional.empty()));
+		}, new ConfigScreenOwnerIcon(modId, title, null));
 	}
 }

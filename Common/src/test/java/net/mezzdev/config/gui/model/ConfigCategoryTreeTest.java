@@ -21,6 +21,7 @@ import net.mezzdev.config.gui.input.UserInput;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
@@ -53,9 +54,9 @@ class ConfigCategoryTreeTest {
 		TestValue cow = value("server.toml", "Animals", "Cow");
 		TestValue pig = value("server.toml", "Animals", "Pig");
 		IConfigScreenValue<Boolean> wrappedCow = IConfigScreenValue.withApplyMode(
-			new TestValue(cow.category(), cow.categories(), Optional.of(provider)), ConfigValueApplyMode.ON_APPLY);
+			new TestValue(cow.category(), cow.categories(), provider), ConfigValueApplyMode.ON_APPLY);
 		IConfigScreenValue<Boolean> wrappedPig = IConfigScreenValue.withApplyMode(
-			new TestValue(pig.category(), pig.categories(), Optional.of(provider)), ConfigValueApplyMode.ON_APPLY);
+			new TestValue(pig.category(), pig.categories(), provider), ConfigValueApplyMode.ON_APPLY);
 		ConfigScreenSchema schema = () -> List.of(category("server.toml", wrappedCow, wrappedPig));
 		ConfigScreenModel model = navigationModel(List.copyOf(schema.getCategories()));
 		ConfigServerInfo info = new ConfigServerInfo(schema);
@@ -503,19 +504,19 @@ class ConfigCategoryTreeTest {
 		}
 	}
 
-	private record TestValue(String category, List<ConfigValueCategoryPath.Category> categories, Optional<Supplier<ServerConfigAccess>> serverAccess) implements IConfigScreenValue<Boolean>, IConfigLocalizedValue, ConfigValueCategoryPath, ConfigValueAccess {
+	private record TestValue(String category, List<ConfigValueCategoryPath.Category> categories, @Nullable Supplier<ServerConfigAccess> serverAccess) implements IConfigScreenValue<Boolean>, IConfigLocalizedValue, ConfigValueCategoryPath, ConfigValueAccess {
 		private TestValue(String category, List<ConfigValueCategoryPath.Category> categories) {
-			this(category, categories, Optional.empty());
+			this(category, categories, null);
 		}
 
 		@Override
 		public boolean isEditable() {
-			return serverAccess.map(provider -> provider.get() == ServerConfigAccess.LOCAL).orElse(true);
+			return serverAccess == null || serverAccess.get() == ServerConfigAccess.LOCAL;
 		}
 
 		@Override
 		public Optional<Supplier<ServerConfigAccess>> getServerAccess() {
-			return serverAccess;
+			return Optional.ofNullable(serverAccess);
 		}
 
 		@Override

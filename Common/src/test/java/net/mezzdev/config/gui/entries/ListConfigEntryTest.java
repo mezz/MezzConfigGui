@@ -8,6 +8,7 @@ import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.network.chat.Component;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
@@ -27,7 +28,7 @@ class ListConfigEntryTest {
 		int size = 2000;
 		List<String> allValues = IntStream.range(0, size).mapToObj(index -> "value" + index).toList();
 		CountingList selectedValues = new CountingList(allValues);
-		TestListSerializer serializer = new TestListSerializer(true, Optional.of(allValues), ConfigListOrdering.ORDERED);
+		TestListSerializer serializer = new TestListSerializer(true, allValues, ConfigListOrdering.ORDERED);
 		new ListConfigEntry<>(new TestConfigValue(serializer, selectedValues), serializer, selector -> {}, () -> {}, null);
 		assertTrue(selectedValues.reads <= size * 3,
 			"Opening a sorting list repeatedly scanned its selected values: " + selectedValues.reads);
@@ -77,7 +78,7 @@ class ListConfigEntryTest {
 	void hidesTypedInputWhenElementSerializerHasFiniteValidValues() {
 		ListConfigEntry<String> entry = createEntry(
 			true,
-			Optional.of(List.of("first", "second"))
+			List.of("first", "second")
 		);
 
 		assertFalse(getAllowsTypedInput(entry));
@@ -87,7 +88,7 @@ class ListConfigEntryTest {
 	void showsTypedInputWhenElementSerializerIsOpenEndedAndRemovingValuesIsAllowed() {
 		ListConfigEntry<String> entry = createEntry(
 			true,
-			Optional.empty()
+			null
 		);
 
 		assertTrue(getAllowsTypedInput(entry));
@@ -97,7 +98,7 @@ class ListConfigEntryTest {
 	void hidesTypedInputWhenRemovingValuesIsDisallowed() {
 		ListConfigEntry<String> entry = createEntry(
 			false,
-			Optional.empty()
+			null
 		);
 
 		assertFalse(getAllowsTypedInput(entry));
@@ -136,7 +137,7 @@ class ListConfigEntryTest {
 	void honorsUnorderedListMetadata() {
 		TestListSerializer serializer = new TestListSerializer(
 			true,
-			Optional.empty(),
+			null,
 			ConfigListOrdering.UNORDERED
 		);
 		ListConfigEntry<String> entry = new ListConfigEntry<>(
@@ -152,7 +153,7 @@ class ListConfigEntryTest {
 
 	private static ListConfigEntry<String> createEntry(
 		boolean allowsRemovingValues,
-		Optional<List<String>> allValidValues
+		@Nullable List<String> allValidValues
 	) {
 		TestListSerializer serializer = new TestListSerializer(
 			allowsRemovingValues,
@@ -258,7 +259,7 @@ class ListConfigEntryTest {
 
 		private TestListSerializer(
 			boolean allowsRemovingValues,
-			Optional<List<String>> allValidValues,
+			@Nullable List<String> allValidValues,
 			ConfigListOrdering ordering
 		) {
 			this.allowsRemovingValues = allowsRemovingValues;
@@ -313,10 +314,15 @@ class ListConfigEntryTest {
 	}
 
 	private static final class TestElementSerializer implements IConfigValueSerializer<String> {
-		private final Optional<List<String>> allValidValues;
+		@Nullable
+		private final List<String> allValidValues;
 
-		private TestElementSerializer(Optional<List<String>> allValidValues) {
-			this.allValidValues = allValidValues.map(List::copyOf);
+		private TestElementSerializer(@Nullable List<String> allValidValues) {
+			if (allValidValues == null) {
+				this.allValidValues = null;
+			} else {
+				this.allValidValues = List.copyOf(allValidValues);
+			}
 		}
 
 		@Override
@@ -336,7 +342,7 @@ class ListConfigEntryTest {
 
 		@Override
 		public Optional<List<String>> getAllValidValues() {
-			return allValidValues;
+			return Optional.ofNullable(allValidValues);
 		}
 
 		@Override

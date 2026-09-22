@@ -5,7 +5,6 @@ import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -31,6 +30,6 @@ class ConfigScreenListEntryTest {
 		Component title = Component.literal(modId);
 		return new ConfigScreenListEntry(modId, title, parent -> {
 			throw new AssertionError("Navigation sorting must not open screens");
-		}, new ConfigScreenOwnerIcon(modId, title, Optional.empty()));
+		}, new ConfigScreenOwnerIcon(modId, title, null));
 	}
 }
