@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.remote;
 
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -89,6 +90,7 @@ class RemoteConfigPayloadTest {
 		List<byte[]> chunks = new ArrayList<>(RemoteConfigPayloadChunker.split(data, 10));
 		Collections.reverse(chunks);
 		RemoteConfigPayloadReassembler reassembler = new RemoteConfigPayloadReassembler();
+		@Nullable
 		byte[] result = null;
 		for (byte[] chunk : chunks) {
 			result = reassembler.accept(chunk, 0).orElse(result);
