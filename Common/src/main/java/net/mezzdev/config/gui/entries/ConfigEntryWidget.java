@@ -44,11 +44,6 @@ import java.util.function.Supplier;
  */
 public abstract class ConfigEntryWidget<T> {
 
-	public static final int TEXT_COLOR = 0xFFFFFFFF;
-	public static final int SECONDARY_TEXT_COLOR = 0xFFE0E0E0;
-	public static final int HOVER_TEXT_COLOR = 0xFFFFFFFF;
-	public static final int DISABLED_TEXT_COLOR = 0xFFA0A0A0;
-
 	protected static final int NAME_RIGHT_RESERVE = 95;
 	private static final int NAME_LEFT_PADDING = 5;
 	public static final float TEXT_SCALE = 1.0f;
@@ -63,10 +58,6 @@ public abstract class ConfigEntryWidget<T> {
 
 	public static int getConfiguredTextColor() {
 		return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_TEXT);
-	}
-
-	public static int getConfiguredSecondaryTextColor() {
-		return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_SECONDARY_TEXT);
 	}
 
 	public static int getConfiguredHoverTextColor() {
