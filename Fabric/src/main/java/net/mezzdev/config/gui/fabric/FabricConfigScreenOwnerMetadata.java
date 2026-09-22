@@ -5,9 +5,6 @@ import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.ModMetadata;
 import net.mezzdev.config.gui.screenlist.ConfigScreenOwnerMetadata;
 
-import java.nio.file.Path;
-import java.util.Optional;
-
 final class FabricConfigScreenOwnerMetadata {
 	private static final int ICON_SIZE = 64;
 
@@ -24,8 +21,10 @@ final class FabricConfigScreenOwnerMetadata {
 
 	private static ConfigScreenOwnerMetadata get(ModContainer modContainer) {
 		ModMetadata metadata = modContainer.getMetadata();
-		Optional<Path> iconPath = metadata.getIconPath(ICON_SIZE)
-			.flatMap(modContainer::findPath);
-		return new ConfigScreenOwnerMetadata(iconPath);
+		return new ConfigScreenOwnerMetadata(
+			metadata.getIconPath(ICON_SIZE)
+				.flatMap(modContainer::findPath)
+				.orElse(null)
+		);
 	}
 }

@@ -735,7 +735,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		if (!row.selected || !isIndexValid(getValue(), row.index)) {
 			return false;
 		}
-		if (row.hexColor.isPresent() && row.componentColorSwatchArea.contains(input.getMouseX(), input.getMouseY())) {
+		if (row.hexColor != null && row.componentColorSwatchArea.contains(input.getMouseX(), input.getMouseY())) {
 			if (!input.isSimulate()) {
 				commitAddValue();
 				commitComponentEdit();
@@ -1387,7 +1387,8 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 
 	private class ListValueRow {
 		final T value;
-		private final Optional<HexColorString> hexColor;
+		@Nullable
+		private final HexColorString hexColor;
 		int index;
 		private final boolean selected;
 		ImmutableRect2i area = ImmutableRect2i.EMPTY;
@@ -1403,7 +1404,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 
 		ListValueRow(T value, int index, boolean selected) {
 			this.value = value;
-			this.hexColor = HexColorString.parse(getRowComponent(value));
+			this.hexColor = HexColorString.parse(getRowComponent(value)).orElse(null);
 			this.index = index;
 			this.selected = selected;
 		}
@@ -1440,7 +1441,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 				componentValueArea = ImmutableRect2i.EMPTY;
 				componentColorSwatchArea = ImmutableRect2i.EMPTY;
 				componentHexArea = ImmutableRect2i.EMPTY;
-				if (hexColor.isPresent()) {
+				if (hexColor != null) {
 					componentColorSwatchArea = createColorComponentAreas(getContentArea(rowArea)).swatchArea();
 				}
 				return;
@@ -1460,7 +1461,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 				contentArea.getHeight()
 			);
 			Object component = keyValueSerializer.getValue(value);
-			if (component instanceof PackedColor || hexColor.isPresent()) {
+			if (component instanceof PackedColor || hexColor != null) {
 				ColorComponentAreas colorAreas = createColorComponentAreas(componentValueArea);
 				componentColorSwatchArea = colorAreas.swatchArea();
 				componentHexArea = colorAreas.hexArea();
@@ -1634,9 +1635,9 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			ImmutableRect2i contentArea = getContentArea(rowArea);
 			int textX = contentArea.getX();
 			int iconY = rowArea.getY() + (rowArea.getHeight() - ConfigValueIcon.ICON_SIZE) / 2;
-			if (hexColor.isPresent()) {
+			if (hexColor != null) {
 				ImmutableRect2i swatch = createColorComponentAreas(contentArea).swatchArea();
-				ColorSwatch.draw(guiGraphics, swatch, hexColor.get().color());
+				ColorSwatch.draw(guiGraphics, swatch, hexColor.color());
 				textX += swatch.getWidth() + COLOR_COMPONENT_GAP;
 			} else {
 				ConfigValueIcon.draw(guiGraphics, elementSerializer, value, textX, iconY);
@@ -1722,9 +1723,9 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			}
 			int textX = componentArea.getX() + KEY_VALUE_TEXT_PADDING;
 			int iconY = componentArea.getY() + (componentArea.getHeight() - ConfigValueIcon.ICON_SIZE) / 2;
-			if (valueComponent && hexColor.isPresent()) {
+			if (valueComponent && hexColor != null) {
 				ImmutableRect2i swatch = createColorComponentAreas(componentArea).swatchArea();
-				ColorSwatch.draw(guiGraphics, swatch, hexColor.get().color());
+				ColorSwatch.draw(guiGraphics, swatch, hexColor.color());
 				textX += swatch.getWidth() + COLOR_COMPONENT_GAP;
 			} else {
 				ConfigValueIcon.draw(guiGraphics, componentSerializer, component, textX, iconY);

@@ -35,15 +35,16 @@ public final class ConfigScreenOwnerIcon {
 
 	private final String modId;
 	private final Component displayName;
-	private final Optional<Path> iconPath;
+	@Nullable
+	private final Path iconPath;
 	@Nullable
 	private LoadedIcon loadedIcon;
 	private boolean loadAttempted;
 
-	public ConfigScreenOwnerIcon(String modId, Component displayName, Optional<Path> iconPath) {
+	public ConfigScreenOwnerIcon(String modId, Component displayName, @Nullable Path iconPath) {
 		this.modId = Objects.requireNonNull(modId, "modId");
 		this.displayName = Objects.requireNonNull(displayName, "displayName");
-		this.iconPath = Objects.requireNonNull(iconPath, "iconPath");
+		this.iconPath = iconPath;
 	}
 
 	public void draw(LegacyGuiGraphics guiGraphics, Font font, ImmutableRect2i iconArea) {
@@ -67,18 +68,18 @@ public final class ConfigScreenOwnerIcon {
 	}
 
 	private Optional<LoadedIcon> loadIcon() {
-		if (iconPath.isEmpty()) {
+		Path iconPath = this.iconPath;
+		if (iconPath == null) {
 			return Optional.empty();
 		}
-		Path path = iconPath.get();
-		try (InputStream inputStream = Files.newInputStream(path)) {
+		try (InputStream inputStream = Files.newInputStream(iconPath)) {
 			NativeImage image = NativeImage.read(inputStream);
 			int imageWidth = image.getWidth();
 			int imageHeight = image.getHeight();
 			ResourceLocation location = ConfigRenderUtil.registerIcon(image);
 			return Optional.of(new LoadedIcon(location, imageWidth, imageHeight));
 		} catch (IOException | RuntimeException e) {
-			LOGGER.debug("Failed to load config screen icon for mod id: {}, path: {}", modId, path, e);
+			LOGGER.debug("Failed to load config screen icon for mod id: {}, path: {}", modId, iconPath, e);
 			return Optional.empty();
 		}
 	}

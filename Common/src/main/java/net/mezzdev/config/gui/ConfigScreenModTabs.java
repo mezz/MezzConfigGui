@@ -284,7 +284,7 @@ final class ConfigScreenModTabs {
 		}
 		ConfigScreenListEntry entry = pressedTarget.entry();
 		if (entry != null && !entry.modId().equals(activeModId)) {
-			return new ClickResult(true, true, Optional.of(entry));
+			return new ClickResult(true, true, entry);
 		}
 		return ClickResult.HANDLED;
 	}
@@ -382,14 +382,10 @@ final class ConfigScreenModTabs {
 	record ClickResult(
 		boolean handled,
 		boolean playSound,
-		Optional<ConfigScreenListEntry> entry
+		@Nullable ConfigScreenListEntry entry
 	) {
-		private static final ClickResult NOT_HANDLED = new ClickResult(false, false, Optional.empty());
-		private static final ClickResult HANDLED = new ClickResult(true, false, Optional.empty());
-		private static final ClickResult SCROLLED = new ClickResult(true, true, Optional.empty());
-
-		ClickResult {
-			Objects.requireNonNull(entry, "entry");
-		}
+		private static final ClickResult NOT_HANDLED = new ClickResult(false, false, null);
+		private static final ClickResult HANDLED = new ClickResult(true, false, null);
+		private static final ClickResult SCROLLED = new ClickResult(true, true, null);
 	}
 }
