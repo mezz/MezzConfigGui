@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -317,6 +318,7 @@ class RemoteConfigEditorTest {
 
 	private static final class RequestCapture {
 		private final RemoteConfigPayloadReassembler reassembler = new RemoteConfigPayloadReassembler();
+		@Nullable
 		private RemoteConfigMessage message;
 
 		private boolean accept(RemoteConfigRequestChunkPayload payload) {
@@ -327,7 +329,7 @@ class RemoteConfigEditorTest {
 		}
 
 		private RemoteConfigMessage take() {
-			RemoteConfigMessage result = message;
+			RemoteConfigMessage result = Objects.requireNonNull(message, "No request was captured");
 			message = null;
 			return result;
 		}
