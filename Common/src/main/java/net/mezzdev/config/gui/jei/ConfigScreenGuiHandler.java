@@ -2,7 +2,6 @@ package net.mezzdev.config.gui.jei;
 
 import mezz.jei.api.gui.handlers.IGlobalGuiHandler;
 import net.mezzdev.config.gui.ConfigScreen;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Rect2i;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,7 +15,6 @@ import java.util.List;
 final class ConfigScreenGuiHandler implements IGlobalGuiHandler {
 	@Override
 	public Collection<Rect2i> getGuiExtraAreas() {
-		Minecraft minecraft = Minecraft.getInstance();
 		if (net.mezzdev.config.gui.ConfigClientUtil.screen() instanceof ConfigScreen configScreen) {
 			List<Rect2i> areas = new ArrayList<>(2);
 			@Nullable

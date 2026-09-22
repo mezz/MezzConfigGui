@@ -134,7 +134,7 @@ public final class ConfigEntryWidgetFactory {
 		IConfigValueSerializer<Integer> serializer = value.getSerializer();
 		ConfigValueRange<Integer> range = serializer.getRange()
 			.orElseThrow(() -> new UnsupportedOperationException("Integer editor requires a config value range."));
-		return new IntegerConfigEntry(value, serializer, range, textures);
+		return new IntegerConfigEntry(value, range, textures);
 	}
 
 	private ConfigEntryWidget<PackedColor> createColorEntry(IConfigScreenValue<PackedColor> value) {
