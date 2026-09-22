@@ -28,6 +28,7 @@ plugins {
     id("maven-publish")
     id("net.neoforged.moddev")
     id("me.modmuss50.mod-publish-plugin")
+    id("net.mezzdev.config-language-resources")
 }
 
 publishMods {
@@ -129,8 +130,9 @@ for (testModSourceSet in testModSourceSets) {
     }
 }
 
-extra["configLanguageDependencyProjects"] = dependencyProjects
-apply(from = rootProject.file("buildtools/ConfigLanguageResources.gradle.kts"))
+configLanguageResources {
+    from(*dependencyProjects.toTypedArray())
+}
 
 val mergedConfigLanguageResources = tasks.named("mergeConfigLanguageResources")
 val configGuiAccessTransformer = commonProject.layout.projectDirectory.file("src/main/accesstransformer.cfg")
