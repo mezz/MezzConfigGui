@@ -2,7 +2,9 @@ package net.mezzdev.config.gui.fabric;
 
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
@@ -22,6 +24,7 @@ public final class ConfigGuiIdentifiableResourceReloadListener implements Prepar
 		return fabricId;
 	}
 
+	@Nullable
 	private PreparableReloadListener listener;
 
 	@Override
@@ -32,6 +35,7 @@ public final class ConfigGuiIdentifiableResourceReloadListener implements Prepar
 
 	@Override
 	public CompletableFuture<Void> reload(SharedState state, Executor backgroundExecutor, PreparationBarrier barrier, Executor gameExecutor) {
+		PreparableReloadListener listener = Objects.requireNonNull(this.listener, "prepareSharedState must be called before reload");
 		return listener.reload(state, backgroundExecutor, barrier, gameExecutor);
 	}
 }
