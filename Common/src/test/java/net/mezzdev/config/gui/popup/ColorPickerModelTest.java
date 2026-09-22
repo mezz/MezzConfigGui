@@ -5,6 +5,7 @@ import net.mezzdev.config.api.value.color.PackedColor;
 import net.mezzdev.config.gui.api.IConfigValuePopup;
 import net.mezzdev.config.gui.info.ColorSwatch;
 import net.minecraft.client.renderer.Rect2i;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -124,7 +125,7 @@ class ColorPickerModelTest {
 		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.rgb(0x336699));
 		IConfigValuePopup.Size size = popup.getPreferredSize(180, 300);
 		Rect2i area = new Rect2i(0, 0, size.width(), size.height());
-		AtomicReference<PackedColor> editedColor = new AtomicReference<>();
+		AtomicReference<@Nullable PackedColor> editedColor = new AtomicReference<>();
 
 		PackedColor noRed = clickControl(popup, area, 14, 90);
 		popup.getClickedValue(area, 90, 135, 0);
@@ -153,7 +154,7 @@ class ColorPickerModelTest {
 		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.argb(0xFF336699));
 		IConfigValuePopup.Size size = popup.getPreferredSize(180, 300);
 		Rect2i area = new Rect2i(0, 0, size.width(), size.height());
-		AtomicReference<PackedColor> editedColor = new AtomicReference<>();
+		AtomicReference<@Nullable PackedColor> editedColor = new AtomicReference<>();
 
 		PackedColor transparent = popup.getClickedValue(area, 14, 130, 0).orElseThrow();
 		popup.getClickedValue(area, 90, 147, 0);
@@ -199,7 +200,7 @@ class ColorPickerModelTest {
 	void popupAcceptsArgbHexInput() {
 		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.argb(0xFFFF0000));
 		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
-		AtomicReference<PackedColor> editedColor = new AtomicReference<>();
+		AtomicReference<@Nullable PackedColor> editedColor = new AtomicReference<>();
 
 		popup.getClickedValue(area, 180, 200, 0);
 		for (char character : "#804477DD".toCharArray()) {
@@ -213,7 +214,7 @@ class ColorPickerModelTest {
 	void hexInputIsAlwaysAvailable() {
 		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.rgb(0xFF0000));
 		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
-		AtomicReference<PackedColor> editedColor = new AtomicReference<>();
+		AtomicReference<@Nullable PackedColor> editedColor = new AtomicReference<>();
 
 		popup.getClickedValue(area, 180, 185, 0);
 		for (char character : "#336699".toCharArray()) {
@@ -226,7 +227,7 @@ class ColorPickerModelTest {
 	@Test
 	void focusedHexInputAcceptsTypingAsSoonAsPickerOpens() {
 		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.rgb(0xFF0000), true);
-		AtomicReference<PackedColor> editedColor = new AtomicReference<>();
+		AtomicReference<@Nullable PackedColor> editedColor = new AtomicReference<>();
 
 		for (char character : "#123456".toCharArray()) {
 			assertTrue(popup.charTyped(character, 0, editedColor::set));
