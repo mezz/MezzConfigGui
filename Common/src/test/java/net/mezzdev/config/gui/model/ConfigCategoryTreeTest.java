@@ -20,6 +20,7 @@ import net.mezzdev.config.gui.input.UserInput;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
@@ -52,9 +53,9 @@ class ConfigCategoryTreeTest {
 		TestValue cow = value("server.toml", "Animals", "Cow");
 		TestValue pig = value("server.toml", "Animals", "Pig");
 		IConfigScreenValue<Boolean> wrappedCow = IConfigScreenValue.withApplyMode(
-			new TestValue(cow.category(), cow.sections(), cow.categoryGroup(), Optional.of(provider)), ConfigValueApplyMode.ON_APPLY);
+			new TestValue(cow.category(), cow.sections(), cow.categoryGroup(), provider), ConfigValueApplyMode.ON_APPLY);
 		IConfigScreenValue<Boolean> wrappedPig = IConfigScreenValue.withApplyMode(
-			new TestValue(pig.category(), pig.sections(), pig.categoryGroup(), Optional.of(provider)), ConfigValueApplyMode.ON_APPLY);
+			new TestValue(pig.category(), pig.sections(), pig.categoryGroup(), provider), ConfigValueApplyMode.ON_APPLY);
 		ConfigScreenSchema schema = () -> List.of(category("server.toml", wrappedCow, wrappedPig));
 		ConfigScreenModel model = navigationModel(List.copyOf(schema.getCategories()));
 		ConfigServerInfo info = new ConfigServerInfo(schema);
@@ -122,7 +123,7 @@ class ConfigCategoryTreeTest {
 
 	private static TestCategory groupedCategory(String file, ConfigValueSections.CategoryGroup group, String... sections) {
 		TestValue original = value(file, sections);
-		TestValue grouped = new TestValue(file, original.sections(), Optional.of(group));
+		TestValue grouped = new TestValue(file, original.sections(), group);
 		return new TestCategory(file, List.of(grouped), group.title());
 	}
 
@@ -489,28 +490,28 @@ class ConfigCategoryTreeTest {
 		}
 	}
 
-	private record TestValue(String category, List<Section> sections, Optional<CategoryGroup> categoryGroup, Optional<Supplier<ServerConfigAccess>> serverAccess) implements IConfigScreenValue<Boolean>, IConfigLocalizedValue, ConfigValueSections, ConfigValueAccess {
-		private TestValue(String category, List<Section> sections, Optional<CategoryGroup> categoryGroup) {
-			this(category, sections, categoryGroup, Optional.empty());
+	private record TestValue(String category, List<Section> sections, @Nullable CategoryGroup categoryGroup, @Nullable Supplier<ServerConfigAccess> serverAccess) implements IConfigScreenValue<Boolean>, IConfigLocalizedValue, ConfigValueSections, ConfigValueAccess {
+		private TestValue(String category, List<Section> sections, @Nullable CategoryGroup categoryGroup) {
+			this(category, sections, categoryGroup, null);
 		}
 
 		private TestValue(String category, List<Section> sections) {
-			this(category, sections, Optional.empty());
+			this(category, sections, null);
 		}
 
 		@Override
 		public boolean isEditable() {
-			return serverAccess.map(provider -> provider.get() == ServerConfigAccess.LOCAL).orElse(true);
+			return serverAccess == null || serverAccess.get() == ServerConfigAccess.LOCAL;
 		}
 
 		@Override
 		public Optional<Supplier<ServerConfigAccess>> getServerAccess() {
-			return serverAccess;
+			return Optional.ofNullable(serverAccess);
 		}
 
 		@Override
 		public Optional<CategoryGroup> getCategoryGroup() {
-			return categoryGroup;
+			return Optional.ofNullable(categoryGroup);
 		}
 		@Override
 		public String getSectionCategoryName() {

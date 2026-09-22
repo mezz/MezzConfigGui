@@ -1,20 +1,16 @@
 package net.mezzdev.config.gui.screenlist;
 
 import java.nio.file.Path;
-import java.util.Objects;
-import java.util.Optional;
+
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Icon metadata for the mod that owns a config screen.
  */
 public record ConfigScreenOwnerMetadata(
-	Optional<Path> iconPath
+	@Nullable Path iconPath
 ) {
-	public ConfigScreenOwnerMetadata {
-		Objects.requireNonNull(iconPath, "iconPath");
-	}
-
 	public ConfigScreenOwnerMetadata() {
-		this(Optional.empty());
+		this(null);
 	}
 }
