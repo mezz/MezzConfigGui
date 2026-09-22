@@ -230,7 +230,7 @@ dependencies {
     compileOnly(mezzConfigApiDependency)
     mezzConfigRun(mezzConfigNeoForgeDependency)
     dependencyProjects.forEach {
-        implementation(it)
+        implementation(project(path = it.path, configuration = "namedElements"))
     }
     compileOnly(commonApiSourceSet.output)
     testImplementation(commonApiSourceSet.output)

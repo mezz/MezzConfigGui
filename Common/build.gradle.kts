@@ -1,15 +1,19 @@
-import net.neoforged.moddevgradle.dsl.NeoForgeExtension
+import net.fabricmc.loom.api.LoomGradleExtensionAPI
 import net.neoforged.jarcompatibilitychecker.gradle.CompatibilityTask
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     id("idea")
     id("java")
-    id("net.neoforged.moddev")
+    id("net.fabricmc.fabric-loom") apply false
     id("net.neoforged.jarcompatibilitychecker")
     id("maven-publish")
 }
+
+pluginManager.apply("net.fabricmc.fabric-loom-remap")
+val loom = extensions.getByType<LoomGradleExtensionAPI>()
 
 repositories {
     maven {
@@ -47,8 +51,8 @@ val targetMinecraftVersion = providers.gradleProperty("minecraftVersion").get()
 val configGuiModId: String by extra
 val configModGroup: String by extra
 val modJavaVersion: String by extra
-val mixinVersion: String by extra
 val jetbrainsAnnotationsVersion: String by extra
+val jsr305Version: String by extra
 val fastutilVersion: String by extra
 val mezzConfigApiDependency: String by rootProject.extra
 val mezzConfigRuntimeDependency = rootProject.extra["mezzConfigNeoForgeDependency"].toString()
@@ -66,26 +70,33 @@ base {
 }
 
 val apiSourceSet = sourceSets.create("api")
+afterEvaluate {
+    configurations.named(apiSourceSet.compileClasspathConfigurationName) {
+        extendsFrom(configurations.named("minecraftNamedCompile").get())
+    }
+}
 
-configure<NeoForgeExtension> {
-    neoFormVersion = "$targetMinecraftVersion-${project.extra["neoformTimestamp"]}"
-    accessTransformers { from(file("src/main/accesstransformer.cfg")) }
-    addModdingDependenciesTo(apiSourceSet)
-    addModdingDependenciesTo(sourceSets.test.get())
+configure<LoomGradleExtensionAPI> {
+    accessWidenerPath.set(file("src/main/resources/mezz_config.accesswidener"))
 }
 
 dependencies {
+    add("minecraft", "com.mojang:minecraft:$targetMinecraftVersion")
+    add("mappings", loom.officialMojangMappings())
+
     implementation(apiSourceSet.output)
     add(apiSourceSet.implementationConfigurationName, "org.jetbrains:annotations:$jetbrainsAnnotationsVersion")
     add(apiSourceSet.compileOnlyConfigurationName, mezzConfigApiDependency)
+    add(apiSourceSet.compileOnlyConfigurationName, "com.google.code.findbugs:jsr305:$jsr305Version")
 
-    compileOnly("org.spongepowered:mixin:$mixinVersion")
+    compileOnly("com.google.code.findbugs:jsr305:$jsr305Version")
     compileOnly(jeiApiDependency)
     compileOnly(mezzConfigApiDependency)
     implementation("org.jetbrains:annotations:$jetbrainsAnnotationsVersion")
     implementation("it.unimi.dsi:fastutil:$fastutilVersion")
     testImplementation("org.junit.jupiter:junit-jupiter:$jUnitVersion")
     testImplementation(mezzConfigApiDependency)
+    testCompileOnly("com.google.code.findbugs:jsr305:$jsr305Version")
     // Exercise sorting persistence with the released implementation, not a reimplementation in a test double.
     testImplementation(mezzConfigRuntimeDependency) {
         isTransitive = false
@@ -101,6 +112,36 @@ tasks.test {
         events = setOf(TestLogEvent.FAILED)
         exceptionFormat = TestExceptionFormat.FULL
     }
+}
+
+val commonCompileClasspath = configurations.named(sourceSets.main.get().compileClasspathConfigurationName)
+val validateVanillaMinecraftClasspath = tasks.register("validateVanillaMinecraftClasspath") {
+    group = "verification"
+    description = "Checks that Common compiles against vanilla Minecraft instead of a loader-patched jar."
+    inputs.files(commonCompileClasspath)
+
+    doLast {
+        val components = commonCompileClasspath.get().incoming.resolutionResult.allComponents
+            .mapNotNull { it.id as? ModuleComponentIdentifier }
+        val patchedMinecraft = components.filter {
+            (it.group == "net.minecraftforge" && it.module == "forge") ||
+                (it.group == "net.neoforged" && it.module == "neoforge")
+        }
+        require(patchedMinecraft.isEmpty()) {
+            "Common compile classpath contains loader-patched Minecraft: ${patchedMinecraft.joinToString()}"
+        }
+
+        val vanillaMinecraft = components.filter {
+            it.group == "net.minecraft" && it.module.startsWith("minecraft-")
+        }
+        require(vanillaMinecraft.size == 1) {
+            "Expected one vanilla Minecraft component on the Common compile classpath, found: ${vanillaMinecraft.joinToString()}"
+        }
+    }
+}
+
+tasks.matching { it.name == "remapJar" || it.name == "remapSourcesJar" }.configureEach {
+    enabled = false
 }
 
 java {
@@ -179,7 +220,7 @@ val checkJarCompatibility = tasks.named<CompatibilityTask>("checkJarCompatibilit
 }
 
 tasks.check {
-    dependsOn(checkJarCompatibility)
+    dependsOn(checkJarCompatibility, validateVanillaMinecraftClasspath)
 }
 
 tasks.withType<JavaCompile> {
