@@ -37,7 +37,7 @@ final class MezzConfigScreenSchema implements ConfigScreenSchema {
 
 	@Override
 	public List<? extends ConfigScreenCategory> getCategories() {
-		return createCategories(schema, schema.getCategories(), schema.getEditorCategories());
+		return createCategories(schema.getCategories(), schema.getEditorCategories());
 	}
 
 	@Override
@@ -50,7 +50,6 @@ final class MezzConfigScreenSchema implements ConfigScreenSchema {
 	}
 
 	private static List<ConfigScreenCategory> createCategories(
-		IConfigSchema schema,
 		List<? extends IConfigCategory> categories,
 		List<? extends IConfigEditorCategory> editorCategories
 	) {
