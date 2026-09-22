@@ -1,0 +1,4 @@
+accessWidener v2 named
+accessible method net/minecraft/client/gui/GuiGraphics blitSprite (Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;IIIIIIIII)V
+accessible method net/minecraft/client/gui/GuiGraphics blitNineSlicedSprite (Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;Lnet/minecraft/client/resources/metadata/gui/GuiSpriteScaling$NineSlice;IIIII)V
+accessible method net/minecraft/client/gui/GuiGraphics blitTiledSprite (Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;IIIIIIIIIII)V
