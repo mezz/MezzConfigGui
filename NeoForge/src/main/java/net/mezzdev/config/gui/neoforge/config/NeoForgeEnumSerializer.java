@@ -7,6 +7,7 @@ import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.common.TranslatableEnum;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.List;
@@ -45,7 +46,7 @@ final class NeoForgeEnumSerializer<T extends Enum<T>> implements IConfigValueEdi
 	}
 
 	@Override
-	public boolean isValid(T value) {
+	public boolean isValid(@Nullable T value) {
 		return validValues.contains(value);
 	}
 

@@ -4,7 +4,7 @@ import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.input.UserInput;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Internal lifecycle wrapper for popup content that edits a config value.

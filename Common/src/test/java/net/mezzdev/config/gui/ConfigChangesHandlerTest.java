@@ -18,7 +18,7 @@ import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.model.AppliedConfigValueChange;
 import net.mezzdev.config.gui.model.ConfigValueChange;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
@@ -143,7 +143,7 @@ class ConfigChangesHandlerTest {
 		);
 		TestConfigSchema schema = new TestConfigSchema(ConfigSchemaType.SERVER, null, remote);
 		List<Runnable> continuationTasks = new ArrayList<>();
-		CompletableFuture<Void> remoteRequest = new CompletableFuture<>();
+		CompletableFuture<@Nullable Void> remoteRequest = new CompletableFuture<>();
 
 		CompletableFuture<ConfigChangesResult> resultFuture = ConfigChangesHandler.applyBySchema(
 			List.of(
@@ -517,7 +517,7 @@ class ConfigChangesHandlerTest {
 		}
 
 		@Override
-		public boolean isValid(String value) {
+		public boolean isValid(@Nullable String value) {
 			return value != null;
 		}
 

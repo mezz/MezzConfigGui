@@ -4,7 +4,7 @@ import net.mezzdev.config.gui.api.IConfigScreenFactory;
 import net.mezzdev.config.gui.screenlist.ConfigScreenListEntry;
 import net.mezzdev.config.gui.screenlist.ConfigScreenListScreen;
 import net.minecraft.client.gui.screens.Screen;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
@@ -38,7 +38,6 @@ public final class ConfigScreenNavigation {
 		if (parent instanceof ConfigScreenListScreen screenListScreen) {
 			return screenListScreen;
 		}
-		@Nullable
 		IConfigScreenFactory screenListFactory = this.screenListFactory;
 		if (screenListFactory == null) {
 			throw new IllegalStateException("No config screen list factory has been registered.");

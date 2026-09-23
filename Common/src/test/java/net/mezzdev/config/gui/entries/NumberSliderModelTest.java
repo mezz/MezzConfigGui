@@ -88,6 +88,7 @@ class NumberSliderModelTest {
 	}
 
 	@Test
+	@SuppressWarnings("DataFlowIssue")
 	void numberDisplayOptionSelectsSliderOrExistingControl() {
 		ConfigEntryWidgetFactory factory = new ConfigEntryWidgetFactory(ignored -> {}, () -> {}, null, Map.of());
 		TestIntegerConfigValue value = new TestIntegerConfigValue();

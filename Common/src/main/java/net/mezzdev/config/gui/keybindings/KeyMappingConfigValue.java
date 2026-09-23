@@ -9,6 +9,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,11 +68,12 @@ public final class KeyMappingConfigValue implements IConfigScreenValue<KeyMappin
 	}
 
 	@Override
-	public boolean set(KeyMappingValue value) {
+	public boolean set(@Nullable KeyMappingValue value) {
 		if (!serializer.isValid(value)) {
 			throw new IllegalArgumentException("Invalid key mapping value: " + value);
 		}
-		ConfigKeyBinding binding = configKeyMapping.normalize(value.binding());
+		KeyMappingValue checkedValue = Objects.requireNonNull(value);
+		ConfigKeyBinding binding = configKeyMapping.normalize(checkedValue.binding());
 		if (getValue().binding().equals(binding)) {
 			return false;
 		}

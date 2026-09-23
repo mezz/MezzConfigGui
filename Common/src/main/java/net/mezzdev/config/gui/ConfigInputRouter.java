@@ -3,6 +3,7 @@ package net.mezzdev.config.gui;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.gui.input.UserInput;
 import net.minecraft.client.gui.screens.Screen;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -17,7 +18,7 @@ final class ConfigInputRouter {
 		this.inputHandlers = List.copyOf(inputHandlers);
 	}
 
-	public boolean handleUserInput(Screen screen, UserInput input) {
+	public boolean handleUserInput(@Nullable Screen screen, UserInput input) {
 		return switch (input.getInputType()) {
 			case IMMEDIATE -> handleImmediateClick(screen, input);
 			case SIMULATE -> handleSimulateClick(screen, input);
@@ -25,12 +26,12 @@ final class ConfigInputRouter {
 		};
 	}
 
-	private boolean handleImmediateClick(Screen screen, UserInput input) {
+	private boolean handleImmediateClick(@Nullable Screen screen, UserInput input) {
 		pending.remove(input.getKey());
 		return handleInput(screen, input).isPresent();
 	}
 
-	private boolean handleSimulateClick(Screen screen, UserInput input) {
+	private boolean handleSimulateClick(@Nullable Screen screen, UserInput input) {
 		pending.remove(input.getKey());
 		return handleInput(screen, input)
 			.map(callback -> {
@@ -40,13 +41,13 @@ final class ConfigInputRouter {
 			.orElse(false);
 	}
 
-	private boolean handleExecuteClick(Screen screen, UserInput input) {
+	private boolean handleExecuteClick(@Nullable Screen screen, UserInput input) {
 		return Optional.ofNullable(pending.remove(input.getKey()))
 			.flatMap(inputHandler -> inputHandler.handleUserInput(screen, input))
 			.isPresent();
 	}
 
-	private Optional<ConfigInputHandler> handleInput(Screen screen, UserInput input) {
+	private Optional<ConfigInputHandler> handleInput(@Nullable Screen screen, UserInput input) {
 		Optional<ConfigInputHandler> firstHandled = Optional.empty();
 		for (ConfigInputHandler inputHandler : inputHandlers) {
 			if (firstHandled.isEmpty()) {
@@ -75,7 +76,7 @@ final class ConfigInputRouter {
 			.isPresent();
 	}
 
-	public boolean handleMouseDragged(Screen screen, double mouseX, double mouseY, int button, double dragX, double dragY) {
+	public boolean handleMouseDragged(@Nullable Screen screen, double mouseX, double mouseY, int button, double dragX, double dragY) {
 		InputConstants.Key key = InputConstants.Type.MOUSE.getOrCreate(button);
 		ConfigInputHandler inputHandler = pending.get(key);
 		if (inputHandler == null) {

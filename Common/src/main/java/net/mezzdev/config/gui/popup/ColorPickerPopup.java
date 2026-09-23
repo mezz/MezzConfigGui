@@ -17,7 +17,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.util.StringUtil;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -125,7 +125,6 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 			return Optional.empty();
 		}
 		PickerLayout layout = createLayout(area);
-		@Nullable
 		ColorAxis clickedAxis = layout.getAxisSelector(mouseX, mouseY);
 		if (clickedAxis != null) {
 			verticalAxis = clickedAxis;
@@ -134,7 +133,6 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 			clearFocus();
 			return Optional.empty();
 		}
-		@Nullable
 		ColorField clickedField = layout.getField(mouseX, mouseY);
 		if (clickedField != null) {
 			activeControl = ColorControl.NONE;
@@ -310,7 +308,6 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		if (field == null) {
 			return;
 		}
-		@Nullable
 		SliderArea slider = layout.getSlider(field);
 		if (slider == null) {
 			return;

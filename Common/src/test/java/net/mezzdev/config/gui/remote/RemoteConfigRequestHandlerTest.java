@@ -14,7 +14,7 @@ import net.mezzdev.config.api.value.change.IConfigValueBatchChangeListener;
 import net.mezzdev.config.api.value.change.IConfigValueChangeListener;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
@@ -266,7 +266,6 @@ class RemoteConfigRequestHandlerTest {
 			});
 			List<IAppliedConfigValueChange<?>> changes = new ArrayList<>();
 			for (PendingSet<?> pendingSet : pendingSets) {
-				@Nullable
 				IAppliedConfigValueChange<?> change = pendingSet.apply();
 				if (change != null) {
 					changes.add(change);
