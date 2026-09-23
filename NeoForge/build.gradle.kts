@@ -278,6 +278,7 @@ tasks.jar {
     for (dependencySourceSet in dependencySourceSets) {
         from(dependencySourceSet.output) {
             exclude("assets/mezz_config/lang/*.json")
+            exclude("assets/mezz_config_gui/lang/*.json")
         }
     }
     from(mergedConfigLanguageResources)

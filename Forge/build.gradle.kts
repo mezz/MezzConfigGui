@@ -173,7 +173,10 @@ val mergedConfigLanguageResources = tasks.named("mergeConfigLanguageResources")
 tasks.jar {
     dependsOn(mergedConfigLanguageResources)
     dependencySourceSets.forEach { dependencySourceSet ->
-        from(dependencySourceSet.output) { exclude("assets/mezz_config/lang/*.json") }
+        from(dependencySourceSet.output) {
+            exclude("assets/mezz_config/lang/*.json")
+            exclude("assets/mezz_config_gui/lang/*.json")
+        }
     }
     from(mergedConfigLanguageResources)
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
