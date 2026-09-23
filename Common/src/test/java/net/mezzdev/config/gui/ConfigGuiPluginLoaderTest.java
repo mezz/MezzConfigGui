@@ -132,7 +132,7 @@ class ConfigGuiPluginLoaderTest {
 
 	@Test
 	void explicitKeyMappingsAreHiddenWhenKeyMappingsAreHidden() {
-		KeyMapping keyMapping = keyMapping("key.test_mod.open", com.mojang.blaze3d.platform.InputConstants.KEY_K);
+		KeyMapping keyMapping = keyMapping("key.test_mod.open", InputConstants.KEY_K);
 
 		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("showKeyMappings", false)) {
 			List<ConfigScreenCategory> categories = createCategories(
@@ -165,8 +165,8 @@ class ConfigGuiPluginLoaderTest {
 	@Test
 	void supportsMultipleCustomKeyMappingCategoriesAndSuppressesDefaultCategory() {
 		AtomicBoolean defaultProviderCalled = new AtomicBoolean(false);
-		KeyMapping primaryKeyMapping = keyMapping("key.test_mod.primary", com.mojang.blaze3d.platform.InputConstants.KEY_K);
-		KeyMapping secondaryKeyMapping = keyMapping("key.test_mod.secondary", com.mojang.blaze3d.platform.InputConstants.KEY_L);
+		KeyMapping primaryKeyMapping = keyMapping("key.test_mod.primary", InputConstants.KEY_K);
+		KeyMapping secondaryKeyMapping = keyMapping("key.test_mod.secondary", InputConstants.KEY_L);
 
 		List<ConfigScreenCategory> categories = createCategories(
 			List.of(),
@@ -193,7 +193,7 @@ class ConfigGuiPluginLoaderTest {
 		AtomicBoolean defaultProviderCalled = new AtomicBoolean(false);
 		TestConfigValue originalValue = new TestConfigValue("dragDelayInMilliseconds");
 		TestCategory originalCategory = new TestCategory("input", List.of(originalValue));
-		KeyMapping keyMapping = keyMapping("key.test_mod.openScreen", com.mojang.blaze3d.platform.InputConstants.KEY_G);
+		KeyMapping keyMapping = keyMapping("key.test_mod.openScreen", InputConstants.KEY_G);
 
 		List<ConfigScreenCategory> categories = createCategories(
 			List.of(originalCategory),
@@ -431,7 +431,7 @@ class ConfigGuiPluginLoaderTest {
 			}
 
 			@Override
-			public void register(net.mezzdev.config.gui.api.IConfigGuiRegistration registration) {
+			public void register(IConfigGuiRegistration registration) {
 				registration.configureScreen(screenBuilder -> {
 					factoryCreationCustomizerCalls.incrementAndGet();
 					screenBuilder.addCategory("runtime")
@@ -998,8 +998,8 @@ class ConfigGuiPluginLoaderTest {
 			commonAliases,
 			commonCacheBudget
 		), ConfigScreenCategoryGroup.LOADER_NATIVE);
-		KeyMapping openKey = keyMapping("key.test_mod.openNativeScreen", com.mojang.blaze3d.platform.InputConstants.KEY_J);
-		KeyMapping toggleKey = keyMapping("key.test_mod.toggleNativeOverlay", com.mojang.blaze3d.platform.InputConstants.KEY_O);
+		KeyMapping openKey = keyMapping("key.test_mod.openNativeScreen", InputConstants.KEY_J);
+		KeyMapping toggleKey = keyMapping("key.test_mod.toggleNativeOverlay", InputConstants.KEY_O);
 		AtomicBoolean defaultProviderCalled = new AtomicBoolean(false);
 
 		List<ConfigScreenCategory> categories = createCategories(
@@ -1183,7 +1183,7 @@ class ConfigGuiPluginLoaderTest {
 	}
 
 	private static KeyMapping keyMapping(String name, int keyCode) {
-		return net.mezzdev.config.gui.TestMinecraft.keyMapping(
+		return TestMinecraft.keyMapping(
 			name,
 			InputConstants.Type.KEYBOARD,
 			keyCode,

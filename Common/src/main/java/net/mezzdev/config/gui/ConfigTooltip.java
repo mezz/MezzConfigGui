@@ -35,7 +35,7 @@ final class ConfigTooltip {
 				Integer.MAX_VALUE
 			);
 			List<FormattedCharSequence> visibleLines = Language.getInstance().getVisualOrder(splitLines.first());
-			if (net.mezzdev.config.gui.ConfigClientUtil.screen() instanceof MezzConfigScreen screen) {
+			if (ConfigClientUtil.screen() instanceof MezzConfigScreen screen) {
 				screen.setTooltipForNextRenderPass(visibleLines);
 			} else {
 				ConfigRenderUtil.tooltip(guiGraphics, font, visibleLines, x, y);

@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui;
 
+import net.minecraft.network.chat.Component;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import org.jetbrains.annotations.Nullable;
@@ -7,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 /** Access to the active screen, which moved to Minecraft's GUI manager in 26.2. */
 public final class ConfigClientUtil {
 	private ConfigClientUtil() {}
-	public static void sendMessage(net.minecraft.network.chat.Component message) {
+	public static void sendMessage(Component message) {
 		var player = Minecraft.getInstance().player;
 		if (player != null)
 			player.sendSystemMessage(message);

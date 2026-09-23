@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.entries;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.gui.ConfigInputUtil;
 
 import net.mezzdev.config.gui.util.ConfigMath;
@@ -233,26 +234,26 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 		if (!editing) {
 			return false;
 		}
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_UP) {
+		if (keyCode == InputConstants.KEY_UP) {
 			commitEdit();
 			incrementValue(getStep(modifiers));
 			return true;
 		}
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_DOWN) {
+		if (keyCode == InputConstants.KEY_DOWN) {
 			commitEdit();
 			incrementValue(-getStep(modifiers));
 			return true;
 		}
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_RETURN) {
+		if (keyCode == InputConstants.KEY_RETURN) {
 			commitEdit();
 			return true;
 		}
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
+		if (keyCode == InputConstants.KEY_ESCAPE) {
 			editing = false;
 			editText = "";
 			return true;
 		}
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_BACKSPACE && !editText.isEmpty()) {
+		if (keyCode == InputConstants.KEY_BACKSPACE && !editText.isEmpty()) {
 			editText = editText.substring(0, editText.length() - 1);
 			return true;
 		}
@@ -267,7 +268,7 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 	}
 
 	private static int getStep(int modifiers) {
-		if ((modifiers & net.mezzdev.config.gui.ConfigInputUtil.SHIFT_MODIFIER) != 0) {
+		if ((modifiers & ConfigInputUtil.SHIFT_MODIFIER) != 0) {
 			return SHIFT_STEP;
 		}
 		return NORMAL_STEP;

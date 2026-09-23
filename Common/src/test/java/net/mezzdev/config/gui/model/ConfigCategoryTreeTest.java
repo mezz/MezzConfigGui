@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui.model;
 
+import com.google.common.collect.Iterables;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.ConfigScreenCategory;
@@ -83,8 +85,8 @@ class ConfigCategoryTreeTest {
 		List<ConfigCategoryTree.Node> tree = ConfigCategoryTree.create(List.of(animals, items), 0);
 		assertEquals(List.of("Common (local)", "Animals", "Items"), tree.stream().map(node -> node.category().getLocalizedName().getString()).toList());
 		assertEquals(List.of(-1, 0, 0), tree.stream().map(ConfigCategoryTree.Node::parentIndex).toList());
-		assertEquals(com.google.common.collect.Iterables.getLast(ConfigCategoryTree.create(List.of(animals), 0)).category().getName(), tree.get(1).category().getName());
-		assertEquals(com.google.common.collect.Iterables.getLast(ConfigCategoryTree.create(List.of(items), 0)).category().getName(), tree.get(2).category().getName());
+		assertEquals(Iterables.getLast(ConfigCategoryTree.create(List.of(animals), 0)).category().getName(), tree.get(1).category().getName());
+		assertEquals(Iterables.getLast(ConfigCategoryTree.create(List.of(items), 0)).category().getName(), tree.get(2).category().getName());
 		assertEquals(animals.values(), tree.get(1).category().getConfigValues());
 		assertEquals(items.values(), tree.get(2).category().getConfigValues());
 		assertEquals("File: animals.toml", tree.get(1).category().getLocalizedDescription().getString());
@@ -119,7 +121,7 @@ class ConfigCategoryTreeTest {
 		TestCategory relocated = new TestCategory("quick", second.values(), group.title());
 		tree = ConfigCategoryTree.create(List.of(first, relocated), 10);
 		assertEquals(2, tree.size());
-		assertTrue(com.google.common.collect.Iterables.getLast(tree).inlineSections().isEmpty());
+		assertTrue(Iterables.getLast(tree).inlineSections().isEmpty());
 	}
 
 	private static TestCategory groupedCategory(String file, ConfigScreenCategoryNavigationGroup group, String... sections) {
@@ -164,7 +166,7 @@ class ConfigCategoryTreeTest {
 		assertEquals(List.of("common.toml", "Settings", "Large"), model.getCategories().stream().map(category -> category.getLocalizedName().getString()).toList());
 		assertTrue(model.getCategories().get(0).getConfigValues().isEmpty());
 		assertEquals(12, model.getCategories().get(1).getConfigValues().size());
-		assertEquals(11, com.google.common.collect.Iterables.getLast(model.getCategories()).getConfigValues().size());
+		assertEquals(11, Iterables.getLast(model.getCategories()).getConfigValues().size());
 		assertEquals(List.of("Small", "Tiny"), model.getInlineSections(1).stream().map(section -> section.title().getString()).toList());
 		assertEquals(List.of(1, 11), model.getInlineSections(1).stream().map(ConfigCategoryWidget.Section::firstEntryIndex).toList());
 		assertEquals(direct, model.getCategories().get(1).getConfigValues().iterator().next());
@@ -184,10 +186,10 @@ class ConfigCategoryTreeTest {
 		assertEquals(List.of(-1, 0), tree.stream().map(ConfigCategoryTree.Node::parentIndex).toList());
 		assertEquals(List.of(0, 1), tree.stream().map(ConfigCategoryTree.Node::depth).toList());
 		assertTrue(tree.get(0).hasChildren());
-		assertFalse(com.google.common.collect.Iterables.getLast(tree).hasChildren());
+		assertFalse(Iterables.getLast(tree).hasChildren());
 		assertTrue(tree.get(0).inlineSections().isEmpty());
-		assertEquals(List.of("Cow", "Pig"), com.google.common.collect.Iterables.getLast(tree).inlineSections().stream().map(section -> section.title().getString()).toList());
-		assertEquals(List.of(1, 2), com.google.common.collect.Iterables.getLast(tree).inlineSections().stream().map(ConfigCategoryWidget.Section::firstEntryIndex).toList());
+		assertEquals(List.of("Cow", "Pig"), Iterables.getLast(tree).inlineSections().stream().map(section -> section.title().getString()).toList());
+		assertEquals(List.of(1, 2), Iterables.getLast(tree).inlineSections().stream().map(ConfigCategoryWidget.Section::firstEntryIndex).toList());
 	}
 
 	@Test
@@ -289,7 +291,7 @@ class ConfigCategoryTreeTest {
 		List<ConfigCategoryTree.Node> customTree = ConfigCategoryTree.create(List.of(category("quick", wrapped)), 0);
 
 		assertEquals(3, nativeTree.size());
-		assertEquals(List.of(wrapped), com.google.common.collect.Iterables.getLast(nativeTree).category().getConfigValues());
+		assertEquals(List.of(wrapped), Iterables.getLast(nativeTree).category().getConfigValues());
 		assertEquals(1, customTree.size());
 		assertEquals(List.of(wrapped), customTree.get(0).category().getConfigValues());
 		assertEquals("Animals › Cow › Remove AI", ConfigValueCategoryPath.getContextualName(wrapped, Component.literal("Remove AI")).getString());
@@ -432,7 +434,7 @@ class ConfigCategoryTreeTest {
 	}
 
 	private static UserInput mouse(double x, double y, InputType type) {
-		return UserInput.fromVanilla(x, y, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT, type).orElseThrow();
+		return UserInput.fromVanilla(x, y, InputConstants.MOUSE_BUTTON_LEFT, type).orElseThrow();
 	}
 
 	private static ConfigScreenModel animalModel() {

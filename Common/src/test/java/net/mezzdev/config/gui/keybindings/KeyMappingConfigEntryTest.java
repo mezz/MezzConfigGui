@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.keybindings;
 
+import net.mezzdev.config.gui.TestMinecraft;
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.gui.api.ConfigValueEditorType;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
@@ -43,7 +44,7 @@ class KeyMappingConfigEntryTest {
 
 	@Test
 	void missingOptionalTranslationsDoNotLeakIntoInfo() {
-		ConfigKeyMapping keyMapping = new ConfigKeyMapping(net.mezzdev.config.gui.TestMinecraft.keyMapping("key.test_mod.without_details", -1, "key.categories.misc"));
+		ConfigKeyMapping keyMapping = new ConfigKeyMapping(TestMinecraft.keyMapping("key.test_mod.without_details", -1, "key.categories.misc"));
 		KeyMappingConfigEntry entry = new KeyMappingConfigEntry(new KeyMappingConfigValue(keyMapping), null);
 
 		assertTrue(keyMapping.getLocalizedDescription().getString().isEmpty());
