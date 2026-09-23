@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui.remote;
 
 import net.mezzdev.config.api.schema.ConfigSchemaType;
+import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.schema.category.IConfigCategory;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.value.IConfigValue;
@@ -810,7 +811,7 @@ public final class RemoteConfigEditor {
 		}
 
 		@Override
-		public net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement getRestartRequirement() {
+		public ConfigValueRestartRequirement getRestartRequirement() {
 			return delegate.getRestartRequirement();
 		}
 

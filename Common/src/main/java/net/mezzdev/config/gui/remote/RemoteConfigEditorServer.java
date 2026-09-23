@@ -7,6 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jspecify.annotations.Nullable;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -145,7 +146,7 @@ public final class RemoteConfigEditorServer {
 				false,
 				error,
 				0,
-				java.util.List.of()
+				List.of()
 			);
 			case RemoteConfigMessage.UpdateResponse update -> new RemoteConfigMessage.UpdateResponse(
 				update.requestId(),
@@ -154,7 +155,7 @@ public final class RemoteConfigEditorServer {
 				false,
 				error,
 				0,
-				java.util.List.of()
+				List.of()
 			);
 			default -> throw new IllegalArgumentException("A request cannot be sent as a remote config response.");
 		};
