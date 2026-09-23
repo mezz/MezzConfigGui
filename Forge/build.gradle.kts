@@ -120,7 +120,10 @@ configLanguageResources {
 }
 val languages = tasks.named("mergeConfigLanguageResources")
 tasks.jar {
-    from(commonOutputs.map { it.output }) { exclude("assets/mezz_config/lang/*.json") }
+    from(commonOutputs.map { it.output }) {
+        exclude("assets/mezz_config/lang/*.json")
+        exclude("assets/mezz_config_gui/lang/*.json")
+    }
     from(languages)
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
