@@ -6,6 +6,7 @@ import net.mezzdev.config.gui.api.ConfigValueEditorType;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.minecraft.network.chat.Component;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
@@ -43,8 +44,8 @@ final class NeoForgeIntegerSerializer implements IConfigValueEditorSerializer<In
 	}
 
 	@Override
-	public boolean isValid(Integer value) {
-		return value >= range.min() && value <= range.max();
+	public boolean isValid(@Nullable Integer value) {
+		return value != null && value >= range.min() && value <= range.max();
 	}
 
 	@Override

@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigInfoPanelLayoutTest {
 	@Test
+	@SuppressWarnings("DataFlowIssue")
 	void growingInfoLeavesTheWindowAndRowOriginsInPlaceAndUpdatesScrolling() {
 		try (var ignored = ConfigGuiOptionsTestUtil.setValue("guiMode", ConfigGuiOptions.GuiMode.FULLSCREEN)) {
 			ConfigScreenLayout layout = new ConfigScreenLayout();
@@ -46,6 +47,7 @@ class ConfigInfoPanelLayoutTest {
 	}
 
 	@Test
+	@SuppressWarnings("DataFlowIssue")
 	void longDescriptionsAreCappedAndTheCapFollowsWindowResizing() {
 		try (var ignored = ConfigGuiOptionsTestUtil.setValue("guiMode", ConfigGuiOptions.GuiMode.FULLSCREEN)) {
 			ConfigScreenLayout layout = new ConfigScreenLayout();

@@ -8,7 +8,7 @@ import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,7 +21,6 @@ class ConfigValueSelectorInputHandlerTest {
 	private static final ImmutableRect2i CLIP_AREA = new ImmutableRect2i(0, 0, 200, 200);
 
 	@Test
-	@SuppressWarnings("DataFlowIssue")
 	void releasingOutsideAfterDraggingDoesNotCloseThePopup() {
 		DraggingPopupSelector popup = new DraggingPopupSelector();
 		AtomicInteger closeCount = new AtomicInteger();

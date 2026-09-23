@@ -24,7 +24,7 @@ import net.mezzdev.config.gui.info.ConfigServerInfo;
 import net.mezzdev.config.gui.info.ServerConfigAccess;
 import net.mezzdev.config.gui.model.ConfigCategoryWidget;
 import net.minecraft.network.chat.Component;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -78,7 +78,7 @@ class RemoteConfigEditorTest {
 		assertEquals(ServerConfigAccess.EDITABLE.getDescription(), category.getSectionHeader(0).getInfo().lines().get(0));
 		assertTrue(editor.isEditable(schema));
 
-		CompletableFuture<Void> update = editor.requestUpdate(schema, List.of(new ConfigValueChange<>(screenValue, "changed")));
+		CompletableFuture<@Nullable Void> update = editor.requestUpdate(schema, List.of(new ConfigValueChange<>(screenValue, "changed")));
 		RemoteConfigMessage.UpdateRequest updateRequest = (RemoteConfigMessage.UpdateRequest) capture.take();
 		sendResponse(new RemoteConfigMessage.UpdateResponse(updateRequest.requestId(), SCHEMA_KEY, false, false, "Permission revoked", 1, List.of()));
 		assertTrue(update.isCompletedExceptionally());
@@ -198,7 +198,7 @@ class RemoteConfigEditorTest {
 		assertEquals(customName, ConfigValueLocalization.getName(screenValue));
 		assertEquals(customDescription, ConfigValueLocalization.getDescription(screenValue));
 		assertTrue(screenValue.getConfigValue().filter(configValue -> configValue == value).isPresent());
-		CompletableFuture<Void> updateFuture = editor.requestUpdate(
+		CompletableFuture<@Nullable Void> updateFuture = editor.requestUpdate(
 			schema,
 			List.of(new ConfigValueChange<>(screenValue, "saved-after"))
 		);
@@ -270,7 +270,7 @@ class RemoteConfigEditorTest {
 			List.of(valueData("overlay"))
 		));
 
-		CompletableFuture<Void> timedOut = editor.requestUpdate(
+		CompletableFuture<@Nullable Void> timedOut = editor.requestUpdate(
 			schema,
 			List.of(new ConfigValueChange<>(screenValue, "first"))
 		);
@@ -283,7 +283,7 @@ class RemoteConfigEditorTest {
 		assertTrue(timedOut.isCompletedExceptionally());
 		assertEquals(1, timeoutCompletions.get());
 
-		CompletableFuture<Void> disconnected = editor.requestUpdate(
+		CompletableFuture<@Nullable Void> disconnected = editor.requestUpdate(
 			schema,
 			List.of(new ConfigValueChange<>(screenValue, "second"))
 		);
