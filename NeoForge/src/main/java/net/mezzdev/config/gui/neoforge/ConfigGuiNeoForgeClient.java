@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.neoforge;
 
+import net.minecraft.resources.Identifier;
 import net.mezzdev.config.gui.api.IConfigScreenFactory;
 import net.mezzdev.config.gui.ConfigGui;
 import net.mezzdev.config.gui.ConfigGuiColors;
@@ -108,8 +109,8 @@ public final class ConfigGuiNeoForgeClient {
 	}
 
 	private static void onRegisterClientReloadListeners(AddClientReloadListenersEvent event) {
-		event.addListener(net.minecraft.resources.Identifier.fromNamespaceAndPath("mezz_config_gui", "sprites"), ConfigTextures.get().getGuiSpriteManager());
-		event.addListener(net.minecraft.resources.Identifier.fromNamespaceAndPath("mezz_config_gui", "colors"), ConfigGuiColors.createReloadListener());
+		event.addListener(Identifier.fromNamespaceAndPath("mezz_config_gui", "sprites"), ConfigTextures.get().getGuiSpriteManager());
+		event.addListener(Identifier.fromNamespaceAndPath("mezz_config_gui", "colors"), ConfigGuiColors.createReloadListener());
 	}
 
 	private static boolean isChannelAvailable() {

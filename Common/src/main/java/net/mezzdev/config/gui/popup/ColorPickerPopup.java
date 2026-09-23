@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.popup;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.gui.ConfigInputUtil;
 
 import net.mezzdev.config.gui.util.ConfigMath;
@@ -120,7 +121,7 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 
 	@Override
 	public Optional<PackedColor> getClickedValue(Rect2i area, double mouseX, double mouseY, int button) {
-		if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
+		if (button != InputConstants.MOUSE_BUTTON_LEFT) {
 			return Optional.empty();
 		}
 		PickerLayout layout = createLayout(area);
@@ -157,7 +158,7 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 
 	@Override
 	public Optional<PackedColor> getDraggedValue(Rect2i area, double mouseX, double mouseY, int button) {
-		if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
+		if (button != InputConstants.MOUSE_BUTTON_LEFT) {
 			return Optional.empty();
 		}
 		PickerLayout layout = createLayout(area);
@@ -194,25 +195,25 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 			applyEditText(valueConsumer);
 			return true;
 		}
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_TAB) {
+		if (keyCode == InputConstants.KEY_TAB) {
 			focusField(ColorField.HEX);
 			return true;
 		}
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_RETURN || keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_NUMPADENTER) {
+		if (keyCode == InputConstants.KEY_RETURN || keyCode == InputConstants.KEY_NUMPADENTER) {
 			applyEditText(valueConsumer);
 			selectAll = true;
 			return true;
 		}
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
+		if (keyCode == InputConstants.KEY_ESCAPE) {
 			clearFocus();
 			return true;
 		}
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_BACKSPACE) {
+		if (keyCode == InputConstants.KEY_BACKSPACE) {
 			removeLastCharacter();
 			applyEditText(valueConsumer);
 			return true;
 		}
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_DELETE) {
+		if (keyCode == InputConstants.KEY_DELETE) {
 			editText = "";
 			selectAll = false;
 			return true;

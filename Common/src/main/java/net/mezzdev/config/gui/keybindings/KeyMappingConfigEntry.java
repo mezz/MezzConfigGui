@@ -173,7 +173,7 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 		if (!listening) {
 			return false;
 		}
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
+		if (keyCode == InputConstants.KEY_ESCAPE) {
 			setBindingValue(ConfigKeyBinding.UNKNOWN);
 			stopListening();
 			return true;

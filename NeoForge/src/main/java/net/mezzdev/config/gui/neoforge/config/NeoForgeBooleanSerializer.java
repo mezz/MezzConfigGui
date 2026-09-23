@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui.neoforge.config;
 
+import net.mezzdev.config.gui.ConfigRenderUtil;
+import net.minecraft.locale.Language;
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.gui.api.ConfigValueEditorType;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
@@ -57,7 +59,7 @@ final class NeoForgeBooleanSerializer implements IConfigValueEditorSerializer<Bo
 	public Optional<Component> getLocalizedValueDescription(String configValueLocalizationKey, Boolean value) {
 		String suffix = ".value." + value + ".description";
 		String translationKey = configValueLocalizationKey + suffix;
-		if (net.minecraft.locale.Language.getInstance().has(translationKey)) {
+		if (Language.getInstance().has(translationKey)) {
 			return Optional.of(Component.translatable(translationKey));
 		}
 		return Optional.of(Component.translatable(getValueDescriptionTranslationKey(value)));
@@ -66,7 +68,7 @@ final class NeoForgeBooleanSerializer implements IConfigValueEditorSerializer<Bo
 	@Override
 	public Optional<IConfigValueIcon> getIcon(Boolean value) {
 		Identifier location = getValueIconLocation(value);
-		return Optional.of((guiGraphics, area) -> net.mezzdev.config.gui.ConfigRenderUtil.blitSprite(guiGraphics, location, area.getX(), area.getY(), area.getWidth(), area.getHeight()));
+		return Optional.of((guiGraphics, area) -> ConfigRenderUtil.blitSprite(guiGraphics, location, area.getX(), area.getY(), area.getWidth(), area.getHeight()));
 	}
 
 	@Override

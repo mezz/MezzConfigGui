@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui.test.neoforge.defaults;
 
+import net.minecraft.resources.Identifier;
+import net.neoforged.testframework.conf.FrameworkConfiguration;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -79,8 +81,8 @@ public final class NeoForgeNativeDefaultsTestMod {
 		if (dist.isClient()) {
 			NeoForgeNativeDefaultsTestClient.register(modEventBus);
 		}
-		net.neoforged.testframework.conf.FrameworkConfiguration.builder(
-				net.minecraft.resources.Identifier.fromNamespaceAndPath(MOD_ID, "tests")
+		FrameworkConfiguration.builder(
+				Identifier.fromNamespaceAndPath(MOD_ID, "tests")
 			)
 			.build().create().init(modEventBus, modContainer);
 		modContainer.registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC, "%s-client.toml".formatted(MOD_ID));

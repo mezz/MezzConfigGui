@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.gui.util.ConfigMath;
 
 import net.mezzdev.config.gui.screenlist.ConfigScreenListEntry;
@@ -249,7 +250,7 @@ final class ConfigScreenModTabs {
 	}
 
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
-		if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
+		if (button != InputConstants.MOUSE_BUTTON_LEFT) {
 			return false;
 		}
 		@Nullable
@@ -264,7 +265,7 @@ final class ConfigScreenModTabs {
 	public ClickResult mouseReleased(double mouseX, double mouseY, int button) {
 		ClickTarget pressedTarget = this.pressedTarget;
 		this.pressedTarget = null;
-		if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT || pressedTarget == null) {
+		if (button != InputConstants.MOUSE_BUTTON_LEFT || pressedTarget == null) {
 			return ClickResult.NOT_HANDLED;
 		}
 		if (!pressedTarget.area().contains(mouseX, mouseY)) {

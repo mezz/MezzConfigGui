@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.test.neoforge.custom;
 
+import net.minecraft.network.chat.Component;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.neoforged.fml.ModList;
 
@@ -13,12 +14,12 @@ public final class NeoForgeNativeCustomTestGameTests {
 	}
 
 	public static void nativeCustomConfigLoadsOnServer(GameTestHelper helper) {
-		helper.assertTrue(ModList.get().isLoaded(CONFIG_GUI_MOD_ID), net.minecraft.network.chat.Component.literal("MezzConfig GUI must be loaded for the integrated GameTest run."));
-		helper.assertTrue(ModList.get().isLoaded(NeoForgeNativeCustomTestMod.MOD_ID), net.minecraft.network.chat.Component.literal("NeoForge native custom test mod must be loaded."));
-		helper.assertTrue(NeoForgeNativeCustomTestMod.COMMON_SPEC.isLoaded(), net.minecraft.network.chat.Component.literal("Common native custom config spec must be loaded."));
-		helper.assertValueEqual(true, NeoForgeNativeCustomTestMod.COMMON_ENABLED.get(), net.minecraft.network.chat.Component.literal("Native common boolean default must load."));
-		helper.assertValueEqual(List.of("common", "native"), NeoForgeNativeCustomTestMod.COMMON_ALIASES.get(), net.minecraft.network.chat.Component.literal("Native common string list default must load."));
-		helper.assertValueEqual(4096L, NeoForgeNativeCustomTestMod.COMMON_CACHE_BUDGET.get(), net.minecraft.network.chat.Component.literal("Native common long default must load."));
+		helper.assertTrue(ModList.get().isLoaded(CONFIG_GUI_MOD_ID), Component.literal("MezzConfig GUI must be loaded for the integrated GameTest run."));
+		helper.assertTrue(ModList.get().isLoaded(NeoForgeNativeCustomTestMod.MOD_ID), Component.literal("NeoForge native custom test mod must be loaded."));
+		helper.assertTrue(NeoForgeNativeCustomTestMod.COMMON_SPEC.isLoaded(), Component.literal("Common native custom config spec must be loaded."));
+		helper.assertValueEqual(true, NeoForgeNativeCustomTestMod.COMMON_ENABLED.get(), Component.literal("Native common boolean default must load."));
+		helper.assertValueEqual(List.of("common", "native"), NeoForgeNativeCustomTestMod.COMMON_ALIASES.get(), Component.literal("Native common string list default must load."));
+		helper.assertValueEqual(4096L, NeoForgeNativeCustomTestMod.COMMON_CACHE_BUDGET.get(), Component.literal("Native common long default must load."));
 		helper.succeed();
 	}
 }
