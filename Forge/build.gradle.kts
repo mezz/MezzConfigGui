@@ -97,11 +97,19 @@ legacyForge {
         create("client") {
             client()
             gameDirectory = file("run/client")
+            loadedMods.set(setOf(
+                mods.getByName(configModId),
+                mods.getByName(configGuiModId)
+            ))
         }
         create("server") {
             server()
             gameDirectory = file("run/server")
             programArguments.add("nogui")
+            loadedMods.set(setOf(
+                mods.getByName(configModId),
+                mods.getByName(configGuiModId)
+            ))
         }
         create("serverSmokeTest") {
             server()
@@ -110,6 +118,11 @@ legacyForge {
             systemProperty("com.mojang.eula.agree", "true")
             systemProperty("mezzConfigGui.loaderSmokeTest.successFile", smokeResult.get().asFile.absolutePath)
             logLevel = Level.INFO
+            loadedMods.set(setOf(
+                mods.getByName(configModId),
+                mods.getByName(configGuiModId),
+                mods.getByName("mezz_config_gui_test_forge_smoke")
+            ))
         }
     }
 }
@@ -152,9 +165,10 @@ publishing {
     }
 }
 tasks.matching { it.name in setOf("runClient", "runServer", "runServerSmokeTest") }.configureEach {
-    dependsOn(prepareMezzConfigRun, tasks.named(smokeMod.classesTaskName))
+    dependsOn(prepareMezzConfigRun)
 }
 tasks.named("runServerSmokeTest") {
+    dependsOn(tasks.named(smokeMod.classesTaskName))
     outputs.file(smokeResult)
     outputs.upToDateWhen { false }
     doFirst {
