@@ -4,7 +4,6 @@ import mezz.jei.api.gui.handlers.IGlobalGuiHandler;
 import net.mezzdev.config.gui.ConfigScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Rect2i;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,12 +18,10 @@ final class ConfigScreenGuiHandler implements IGlobalGuiHandler {
 		Minecraft minecraft = Minecraft.getInstance();
 		if (minecraft.screen instanceof ConfigScreen configScreen) {
 			List<Rect2i> areas = new ArrayList<>(2);
-			@Nullable
 			Rect2i modTabsArea = configScreen.getModTabsArea();
 			if (modTabsArea != null) {
 				areas.add(modTabsArea);
 			}
-			@Nullable
 			Rect2i selectorArea = configScreen.getValueSelectorArea();
 			if (selectorArea != null) {
 				areas.add(selectorArea);

@@ -72,8 +72,12 @@ class ConfigGuiPluginLoaderTest {
 		var constructor = registrationClass.getDeclaredConstructor(String.class);
 		constructor.setAccessible(true);
 		IConfigGuiRegistration registration = (IConfigGuiRegistration) constructor.newInstance(MOD_ID);
-		registration.registerValueEditor(stringType, ignored -> null);
-		registration.registerValueEditor(integerType, ignored -> null);
+		registration.registerValueEditor(stringType, ignored -> {
+			throw new AssertionError("Editor factory should not be called");
+		});
+		registration.registerValueEditor(integerType, ignored -> {
+			throw new AssertionError("Editor factory should not be called");
+		});
 
 		Field factoriesField = registrationClass.getDeclaredField("valueEditorFactories");
 		factoriesField.setAccessible(true);

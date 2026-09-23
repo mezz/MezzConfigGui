@@ -16,7 +16,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -81,11 +81,8 @@ final class ConfigScreenView {
 		ImmutableRect2i screenListButtonArea = layout.getScreenListButtonArea();
 		ImmutableRect2i applyPendingChangesButtonArea = layout.getApplyPendingChangesButtonArea();
 		ImmutableRect2i undoChangesButtonArea = layout.getUndoChangesButtonArea();
-		@Nullable
 		ConfigInfo hoveredValueSelectorInfo = getValueSelectorInfo(valueSelector, valueSelectorClipArea, mouseX, mouseY);
-		@Nullable
 		ConfigInfo activeValueSelectorInfo = getActiveValueSelectorInfo(valueSelector);
-		@Nullable
 		ConfigInfo tooltipInfo = getTooltipInfo(
 			valueSelector,
 			valueSelectorClipArea,
@@ -96,7 +93,6 @@ final class ConfigScreenView {
 			mouseX,
 			mouseY
 		);
-		@Nullable
 		ConfigInfo hoveredControlInfo = getControlInfo(
 			searchBackgroundArea,
 			resizeHandle,
@@ -111,14 +107,12 @@ final class ConfigScreenView {
 		drawTitle(guiGraphics, font, titleArea, title);
 		drawActionButtons(guiGraphics, screenListButtonArea, applyPendingChangesButtonArea, undoChangesButtonArea, mouseX, mouseY);
 		drawNavBackground(guiGraphics, navArea);
-		@Nullable
 		ConfigNavItem hoveredNavItem = drawNavItems(guiGraphics, navArea, mouseX, mouseY);
 		drawInsetBorder(guiGraphics, navArea);
 		drawNavScrollBar(guiGraphics);
 		drawNavigationDivider(guiGraphics, mouseX, mouseY);
 		drawSearch(guiGraphics, textures, searchBackgroundArea, mouseX, mouseY, partialTick);
 		drawValueAreaBackground(guiGraphics, contentArea);
-		@Nullable
 		Supplier<ConfigInfo> hoveredEntryInfo = drawEntries(guiGraphics, contentArea, mouseX, mouseY, valueSelector == null);
 		drawInsetBorder(guiGraphics, contentArea);
 		ImmutableRect2i infoArea = layout.getInfoArea();
@@ -239,7 +233,6 @@ final class ConfigScreenView {
 
 	@Nullable
 	private ConfigNavItem drawNavItems(GuiGraphics guiGraphics, ImmutableRect2i navArea, int mouseX, int mouseY) {
-		@Nullable
 		ConfigNavItem hoveredNavItem = null;
 		guiGraphics.enableScissor(
 			navArea.getX(),
@@ -317,7 +310,6 @@ final class ConfigScreenView {
 		int mouseY,
 		boolean allowEntryHover
 	) {
-		@Nullable
 		Supplier<ConfigInfo> hoveredEntryInfo = null;
 		guiGraphics.enableScissor(
 			contentArea.getX(),
@@ -377,7 +369,6 @@ final class ConfigScreenView {
 		int mouseX,
 		int mouseY
 	) {
-		@Nullable
 		ConfigInfo actionButtonTooltipInfo = getActionButtonTooltipInfo(
 			screenListButtonArea,
 			applyPendingChangesButtonArea,
@@ -389,7 +380,6 @@ final class ConfigScreenView {
 			return actionButtonTooltipInfo;
 		}
 		if (valueSelector != null && valueSelectorClipArea.contains(mouseX, mouseY)) {
-			@Nullable
 			ConfigInfo valueSelectorTooltipInfo = valueSelector.getTooltipInfo(mouseX, mouseY);
 			if (valueSelectorTooltipInfo != null) {
 				return valueSelectorTooltipInfo;
@@ -405,7 +395,6 @@ final class ConfigScreenView {
 			if (entryWidget.getArea().equals(ImmutableRect2i.EMPTY) || !entryWidget.isMouseOver(mouseX, mouseY)) {
 				continue;
 			}
-			@Nullable
 			ConfigInfo info = entryWidget.getTooltipInfo(mouseX, mouseY);
 			if (info != null) {
 				return info;

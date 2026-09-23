@@ -33,7 +33,7 @@ import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -258,7 +258,7 @@ public class ConfigScreen extends MezzConfigScreen {
 		ConfigInputHandler entryInputHandler = entry.createInputHandler();
 		return new ConfigInputHandler() {
 			@Override
-			public Optional<ConfigInputHandler> handleUserInput(Screen screen, UserInput input) {
+			public Optional<ConfigInputHandler> handleUserInput(@Nullable Screen screen, UserInput input) {
 				if (!entry.isEditable()) {
 					return Optional.empty();
 				}
@@ -333,7 +333,6 @@ public class ConfigScreen extends MezzConfigScreen {
 		}
 		ImmutableRect2i clipArea = ConfigScreenView.getValueSelectorClipArea(layout.getContentArea());
 		valueSelector.updateBounds(clipArea);
-		@Nullable
 		ImmutableRect2i intersection = getIntersection(valueSelector.getArea(), clipArea);
 		if (intersection == null) {
 			return null;
@@ -518,10 +517,10 @@ public class ConfigScreen extends MezzConfigScreen {
 			return;
 		}
 		changeRequestPending = true;
-		request.whenComplete((result, throwable) -> runOnClientThread(() -> {
+		request.whenComplete((@Nullable ConfigChangesResult result, @Nullable Throwable throwable) -> runOnClientThread(() -> {
 			changeRequestPending = false;
 			refreshLayout();
-			if (throwable == null && result.succeeded()) {
+			if (throwable == null && result != null && result.succeeded()) {
 				successAction.run();
 			} else {
 				failureAction.run();

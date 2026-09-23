@@ -39,6 +39,7 @@ class KeyValueListConfigEntryTest {
 		);
 	}
 
+	@SuppressWarnings("DataFlowIssue")
 	private static ListConfigEntry<NamedNumber> createEntry() {
 		return new ListConfigEntry<>(
 			new TestConfigValue(),

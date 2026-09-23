@@ -33,7 +33,7 @@ import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.ResourceLocation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,6 +44,7 @@ import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -156,7 +157,6 @@ final class ConfigGuiPluginLoader {
 	}
 
 	private static boolean addFactory(Map<String, IConfigScreenFactory> factories, String modId, IConfigScreenFactory factory) {
-		@Nullable
 		IConfigScreenFactory previous = factories.putIfAbsent(modId, factory);
 		if (previous != null) {
 			LOGGER.error("Duplicate config GUI plugin for mod id: {}", modId);
@@ -291,12 +291,10 @@ final class ConfigGuiPluginLoader {
 
 		@Nullable
 		private ConfigScreenFactoryConfig getConfigScreenFactoryConfig() {
-			@Nullable
 			ConfigScreenFactoryConfig config = this.config;
 			if (config != null) {
 				return config;
 			}
-			@Nullable
 			ConfigScreenConfig configScreen = this.configScreen;
 			if (configScreen == null) {
 				return null;
@@ -1037,10 +1035,7 @@ final class ConfigGuiPluginLoader {
 			schemaSupplier
 		);
 		ConfigScreenBuilder screenBuilder = createScreenBuilder(modId, config, screenCustomizers);
-		ConfigScreenSchema schema = schemaSupplier.get();
-		if (schema == null) {
-			throw new NullPointerException("schemaSupplier must not return null.");
-		}
+		ConfigScreenSchema schema = Objects.requireNonNull(schemaSupplier.get(), "schemaSupplier must not return null.");
 		List<ConfiguredScreenCategory> configuredCategories = screenBuilder.getCategories();
 		boolean clearDefaultCategories = screenBuilder.isClearDefaultCategories();
 		return new CustomizedConfigScreenSchema(
@@ -1063,7 +1058,6 @@ final class ConfigGuiPluginLoader {
 		List<ResolvedScreenCategory> resolvedCategories = originalCategories.stream()
 			.map(ConfigGuiPluginLoader::resolve)
 			.toList();
-		@Nullable
 		String categoryLocalizationPrefix = getCategoryLocalizationPrefix(resolvedCategories).orElse(null);
 		Set<String> emittedCategoryNames = new HashSet<>();
 		List<ConfigScreenCategory> screenCategories = new ArrayList<>();
@@ -1235,7 +1229,6 @@ final class ConfigGuiPluginLoader {
 		IConfigScreenValue<?> value,
 		List<IConfigScreenValue<?>> values
 	) {
-		@Nullable
 		ConfigValueApplyMode applyMode = configuredCategory.defaultApplyMode();
 		for (ConfigScreenValueApplyModeOverride applyModeOverride : configuredCategory.applyModeOverrides()) {
 			ConfigScreenValueMatcher valueMatcher = applyModeOverride.valueMatcher();
@@ -1491,7 +1484,6 @@ final class ConfigGuiPluginLoader {
 	}
 
 	private static Optional<IConfigScreenValue<?>> findValueInCategory(ConfigScreenValueLookup lookup, ConfigScreenValueMatcher valueMatcher) {
-		@Nullable
 		IConfigScreenValue<?> result = null;
 		for (ResolvedScreenCategory category : lookup.resolvedCategories()) {
 			if (!category.name().equals(lookup.categoryName())) {
@@ -1516,7 +1508,6 @@ final class ConfigGuiPluginLoader {
 	}
 
 	private static Optional<IConfigScreenValue<?>> findValueInAllCategories(ConfigScreenValueLookup lookup, ConfigScreenValueMatcher valueMatcher) {
-		@Nullable
 		IConfigScreenValue<?> result = null;
 		for (ResolvedScreenCategory category : lookup.resolvedCategories()) {
 			for (IConfigScreenValue<?> value : category.values()) {
@@ -1660,10 +1651,7 @@ final class ConfigGuiPluginLoader {
 		Supplier<? extends ConfigScreenSchema> schemaSupplier,
 		ConfigScreenBuilder screenBuilder
 	) {
-		ConfigScreenSchema schema = schemaSupplier.get();
-		if (schema == null) {
-			throw new NullPointerException("schemaSupplier must not return null.");
-		}
+		ConfigScreenSchema schema = Objects.requireNonNull(schemaSupplier.get(), "schemaSupplier must not return null.");
 		return new CustomizedConfigScreenSchema(
 			modId,
 			schema,
@@ -1764,10 +1752,7 @@ final class ConfigGuiPluginLoader {
 	private static Supplier<ConfigScreenSchema> createScreenSchemaSupplier(Supplier<? extends IConfigSchema> schemaSupplier) {
 		ErrorUtil.checkNotNull(schemaSupplier, "schemaSupplier");
 		return () -> {
-			IConfigSchema schema = schemaSupplier.get();
-			if (schema == null) {
-				throw new NullPointerException("schemaSupplier must not return null.");
-			}
+			IConfigSchema schema = Objects.requireNonNull(schemaSupplier.get(), "schemaSupplier must not return null.");
 			return ConfigScreenSchema.from(schema);
 		};
 	}

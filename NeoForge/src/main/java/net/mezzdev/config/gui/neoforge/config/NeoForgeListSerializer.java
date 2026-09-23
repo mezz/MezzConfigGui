@@ -4,6 +4,7 @@ import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.api.value.serializer.IConfigListValueSerializer;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.neoforged.neoforge.common.ModConfigSpec;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -70,7 +71,7 @@ final class NeoForgeListSerializer<T> implements IConfigListValueSerializer<T> {
 	}
 
 	@Override
-	public boolean isValid(List<T> value) {
+	public boolean isValid(@Nullable List<@Nullable T> value) {
 		if (value == null) {
 			return false;
 		}
@@ -83,7 +84,7 @@ final class NeoForgeListSerializer<T> implements IConfigListValueSerializer<T> {
 		return isValidList(value);
 	}
 
-	private boolean isValidElement(T value) {
+	private boolean isValidElement(@Nullable T value) {
 		if (value == null || !elementSerializer.isValid(value)) {
 			return false;
 		}

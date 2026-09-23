@@ -9,6 +9,7 @@ import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
@@ -40,7 +41,7 @@ final class NeoForgeBooleanSerializer implements IConfigValueEditorSerializer<Bo
 	}
 
 	@Override
-	public boolean isValid(Boolean value) {
+	public boolean isValid(@Nullable Boolean value) {
 		return value != null;
 	}
 

@@ -17,7 +17,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -100,7 +100,6 @@ final class NumberSliderConfigEntry<T> extends ConfigEntryWidget<T> {
 	@Override
 	@Nullable
 	public ConfigInfo getTooltipInfo(double mouseX, double mouseY) {
-		@Nullable
 		ConfigInfo resetInfo = super.getTooltipInfo(mouseX, mouseY);
 		if (resetInfo != null) {
 			return resetInfo;
@@ -202,7 +201,7 @@ final class NumberSliderConfigEntry<T> extends ConfigEntryWidget<T> {
 
 	private final class SliderInputHandler implements ConfigInputHandler {
 		@Override
-		public Optional<ConfigInputHandler> handleUserInput(Screen screen, UserInput input) {
+		public Optional<ConfigInputHandler> handleUserInput(@Nullable Screen screen, UserInput input) {
 			if (!ConfigInputUtil.isLeftClick(input)) {
 				stopSliding();
 				return Optional.empty();
@@ -231,7 +230,7 @@ final class NumberSliderConfigEntry<T> extends ConfigEntryWidget<T> {
 
 		@Override
 		public Optional<ConfigInputHandler> handleMouseDragged(
-			Screen screen,
+			@Nullable Screen screen,
 			double mouseX,
 			double mouseY,
 			int button,

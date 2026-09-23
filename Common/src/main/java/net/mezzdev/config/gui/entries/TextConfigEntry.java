@@ -23,7 +23,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.StringUtil;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -131,7 +131,6 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 	@Override
 	@Nullable
 	public ConfigInfo getTooltipInfo(double mouseX, double mouseY) {
-		@Nullable
 		ConfigInfo resetInfo = super.getTooltipInfo(mouseX, mouseY);
 		if (resetInfo != null) {
 			return resetInfo;

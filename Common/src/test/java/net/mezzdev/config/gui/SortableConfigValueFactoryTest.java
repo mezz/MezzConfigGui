@@ -16,7 +16,7 @@ import net.mezzdev.config.gui.api.IConfigValueIconProvider;
 import net.mezzdev.config.gui.api.IConfigValueLocalizationProvider;
 import net.mezzdev.config.gui.api.ISortableConfigValueFactory;
 import net.minecraft.network.chat.Component;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
