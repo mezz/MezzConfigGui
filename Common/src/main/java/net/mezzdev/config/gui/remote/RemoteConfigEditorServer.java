@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.remote;
 
+import java.util.List;
 import net.mezzdev.config.api.Configs;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -148,7 +149,7 @@ public final class RemoteConfigEditorServer {
 				false,
 				error,
 				0,
-				java.util.List.of()
+				List.of()
 			);
 		}
 		if (response instanceof RemoteConfigMessage.UpdateResponse update) {
@@ -159,7 +160,7 @@ public final class RemoteConfigEditorServer {
 				false,
 				error,
 				0,
-				java.util.List.of()
+				List.of()
 			);
 		}
 		throw new IllegalArgumentException("A request cannot be sent as a remote config response.");

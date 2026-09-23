@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.util;
 
+import net.mezzdev.config.gui.ConfigRenderUtil;
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
@@ -36,7 +37,7 @@ public final class StringUtil {
 
 		FormattedText truncatedText = font.substrByWidth(text, width - ellipsisWidth);
 
-		Style style = net.mezzdev.config.gui.ConfigRenderUtil.truncationStyle(font, text, width - ellipsisWidth);
+		Style style = ConfigRenderUtil.truncationStyle(font, text, width - ellipsisWidth);
 		if (style == null) {
 			style = Style.EMPTY;
 		}

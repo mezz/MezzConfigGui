@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.popup;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.input.InputType;
 import net.mezzdev.config.gui.input.UserInput;
@@ -33,7 +34,7 @@ class ConfigValueSelectorInputHandlerTest {
 		Screen screen = null;
 
 		assertTrue(handler.handleUserInput(screen, mouseInput(50, 50, InputType.SIMULATE)).isPresent());
-		assertTrue(handler.handleMouseDragged(screen, 150, 50, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT, 100, 0).isPresent());
+		assertTrue(handler.handleMouseDragged(screen, 150, 50, InputConstants.MOUSE_BUTTON_LEFT, 100, 0).isPresent());
 		assertTrue(handler.handleUserInput(screen, mouseInput(150, 50, InputType.EXECUTE)).isPresent());
 
 		assertEquals(1, popup.clickCount);
@@ -47,7 +48,7 @@ class ConfigValueSelectorInputHandlerTest {
 	}
 
 	private static UserInput mouseInput(double mouseX, double mouseY, InputType inputType) {
-		return UserInput.fromVanilla(mouseX, mouseY, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT, inputType).orElseThrow();
+		return UserInput.fromVanilla(mouseX, mouseY, InputConstants.MOUSE_BUTTON_LEFT, inputType).orElseThrow();
 	}
 
 	private static final class DraggingPopupSelector implements ConfigPopupSelector {

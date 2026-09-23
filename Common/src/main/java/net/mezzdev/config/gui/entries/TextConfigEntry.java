@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.entries;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.gui.ConfigInputUtil;
 
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
@@ -251,20 +252,20 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 			appendText(Minecraft.getInstance().keyboardHandler.getClipboard());
 			return true;
 		}
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_RETURN || keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_NUMPADENTER) {
+		if (keyCode == InputConstants.KEY_RETURN || keyCode == InputConstants.KEY_NUMPADENTER) {
 			commitEdit();
 			return true;
 		}
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
+		if (keyCode == InputConstants.KEY_ESCAPE) {
 			editing = false;
 			editText = "";
 			return true;
 		}
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_BACKSPACE && !editText.isEmpty()) {
+		if (keyCode == InputConstants.KEY_BACKSPACE && !editText.isEmpty()) {
 			editText = editText.substring(0, editText.length() - 1);
 			return true;
 		}
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_DELETE) {
+		if (keyCode == InputConstants.KEY_DELETE) {
 			editText = "";
 			return true;
 		}

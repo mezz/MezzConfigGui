@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.gui.util.ConfigMath;
 
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
@@ -366,7 +367,7 @@ final class PendingChangesScreen extends MezzConfigScreen {
 
 	@Override
 	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
+		if (keyCode == InputConstants.KEY_ESCAPE) {
 			backAction.run();
 			return true;
 		}

@@ -2,6 +2,7 @@ package net.mezzdev.config.gui;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
+import net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
@@ -26,7 +27,7 @@ public abstract class MezzConfigScreen extends ConfigScreenBase {
 	public abstract Rect2i getScreenArea();
 
 	public void setTooltipForNextRenderPass(List<FormattedCharSequence> tooltip) {
-		setTooltipForNextRenderPass(tooltip, net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner.INSTANCE, true);
+		setTooltipForNextRenderPass(tooltip, DefaultTooltipPositioner.INSTANCE, true);
 	}
 
 	public void setTooltipForNextRenderPass(List<FormattedCharSequence> tooltip, ClientTooltipPositioner positioner, boolean override) {

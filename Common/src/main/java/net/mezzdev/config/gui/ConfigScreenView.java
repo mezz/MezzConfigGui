@@ -269,7 +269,7 @@ final class ConfigScreenView {
 	) {
 		textures.getSearchBackground()
 			.draw(guiGraphics, searchBackgroundArea);
-		net.mezzdev.config.gui.ConfigRenderUtil.renderEditBox(searchBox, guiGraphics, mouseX, mouseY, partialTick);
+		ConfigRenderUtil.renderEditBox(searchBox, guiGraphics, mouseX, mouseY, partialTick);
 	}
 
 	private static void drawValueAreaBackground(GuiGraphics guiGraphics, ImmutableRect2i contentArea) {

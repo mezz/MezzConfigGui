@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.entries;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueEditor;
@@ -85,7 +86,7 @@ final class SelectionConfigValueEditor<T> implements IConfigValueEditor<T> {
 		double mouseY,
 		int button
 	) {
-		if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
+		if (button != InputConstants.MOUSE_BUTTON_LEFT) {
 			return Optional.empty();
 		}
 		List<T> validValues = getValidValues(configValue);

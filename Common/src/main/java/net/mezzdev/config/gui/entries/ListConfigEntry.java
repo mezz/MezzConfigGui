@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.entries;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.gui.ConfigRenderUtil;
 
 import net.mezzdev.config.gui.util.ConfigMath;
@@ -577,19 +578,19 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			appendAddValueText(Minecraft.getInstance().keyboardHandler.getClipboard());
 			return true;
 		}
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_RETURN || keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_NUMPADENTER) {
+		if (keyCode == InputConstants.KEY_RETURN || keyCode == InputConstants.KEY_NUMPADENTER) {
 			commitAddValue();
 			return true;
 		}
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
+		if (keyCode == InputConstants.KEY_ESCAPE) {
 			cancelAddValue();
 			return true;
 		}
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_BACKSPACE && !addValueText.isEmpty()) {
+		if (keyCode == InputConstants.KEY_BACKSPACE && !addValueText.isEmpty()) {
 			addValueText = addValueText.substring(0, addValueText.length() - 1);
 			return true;
 		}
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_DELETE) {
+		if (keyCode == InputConstants.KEY_DELETE) {
 			addValueText = "";
 			return true;
 		}
@@ -601,24 +602,24 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			appendComponentEditText(Minecraft.getInstance().keyboardHandler.getClipboard());
 			return true;
 		}
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_RETURN || keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_NUMPADENTER) {
+		if (keyCode == InputConstants.KEY_RETURN || keyCode == InputConstants.KEY_NUMPADENTER) {
 			commitComponentEdit();
 			return true;
 		}
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_TAB) {
+		if (keyCode == InputConstants.KEY_TAB) {
 			commitComponentEdit();
 			return true;
 		}
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
+		if (keyCode == InputConstants.KEY_ESCAPE) {
 			cancelComponentEdit();
 			return true;
 		}
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_BACKSPACE && !componentEditSession.editText.isEmpty()) {
+		if (keyCode == InputConstants.KEY_BACKSPACE && !componentEditSession.editText.isEmpty()) {
 			String editText = componentEditSession.editText;
 			componentEditSession.editText = editText.substring(0, editText.length() - 1);
 			return true;
 		}
-		if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_DELETE) {
+		if (keyCode == InputConstants.KEY_DELETE) {
 			componentEditSession.editText = "";
 			return true;
 		}
@@ -1260,7 +1261,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			double dragX,
 			double dragY
 		) {
-			if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
+			if (button != InputConstants.MOUSE_BUTTON_LEFT) {
 				stop();
 				return Optional.empty();
 			}
