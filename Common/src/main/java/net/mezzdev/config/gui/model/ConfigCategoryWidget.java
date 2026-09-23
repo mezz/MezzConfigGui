@@ -5,7 +5,7 @@ import net.mezzdev.config.gui.entries.ConfigEntryWidget;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.info.ConfigServerInfo;
 import net.minecraft.network.chat.Component;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;

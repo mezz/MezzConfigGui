@@ -9,7 +9,7 @@ import net.mezzdev.config.gui.MezzConfigScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.resources.ResourceLocation;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Optional JEI integration for the config screen.
@@ -37,7 +37,6 @@ public class ConfigGuiPlugin implements IModPlugin {
 		if (screen.width <= 0 || screen.height <= 0) {
 			return null;
 		}
-		@Nullable
 		Rect2i area = screen.getScreenArea();
 		if (area == null || area.getWidth() <= 0 || area.getHeight() <= 0) {
 			return null;

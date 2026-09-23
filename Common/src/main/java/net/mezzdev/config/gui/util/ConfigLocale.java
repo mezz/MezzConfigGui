@@ -2,7 +2,7 @@ package net.mezzdev.config.gui.util;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.LanguageManager;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 
@@ -22,7 +22,6 @@ public final class ConfigLocale {
 
 	private static Locale getLocale() {
 		Minecraft minecraft = Minecraft.getInstance();
-		//noinspection ConstantValue
 		if (minecraft == null) {
 			return Locale.getDefault();
 		}

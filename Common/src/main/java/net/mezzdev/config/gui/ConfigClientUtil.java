@@ -2,7 +2,7 @@ package net.mezzdev.config.gui;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** Access to the active screen, which moved to Minecraft's GUI manager in 26.2. */
 public final class ConfigClientUtil {

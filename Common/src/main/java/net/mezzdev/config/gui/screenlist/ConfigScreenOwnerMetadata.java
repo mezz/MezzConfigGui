@@ -2,7 +2,7 @@ package net.mezzdev.config.gui.screenlist;
 
 import java.nio.file.Path;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Icon metadata for the mod that owns a config screen.

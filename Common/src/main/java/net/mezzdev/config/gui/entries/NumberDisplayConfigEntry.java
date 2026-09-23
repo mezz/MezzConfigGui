@@ -11,7 +11,7 @@ import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.mezzdev.config.gui.api.LegacyGuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
@@ -111,7 +111,7 @@ final class NumberDisplayConfigEntry<T> extends ConfigEntryWidget<T> {
 		ConfigInputHandler standardInputHandler = standardEntry.createInputHandler();
 		return new ConfigInputHandler() {
 			@Override
-			public Optional<ConfigInputHandler> handleUserInput(Screen screen, UserInput input) {
+			public Optional<ConfigInputHandler> handleUserInput(@Nullable Screen screen, UserInput input) {
 				return getActiveInputHandler().handleUserInput(screen, input);
 			}
 

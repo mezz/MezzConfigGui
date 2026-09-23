@@ -52,6 +52,7 @@ class HexColorConfigEntryTest {
 	}
 
 	@Test
+	@SuppressWarnings("DataFlowIssue")
 	void stringSwatchOpensPickerAndTextRemainsEditableAfterChangingToANonColor() throws Exception {
 		List<ConfigPopupSelector> opened = new ArrayList<>();
 		StringSerializer serializer = new StringSerializer(value -> true);
@@ -80,6 +81,7 @@ class HexColorConfigEntryTest {
 	}
 
 	@Test
+	@SuppressWarnings("DataFlowIssue")
 	void stringPickerHonorsItsSerializerValidator() throws Exception {
 		List<ConfigPopupSelector> opened = new ArrayList<>();
 		StringSerializer serializer = new StringSerializer("#ABCDEF"::equals);
@@ -95,6 +97,7 @@ class HexColorConfigEntryTest {
 	}
 
 	@Test
+	@SuppressWarnings("DataFlowIssue")
 	void listSwatchEditsOnlyItsOwnElementAndSupportsRepeatedPickerUpdates() throws Exception {
 		List<ConfigPopupSelector> opened = new ArrayList<>();
 		List<String> original = List.of("automatic", "0X80ABCDEF", "#123456");
@@ -115,6 +118,7 @@ class HexColorConfigEntryTest {
 	}
 
 	@Test
+	@SuppressWarnings("DataFlowIssue")
 	void listPickerHonorsWholeListValidation() throws Exception {
 		List<ConfigPopupSelector> opened = new ArrayList<>();
 		List<String> original = List.of("#ABCDEF", "#123456");

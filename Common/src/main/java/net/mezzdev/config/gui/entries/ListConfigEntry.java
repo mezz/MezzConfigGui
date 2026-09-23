@@ -45,7 +45,7 @@ import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -275,7 +275,6 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		}
 
 		drawValueGroup(guiGraphics, valueGroupArea);
-		@Nullable
 		DragSession dragSession = this.dragSession;
 		if (dragSession == null) {
 			for (ListValueRow row : getVisibleRows(valueRows, 0)) {
@@ -432,7 +431,6 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	@Override
 	@Nullable
 	public ConfigInfo getTooltipInfo(double mouseX, double mouseY) {
-		@Nullable
 		ConfigInfo resetInfo = super.getTooltipInfo(mouseX, mouseY);
 		if (resetInfo != null) {
 			return resetInfo;
@@ -784,7 +782,6 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		}
 		ListComponentScreenValue componentConfigValue = new ListComponentScreenValue(rowIndex);
 		Object component = componentConfigValue.getValue();
-		@Nullable
 		IConfigValuePopup<Object> popup = createComponentPopup(componentConfigValue, component, focusHexInput, rowIndex);
 		if (popup == null) {
 			return;
@@ -1131,7 +1128,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 
 	private class ListEntryInputHandler implements ConfigInputHandler {
 		@Override
-		public Optional<ConfigInputHandler> handleUserInput(Screen screen, UserInput input) {
+		public Optional<ConfigInputHandler> handleUserInput(@Nullable Screen screen, UserInput input) {
 			if (!area.contains(input.getMouseX(), input.getMouseY())) {
 				return Optional.empty();
 			}
@@ -1241,7 +1238,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		}
 
 		@Override
-		public Optional<ConfigInputHandler> handleUserInput(Screen screen, UserInput input) {
+		public Optional<ConfigInputHandler> handleUserInput(@Nullable Screen screen, UserInput input) {
 			if (active && ConfigInputUtil.isLeftClick(input)) {
 				moveToMouse(input.getMouseX(), input.getMouseY());
 				commitMove();
@@ -1252,7 +1249,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 
 		@Override
 		public Optional<ConfigInputHandler> handleMouseDragged(
-			Screen screen,
+			@Nullable Screen screen,
 			double mouseX,
 			double mouseY,
 			int button,
@@ -1320,7 +1317,6 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 					row.drawDuringDrag(guiGraphics, getVisualArea(row));
 				}
 			}
-			@Nullable
 			ListValueRow targetRow = getTargetRow();
 			if (targetRow != null) {
 				targetRow.drawDragGap(guiGraphics, targetIndex != sourceIndex);
@@ -1338,7 +1334,6 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		}
 
 		public void drawFloatingRow(LegacyGuiGraphics guiGraphics) {
-			@Nullable
 			ListValueRow row = getDraggingRow();
 			if (row != null) {
 				row.drawFloating(guiGraphics, getFloatingRowX(row), getFloatingRowY());

@@ -6,8 +6,12 @@ import net.minecraft.client.gui.Font;
 import net.mezzdev.config.gui.api.LegacyGuiGraphics;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.network.chat.FormattedText;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
+import org.jspecify.annotations.Nullable;
+
 import java.util.List;
 
 /** Minecraft rendering operations whose signatures change between supported targets. */
@@ -67,8 +71,8 @@ public final class ConfigRenderUtil {
 	public static ResourceLocation registerIcon(NativeImage image) {
 		return Minecraft.getInstance().getTextureManager().register("mezz_config_gui_mod_icon", new DynamicTexture(image));
 	}
-	@org.jetbrains.annotations.Nullable
-	public static net.minecraft.network.chat.Style truncationStyle(Font font, net.minecraft.network.chat.FormattedText text, int width) {
+	@Nullable
+	public static Style truncationStyle(Font font, FormattedText text, int width) {
 		return font.getSplitter().componentStyleAtWidth(text, width);
 	}
 

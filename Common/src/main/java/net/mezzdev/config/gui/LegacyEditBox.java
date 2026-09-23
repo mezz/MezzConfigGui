@@ -2,7 +2,7 @@ package net.mezzdev.config.gui;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 public final class LegacyEditBox extends net.minecraft.client.gui.components.EditBox {
 	private final Font hintFont;
 	@Nullable

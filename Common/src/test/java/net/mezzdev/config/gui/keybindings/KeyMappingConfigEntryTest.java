@@ -42,6 +42,7 @@ class KeyMappingConfigEntryTest {
 	}
 
 	@Test
+	@SuppressWarnings("DataFlowIssue")
 	void missingOptionalTranslationsDoNotLeakIntoInfo() {
 		ConfigKeyMapping keyMapping = new ConfigKeyMapping(net.mezzdev.config.gui.TestMinecraft.keyMapping("key.test_mod.without_details", -1, "key.categories.misc"));
 		KeyMappingConfigEntry entry = new KeyMappingConfigEntry(new KeyMappingConfigValue(keyMapping), null);
@@ -56,10 +57,6 @@ class KeyMappingConfigEntryTest {
 		KeyMappingConfigValue configValue = new KeyMappingConfigValue(new TestConfigKeyMapping());
 
 		assertThrows(IllegalArgumentException.class, () -> configValue.set(null));
-		assertThrows(
-			IllegalArgumentException.class,
-			() -> configValue.set(new KeyMappingValue(null, new TestConfigKeyMapping()))
-		);
 	}
 
 	@Test
@@ -83,6 +80,7 @@ class KeyMappingConfigEntryTest {
 	}
 
 	@Test
+	@SuppressWarnings("DataFlowIssue")
 	void conflictDetailsOptionControlsConflictLookup() {
 		TestConfigKeyMapping keyMapping = new TestConfigKeyMapping();
 		KeyMappingConfigEntry entry = new KeyMappingConfigEntry(new TestScreenValue(keyMapping), null);

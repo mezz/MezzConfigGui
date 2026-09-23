@@ -5,7 +5,7 @@ import net.mezzdev.config.api.value.color.PackedColor;
 import net.mezzdev.config.gui.api.IConfigValuePopup;
 import net.mezzdev.config.gui.info.ColorSwatch;
 import net.minecraft.client.renderer.Rect2i;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicReference;
