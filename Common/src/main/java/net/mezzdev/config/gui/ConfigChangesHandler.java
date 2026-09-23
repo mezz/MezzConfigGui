@@ -9,7 +9,7 @@ import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.model.AppliedConfigValueChange;
 import net.mezzdev.config.gui.model.ConfigValueChange;
 import net.mezzdev.config.gui.remote.RemoteConfigEditor;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -81,7 +81,6 @@ interface ConfigChangesHandler {
 		List<ConfigChangeBatch> batches = new ArrayList<>();
 		IdentityHashMap<IConfigSchema, ConfigChangeBatch> batchesBySchema = new IdentityHashMap<>();
 		for (ConfigValueChange<?> change : changes) {
-			@Nullable
 			IConfigSchema schema = schemaResolver.apply(change.configValue())
 				.orElse(null);
 			if (schema == null) {
@@ -129,7 +128,7 @@ interface ConfigChangesHandler {
 		RemoteChangesHandler remoteChangesHandler
 	) {
 		List<AppliedChangeCandidate<?>> candidates = new ArrayList<>();
-		CompletableFuture<Void> request;
+		CompletableFuture<@Nullable Void> request;
 		try {
 			for (ConfigValueChange<?> change : changes) {
 				candidates.add(createCandidate(change));
@@ -149,7 +148,7 @@ interface ConfigChangesHandler {
 		} catch (RuntimeException exception) {
 			return CompletableFuture.completedFuture(ConfigChangesResult.failure(changes.get(0), exception));
 		}
-		return request.handle((ignored, throwable) -> {
+		return request.handle((@Nullable Void ignored, @Nullable Throwable throwable) -> {
 			if (throwable != null) {
 				return ConfigChangesResult.failure(changes.get(0), asRuntimeException(throwable));
 			}
@@ -167,8 +166,12 @@ interface ConfigChangesHandler {
 
 	private static RuntimeException asRuntimeException(Throwable throwable) {
 		Throwable cause = throwable;
-		while (cause instanceof CompletionException && cause.getCause() != null) {
-			cause = cause.getCause();
+		while (cause instanceof CompletionException) {
+			Throwable nestedCause = cause.getCause();
+			if (nestedCause == null) {
+				break;
+			}
+			cause = nestedCause;
 		}
 		if (cause instanceof RuntimeException runtimeException) {
 			return runtimeException;
@@ -240,7 +243,7 @@ interface ConfigChangesHandler {
 
 	@FunctionalInterface
 	interface RemoteChangesHandler {
-		CompletableFuture<Void> requestUpdate(IConfigSchema schema, List<ConfigValueChange<?>> changes);
+		CompletableFuture<@Nullable Void> requestUpdate(IConfigSchema schema, List<ConfigValueChange<?>> changes);
 	}
 
 	record AppliedChangeCandidate<T>(
@@ -297,7 +300,6 @@ record ConfigChangesResult(
 	ConfigChangesResult append(ConfigChangesResult other) {
 		List<AppliedConfigValueChange<?>> combinedChanges = new ArrayList<>(appliedChanges);
 		combinedChanges.addAll(other.appliedChanges);
-		@Nullable
 		ConfigChangeFailure combinedFailure = failure;
 		if (other.failure != null) {
 			combinedFailure = other.failure;

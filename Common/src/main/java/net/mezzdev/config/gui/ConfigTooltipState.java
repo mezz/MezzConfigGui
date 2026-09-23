@@ -1,6 +1,6 @@
 package net.mezzdev.config.gui;
 import net.minecraft.util.FormattedCharSequence;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 import java.util.List;
 
 /** Holds a tooltip until the final loader overlay pass. */

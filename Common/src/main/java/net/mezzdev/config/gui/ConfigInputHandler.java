@@ -2,11 +2,12 @@ package net.mezzdev.config.gui;
 
 import net.mezzdev.config.gui.input.UserInput;
 import net.minecraft.client.gui.screens.Screen;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Optional;
 
 public interface ConfigInputHandler {
-	Optional<ConfigInputHandler> handleUserInput(Screen screen, UserInput input);
+	Optional<ConfigInputHandler> handleUserInput(@Nullable Screen screen, UserInput input);
 
 	/**
 	 * Called when a mouse is clicked but was handled and canceled by some other mouse handler.
@@ -20,7 +21,7 @@ public interface ConfigInputHandler {
 	}
 
 	default Optional<ConfigInputHandler> handleMouseDragged(
-		Screen screen,
+		@Nullable Screen screen,
 		double mouseX,
 		double mouseY,
 		int button,

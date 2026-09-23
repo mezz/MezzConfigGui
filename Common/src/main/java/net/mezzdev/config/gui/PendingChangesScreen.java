@@ -12,7 +12,7 @@ import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -80,7 +80,6 @@ final class PendingChangesScreen extends MezzConfigScreen {
 	@Override
 	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
 		renderBackground(guiGraphics, mouseX, mouseY, partialTick);
-		@Nullable
 		PendingConfigChange hoveredChange = drawContent(guiGraphics, mouseX, mouseY);
 		super.render(guiGraphics, mouseX, mouseY, partialTick);
 		drawTooltip(guiGraphics, mouseX, mouseY, hoveredChange);
@@ -146,7 +145,6 @@ final class PendingChangesScreen extends MezzConfigScreen {
 
 		clampScrollOffset();
 
-		@Nullable
 		PendingConfigChange hoveredChange = null;
 		guiGraphics.enableScissor(
 			innerArea.getX(),

@@ -8,7 +8,7 @@ import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.network.chat.Component;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ListConfigEntryTest {
 	@Test
+	@SuppressWarnings("DataFlowIssue")
 	void openingLargeSortingListsDoesNotRepeatedlyScanSelectedValues() {
 		int size = 2000;
 		List<String> allValues = IntStream.range(0, size).mapToObj(index -> "value" + index).toList();
@@ -134,6 +135,7 @@ class ListConfigEntryTest {
 	}
 
 	@Test
+	@SuppressWarnings("DataFlowIssue")
 	void honorsUnorderedListMetadata() {
 		TestListSerializer serializer = new TestListSerializer(
 			true,
@@ -151,6 +153,7 @@ class ListConfigEntryTest {
 		assertFalse(getBooleanField(entry, "ordered"));
 	}
 
+	@SuppressWarnings("DataFlowIssue")
 	private static ListConfigEntry<String> createEntry(
 		boolean allowsRemovingValues,
 		@Nullable List<String> allValidValues
