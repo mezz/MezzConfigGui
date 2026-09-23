@@ -6,7 +6,7 @@ import net.mezzdev.config.gui.ConfigScreenCategoryNavigationGroup;
 import net.mezzdev.config.gui.ConfigValueCategoryPath;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.minecraft.network.chat.Component;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -36,13 +37,15 @@ final class ConfigCategoryTree {
 		}
 		for (ConfigScreenCategory category : categories) {
 			ConfigScreenCategoryNavigationGroup grouping = getNavigationGroup(category);
-			if (grouping != null && groupedCategories.get(grouping.name()).size() > 1) {
-				List<ConfigScreenCategory> members = groupedCategories.get(grouping.name());
-				if (members.get(0) == category) {
-					MutableNode root = createGroup(grouping, members);
-					appendNodes(result, root, category.getGroup(), -1, 0, inlineSubsectionLimit);
+			if (grouping != null) {
+				List<ConfigScreenCategory> members = Objects.requireNonNull(groupedCategories.get(grouping.name()));
+				if (members.size() > 1) {
+					if (members.get(0) == category) {
+						MutableNode root = createGroup(grouping, members);
+						appendNodes(result, root, category.getGroup(), -1, 0, inlineSubsectionLimit);
+					}
+					continue;
 				}
-				continue;
 			}
 			appendNodes(result, createRoot(category), category.getGroup(), -1, 0, inlineSubsectionLimit);
 		}

@@ -6,7 +6,7 @@ import net.mezzdev.config.gui.ConfigScreenCategoryNavigationGroup;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigLocalizedCategory;
 import net.minecraft.network.chat.Component;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.List;

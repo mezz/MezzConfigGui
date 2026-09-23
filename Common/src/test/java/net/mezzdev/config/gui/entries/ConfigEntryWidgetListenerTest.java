@@ -6,7 +6,7 @@ import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayDeque;
@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigEntryWidgetListenerTest {
 	@Test
+	@SuppressWarnings("DataFlowIssue")
 	void offscreenEntriesSkipRenderingAndVisibleEntriesReceiveTheViewport() {
 		ImmutableRect2i viewport = new ImmutableRect2i(10, 20, 100, 100);
 		RenderCountingWidget widget = new RenderCountingWidget(new TestConfigValue("value"));
@@ -44,6 +45,7 @@ class ConfigEntryWidgetListenerTest {
 		private ImmutableRect2i lastViewport;
 		private int lastRowIndex;
 
+		@SuppressWarnings("DataFlowIssue")
 		private RenderCountingWidget(IConfigScreenValue<String> value) {
 			super(value, null);
 		}
@@ -184,10 +186,12 @@ class ConfigEntryWidgetListenerTest {
 	private static final class TestConfigEntryWidget extends ConfigEntryWidget<String> {
 		private int valueChangedCount;
 
+		@SuppressWarnings("DataFlowIssue")
 		private TestConfigEntryWidget(IConfigScreenValue<String> configValue) {
 			super(configValue, null);
 		}
 
+		@SuppressWarnings("DataFlowIssue")
 		private TestConfigEntryWidget(IConfigScreenValue<String> configValue, Consumer<Runnable> clientThreadDispatcher) {
 			super(configValue, null, clientThreadDispatcher);
 		}
@@ -287,7 +291,7 @@ class ConfigEntryWidgetListenerTest {
 		}
 
 		@Override
-		public boolean isValid(String value) {
+		public boolean isValid(@Nullable String value) {
 			return value != null;
 		}
 

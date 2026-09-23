@@ -6,6 +6,7 @@ import net.mezzdev.config.gui.api.ConfigValueEditorType;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.minecraft.network.chat.Component;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
@@ -45,8 +46,8 @@ final class KeyMappingSerializer implements IConfigValueEditorSerializer<KeyMapp
 	}
 
 	@Override
-	public boolean isValid(KeyMappingValue value) {
-		return value != null && value.binding() != null && value.configKeyMapping() != null;
+	public boolean isValid(@Nullable KeyMappingValue value) {
+		return value != null;
 	}
 
 	@Override

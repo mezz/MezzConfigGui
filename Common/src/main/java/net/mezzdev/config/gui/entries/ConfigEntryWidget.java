@@ -28,7 +28,7 @@ import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.util.FormattedCharSequence;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
@@ -245,7 +245,6 @@ public abstract class ConfigEntryWidget<T> {
 	}
 
 	private static void runOnClientThread(Runnable task) {
-		@Nullable
 		Minecraft minecraft = Minecraft.getInstance();
 		if (minecraft == null || minecraft.isSameThread()) {
 			task.run();
@@ -657,7 +656,7 @@ public abstract class ConfigEntryWidget<T> {
 
 	private class EntryWidgetInputHandler implements ConfigInputHandler {
 		@Override
-		public Optional<ConfigInputHandler> handleUserInput(Screen screen, UserInput input) {
+		public Optional<ConfigInputHandler> handleUserInput(@Nullable Screen screen, UserInput input) {
 			if (!isEditable()) {
 				return Optional.empty();
 			}

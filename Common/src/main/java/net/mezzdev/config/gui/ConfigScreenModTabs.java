@@ -9,7 +9,7 @@ import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -253,7 +253,6 @@ final class ConfigScreenModTabs {
 		if (button != InputConstants.MOUSE_BUTTON_LEFT) {
 			return false;
 		}
-		@Nullable
 		ClickTarget target = getClickTarget(mouseX, mouseY);
 		if (target == null) {
 			return false;

@@ -13,6 +13,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
@@ -120,7 +121,7 @@ public final class ConfigSectionHeader implements ConfigInputHandler {
 	}
 
 	@Override
-	public Optional<ConfigInputHandler> handleUserInput(Screen screen, UserInput input) {
+	public Optional<ConfigInputHandler> handleUserInput(@Nullable Screen screen, UserInput input) {
 		if (!area.contains(input.getMouseX(), input.getMouseY()) || !ConfigInputUtil.isLeftClick(input)) {
 			return Optional.empty();
 		}

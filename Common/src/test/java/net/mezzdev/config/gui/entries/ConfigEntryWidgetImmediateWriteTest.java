@@ -7,6 +7,7 @@ import net.mezzdev.config.gui.ConfigValueAccess;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -91,6 +92,7 @@ class ConfigEntryWidgetImmediateWriteTest {
 	private static final class TestConfigEntryWidget extends ConfigEntryWidget<String> {
 		private int valueChangedCount;
 
+		@SuppressWarnings("DataFlowIssue")
 		private TestConfigEntryWidget(IConfigScreenValue<String> configValue) {
 			super(configValue, null);
 		}
@@ -214,7 +216,7 @@ class ConfigEntryWidgetImmediateWriteTest {
 		}
 
 		@Override
-		public boolean isValid(String value) {
+		public boolean isValid(@Nullable String value) {
 			return value != null;
 		}
 

@@ -2,7 +2,7 @@ package net.mezzdev.config.gui;
 
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.minecraft.network.chat.Component;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.Collection;

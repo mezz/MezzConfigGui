@@ -13,7 +13,7 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -132,7 +132,7 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 	}
 
 	@Override
-	public boolean set(T value) {
+	public boolean set(@Nullable T value) {
 		if (!isEditable()) {
 			throw new IllegalStateException("Native NeoForge multiplayer server configs cannot be edited from this client.");
 		}

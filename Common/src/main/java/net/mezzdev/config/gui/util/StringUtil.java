@@ -38,10 +38,6 @@ public final class StringUtil {
 		FormattedText truncatedText = font.substrByWidth(text, width - ellipsisWidth);
 
 		Style style = ConfigRenderUtil.truncationStyle(font, text, width - ellipsisWidth);
-		if (style == null) {
-			style = Style.EMPTY;
-		}
-
 		return FormattedText.composite(truncatedText, Component.literal("...").setStyle(style));
 	}
 

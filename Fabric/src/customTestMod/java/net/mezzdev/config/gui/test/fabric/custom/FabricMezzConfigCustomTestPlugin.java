@@ -33,7 +33,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -216,7 +216,7 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 		}
 
 		@Override
-		public boolean isValid(String value) {
+		public boolean isValid(@Nullable String value) {
 			return value != null && !value.isBlank() && value.length() <= 40;
 		}
 
@@ -261,7 +261,7 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 		}
 
 		@Override
-		public boolean isValid(TestColor value) {
+		public boolean isValid(@Nullable TestColor value) {
 			return value != null;
 		}
 
@@ -305,7 +305,7 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 		}
 
 		@Override
-		public boolean isValid(CombinedEnabled value) {
+		public boolean isValid(@Nullable CombinedEnabled value) {
 			return value != null;
 		}
 
@@ -349,7 +349,7 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 		}
 
 		@Override
-		public boolean isValid(TestMode value) {
+		public boolean isValid(@Nullable TestMode value) {
 			return value != null;
 		}
 
@@ -407,7 +407,7 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 		}
 
 		@Override
-		public boolean isValid(List<TestMode> value) {
+		public boolean isValid(@Nullable List<@Nullable TestMode> value) {
 			return value != null && value.stream().allMatch(ModeSerializer.INSTANCE::isValid);
 		}
 

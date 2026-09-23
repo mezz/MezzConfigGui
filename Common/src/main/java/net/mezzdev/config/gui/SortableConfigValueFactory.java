@@ -21,7 +21,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -327,7 +327,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		}
 
 		@Override
-		public boolean set(List<T> value) {
+		public boolean set(@Nullable List<T> value) {
 			if (value == null || !serializer.isValid(value)) {
 				throw new IllegalArgumentException(
 					"Invalid sortable config value '%s'. %s".formatted(value, serializer.getValidValuesDescription())
@@ -357,7 +357,6 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		}
 
 		private void removeListener(Consumer<List<T>> listener) {
-			@Nullable
 			Runnable removeSortingConfigListener = null;
 			synchronized (this) {
 				listeners.remove(listener);

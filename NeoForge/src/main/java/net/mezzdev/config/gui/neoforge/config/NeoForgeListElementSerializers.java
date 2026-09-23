@@ -3,6 +3,7 @@ package net.mezzdev.config.gui.neoforge.config;
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.neoforged.neoforge.common.ModConfigSpec;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.List;
@@ -24,7 +25,9 @@ final class NeoForgeListElementSerializers {
 				.map(NeoForgeListElementSerializers::getElementClass);
 		}
 		Class<?> elementClass = null;
-		for (Object defaultValue : defaultValues) {
+		for (@Nullable
+			Object defaultValue : defaultValues
+		) {
 			if (defaultValue == null) {
 				return Optional.empty();
 			}
@@ -115,7 +118,7 @@ final class NeoForgeListElementSerializers {
 		}
 
 		@Override
-		public boolean isValid(String value) {
+		public boolean isValid(@Nullable String value) {
 			return value != null;
 		}
 
@@ -150,7 +153,7 @@ final class NeoForgeListElementSerializers {
 		}
 
 		@Override
-		public boolean isValid(Long value) {
+		public boolean isValid(@Nullable Long value) {
 			return value != null;
 		}
 
@@ -188,7 +191,7 @@ final class NeoForgeListElementSerializers {
 		}
 
 		@Override
-		public boolean isValid(Double value) {
+		public boolean isValid(@Nullable Double value) {
 			return value != null && Double.isFinite(value);
 		}
 

@@ -11,6 +11,7 @@ import net.mezzdev.config.gui.screenlist.ConfigScreenOwnerIcon;
 import net.mezzdev.config.serializers.StringSerializer;
 import net.mezzdev.config.sorting.SortingConfig;
 import net.minecraft.network.chat.Component;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -95,7 +96,7 @@ class ModNavigationConfigTest {
 			@Override
 			public ConfigScreenCategoryGroup getGroup() { return ConfigScreenCategoryGroup.MOD_OWNED; }
 			@Override
-			public ConfigScreenCategoryNavigationGroup getNavigationGroup() { return null; }
+			public @Nullable ConfigScreenCategoryNavigationGroup getNavigationGroup() { return null; }
 			@Override
 			public String getName() { return "modList"; }
 			@Override

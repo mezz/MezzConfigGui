@@ -23,7 +23,7 @@ import net.mezzdev.config.gui.input.UserInput;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
@@ -461,7 +461,7 @@ class ConfigCategoryTreeTest {
 		String name,
 		List<IConfigScreenValue<?>> values,
 		Component title,
-		ConfigScreenCategoryNavigationGroup navigationGroup
+		@Nullable ConfigScreenCategoryNavigationGroup navigationGroup
 	) implements ConfigScreenCategory {
 		private TestCategory(String name, List<IConfigScreenValue<?>> values) {
 			this(name, values, Component.literal(name), null);
@@ -476,7 +476,7 @@ class ConfigCategoryTreeTest {
 		}
 
 		@Override
-		public ConfigScreenCategoryNavigationGroup getNavigationGroup() {
+		public @Nullable ConfigScreenCategoryNavigationGroup getNavigationGroup() {
 			return navigationGroup;
 		}
 
@@ -578,6 +578,7 @@ class ConfigCategoryTreeTest {
 	}
 
 	private static class TestEntry extends ConfigEntryWidget<Boolean> {
+		@SuppressWarnings("DataFlowIssue")
 		TestEntry(IConfigScreenValue<Boolean> value) {
 			super(value, null);
 		}

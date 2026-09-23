@@ -11,7 +11,7 @@ import net.mezzdev.config.api.value.editor.ConfigValueEditMode;
 import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.gui.screenlist.ConfigScreenListEntry;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 

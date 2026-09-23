@@ -6,6 +6,7 @@ import net.mezzdev.config.gui.ConfigScreenCategoryNavigationGroup;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.config.ConfigGuiOptionsTestUtil;
 import net.minecraft.network.chat.Component;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -69,7 +70,7 @@ class ConfigScreenHistoryTest {
 		}
 
 		@Override
-		public ConfigScreenCategoryNavigationGroup getNavigationGroup() {
+		public @Nullable ConfigScreenCategoryNavigationGroup getNavigationGroup() {
 			return null;
 		}
 

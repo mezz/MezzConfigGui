@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui.api;
 
 import net.minecraft.client.gui.screens.Screen;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Creates a config screen from a parent screen.

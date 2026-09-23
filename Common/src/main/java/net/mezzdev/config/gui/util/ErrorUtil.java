@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui.util;
 
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public final class ErrorUtil {
 	private ErrorUtil() {

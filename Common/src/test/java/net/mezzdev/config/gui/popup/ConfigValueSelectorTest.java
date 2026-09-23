@@ -10,7 +10,7 @@ import net.mezzdev.config.gui.input.UserInput;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.Rect2i;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -222,7 +222,7 @@ class ConfigValueSelectorTest {
 		}
 
 		@Override
-		public boolean isValid(String value) {
+		public boolean isValid(@Nullable String value) {
 			return value != null;
 		}
 

@@ -38,6 +38,7 @@ import net.mezzdev.config.gui.remote.RemoteConfigEditor;
 import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryRegistry;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.network.chat.Component;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
@@ -73,8 +74,12 @@ class ConfigGuiPluginLoaderTest {
 		var constructor = registrationClass.getDeclaredConstructor(String.class);
 		constructor.setAccessible(true);
 		IConfigGuiRegistration registration = (IConfigGuiRegistration) constructor.newInstance(MOD_ID);
-		registration.registerValueEditor(stringType, ignored -> null);
-		registration.registerValueEditor(integerType, ignored -> null);
+		registration.registerValueEditor(stringType, ignored -> {
+			throw new AssertionError("Editor factory should not be called");
+		});
+		registration.registerValueEditor(integerType, ignored -> {
+			throw new AssertionError("Editor factory should not be called");
+		});
 
 		Field factoriesField = registrationClass.getDeclaredField("valueEditorFactories");
 		factoriesField.setAccessible(true);
@@ -1195,7 +1200,7 @@ class ConfigGuiPluginLoaderTest {
 		String name,
 		List<IConfigScreenValue<?>> values,
 		ConfigScreenCategoryGroup group,
-		ConfigScreenCategoryNavigationGroup navigationGroup
+		@Nullable ConfigScreenCategoryNavigationGroup navigationGroup
 	) implements ConfigScreenCategory {
 		private TestCategory(String name, List<IConfigScreenValue<?>> values) {
 			this(name, values, ConfigScreenCategoryGroup.MOD_OWNED, null);
@@ -1211,7 +1216,7 @@ class ConfigGuiPluginLoaderTest {
 		}
 
 		@Override
-		public ConfigScreenCategoryNavigationGroup getNavigationGroup() {
+		public @Nullable ConfigScreenCategoryNavigationGroup getNavigationGroup() {
 			return navigationGroup;
 		}
 

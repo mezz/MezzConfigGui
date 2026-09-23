@@ -3,6 +3,7 @@ package net.mezzdev.config.gui;
 import net.mezzdev.config.gui.input.IMouseOverable;
 import net.mezzdev.config.gui.input.UserInput;
 import net.minecraft.client.gui.screens.Screen;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Optional;
 
@@ -16,7 +17,7 @@ public final class SameConfigElementInputHandler implements ConfigInputHandler {
 	}
 
 	@Override
-	public Optional<ConfigInputHandler> handleUserInput(Screen screen, UserInput input) {
+	public Optional<ConfigInputHandler> handleUserInput(@Nullable Screen screen, UserInput input) {
 		double mouseX = input.getMouseX();
 		double mouseY = input.getMouseY();
 		if (mouseOverable.isMouseOver(mouseX, mouseY)) {
