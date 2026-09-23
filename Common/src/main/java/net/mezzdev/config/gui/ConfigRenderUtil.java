@@ -38,17 +38,14 @@ public final class ConfigRenderUtil {
 	}
 	public static void blitSprite(LegacyGuiGraphics graphics, ResourceLocation sprite, int x, int y, int width, int height) {
 		String path = sprite.getPath();
-		int row = 0;
-		if (path.contains("handle")) {
-			row += 2;
-		}
-		if (path.contains("highlighted")) {
-			row++;
-		}
 		ResourceLocation texture = new ResourceLocation("minecraft", "textures/gui/widgets.png");
-		int sourceY = 66;
-		if (path.contains("highlighted")) {
-			sourceY = 86;
+		// Minecraft 1.19.2 stores the dark slider track at y=46; the handle states use y=66 and y=86.
+		int sourceY = 46;
+		if (path.contains("handle")) {
+			sourceY = 66;
+			if (path.contains("highlighted")) {
+				sourceY = 86;
+			}
 		}
 		int left = width / 2;
 		graphics.blit(texture, x, y, left, height, 0, sourceY, left, 20, 256, 256);
