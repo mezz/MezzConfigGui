@@ -56,7 +56,7 @@ final class AppliedConfigChangeTracker {
 		List<ConfigValueChange<?>> undoChanges = new ArrayList<>(valueKeysInApplicationOrder.size());
 		for (int i = valueKeysInApplicationOrder.size() - 1; i >= 0; i--) {
 			Object identityKey = valueKeysInApplicationOrder.get(i);
-			AppliedConfigValueChange<?> change = changesByValueKey.get(identityKey);
+			AppliedConfigValueChange<?> change = Objects.requireNonNull(changesByValueKey.get(identityKey));
 			undoChanges.add(change.toUndoChange());
 		}
 		return List.copyOf(undoChanges);

@@ -3,6 +3,7 @@ package net.mezzdev.config.gui.neoforge.config;
 import net.mezzdev.config.api.value.serializer.ConfigValueRange;
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.neoforged.neoforge.common.ModConfigSpec;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Optional;
 
@@ -49,7 +50,7 @@ final class NeoForgeDoubleSerializer extends NeoForgeTextSerializer<Double> {
 	}
 
 	@Override
-	public boolean isValid(Double value) {
+	public boolean isValid(@Nullable Double value) {
 		return value != null && Double.isFinite(value) && super.isValid(value);
 	}
 }

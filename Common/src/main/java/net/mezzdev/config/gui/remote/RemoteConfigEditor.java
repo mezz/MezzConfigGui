@@ -15,6 +15,7 @@ import net.mezzdev.config.gui.info.ServerConfigAccess;
 import net.minecraft.network.chat.Component;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jspecify.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -148,7 +149,7 @@ public final class RemoteConfigEditor {
 		}
 	}
 
-	public CompletableFuture<Void> requestUpdate(
+	public CompletableFuture<@Nullable Void> requestUpdate(
 		IConfigSchema schema,
 		List<ConfigValueChange<?>> changes
 	) {
@@ -204,7 +205,7 @@ public final class RemoteConfigEditor {
 		INSTANCE.acceptResponseChunk(chunk);
 	}
 
-	private CompletableFuture<Void> requestSnapshot(IConfigSchema schema) {
+	private CompletableFuture<@Nullable Void> requestSnapshot(IConfigSchema schema) {
 		RemoteConfigMessage.SnapshotRequest request;
 		PendingRequest pending;
 		synchronized (lock) {
@@ -258,6 +259,7 @@ public final class RemoteConfigEditor {
 		return findPendingSnapshot(schema) != null;
 	}
 
+	@Nullable
 	private PendingRequest findPendingSnapshot(IConfigSchema schema) {
 		return pendingRequests.values()
 			.stream()
@@ -438,7 +440,7 @@ public final class RemoteConfigEditor {
 		List<RemoteValueData> serialized = new ArrayList<>(changes.size());
 		for (ConfigValueChange<?> change : changes) {
 			IConfigValue<?> backingValue = findBackingValue(knownValues.keySet(), change.configValue());
-			RemoteValueKey key = knownValues.get(backingValue);
+			RemoteValueKey key = Objects.requireNonNull(knownValues.get(backingValue));
 			if (!changedKeys.add(key)) {
 				throw new IllegalArgumentException("A remote config update contains a duplicate value.");
 			}
@@ -506,7 +508,7 @@ public final class RemoteConfigEditor {
 				return Optional.empty();
 			}
 			@SuppressWarnings("unchecked")
-			T overlayValue = (T) state.values().get(value);
+			T overlayValue = (T) Objects.requireNonNull(state.values().get(value));
 			return Optional.of(overlayValue);
 		}
 	}
@@ -557,8 +559,8 @@ public final class RemoteConfigEditor {
 
 	private List<ValueNotification> createNotifications(
 		IConfigSchema schema,
-		SchemaState oldState,
-		SchemaState newState
+		@Nullable SchemaState oldState,
+		@Nullable SchemaState newState
 	) {
 		Map<IConfigValue<?>, List<Consumer<Object>>> schemaListeners = valueListeners.get(schema);
 		if (schemaListeners == null) {
@@ -578,9 +580,9 @@ public final class RemoteConfigEditor {
 		return List.copyOf(notifications);
 	}
 
-	private static Object getStateValue(SchemaState state, IConfigValue<?> value) {
+	private static Object getStateValue(@Nullable SchemaState state, IConfigValue<?> value) {
 		if (state != null && state.available() && state.values().containsKey(value)) {
-			return state.values().get(value);
+			return Objects.requireNonNull(state.values().get(value));
 		}
 		return value.getEditorInfo().getPendingValue();
 	}
@@ -718,7 +720,7 @@ public final class RemoteConfigEditor {
 		RemoteSchemaKey key,
 		IConfigSchema schema,
 		RequestKind kind,
-		CompletableFuture<Void> future,
+		CompletableFuture<@Nullable Void> future,
 		long createdNanos
 	) {}
 

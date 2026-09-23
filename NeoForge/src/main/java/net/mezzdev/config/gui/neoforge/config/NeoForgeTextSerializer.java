@@ -5,6 +5,7 @@ import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.common.ModConfigSpec;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +20,7 @@ abstract class NeoForgeTextSerializer<T> implements IConfigValueEditorSerializer
 	}
 
 	@Override
-	public boolean isValid(T value) {
+	public boolean isValid(@Nullable T value) {
 		if (value == null) {
 			return false;
 		}

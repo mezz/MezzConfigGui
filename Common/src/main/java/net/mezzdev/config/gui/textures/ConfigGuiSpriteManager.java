@@ -10,6 +10,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.metadata.MetadataSectionType;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ResourceManager;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -71,11 +72,15 @@ public class ConfigGuiSpriteManager implements PreparableReloadListener, AutoClo
 
 		PendingStitch pendingStitch = pendingStitchResults.pendingStitch;
 		pendingStitch.entry.scheduleLoad(resourcemanager, loadAndStitchExecutor)
-			.whenComplete((preparations, throwable) -> {
+			.whenComplete((SpriteLoader.@Nullable Preparations preparations, @Nullable Throwable throwable) -> {
 				if (preparations != null) {
 					pendingStitch.preparations.complete(preparations);
-				} else {
+				} else if (throwable != null) {
 					pendingStitch.preparations.completeExceptionally(throwable);
+				} else {
+					pendingStitch.preparations.completeExceptionally(
+						new IllegalStateException("Sprite loading completed without a result.")
+					);
 				}
 			});
 		return pendingStitchResults.readyToUpload

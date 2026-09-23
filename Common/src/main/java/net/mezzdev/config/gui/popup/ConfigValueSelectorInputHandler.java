@@ -5,6 +5,7 @@ import net.mezzdev.config.gui.ConfigInputHandler;
 import net.mezzdev.config.gui.input.UserInput;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.gui.screens.Screen;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -13,14 +14,14 @@ import java.util.function.Supplier;
  * Routes clicks to an open popup selector and closes it when clicking elsewhere.
  */
 public final class ConfigValueSelectorInputHandler implements ConfigInputHandler {
-	private final Supplier<ConfigPopupSelector> valueSelectorSupplier;
+	private final Supplier<@Nullable ConfigPopupSelector> valueSelectorSupplier;
 	private final Supplier<ImmutableRect2i> valueSelectorClipAreaSupplier;
 	private final Runnable valueSelectorCloser;
 	private final Runnable layoutUpdater;
 	private boolean valueSelectorWasDragged;
 
 	public ConfigValueSelectorInputHandler(
-		Supplier<ConfigPopupSelector> valueSelectorSupplier,
+		Supplier<@Nullable ConfigPopupSelector> valueSelectorSupplier,
 		Supplier<ImmutableRect2i> valueSelectorClipAreaSupplier,
 		Runnable valueSelectorCloser,
 		Runnable layoutUpdater
@@ -32,7 +33,7 @@ public final class ConfigValueSelectorInputHandler implements ConfigInputHandler
 	}
 
 	@Override
-	public Optional<ConfigInputHandler> handleUserInput(Screen screen, UserInput input) {
+	public Optional<ConfigInputHandler> handleUserInput(@Nullable Screen screen, UserInput input) {
 		if (input.isSimulate()) {
 			valueSelectorWasDragged = false;
 		}
@@ -94,7 +95,7 @@ public final class ConfigValueSelectorInputHandler implements ConfigInputHandler
 
 	@Override
 	public Optional<ConfigInputHandler> handleMouseDragged(
-		Screen screen,
+		@Nullable Screen screen,
 		double mouseX,
 		double mouseY,
 		int button,

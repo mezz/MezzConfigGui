@@ -1,6 +1,6 @@
 package net.mezzdev.config.gui;
 import net.minecraft.util.FormattedCharSequence;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 import java.util.List;
 
 /** Holds a tooltip until the final loader overlay pass. */
@@ -13,6 +13,10 @@ final class ConfigTooltipState<P> {
 	}
 	void clear() { pending = null; }
 	@Nullable
-	Tooltip<P> take() { Tooltip<P> result = pending; pending = null; return result; }
+	Tooltip<P> take() {
+		Tooltip<P> result = pending;
+		pending = null;
+		return result;
+	}
 	record Tooltip<P>(List<FormattedCharSequence> lines, P positioner) {}
 }
