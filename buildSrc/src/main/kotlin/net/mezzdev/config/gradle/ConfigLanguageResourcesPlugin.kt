@@ -15,7 +15,8 @@ import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskProvider
 
-private const val CONFIG_LANGUAGE_FILE = "src/main/resources/assets/mezz_config/lang/en_us.json"
+private const val CONFIG_LANGUAGE_RESOURCE_PATH = "assets/mezz_config_gui/lang/en_us.json"
+private const val CONFIG_LANGUAGE_FILE = "src/main/resources/$CONFIG_LANGUAGE_RESOURCE_PATH"
 
 class ConfigLanguageResourcesPlugin : Plugin<Project> {
     override fun apply(project: Project) {
@@ -54,6 +55,7 @@ abstract class MergeConfigLanguageResources : DefaultTask() {
 
     @TaskAction
     fun merge() {
+        project.delete(outputDirectory)
         val mergedTranslations = linkedMapOf<String, String>()
         val jsonSlurper = JsonSlurper()
         for (languageFile in languageFiles.files) {
@@ -72,7 +74,7 @@ abstract class MergeConfigLanguageResources : DefaultTask() {
             }
         }
 
-        val outputFile = outputDirectory.file("assets/mezz_config/lang/en_us.json").get().asFile
+        val outputFile = outputDirectory.file(CONFIG_LANGUAGE_RESOURCE_PATH).get().asFile
         outputFile.parentFile.mkdirs()
         outputFile.writeText(JsonOutput.prettyPrint(JsonOutput.toJson(mergedTranslations)) + "\n")
     }

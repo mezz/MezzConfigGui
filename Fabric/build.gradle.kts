@@ -226,6 +226,7 @@ tasks.jar {
         from(dependencySourceSet.output) {
             exclude("fabric.mod.json")
             exclude("assets/mezz_config/lang/*.json")
+            exclude("assets/mezz_config_gui/lang/*.json")
         }
     }
     from(mergedConfigLanguageResources)
