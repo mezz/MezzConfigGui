@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.test.fabric.custom;
 
+import net.mezzdev.config.gui.ConfigInputUtil;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.mezzdev.config.api.Configs;
@@ -48,14 +49,14 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 	private static final KeyMapping OPEN_SCREEN_KEY = new KeyMapping(
 		"key.%s.openScreen".formatted(MOD_ID),
 		InputConstants.Type.KEYSYM,
-		com.mojang.blaze3d.platform.InputConstants.KEY_G,
-		net.mezzdev.config.gui.ConfigInputUtil.keyCategory(MOD_ID)
+		InputConstants.KEY_G,
+		ConfigInputUtil.keyCategory(MOD_ID)
 	);
 	private static final KeyMapping TOGGLE_OVERLAY_KEY = new KeyMapping(
 		"key.%s.toggleOverlay".formatted(MOD_ID),
 		InputConstants.Type.KEYSYM,
-		com.mojang.blaze3d.platform.InputConstants.KEY_H,
-		net.mezzdev.config.gui.ConfigInputUtil.keyCategory(MOD_ID)
+		InputConstants.KEY_H,
+		ConfigInputUtil.keyCategory(MOD_ID)
 	);
 
 	@Nullable
@@ -543,7 +544,7 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 			double mouseY,
 			int button
 		) {
-			if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
+			if (button != InputConstants.MOUSE_BUTTON_LEFT) {
 				return Optional.empty();
 			}
 			return Optional.of(new TestColorPopup(configValue));

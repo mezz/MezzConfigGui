@@ -1,5 +1,8 @@
 package net.mezzdev.config.gui.textures;
 
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.metadata.gui.GuiMetadataSection;
+import net.minecraft.client.resources.metadata.gui.GuiSpriteScaling;
 import net.minecraft.client.renderer.texture.SpriteLoader;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureManager;
@@ -22,15 +25,15 @@ public class ConfigGuiSpriteManager implements PreparableReloadListener, AutoClo
 		this(textureManager, new Config(
 			Identifier.fromNamespaceAndPath(TEXTURE_NAMESPACE, "textures/atlas/gui.png"),
 			Identifier.fromNamespaceAndPath(TEXTURE_NAMESPACE, "gui"),
-			Set.of(net.minecraft.client.resources.metadata.gui.GuiMetadataSection.TYPE)
+			Set.of(GuiMetadataSection.TYPE)
 		));
 	}
-	public net.minecraft.client.renderer.texture.TextureAtlasSprite getSprite(Identifier location) {
+	public TextureAtlasSprite getSprite(Identifier location) {
 		return getAtlas().getSprite(location);
 	}
-	public net.minecraft.client.resources.metadata.gui.GuiSpriteScaling getSpriteScaling(net.minecraft.client.renderer.texture.TextureAtlasSprite sprite) {
-		return sprite.contents().getAdditionalMetadata(net.minecraft.client.resources.metadata.gui.GuiMetadataSection.TYPE)
-			.orElse(net.minecraft.client.resources.metadata.gui.GuiMetadataSection.DEFAULT).scaling();
+	public GuiSpriteScaling getSpriteScaling(TextureAtlasSprite sprite) {
+		return sprite.contents().getAdditionalMetadata(GuiMetadataSection.TYPE)
+			.orElse(GuiMetadataSection.DEFAULT).scaling();
 	}
 	private ConfigGuiSpriteManager(TextureManager textureManager, Config config) {
 		TextureAtlas atlas = new TextureAtlas(config.textureId);

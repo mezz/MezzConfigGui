@@ -1,4 +1,5 @@
 package net.mezzdev.config.gui;
+import net.minecraft.resources.Identifier;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 public final class TestMinecraft {
@@ -8,6 +9,6 @@ public final class TestMinecraft {
 		if (key == -1) {
 			key = InputConstants.UNKNOWN.getValue();
 		}
-		return new KeyMapping(name, type, key, new KeyMapping.Category(net.minecraft.resources.Identifier.withDefaultNamespace(category.replace("key.categories.", ""))));
+		return new KeyMapping(name, type, key, new KeyMapping.Category(Identifier.withDefaultNamespace(category.replace("key.categories.", ""))));
 	}
 }

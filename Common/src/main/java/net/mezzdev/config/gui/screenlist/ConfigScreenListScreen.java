@@ -1,5 +1,8 @@
 package net.mezzdev.config.gui.screenlist;
 
+import com.mojang.blaze3d.platform.InputConstants;
+import net.mezzdev.config.gui.ConfigClientUtil;
+import net.mezzdev.config.gui.ConfigRenderUtil;
 import net.mezzdev.config.gui.ConfigInputUtil;
 
 import net.mezzdev.config.gui.ConfigGuiColors;
@@ -196,7 +199,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 	@Override
 	public void onClose() {
 		if (minecraft != null) {
-			net.mezzdev.config.gui.ConfigClientUtil.setScreen(parent);
+			ConfigClientUtil.setScreen(parent);
 		}
 	}
 
@@ -228,22 +231,22 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
-		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && resizer.startResizeDrag(mouseX, mouseY)) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT && resizer.startResizeDrag(mouseX, mouseY)) {
 			pressedEntry = null;
 			return true;
 		}
-		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT && searchBox.isMouseOver(mouseX, mouseY)) {
+		if (button == InputConstants.MOUSE_BUTTON_RIGHT && searchBox.isMouseOver(mouseX, mouseY)) {
 			if (!searchBox.getValue().isEmpty()) {
 				searchBox.setValue("");
 			}
 			searchBox.setFocused(true);
 			return true;
 		}
-		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && startScrollDrag(mouseX, mouseY)) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT && startScrollDrag(mouseX, mouseY)) {
 			pressedEntry = null;
 			return true;
 		}
-		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && listArea.contains(mouseX, mouseY)) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT && listArea.contains(mouseX, mouseY)) {
 			pressedEntry = getEntryAt(mouseX, mouseY).orElse(null);
 			if (pressedEntry != null) {
 				return true;
@@ -257,18 +260,18 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
-		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && resizer.isResizing()) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT && resizer.isResizing()) {
 			resizer.finishResizeDrag()
 				.ifPresent(resizedArea -> ConfigGuiOptions.setWindowSize(resizedArea.getWidth(), resizedArea.getHeight()));
 			return true;
 		}
-		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && draggingScroll) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT && draggingScroll) {
 			draggingScroll = false;
 			return true;
 		}
 		ConfigScreenListEntry pressedEntry = this.pressedEntry;
 		this.pressedEntry = null;
-		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && pressedEntry != null && listArea.contains(mouseX, mouseY)) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT && pressedEntry != null && listArea.contains(mouseX, mouseY)) {
 			Optional<ConfigScreenListEntry> clickedEntry = getEntryAt(mouseX, mouseY);
 			if (clickedEntry.isPresent() && clickedEntry.get() == pressedEntry) {
 				openEntry(pressedEntry);
@@ -292,19 +295,19 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 
 	private void openEntry(ConfigScreenListEntry entry) {
 		if (minecraft != null) {
-			net.mezzdev.config.gui.ConfigClientUtil.setScreen(entry.factory().create(this));
+			ConfigClientUtil.setScreen(entry.factory().create(this));
 		}
 	}
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && resizer.isResizing()) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT && resizer.isResizing()) {
 			if (resizer.dragResize(mouseX, mouseY, width, height)) {
 				updateLayout();
 			}
 			return true;
 		}
-		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && draggingScroll) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT && draggingScroll) {
 			setScrollFromMarkerY(mouseY - scrollDragOffsetY);
 			return true;
 		}
@@ -394,7 +397,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 	private void drawSearch(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
 		textures.getSearchBackground()
 			.draw(guiGraphics, searchArea);
-		net.mezzdev.config.gui.ConfigRenderUtil.renderEditBox(searchBox, guiGraphics, mouseX, mouseY, partialTick);
+		ConfigRenderUtil.renderEditBox(searchBox, guiGraphics, mouseX, mouseY, partialTick);
 	}
 
 	private void drawList(GuiGraphicsExtractor guiGraphics, Font font, int mouseX, int mouseY) {

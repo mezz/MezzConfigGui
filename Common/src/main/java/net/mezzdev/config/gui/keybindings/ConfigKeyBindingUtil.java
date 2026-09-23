@@ -69,9 +69,9 @@ public final class ConfigKeyBindingUtil {
 				return Component.translatable("mezz_config.key.modifier.command");
 			}
 			return switch (value) {
-				case com.mojang.blaze3d.platform.InputConstants.KEY_LSHIFT, com.mojang.blaze3d.platform.InputConstants.KEY_RSHIFT -> Component.translatable("mezz_config.key.modifier.shift");
-				case com.mojang.blaze3d.platform.InputConstants.KEY_LALT, com.mojang.blaze3d.platform.InputConstants.KEY_RALT -> Component.translatable("mezz_config.key.modifier.alt");
-				case com.mojang.blaze3d.platform.InputConstants.KEY_LCONTROL, com.mojang.blaze3d.platform.InputConstants.KEY_RCONTROL -> Component.translatable("mezz_config.key.modifier.control");
+				case InputConstants.KEY_LSHIFT, InputConstants.KEY_RSHIFT -> Component.translatable("mezz_config.key.modifier.shift");
+				case InputConstants.KEY_LALT, InputConstants.KEY_RALT -> Component.translatable("mezz_config.key.modifier.alt");
+				case InputConstants.KEY_LCONTROL, InputConstants.KEY_RCONTROL -> Component.translatable("mezz_config.key.modifier.control");
 				default -> key.getDisplayName();
 			};
 		}
@@ -84,9 +84,9 @@ public final class ConfigKeyBindingUtil {
 		}
 		int keyCode = key.getValue();
 		return switch (keyCode) {
-			case com.mojang.blaze3d.platform.InputConstants.KEY_LSHIFT, com.mojang.blaze3d.platform.InputConstants.KEY_RSHIFT -> ConfigKeyModifier.SHIFT;
-			case com.mojang.blaze3d.platform.InputConstants.KEY_LALT, com.mojang.blaze3d.platform.InputConstants.KEY_RALT -> ConfigKeyModifier.ALT;
-			case com.mojang.blaze3d.platform.InputConstants.KEY_LCONTROL, com.mojang.blaze3d.platform.InputConstants.KEY_RCONTROL -> ConfigKeyModifier.CONTROL_OR_COMMAND;
+			case InputConstants.KEY_LSHIFT, InputConstants.KEY_RSHIFT -> ConfigKeyModifier.SHIFT;
+			case InputConstants.KEY_LALT, InputConstants.KEY_RALT -> ConfigKeyModifier.ALT;
+			case InputConstants.KEY_LCONTROL, InputConstants.KEY_RCONTROL -> ConfigKeyModifier.CONTROL_OR_COMMAND;
 			case ConfigInputUtil.KEY_COMMAND_LEFT, ConfigInputUtil.KEY_COMMAND_RIGHT -> getMacControlOrCommandModifier();
 			default -> ConfigKeyModifier.NONE;
 		};

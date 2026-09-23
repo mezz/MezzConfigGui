@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.api;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.Rect2i;
 
@@ -102,7 +103,7 @@ public interface IConfigValuePopup<T> {
 	 * @since 0.1.0
 	 */
 	default Optional<T> getClickedValue(Rect2i area, double mouseX, double mouseY, int button) {
-		if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
+		if (button != InputConstants.MOUSE_BUTTON_LEFT) {
 			return Optional.empty();
 		}
 		return getHoveredValue(area, mouseX, mouseY);

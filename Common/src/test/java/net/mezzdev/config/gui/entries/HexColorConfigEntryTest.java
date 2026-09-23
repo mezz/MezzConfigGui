@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui.entries;
 
+import com.google.common.collect.Iterables;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
@@ -42,9 +44,9 @@ class HexColorConfigEntryTest {
 		for (char c : "#80a1b2c3".toCharArray()) {
 			assertTrue(popup.charTyped(c, 0, values::add));
 		}
-		assertEquals("0x80a1b2c3", com.google.common.collect.Iterables.getLast(values));
-		assertTrue(popup.keyPressed(com.mojang.blaze3d.platform.InputConstants.KEY_RETURN, 0, 0, values::add));
-		assertEquals("0x80a1b2c3", com.google.common.collect.Iterables.getLast(values));
+		assertEquals("0x80a1b2c3", Iterables.getLast(values));
+		assertTrue(popup.keyPressed(InputConstants.KEY_RETURN, 0, 0, values::add));
+		assertEquals("0x80a1b2c3", Iterables.getLast(values));
 		for (char c : "#80ffffff".toCharArray()) {
 			popup.charTyped(c, 0, values::add);
 		}
@@ -68,11 +70,11 @@ class HexColorConfigEntryTest {
 		assertFalse(popup.closesAfterClick());
 
 		assertTrue(entry.onMouseClicked(click(135, 5, InputType.EXECUTE)));
-		entry.keyPressed(com.mojang.blaze3d.platform.InputConstants.KEY_DELETE, 0, 0);
+		entry.keyPressed(InputConstants.KEY_DELETE, 0, 0);
 		for (char c : "automatic".toCharArray()) {
 			assertTrue(entry.charTyped(c, 0));
 		}
-		entry.keyPressed(com.mojang.blaze3d.platform.InputConstants.KEY_RETURN, 0, 0);
+		entry.keyPressed(InputConstants.KEY_RETURN, 0, 0);
 		assertEquals("automatic", entry.getValue());
 		entry.onMouseClicked(click(102, 5, InputType.EXECUTE));
 		assertEquals(1, opened.size());
@@ -89,7 +91,7 @@ class HexColorConfigEntryTest {
 		ConfigPopupSelector popup = opened.get(0);
 		popup.updateBounds(CLIP);
 		ImmutableRect2i area = popup.getArea();
-		assertFalse(popup.onMouseDragged(area.getX() + 55, area.getY() + 55, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT));
+		assertFalse(popup.onMouseDragged(area.getX() + 55, area.getY() + 55, InputConstants.MOUSE_BUTTON_LEFT));
 		assertEquals("#ABCDEF", entry.getValue());
 		assertFalse(entry.hasPendingChange());
 	}
@@ -109,7 +111,7 @@ class HexColorConfigEntryTest {
 		selectColor(popup, 95);
 		assertNotEquals(first, entry.getValue().get(1));
 		assertEquals("automatic", entry.getValue().get(0));
-		assertEquals("#123456", com.google.common.collect.Iterables.getLast(entry.getValue()));
+		assertEquals("#123456", Iterables.getLast(entry.getValue()));
 		assertEquals(original, entry.configValue.getValue());
 		assertTrue(entry.hasPendingChange());
 	}
@@ -124,7 +126,7 @@ class HexColorConfigEntryTest {
 		ConfigPopupSelector popup = opened.get(0);
 		popup.updateBounds(CLIP);
 		ImmutableRect2i area = popup.getArea();
-		assertFalse(popup.onMouseDragged(area.getX() + 55, area.getY() + 55, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT));
+		assertFalse(popup.onMouseDragged(area.getX() + 55, area.getY() + 55, InputConstants.MOUSE_BUTTON_LEFT));
 		assertEquals(original, entry.getValue());
 		assertFalse(entry.hasPendingChange());
 	}
@@ -132,7 +134,7 @@ class HexColorConfigEntryTest {
 	private static void selectColor(ConfigPopupSelector popup, int x) {
 		popup.updateBounds(CLIP);
 		ImmutableRect2i area = popup.getArea();
-		assertTrue(popup.onMouseDragged(area.getX() + x, area.getY() + 55, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT));
+		assertTrue(popup.onMouseDragged(area.getX() + x, area.getY() + 55, InputConstants.MOUSE_BUTTON_LEFT));
 	}
 
 	private static void clickListSwatch(ListConfigEntry<String> entry, int index) throws Exception {
@@ -148,7 +150,7 @@ class HexColorConfigEntryTest {
 	}
 
 	private static UserInput click(double x, double y, InputType type) {
-		return UserInput.fromVanilla(x, y, com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT, type).orElseThrow();
+		return UserInput.fromVanilla(x, y, InputConstants.MOUSE_BUTTON_LEFT, type).orElseThrow();
 	}
 
 	private static void setField(Object target, String name, Object value) throws Exception {

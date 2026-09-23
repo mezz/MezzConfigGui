@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.remote;
 
+import net.minecraft.server.permissions.Permission.HasCommandLevel;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -7,6 +8,6 @@ import net.minecraft.server.level.ServerPlayer;
 final class ConfigServerPermissions {
 	private ConfigServerPermissions() {}
 	static boolean canEdit(MinecraftServer server, ServerPlayer player) {
-		return player.permissions().hasPermission(new net.minecraft.server.permissions.Permission.HasCommandLevel(server.operatorUserPermissions().level()));
+		return player.permissions().hasPermission(new HasCommandLevel(server.operatorUserPermissions().level()));
 	}
 }

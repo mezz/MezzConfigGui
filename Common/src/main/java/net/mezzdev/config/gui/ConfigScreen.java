@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.api.schema.ConfigSchemaType;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
@@ -448,13 +449,13 @@ public class ConfigScreen extends MezzConfigScreen {
 
 	private void closeWithoutPrompt() {
 		if (minecraft != null) {
-			net.mezzdev.config.gui.ConfigClientUtil.setScreen(parent);
+			ConfigClientUtil.setScreen(parent);
 		}
 	}
 
 	private void openScreenListWithoutPrompt() {
 		if (minecraft != null) {
-			net.mezzdev.config.gui.ConfigClientUtil.setScreen(navigation.createScreenList(parent));
+			ConfigClientUtil.setScreen(navigation.createScreenList(parent));
 		}
 	}
 
@@ -464,7 +465,7 @@ public class ConfigScreen extends MezzConfigScreen {
 			if (nextScreen instanceof ConfigScreen configScreen) {
 				configScreen.modTabs.copyScrollPositionFrom(modTabs);
 			}
-			net.mezzdev.config.gui.ConfigClientUtil.setScreen(nextScreen);
+			ConfigClientUtil.setScreen(nextScreen);
 		}
 	}
 
@@ -475,7 +476,7 @@ public class ConfigScreen extends MezzConfigScreen {
 		PendingChangesScreen pendingChangesScreen = new PendingChangesScreen(
 			applyChanges -> {
 				if (applyChanges) {
-					net.mezzdev.config.gui.ConfigClientUtil.setScreen(this);
+					ConfigClientUtil.setScreen(this);
 					applyPendingChanges(leaveAction, () -> {});
 					return;
 				} else {
@@ -483,11 +484,11 @@ public class ConfigScreen extends MezzConfigScreen {
 				}
 				leaveAction.run();
 			},
-			() -> net.mezzdev.config.gui.ConfigClientUtil.setScreen(this),
+			() -> ConfigClientUtil.setScreen(this),
 			controller.getPendingChangesRestartRequirement(),
 			controller.getPendingConfigChanges()
 		);
-		net.mezzdev.config.gui.ConfigClientUtil.setScreen(pendingChangesScreen);
+		ConfigClientUtil.setScreen(pendingChangesScreen);
 	}
 
 	private void applyPendingChanges() {
@@ -579,7 +580,7 @@ public class ConfigScreen extends MezzConfigScreen {
 			if (valueSelector.keyPressed(keyCode, scanCode, modifiers)) {
 				return true;
 			}
-			if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
+			if (keyCode == InputConstants.KEY_ESCAPE) {
 				closeValueSelector();
 				return true;
 			}
@@ -643,28 +644,28 @@ public class ConfigScreen extends MezzConfigScreen {
 		if (modTabs.mouseClicked(mouseX, mouseY, button)) {
 			return true;
 		}
-		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && layout.startResizeDrag(mouseX, mouseY, modTabs.getResizeExclusionArea(mouseY))) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT && layout.startResizeDrag(mouseX, mouseY, modTabs.getResizeExclusionArea(mouseY))) {
 			flushPendingInput();
 			return true;
 		}
-		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && layout.startNavigationResize(mouseX, mouseY)) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT && layout.startNavigationResize(mouseX, mouseY)) {
 			flushPendingInput();
 			return true;
 		}
-		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && isActionButton(mouseX, mouseY)) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT && isActionButton(mouseX, mouseY)) {
 			return true;
 		}
-		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT && searchBox.isMouseOver(mouseX, mouseY)) {
+		if (button == InputConstants.MOUSE_BUTTON_RIGHT && searchBox.isMouseOver(mouseX, mouseY)) {
 			if (!searchBox.getValue().isEmpty()) {
 				searchBox.setValue("");
 			}
 			searchBox.setFocused(true);
 			return true;
 		}
-		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && controller.startContentScrollDrag(mouseX, mouseY)) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT && controller.startContentScrollDrag(mouseX, mouseY)) {
 			return true;
 		}
-		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && controller.startNavScrollDrag(mouseX, mouseY)) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT && controller.startNavScrollDrag(mouseX, mouseY)) {
 			return true;
 		}
 		if (searchBox.isFocused() && !searchBox.isMouseOver(mouseX, mouseY)) {
@@ -689,19 +690,19 @@ public class ConfigScreen extends MezzConfigScreen {
 			}
 			return true;
 		}
-		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && layout.isResizing()) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT && layout.isResizing()) {
 			layout.finishResizeDrag()
 				.ifPresent(resizedArea -> ConfigGuiOptions.setWindowSize(resizedArea.getWidth(), resizedArea.getHeight()));
 			return true;
 		}
-		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && layout.isResizingNavigation()) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT && layout.isResizingNavigation()) {
 			layout.finishNavigationResize().ifPresent(ConfigGuiOptions::setNavigationWidth);
 			return true;
 		}
-		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && (controller.stopContentScrollDrag() || controller.stopNavScrollDrag())) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT && (controller.stopContentScrollDrag() || controller.stopNavScrollDrag())) {
 			return true;
 		}
-		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT) {
 			if (handleActionButton(mouseX, mouseY)) {
 				Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
 				return true;
@@ -758,25 +759,25 @@ public class ConfigScreen extends MezzConfigScreen {
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && modTabs.isPressing()) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT && modTabs.isPressing()) {
 			return true;
 		}
-		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && layout.isResizing()) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT && layout.isResizing()) {
 			if (layout.dragResize(mouseX, mouseY, width, height)) {
 				refreshLayout();
 			}
 			return true;
 		}
-		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && layout.isResizingNavigation()) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT && layout.isResizingNavigation()) {
 			if (layout.dragNavigationResize(mouseX)) {
 				refreshLayout();
 			}
 			return true;
 		}
-		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && controller.dragContentScroll(mouseY)) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT && controller.dragContentScroll(mouseY)) {
 			return true;
 		}
-		if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT && controller.dragNavScroll(mouseY)) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT && controller.dragNavScroll(mouseY)) {
 			return true;
 		}
 		if (inputHandler.handleMouseDragged(this, mouseX, mouseY, button, dragX, dragY)) {

@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.entries;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.gui.ConfigRenderUtil;
 
 import net.mezzdev.config.gui.info.ConfigNumberInfo;
@@ -240,7 +241,7 @@ final class NumberSliderConfigEntry<T> extends ConfigEntryWidget<T> {
 			double dragX,
 			double dragY
 		) {
-			if (!sliding || button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
+			if (!sliding || button != InputConstants.MOUSE_BUTTON_LEFT) {
 				stopSliding();
 				return Optional.empty();
 			}

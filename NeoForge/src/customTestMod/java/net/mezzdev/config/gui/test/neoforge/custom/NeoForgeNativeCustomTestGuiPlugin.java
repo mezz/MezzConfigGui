@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.test.neoforge.custom;
 
+import net.mezzdev.config.gui.ConfigInputUtil;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
@@ -28,14 +29,14 @@ public final class NeoForgeNativeCustomTestGuiPlugin implements IConfigGuiPlugin
 	private static final KeyMapping OPEN_NATIVE_SCREEN_KEY = new KeyMapping(
 		"key.%s.openNativeScreen".formatted(NeoForgeNativeCustomTestMod.MOD_ID),
 		InputConstants.Type.KEYSYM,
-		com.mojang.blaze3d.platform.InputConstants.KEY_J,
-		net.mezzdev.config.gui.ConfigInputUtil.keyCategory(NeoForgeNativeCustomTestMod.MOD_ID)
+		InputConstants.KEY_J,
+		ConfigInputUtil.keyCategory(NeoForgeNativeCustomTestMod.MOD_ID)
 	);
 	private static final KeyMapping TOGGLE_NATIVE_OVERLAY_KEY = new KeyMapping(
 		"key.%s.toggleNativeOverlay".formatted(NeoForgeNativeCustomTestMod.MOD_ID),
 		InputConstants.Type.KEYSYM,
-		com.mojang.blaze3d.platform.InputConstants.KEY_O,
-		net.mezzdev.config.gui.ConfigInputUtil.keyCategory(NeoForgeNativeCustomTestMod.MOD_ID)
+		InputConstants.KEY_O,
+		ConfigInputUtil.keyCategory(NeoForgeNativeCustomTestMod.MOD_ID)
 	);
 
 	@Override
@@ -181,7 +182,7 @@ public final class NeoForgeNativeCustomTestGuiPlugin implements IConfigGuiPlugin
 			double mouseY,
 			int button
 		) {
-			if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
+			if (button != InputConstants.MOUSE_BUTTON_LEFT) {
 				return Optional.empty();
 			}
 			List<T> values = configValue.getSerializer()
