@@ -1,7 +1,7 @@
 package net.mezzdev.config.gui.popup;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.gui.ConfigInputUtil;
-
 import net.mezzdev.config.gui.util.ConfigMath;
 
 import net.mezzdev.config.api.value.color.ConfigColorFormat;
@@ -15,6 +15,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.mezzdev.config.gui.api.LegacyGuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
+import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -65,6 +66,7 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		16
 	);
 	private static final int FIELD_TEXT_PADDING = 2;
+	private static final int DONE_BUTTON_WIDTH = 44;
 	private static final int MAX_EDIT_TEXT_LENGTH = 12;
 	private static final float PRECISE_SLIDER_SCALE = 0.1f;
 	private final ConfigColorFormat format;
@@ -78,6 +80,7 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 	private ColorField focusedField;
 	private String editText = "";
 	private boolean selectAll;
+	private boolean doneSelected;
 
 	public ColorPickerPopup(PackedColor color) {
 		this(color, false);
@@ -119,10 +122,22 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 
 	@Override
 	public Optional<PackedColor> getClickedValue(Rect2i area, double mouseX, double mouseY, int button) {
-		if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
+		doneSelected = false;
+		if (button != InputConstants.MOUSE_BUTTON_LEFT) {
 			return Optional.empty();
 		}
 		PickerLayout layout = createLayout(area);
+		if (contains(layout.doneButtonArea(), mouseX, mouseY)) {
+			if (!canFinish()) {
+				return Optional.empty();
+			}
+			PackedColor color = getEditedValue().orElseGet(model::getPackedColor);
+			activeControl = ColorControl.NONE;
+			clearPrecisionControl();
+			clearFocus();
+			doneSelected = true;
+			return Optional.of(color);
+		}
 		ColorAxis clickedAxis = layout.getAxisSelector(mouseX, mouseY);
 		if (clickedAxis != null) {
 			verticalAxis = clickedAxis;
@@ -153,8 +168,17 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 	}
 
 	@Override
+	public void mouseReleased(Rect2i area, double mouseX, double mouseY, int button) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT) {
+			activeControl = ColorControl.NONE;
+			clearPrecisionControl();
+		}
+	}
+
+	@Override
 	public Optional<PackedColor> getDraggedValue(Rect2i area, double mouseX, double mouseY, int button) {
-		if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) {
+		doneSelected = false;
+		if (button != InputConstants.MOUSE_BUTTON_LEFT) {
 			return Optional.empty();
 		}
 		PickerLayout layout = createLayout(area);
@@ -219,7 +243,7 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 
 	@Override
 	public boolean closesAfterValueSelected() {
-		return false;
+		return doneSelected;
 	}
 
 	@Override
@@ -232,6 +256,29 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 			drawAlpha(guiGraphics, layout.alphaArea(), layout.channelSliderLabelWidth());
 		}
 		drawFields(guiGraphics, layout);
+		drawDoneButton(guiGraphics, layout.doneButtonArea(), mouseX, mouseY);
+	}
+
+	private boolean canFinish() {
+		return focusedField == null || isEditTextValid();
+	}
+
+	private void drawDoneButton(LegacyGuiGraphics guiGraphics, Rect2i area, double mouseX, double mouseY) {
+		boolean enabled = canFinish();
+		int backgroundColor = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_FIELD_BACKGROUND);
+		int borderColor = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_FIELD_BORDER);
+		if (enabled && contains(area, mouseX, mouseY)) {
+			backgroundColor = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_FIELD_FOCUSED_BACKGROUND);
+			borderColor = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.COLOR_PICKER_FIELD_FOCUSED_BORDER);
+		}
+		fillWithBorder(guiGraphics, area, backgroundColor, borderColor);
+		int textColor = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_DISABLED_TEXT);
+		if (enabled) {
+			textColor = ConfigEntryWidget.getConfiguredTextColor();
+		}
+		ConfigEntryWidget.drawCenteredButtonText(
+			guiGraphics, Minecraft.getInstance().font, Component.translatable("gui.done"), toImmutableRect2i(area), textColor
+		);
 	}
 
 	private Optional<PackedColor> updateValue(ColorControl control, PickerLayout layout, double mouseX, double mouseY) {
@@ -786,9 +833,14 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 			alphaArea = new Rect2i(controlX, y, controlWidth, metrics.alphaHeight());
 			y += metrics.alphaHeight() + metrics.controlGap();
 		}
+		int doneWidth = Math.min(DONE_BUTTON_WIDTH, contentWidth / 3);
+		int hexWidth = Math.max(1, contentWidth - doneWidth - metrics.controlGap());
 		FieldArea hexFieldArea = new FieldArea(
 			ColorField.HEX,
-			new Rect2i(visualX, y, contentWidth, metrics.fieldHeight())
+			new Rect2i(visualX, y, hexWidth, metrics.fieldHeight())
+		);
+		Rect2i doneButtonArea = new Rect2i(
+			visualX + contentWidth - doneWidth, y, doneWidth, metrics.fieldHeight()
 		);
 		return new PickerLayout(
 			colorPreviewArea,
@@ -798,7 +850,8 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 			sliderAreas,
 			metrics.channelSliderLabelWidth(),
 			alphaArea,
-			hexFieldArea
+			hexFieldArea,
+			doneButtonArea
 		);
 	}
 
@@ -966,7 +1019,8 @@ public final class ColorPickerPopup implements IConfigValuePopup<PackedColor> {
 		List<SliderArea> sliderAreas,
 		int channelSliderLabelWidth,
 		Rect2i alphaArea,
-		FieldArea hexFieldArea
+		FieldArea hexFieldArea,
+		Rect2i doneButtonArea
 	) {
 		ColorControl getControl(double mouseX, double mouseY) {
 			if (colorPlaneArea.getWidth() > 0 && contains(colorPlaneArea, mouseX, mouseY)) {
