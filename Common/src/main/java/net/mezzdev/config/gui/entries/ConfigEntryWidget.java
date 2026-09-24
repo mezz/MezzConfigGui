@@ -375,6 +375,10 @@ public abstract class ConfigEntryWidget<T> {
 		return false;
 	}
 
+	public boolean isCapturingTextInput() {
+		return false;
+	}
+
 	public void unfocus() {
 
 	}
