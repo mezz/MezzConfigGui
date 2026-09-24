@@ -96,7 +96,6 @@ final class NumberSliderConfigEntry<T> extends ConfigEntryWidget<T> {
 		List<Component> lines = new ArrayList<>(info.lines());
 		lines.add(ConfigNumberInfo.getRange(model.getRange()));
 		lines.add(Component.translatable("mezz_config.config.screen.number.shiftStep", 1));
-		lines.add(Component.translatable("mezz_config.config.screen.number.slider.mouseWheel"));
 		return new ConfigInfo(info.title(), lines);
 	}
 
@@ -255,17 +254,13 @@ final class NumberSliderConfigEntry<T> extends ConfigEntryWidget<T> {
 			double scrollDeltaX,
 			double scrollDeltaY
 		) {
-			if (!sliderArea.contains(mouseX, mouseY)) {
+			if (scrollDeltaY != 0.0 || !sliderArea.contains(mouseX, mouseY)) {
 				return Optional.empty();
 			}
-			double scrollDelta = scrollDeltaY;
-			if (scrollDelta == 0.0) {
-				scrollDelta = scrollDeltaX;
-			}
-			if (getScrollSteps(scrollDelta) == 0) {
+			if (getScrollSteps(scrollDeltaX) == 0) {
 				return Optional.empty();
 			}
-			scrollValue(scrollDelta);
+			scrollValue(scrollDeltaX);
 			return Optional.of(this);
 		}
 
