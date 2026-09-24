@@ -67,7 +67,7 @@ public class ConfigScreen extends MezzConfigScreen {
 	}
 
 	public static boolean isCapturingKeyBinding(Screen screen) {
-		return screen instanceof ConfigScreen configScreen && configScreen.isCapturingKeyBinding();
+		return screen instanceof ConfigScreen configScreen && configScreen.isCapturingKeyboardInput();
 	}
 
 	private final ConfigInputRouter inputHandler;
@@ -312,7 +312,7 @@ public class ConfigScreen extends MezzConfigScreen {
 		}
 	}
 
-	private boolean isCapturingKeyBinding() {
+	private boolean isCapturingKeyboardInput() {
 		return controller.getVisibleEntryWidgets()
 			.stream()
 			.filter(ConfigEntryWidget::isEditable)
@@ -562,6 +562,10 @@ public class ConfigScreen extends MezzConfigScreen {
 		if (valueSelector != null && valueSelector.charTyped(codePoint, modifiers)) {
 			return true;
 		}
+		if (isCapturingKeyboardInput()) {
+			forwardCharTypedToEntries(codePoint, modifiers);
+			return true;
+		}
 		if (searchBox.isFocused() && ConfigInputUtil.charTyped(searchBox, codePoint, modifiers)) {
 			return true;
 		}
@@ -584,6 +588,10 @@ public class ConfigScreen extends MezzConfigScreen {
 			}
 		}
 		UserInput input = UserInput.fromVanilla(keyCode, scanCode, modifiers, InputType.IMMEDIATE);
+		if (isCapturingKeyboardInput()) {
+			forwardKeyPressedToEntries(keyCode, scanCode, modifiers);
+			return true;
+		}
 		if (searchBox.isFocused()) {
 			if (ConfigInputUtil.keyPressed(searchBox, keyCode, scanCode, modifiers)) {
 				return true;
@@ -779,7 +787,7 @@ public class ConfigScreen extends MezzConfigScreen {
 			return true;
 		}
 		if (inputHandler.handleMouseDragged(this, mouseX, mouseY, button, dragX, dragY)) {
-			if (controller.autoScrollContentForDrag(mouseY)) {
+			if (inputHandler.allowsContentAutoScrollForDrag(button) && controller.autoScrollContentForDrag(mouseY)) {
 				inputHandler.handleMouseDragged(this, mouseX, mouseY, button, dragX, dragY);
 			}
 			return true;
