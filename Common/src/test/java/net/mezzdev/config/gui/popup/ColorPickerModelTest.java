@@ -9,6 +9,7 @@ import net.minecraft.client.renderer.Rect2i;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -119,6 +120,25 @@ class ColorPickerModelTest {
 		assertEquals(PackedColor.rgb(0x006699), noRed);
 		assertEquals(PackedColor.rgb(0x00FF99), fullGreen);
 		assertEquals(PackedColor.rgb(0x00FF00), noBlue);
+	}
+
+	@Test
+	void releasingADragLetsTheNextRgbSliderChangeOnlyItsOwnChannel() {
+		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.rgb(0x336699));
+		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
+		int button = InputConstants.MOUSE_BUTTON_LEFT;
+
+		popup.getClickedValue(area, 21, 133, button).orElseThrow();
+		assertEquals(PackedColor.rgb(0xFF6699), popup.getDraggedValue(area, 210, 161, button).orElseThrow());
+		popup.mouseReleased(area, 210, 161, button);
+
+		assertEquals(PackedColor.rgb(0xFF0099), popup.getClickedValue(area, 21, 147, button).orElseThrow());
+		assertEquals(PackedColor.rgb(0xFFFF99), popup.getDraggedValue(area, 210, 133, button).orElseThrow());
+		popup.mouseReleased(area, 210, 133, button);
+
+		assertEquals(PackedColor.rgb(0xFFFF00), popup.getClickedValue(area, 21, 161, button).orElseThrow());
+		assertEquals(PackedColor.rgb(0xFFFFFF), popup.getDraggedValue(area, 210, 147, button).orElseThrow());
+		popup.mouseReleased(area, 210, 147, button);
 	}
 
 	@Test
@@ -244,6 +264,46 @@ class ColorPickerModelTest {
 
 		assertTrue(popup.getHoveredValue(area, 100, 90).isEmpty());
 		assertTrue(popup.getHoveredValue(area, 100, 155).isEmpty());
+	}
+
+	@Test
+	void doneConfirmsTypedColorsInStandardAndCompactPickers() {
+		for (PackedColor color : List.of(PackedColor.rgb(0x4477DD), PackedColor.argb(0x804477DD))) {
+			for (IConfigValuePopup.Size available : List.of(
+				new IConfigValuePopup.Size(256, 300),
+				new IConfigValuePopup.Size(180, 180),
+				new IConfigValuePopup.Size(180, 140)
+			)) {
+				ColorPickerPopup popup = new ColorPickerPopup(new PackedColor(0, color.format()), true);
+				IConfigValuePopup.Size size = popup.getPreferredSize(available.width(), available.height());
+				Rect2i area = new Rect2i(12, 8, size.width(), size.height());
+				for (char character : ColorSwatch.formatHex(color).toCharArray()) {
+					assertTrue(popup.charTyped(character, 0, value -> {}));
+				}
+				assertFalse(popup.closesAfterValueSelected());
+				double doneX = area.getX() + area.getWidth() - 15;
+				double doneY = area.getY() + area.getHeight() - 12;
+				assertEquals(color, clickControl(popup, area, doneX, doneY));
+				popup.mouseReleased(area, doneX, doneY, InputConstants.MOUSE_BUTTON_LEFT);
+				assertTrue(popup.closesAfterValueSelected());
+			}
+		}
+	}
+
+	@Test
+	void doneKeepsInvalidHexInputOpenForCorrection() {
+		ColorPickerPopup popup = new ColorPickerPopup(PackedColor.rgb(0x336699), true);
+		Rect2i area = new Rect2i(0, 0, popup.getWidth(), popup.getHeight());
+		popup.charTyped('#', 0, value -> {});
+		double doneX = area.getWidth() - 15;
+		double doneY = area.getHeight() - 12;
+		assertTrue(popup.getClickedValue(area, doneX, doneY, InputConstants.MOUSE_BUTTON_LEFT).isEmpty());
+		assertFalse(popup.closesAfterValueSelected());
+		for (char character : "123456".toCharArray()) {
+			assertTrue(popup.charTyped(character, 0, value -> {}));
+		}
+		assertEquals(PackedColor.rgb(0x123456), clickControl(popup, area, doneX, doneY));
+		assertTrue(popup.closesAfterValueSelected());
 	}
 
 	@Test

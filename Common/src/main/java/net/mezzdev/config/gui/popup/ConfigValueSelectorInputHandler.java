@@ -110,9 +110,8 @@ public final class ConfigValueSelectorInputHandler implements ConfigInputHandler
 		valueSelector.updateBounds(clipArea);
 		if (valueSelector.onMouseDragged(mouseX, mouseY, button)) {
 			valueSelectorWasDragged = true;
-			return Optional.of(this);
 		}
-		return Optional.empty();
+		return Optional.of(this);
 	}
 
 	@Override
