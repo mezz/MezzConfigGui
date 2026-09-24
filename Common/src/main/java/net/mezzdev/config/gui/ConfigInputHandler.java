@@ -30,4 +30,8 @@ public interface ConfigInputHandler {
 	) {
 		return Optional.empty();
 	}
+
+	default boolean allowsContentAutoScroll() {
+		return false;
+	}
 }

@@ -1,11 +1,14 @@
 package net.mezzdev.config.gui.entries;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.api.value.serializer.ConfigListOrdering;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.IConfigListValueEditorOptions;
 import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
+import net.mezzdev.config.gui.input.InputType;
+import net.mezzdev.config.gui.input.UserInput;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.Nullable;
@@ -20,6 +23,7 @@ import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ListConfigEntryTest {
@@ -93,6 +97,109 @@ class ListConfigEntryTest {
 		);
 
 		assertTrue(getAllowsTypedInput(entry));
+	}
+
+	@Test
+	@SuppressWarnings("DataFlowIssue")
+	void addFocusesABlankFieldAndOnlyInsertsTheTypedValue() throws Exception {
+		TestListSerializer listSerializer = new TestListSerializer(true, null, ConfigListOrdering.ORDERED);
+		TestConfigValue listValue = new TestConfigValue(listSerializer, List.of());
+		ListConfigEntry<String> entry = new ListConfigEntry<>(
+			listValue,
+			listSerializer,
+			selector -> {},
+			() -> {},
+			null
+		);
+		entry.area = new ImmutableRect2i(0, 0, 400, 300);
+		ImmutableRect2i addButtonArea = new ImmutableRect2i(100, 20, 20, 20);
+		setField(entry, "addValueButtonArea", addButtonArea);
+		int addX = addButtonArea.getX() + addButtonArea.getWidth() / 2;
+		int addY = addButtonArea.getY() + addButtonArea.getHeight() / 2;
+
+		assertTrue(entry.createInputHandler().handleUserInput(null, mouseInput(addX, addY)).isPresent());
+		assertEquals(List.of(), entry.getValue());
+		assertFalse(entry.hasPendingChange());
+		assertTrue(entry.isCapturingKeyboardInput());
+		assertTrue(entry.isCapturingTextInput());
+		assertEquals("", getField(getField(entry, "componentEditSession"), "editText"));
+
+		for (char codePoint : "new value".toCharArray()) {
+			assertTrue(entry.charTyped(codePoint, 0));
+		}
+		assertTrue(entry.keyPressed(InputConstants.KEY_RETURN, 0, 0));
+		assertEquals(List.of("new value"), entry.getValue());
+
+		entry.createInputHandler().handleUserInput(null, mouseInput(addX, addY));
+		assertTrue(entry.keyPressed(InputConstants.KEY_RETURN, 0, 0));
+		assertEquals(List.of("new value"), entry.getValue(), "An untouched field must not add an empty value");
+		assertTrue(entry.isCapturingKeyboardInput(), "An invalid submission must keep the field focused");
+		assertTrue(entry.isCapturingTextInput());
+		assertEquals("", getField(getField(entry, "componentEditSession"), "editText"));
+		assertTrue(entry.keyPressed(InputConstants.KEY_NUMPADENTER, 0, 0));
+		assertTrue(entry.isCapturingTextInput());
+
+		assertTrue(entry.charTyped('x', 0));
+		assertTrue(entry.keyPressed(InputConstants.KEY_ESCAPE, 0, 0));
+		assertEquals(List.of("new value"), entry.getValue(), "Cancel must not insert a default or partial value");
+	}
+
+	@Test
+	@SuppressWarnings("DataFlowIssue")
+	void finiteChoiceValuesCanBeReorderedButCannotBeEdited() throws Exception {
+		for (boolean allowsRemoving : List.of(true, false)) {
+			List<String> values = List.of("first", "second");
+			TestListSerializer serializer = new TestListSerializer(allowsRemoving, values, ConfigListOrdering.ORDERED);
+			ListConfigEntry<String> entry = new ListConfigEntry<>(
+				new TestConfigValue(serializer, values), serializer,
+				selector -> { throw new AssertionError("Finite list opened a value editor"); }, () -> {}, null
+			);
+			entry.area = new ImmutableRect2i(0, 0, 400, 300);
+			List<?> rows = (List<?>) getField(entry, "valueRows");
+			for (int i = 0; i < rows.size(); i++) {
+				Object row = rows.get(i);
+				var updateBounds = row.getClass().getDeclaredMethod("updateBounds", ImmutableRect2i.class);
+				updateBounds.setAccessible(true);
+				updateBounds.invoke(row, new ImmutableRect2i(0, 40 + i * 24, 400, 24));
+			}
+			var handler = entry.createInputHandler().handleUserInput(null, mouseInput(25, 45)).orElseThrow();
+			assertFalse(entry.isCapturingKeyboardInput());
+			assertFalse(entry.charTyped('x', 0));
+			assertTrue(handler.handleMouseDragged(null, 25, 75, InputConstants.MOUSE_BUTTON_LEFT, 0, 30).isPresent());
+			handler.handleUserInput(null, mouseInput(25, 75));
+			assertEquals(List.of("second", "first"), entry.getValue());
+		}
+	}
+
+	@Test
+	@SuppressWarnings("DataFlowIssue")
+	void existingListValuesCanBeEditedInPlace() throws Exception {
+		TestListSerializer listSerializer = new TestListSerializer(true, null, ConfigListOrdering.ORDERED);
+		ListConfigEntry<String> entry = new ListConfigEntry<>(
+			new TestConfigValue(listSerializer, List.of("first")),
+			listSerializer,
+			selector -> {},
+			() -> {},
+			null
+		);
+		entry.area = new ImmutableRect2i(0, 0, 400, 300);
+		List<?> rows = assertInstanceOf(List.class, getField(entry, "valueRows"));
+		ImmutableRect2i valueArea = new ImmutableRect2i(20, 40, 200, 20);
+		setField(rows.get(0), "componentValueArea", valueArea);
+
+		assertTrue(entry.createInputHandler().handleUserInput(
+				null,
+				mouseInput(valueArea.getX() + 1, valueArea.getY() + 1)
+			)
+			.isPresent());
+		assertTrue(entry.isCapturingKeyboardInput());
+		assertTrue(entry.keyPressed(InputConstants.KEY_DELETE, 0, 0));
+		for (char codePoint : "edited".toCharArray()) {
+			assertTrue(entry.charTyped(codePoint, 0));
+		}
+		assertTrue(entry.keyPressed(InputConstants.KEY_RETURN, 0, 0));
+
+		assertEquals(List.of("edited"), entry.getValue());
 	}
 
 	@Test
@@ -184,6 +291,22 @@ class ListConfigEntryTest {
 		} catch (ReflectiveOperationException e) {
 			throw new AssertionError(e);
 		}
+	}
+
+	private static void setField(Object target, String fieldName, Object value) throws ReflectiveOperationException {
+		Field field = target.getClass().getDeclaredField(fieldName);
+		field.setAccessible(true);
+		field.set(target, value);
+	}
+
+	private static Object getField(Object target, String fieldName) throws ReflectiveOperationException {
+		Field field = target.getClass().getDeclaredField(fieldName);
+		field.setAccessible(true);
+		return field.get(target);
+	}
+
+	private static UserInput mouseInput(double mouseX, double mouseY) {
+		return UserInput.fromVanilla(mouseX, mouseY, InputConstants.MOUSE_BUTTON_LEFT, InputType.EXECUTE).orElseThrow();
 	}
 
 	private static final class TestConfigValue implements IConfigScreenValue<List<String>> {

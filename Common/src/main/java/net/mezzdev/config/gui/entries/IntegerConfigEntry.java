@@ -278,6 +278,16 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 	}
 
 	@Override
+	public boolean isCapturingKeyboardInput() {
+		return editing;
+	}
+
+	@Override
+	public boolean isCapturingTextInput() {
+		return editing;
+	}
+
+	@Override
 	public void unfocus() {
 		commitEdit();
 	}

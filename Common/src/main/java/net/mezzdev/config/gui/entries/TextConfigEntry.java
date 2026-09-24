@@ -281,6 +281,11 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 	}
 
 	@Override
+	public boolean isCapturingTextInput() {
+		return editing;
+	}
+
+	@Override
 	public void unfocus() {
 		commitEdit();
 	}
