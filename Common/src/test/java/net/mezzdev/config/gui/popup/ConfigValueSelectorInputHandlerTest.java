@@ -46,6 +46,22 @@ class ConfigValueSelectorInputHandlerTest {
 		assertEquals(1, closeCount.get());
 	}
 
+	@Test
+	void popupOwnsTheDragEvenWhenItsContentDoesNotHandleThatPosition() {
+		DraggingPopupSelector popup = new DraggingPopupSelector();
+		popup.handlesDrag = false;
+		ConfigValueSelectorInputHandler handler = new ConfigValueSelectorInputHandler(
+			() -> popup,
+			() -> CLIP_AREA,
+			() -> {},
+			() -> {}
+		);
+
+		assertTrue(handler.handleUserInput(null, mouseInput(50, 50, InputType.SIMULATE)).isPresent());
+		assertTrue(handler.handleMouseDragged(null, 60, 60, InputConstants.MOUSE_BUTTON_LEFT, 10, 10).isPresent());
+		assertEquals(1, popup.dragCount);
+	}
+
 	private static UserInput mouseInput(double mouseX, double mouseY, InputType inputType) {
 		return UserInput.fromVanilla(mouseX, mouseY, InputConstants.MOUSE_BUTTON_LEFT, inputType).orElseThrow();
 	}
@@ -54,6 +70,7 @@ class ConfigValueSelectorInputHandlerTest {
 		private int clickCount;
 		private int dragCount;
 		private int releaseCount;
+		private boolean handlesDrag = true;
 
 		@Override
 		public void updateBounds(ImmutableRect2i clipArea) {
@@ -95,7 +112,7 @@ class ConfigValueSelectorInputHandlerTest {
 		@Override
 		public boolean onMouseDragged(double mouseX, double mouseY, int button) {
 			dragCount++;
-			return true;
+			return handlesDrag;
 		}
 
 		@Override
