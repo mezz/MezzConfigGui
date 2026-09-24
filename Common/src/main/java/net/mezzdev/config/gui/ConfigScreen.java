@@ -69,7 +69,7 @@ public class ConfigScreen extends MezzConfigScreen {
 	}
 
 	public static boolean isCapturingKeyBinding(Screen screen) {
-		return screen instanceof ConfigScreen configScreen && configScreen.isCapturingKeyBinding();
+		return screen instanceof ConfigScreen configScreen && configScreen.isCapturingKeyboardInput();
 	}
 
 	private final ConfigInputRouter inputHandler;
@@ -314,7 +314,7 @@ public class ConfigScreen extends MezzConfigScreen {
 		}
 	}
 
-	private boolean isCapturingKeyBinding() {
+	private boolean isCapturingKeyboardInput() {
 		return controller.getVisibleEntryWidgets()
 			.stream()
 			.filter(ConfigEntryWidget::isEditable)
@@ -324,6 +324,16 @@ public class ConfigScreen extends MezzConfigScreen {
 	private void flushPendingInput() {
 		inputHandler.handleGuiChange();
 		closeValueSelector();
+		updateTextInputFocus();
+	}
+
+	private void updateTextInputFocus() {
+		// Custom entry and popup editors need SDL text events just like a focused EditBox.
+		// Key-binding capture deliberately does not enable text input.
+		boolean editingText = valueSelector != null || controller.getVisibleEntryWidgets().stream()
+			.filter(ConfigEntryWidget::isEditable)
+			.anyMatch(ConfigEntryWidget::isCapturingTextInput);
+		Minecraft.getInstance().textInputManager().onTextInputFocusChange(this, editingText);
 	}
 
 	@Nullable
@@ -411,6 +421,7 @@ public class ConfigScreen extends MezzConfigScreen {
 	public void removed() {
 		controller.stopListening();
 		closeValueSelector();
+		Minecraft.getInstance().textInputManager().stopTextInput(this);
 		super.removed();
 	}
 
@@ -564,6 +575,10 @@ public class ConfigScreen extends MezzConfigScreen {
 		if (valueSelector != null && valueSelector.charTyped(codePoint, modifiers)) {
 			return true;
 		}
+		if (isCapturingKeyboardInput()) {
+			forwardCharTypedToEntries(codePoint, modifiers);
+			return true;
+		}
 		if (searchBox.isFocused() && ConfigInputUtil.charTyped(searchBox, codePoint, modifiers)) {
 			return true;
 		}
@@ -575,6 +590,14 @@ public class ConfigScreen extends MezzConfigScreen {
 
 	@Override
 	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+		try {
+			return handleKeyPressed(keyCode, scanCode, modifiers);
+		} finally {
+			updateTextInputFocus();
+		}
+	}
+
+	private boolean handleKeyPressed(int keyCode, int scanCode, int modifiers) {
 		ConfigPopupSelector valueSelector = this.valueSelector;
 		if (valueSelector != null) {
 			if (valueSelector.keyPressed(keyCode, scanCode, modifiers)) {
@@ -586,6 +609,10 @@ public class ConfigScreen extends MezzConfigScreen {
 			}
 		}
 		UserInput input = UserInput.fromVanilla(keyCode, scanCode, modifiers, InputType.IMMEDIATE);
+		if (isCapturingKeyboardInput()) {
+			forwardKeyPressedToEntries(keyCode, scanCode, modifiers);
+			return true;
+		}
 		if (searchBox.isFocused()) {
 			if (ConfigInputUtil.keyPressed(searchBox, keyCode, scanCode, modifiers)) {
 				return true;
@@ -781,7 +808,7 @@ public class ConfigScreen extends MezzConfigScreen {
 			return true;
 		}
 		if (inputHandler.handleMouseDragged(this, mouseX, mouseY, button, dragX, dragY)) {
-			if (controller.autoScrollContentForDrag(mouseY)) {
+			if (inputHandler.allowsContentAutoScrollForDrag(button) && controller.autoScrollContentForDrag(mouseY)) {
 				inputHandler.handleMouseDragged(this, mouseX, mouseY, button, dragX, dragY);
 			}
 			return true;
@@ -790,7 +817,11 @@ public class ConfigScreen extends MezzConfigScreen {
 	}
 
 	private boolean handleInput(UserInput input) {
-		return this.inputHandler.handleUserInput(this, input);
+		try {
+			return this.inputHandler.handleUserInput(this, input);
+		} finally {
+			updateTextInputFocus();
+		}
 	}
 
 	@Override
@@ -822,6 +853,7 @@ public class ConfigScreen extends MezzConfigScreen {
 			controller.updateContentLayout();
 			updateValueSelectorBounds();
 		}
+		updateTextInputFocus();
 	}
 
 	private void updateValueSelectorBounds() {

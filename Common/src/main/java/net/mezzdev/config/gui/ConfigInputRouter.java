@@ -89,4 +89,10 @@ final class ConfigInputRouter {
 			})
 			.orElse(false);
 	}
+
+	public boolean allowsContentAutoScrollForDrag(int button) {
+		InputConstants.Key key = InputConstants.Type.MOUSE.getOrCreate(button);
+		ConfigInputHandler inputHandler = pending.get(key);
+		return inputHandler != null && inputHandler.allowsContentAutoScroll();
+	}
 }

@@ -46,11 +46,33 @@ final class KeyValueElementSerializerAdapter<T> {
 			.filter(serializer::isValid);
 	}
 
+	public Optional<T> withSerializedKey(T entry, String serializedKey) {
+		return deserialize(serializer.getKeySerializer(), serializedKey)
+			.flatMap(key -> Optional.ofNullable(serializer.createEntry(key, serializer.getValue(entry))))
+			.filter(serializer::isValid);
+	}
+
 	public Optional<T> withValue(T entry, Object value) {
 		if (!serializer.getValueSerializer().isValid(value)) {
 			return Optional.empty();
 		}
 		return Optional.ofNullable(serializer.createEntry(serializer.getKey(entry), value))
+			.filter(serializer::isValid);
+	}
+
+	public Optional<T> withKey(T entry, Object key) {
+		if (!serializer.getKeySerializer().isValid(key)) {
+			return Optional.empty();
+		}
+		return Optional.ofNullable(serializer.createEntry(key, serializer.getValue(entry)))
+			.filter(serializer::isValid);
+	}
+
+	public Optional<T> createEntry(Object key, Object value) {
+		if (!serializer.getKeySerializer().isValid(key) || !serializer.getValueSerializer().isValid(value)) {
+			return Optional.empty();
+		}
+		return Optional.ofNullable(serializer.createEntry(key, value))
 			.filter(serializer::isValid);
 	}
 

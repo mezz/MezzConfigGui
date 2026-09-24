@@ -2,6 +2,7 @@ package net.mezzdev.config.gui.entries;
 
 import com.google.common.collect.Iterables;
 import com.mojang.blaze3d.platform.InputConstants;
+import net.mezzdev.config.api.value.color.PackedColor;
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
@@ -135,6 +136,34 @@ class HexColorConfigEntryTest {
 		assertFalse(entry.hasPendingChange());
 	}
 
+	@Test
+	@SuppressWarnings("DataFlowIssue")
+	void packedColorListAddButtonInsertsADefaultThenEditsItWithTheNormalPicker() throws Exception {
+		List<ConfigPopupSelector> opened = new ArrayList<>();
+		PackedColorListSerializer serializer = new PackedColorListSerializer();
+		ListConfigEntry<PackedColor> entry = new ListConfigEntry<>(
+			new TestValue<>(List.of(), serializer),
+			serializer,
+			opened::add,
+			() -> {},
+			null
+		);
+		entry.area = CLIP;
+		setField(entry, "addValueButtonArea", new ImmutableRect2i(250, 10, 20, 20));
+
+		assertTrue(entry.createInputHandler().handleUserInput(null, click(252, 12, InputType.EXECUTE)).isPresent());
+		assertEquals(List.of(PackedColor.rgb(0)), entry.getValue());
+		List<?> rows = (List<?>) getField(entry, "valueRows");
+		setField(rows.get(0), "componentColorSwatchArea", new ImmutableRect2i(108, 480, 18, 18));
+		ConfigPopupSelector colorPicker = opened.get(0);
+		colorPicker.updateBounds(CLIP);
+		assertFalse(colorPicker.getArea().isEmpty());
+		selectColor(colorPicker, 221);
+
+		assertEquals(1, entry.getValue().size());
+		assertNotEquals(PackedColor.rgb(0), entry.getValue().get(0));
+	}
+
 	private static void selectColor(ConfigPopupSelector popup, int x) {
 		popup.updateBounds(CLIP);
 		ImmutableRect2i area = popup.getArea();
@@ -161,6 +190,12 @@ class HexColorConfigEntryTest {
 		Field field = target.getClass().getDeclaredField(name);
 		field.setAccessible(true);
 		field.set(target, value);
+	}
+
+	private static Object getField(Object target, String name) throws Exception {
+		Field field = target.getClass().getDeclaredField(name);
+		field.setAccessible(true);
+		return field.get(target);
 	}
 
 	private record TestValue<T>(T value, IConfigValueSerializer<T> serializer) implements IConfigScreenValue<T> {
@@ -251,6 +286,63 @@ class HexColorConfigEntryTest {
 		@Override
 		public Component getLocalizedValueName(String key, List<String> value) {
 			return Component.literal(value.toString());
+		}
+	}
+
+	private static final class PackedColorListSerializer implements IConfigListValueEditorSerializer<PackedColor> {
+		private static final IConfigValueSerializer<PackedColor> ELEMENT_SERIALIZER = new IConfigValueSerializer<>() {
+			@Override
+			public String serialize(PackedColor value) {
+				return Integer.toHexString(value.packedValue());
+			}
+
+			@Override
+			public IDeserializeResult<PackedColor> deserialize(String value) {
+				if (value.equals("0x000000")) {
+					return IDeserializeResult.success(PackedColor.rgb(0));
+				}
+				return IDeserializeResult.failure("Invalid color");
+			}
+
+			@Override
+			public boolean isValid(PackedColor value) {
+				return value != null;
+			}
+
+			@Override
+			public String getValidValuesDescription() {
+				return "an RGB color";
+			}
+		};
+
+		@Override
+		public IConfigValueSerializer<PackedColor> getElementSerializer() {
+			return ELEMENT_SERIALIZER;
+		}
+
+		@Override
+		public String serialize(List<PackedColor> values) {
+			return values.toString();
+		}
+
+		@Override
+		public IDeserializeResult<List<PackedColor>> deserialize(String value) {
+			return IDeserializeResult.failure("Unused");
+		}
+
+		@Override
+		public boolean isValid(List<PackedColor> values) {
+			return values != null && values.stream().allMatch(ELEMENT_SERIALIZER::isValid);
+		}
+
+		@Override
+		public Component getLocalizedValueName(String key, List<PackedColor> value) {
+			return Component.literal(value.toString());
+		}
+
+		@Override
+		public String getValidValuesDescription() {
+			return "a list of RGB colors";
 		}
 	}
 }

@@ -1,11 +1,16 @@
 package net.mezzdev.config.gui.entries;
 
+import com.mojang.blaze3d.platform.InputConstants;
+import net.mezzdev.config.api.value.serializer.ConfigValueRange;
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.api.value.serializer.IConfigKeyValueSerializer;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.IConfigListValueEditorOptions;
 import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
+import net.mezzdev.config.gui.input.InputType;
+import net.mezzdev.config.gui.input.UserInput;
+import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
@@ -14,6 +19,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class KeyValueListConfigEntryTest {
@@ -39,6 +45,94 @@ class KeyValueListConfigEntryTest {
 		);
 	}
 
+	@Test
+	@SuppressWarnings("DataFlowIssue")
+	void addInsertsADefaultEntryThenEditsItsKeyAndValue() throws Exception {
+		ListConfigEntry<NamedNumber> entry = new ListConfigEntry<>(
+			new TestConfigValue(),
+			SERIALIZER,
+			selector -> {},
+			() -> {},
+			null
+		);
+		entry.area = new ImmutableRect2i(0, 0, 400, 300);
+		ImmutableRect2i addButtonArea = new ImmutableRect2i(100, 20, 20, 20);
+		setField(entry, "addValueButtonArea", addButtonArea);
+
+		assertTrue(entry.createInputHandler().handleUserInput(null, mouseInput(110, 30)).isPresent());
+		assertEquals(
+			List.of(new NamedNumber("second", 99), new NamedNumber("first", 88), new NamedNumber("0", 0)),
+			entry.getValue()
+		);
+		assertTrue(entry.isCapturingKeyboardInput());
+
+		for (char codePoint : "third".toCharArray()) {
+			assertTrue(entry.charTyped(codePoint, 0));
+		}
+		assertTrue(entry.keyPressed(InputConstants.KEY_RETURN, 0, 0));
+
+		List<?> rows = (List<?>) getField(entry, "valueRows");
+		Object addedRow = rows.get(2);
+		ImmutableRect2i valueArea = new ImmutableRect2i(120, 40, 100, 20);
+		setField(addedRow, "componentValueArea", valueArea);
+		assertTrue(entry.createInputHandler().handleUserInput(null, mouseInput(121, 41)).isPresent());
+		assertTrue(entry.keyPressed(InputConstants.KEY_DELETE, 0, 0));
+		assertTrue(entry.charTyped('7', 0));
+		assertTrue(entry.keyPressed(InputConstants.KEY_RETURN, 0, 0));
+
+		assertEquals(
+			List.of(new NamedNumber("second", 99), new NamedNumber("first", 88), new NamedNumber("third", 7)),
+			entry.getValue()
+		);
+	}
+
+	@Test
+	void newKeysKeepADisabledResetButtonAlignedWithDefaultKeys() throws Exception {
+		ListConfigEntry<NamedNumber> entry = createEntry();
+		entry.area = new ImmutableRect2i(0, 0, 400, 300);
+		setField(entry, "addValueButtonArea", new ImmutableRect2i(100, 20, 20, 20));
+		entry.createInputHandler().handleUserInput(null, mouseInput(110, 30));
+		entry.unfocus();
+		List<?> rows = (List<?>) getField(entry, "valueRows");
+		for (int i = 0; i < rows.size(); i++) {
+			Object row = rows.get(i);
+			var updateBounds = row.getClass().getDeclaredMethod("updateBounds", ImmutableRect2i.class);
+			updateBounds.setAccessible(true);
+			updateBounds.invoke(row, new ImmutableRect2i(0, 40 + i * 24, 400, 24));
+		}
+		ImmutableRect2i defaultReset = (ImmutableRect2i) getField(rows.getFirst(), "resetArea");
+		ImmutableRect2i addedReset = (ImmutableRect2i) getField(rows.getLast(), "resetArea");
+		assertFalse(addedReset.isEmpty());
+		assertEquals(defaultReset.getX(), addedReset.getX());
+		assertEquals(
+			((ImmutableRect2i) getField(rows.getFirst(), "componentValueArea")).getWidth(),
+			((ImmutableRect2i) getField(rows.getLast(), "componentValueArea")).getWidth()
+		);
+		List<NamedNumber> before = entry.getValue();
+		entry.createInputHandler().handleUserInput(null, mouseInput(addedReset.getX() + 1, addedReset.getY() + 1));
+		assertFalse(entry.resetComponentValue(rows.size() - 1));
+		assertEquals(before, entry.getValue());
+		assertTrue(entry.resetComponentValue(0));
+	}
+
+	@Test
+	@SuppressWarnings("DataFlowIssue")
+	void emptyKeyValueListsReceiveAnEditableDefaultEntry() throws Exception {
+		ListConfigEntry<NamedNumber> entry = new ListConfigEntry<>(
+			new TestConfigValue(List.of(), List.of()),
+			SERIALIZER,
+			selector -> {},
+			() -> {},
+			null
+		);
+		entry.area = new ImmutableRect2i(0, 0, 400, 300);
+		setField(entry, "addValueButtonArea", new ImmutableRect2i(100, 20, 20, 20));
+
+		assertTrue(entry.createInputHandler().handleUserInput(null, mouseInput(110, 30)).isPresent());
+		assertEquals(List.of(new NamedNumber("0", 0)), entry.getValue());
+		assertTrue(entry.isCapturingKeyboardInput());
+	}
+
 	@SuppressWarnings("DataFlowIssue")
 	private static ListConfigEntry<NamedNumber> createEntry() {
 		return new ListConfigEntry<>(
@@ -60,10 +154,41 @@ class KeyValueListConfigEntryTest {
 		}
 	}
 
+	private static void setField(Object target, String fieldName, Object value) throws ReflectiveOperationException {
+		Field field = target.getClass().getDeclaredField(fieldName);
+		field.setAccessible(true);
+		field.set(target, value);
+	}
+
+	private static Object getField(Object target, String fieldName) throws ReflectiveOperationException {
+		Field field = target.getClass().getDeclaredField(fieldName);
+		field.setAccessible(true);
+		return field.get(target);
+	}
+
+	private static UserInput mouseInput(double mouseX, double mouseY) {
+		return UserInput.fromVanilla(mouseX, mouseY, InputConstants.MOUSE_BUTTON_LEFT, InputType.EXECUTE).orElseThrow();
+	}
+
 	private record NamedNumber(String name, int number) {
 	}
 
 	private static final class TestConfigValue implements IConfigScreenValue<List<NamedNumber>> {
+		private final List<NamedNumber> value;
+		private final List<NamedNumber> defaultValue;
+
+		private TestConfigValue() {
+			this(
+				List.of(new NamedNumber("second", 99), new NamedNumber("first", 88)),
+				List.of(new NamedNumber("first", 1), new NamedNumber("second", 2))
+			);
+		}
+
+		private TestConfigValue(List<NamedNumber> value, List<NamedNumber> defaultValue) {
+			this.value = value;
+			this.defaultValue = defaultValue;
+		}
+
 		@Override
 		public String getName() {
 			return "namedNumbers";
@@ -76,12 +201,12 @@ class KeyValueListConfigEntryTest {
 
 		@Override
 		public List<NamedNumber> getValue() {
-			return List.of(new NamedNumber("second", 99), new NamedNumber("first", 88));
+			return value;
 		}
 
 		@Override
 		public List<NamedNumber> getDefaultValue() {
-			return List.of(new NamedNumber("first", 1), new NamedNumber("second", 2));
+			return defaultValue;
 		}
 
 		@Override
@@ -235,6 +360,11 @@ class KeyValueListConfigEntryTest {
 		@Override
 		public boolean isValid(Integer value) {
 			return value >= 0;
+		}
+
+		@Override
+		public java.util.Optional<ConfigValueRange<Integer>> getRange() {
+			return java.util.Optional.of(new ConfigValueRange<>(0, 1000));
 		}
 
 		@Override

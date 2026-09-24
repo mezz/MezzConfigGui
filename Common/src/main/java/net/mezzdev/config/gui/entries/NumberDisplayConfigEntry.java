@@ -178,6 +178,11 @@ final class NumberDisplayConfigEntry<T> extends ConfigEntryWidget<T> {
 	}
 
 	@Override
+	public boolean isCapturingTextInput() {
+		return getActiveEntry().isCapturingTextInput();
+	}
+
+	@Override
 	public void unfocus() {
 		getActiveEntry().unfocus();
 	}
