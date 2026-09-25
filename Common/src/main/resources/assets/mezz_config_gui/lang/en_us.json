@@ -62,7 +62,6 @@
   "mezz_config.config.screen.validValues": "Valid values: %s",
   "mezz_config.config.screen.text.invalid": "Invalid Value",
   "mezz_config.config.screen.text.invalid.info": "This value cannot be saved.",
-  "mezz_config.config.screen.number.shiftStep": "Hold Shift to change by %s.",
   "mezz_config.config.screen.color.choose": "Choose Color",
   "mezz_config.config.value.boolean.true": "Enabled",
   "mezz_config.config.value.boolean.true.description": "This setting is enabled.",

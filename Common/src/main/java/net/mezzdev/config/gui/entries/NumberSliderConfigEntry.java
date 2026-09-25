@@ -95,7 +95,6 @@ final class NumberSliderConfigEntry<T> extends ConfigEntryWidget<T> {
 		ConfigInfo info = super.getInfo();
 		List<Component> lines = new ArrayList<>(info.lines());
 		lines.add(ConfigNumberInfo.getRange(model.getRange()));
-		lines.add(Component.translatable("mezz_config.config.screen.number.shiftStep", 1));
 		return new ConfigInfo(info.title(), lines);
 	}
 
