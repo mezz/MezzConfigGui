@@ -96,6 +96,7 @@ final class ConfigGuiPluginLoader {
 		Map<String, IConfigScreenFactory> factories = new LinkedHashMap<>();
 		List<ConfigScreenFactoryEntry> entries = new ArrayList<>();
 		registrations.forEach((modId, registration) -> addFactory(factories, entries, modId, registration, navigation));
+		factories.forEach((modId, factory) -> registrations.get(modId).notifyScreenFactory(factory));
 		logDiscoverySummary(allConfigScreens, plugins, factories);
 		return new ConfigScreenFactoryRegistry(factories, entries, navigation);
 	}
@@ -151,6 +152,7 @@ final class ConfigGuiPluginLoader {
 			String modId = validateModId(plugin.getModId());
 			ConfigGuiRegistration registration = registrations.computeIfAbsent(modId, ConfigGuiRegistration::new);
 			plugin.register(registration);
+			registration.plugins.add(plugin);
 		} catch (RuntimeException | LinkageError e) {
 			LOGGER.error("Failed to load config GUI plugin: {}", plugin.getClass(), e);
 		}
@@ -194,6 +196,7 @@ final class ConfigGuiPluginLoader {
 
 	private static final class ConfigGuiRegistration implements IConfigGuiRegistration {
 		private final String modId;
+		private final List<IConfigGuiPlugin> plugins = new ArrayList<>();
 		private final Map<ConfigValueEditorType<?>, IConfigValueEditorFactory<?>> valueEditorFactories = new LinkedHashMap<>();
 		private final Map<Identifier, ConfigValueEditorType<?>> valueEditorTypesByUid = new LinkedHashMap<>();
 		private final List<Consumer<IConfigScreenBuilder>> screenCustomizers = new ArrayList<>();
@@ -224,6 +227,16 @@ final class ConfigGuiPluginLoader {
 					ConfigValueEditorTypes.getKeyMapping()
 				)
 				.forEach(editorType -> valueEditorTypesByUid.put(editorType.getUid(), editorType));
+		}
+
+		private void notifyScreenFactory(IConfigScreenFactory factory) {
+			for (IConfigGuiPlugin plugin : plugins) {
+				try {
+					plugin.onScreenFactoryAvailable(factory);
+				} catch (RuntimeException | LinkageError e) {
+					LOGGER.error("Failed to deliver config screen factory to plugin: {}", plugin.getClass(), e);
+				}
+			}
 		}
 
 		@Override

@@ -7,10 +7,10 @@ import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.ConfigScreenConfig;
 import net.mezzdev.config.gui.MezzConfigScreen;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
+import net.mezzdev.config.gui.neoforge.config.NeoForgeConfigScreenConfigs;
 import net.mezzdev.config.gui.remote.RemoteConfigEditor;
 import net.mezzdev.config.gui.remote.RemoteConfigNetworking;
 import net.mezzdev.config.gui.remote.RemoteConfigRequestChunkPayload;
-import net.mezzdev.config.gui.neoforge.config.NeoForgeConfigScreenConfigs;
 import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryRegistry;
 import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.minecraft.client.Minecraft;
@@ -73,18 +73,15 @@ public final class ConfigGuiNeoForgeClient {
 	}
 
 	private static void onClientSetup(FMLClientSetupEvent event) {
-		event.enqueueWork(() -> registerConfigScreens(createScreenFactoryRegistry()));
+		event.enqueueWork(ConfigGuiNeoForgeClient::registerConfigScreens);
 	}
 
-	private static ConfigScreenFactoryRegistry createScreenFactoryRegistry() {
+	private static void registerConfigScreens() {
 		Collection<? extends ConfigScreenConfig> configScreens = List.of();
 		if (ConfigGuiOptions.enableNativeConfigDiscovery()) {
 			configScreens = NeoForgeConfigScreenConfigs.getConfigScreens();
 		}
-		return ConfigGui.createScreenFactoryRegistryFromInternalConfigs(configScreens, ConfigGuiNeoForgePluginFinder.getPlugins());
-	}
-
-	private static void registerConfigScreens(ConfigScreenFactoryRegistry registry) {
+		ConfigScreenFactoryRegistry registry = ConfigGui.createScreenFactoryRegistryFromInternalConfigs(configScreens, ConfigGuiNeoForgePluginFinder.getPlugins());
 		ConfigGui.createScreenListFactory(registry, NeoForgeConfigScreenOwnerMetadata::get);
 		registry.getFactories().forEach(ConfigGuiNeoForgeClient::registerConfigScreen);
 	}

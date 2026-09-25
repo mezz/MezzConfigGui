@@ -1,11 +1,13 @@
 package net.mezzdev.config.gui.fabric;
 
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
+import net.mezzdev.config.gui.ConfigGui;
 import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.MezzConfigScreen;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
@@ -13,6 +15,7 @@ import net.mezzdev.config.gui.remote.RemoteConfigEditor;
 import net.mezzdev.config.gui.remote.RemoteConfigNetworking;
 import net.mezzdev.config.gui.remote.RemoteConfigRequestChunkPayload;
 import net.mezzdev.config.gui.remote.RemoteConfigResponseChunkPayload;
+import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryRegistry;
 import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.minecraft.server.packs.PackType;
 
@@ -23,6 +26,7 @@ public final class ConfigGuiFabricClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		ConfigGuiOptions.register();
+		ClientLifecycleEvents.CLIENT_STARTED.register(client -> getScreenFactoryRegistry());
 		ScreenEvents.AFTER_INIT.register((client, screen, width, height) -> {
 			if (screen instanceof MezzConfigScreen configScreen) {
 				ScreenEvents.beforeExtract(screen).register((renderedScreen, graphics, mouseX, mouseY, tickDelta) -> configScreen.clearTooltipForNextRenderPass());
@@ -53,6 +57,20 @@ public final class ConfigGuiFabricClient implements ClientModInitializer {
 		var colors = new ConfigGuiIdentifiableResourceReloadListener("config_gui_colors", ConfigGuiColors::createReloadListener);
 		resources.registerReloadListener(sprites.getFabricId(), sprites);
 		resources.registerReloadListener(colors.getFabricId(), colors);
+	}
+
+	static ConfigScreenFactoryRegistry getScreenFactoryRegistry() {
+		return RegistryHolder.REGISTRY;
+	}
+
+	private static final class RegistryHolder {
+		private static final ConfigScreenFactoryRegistry REGISTRY = createRegistry();
+
+		private static ConfigScreenFactoryRegistry createRegistry() {
+			ConfigScreenFactoryRegistry registry = ConfigGui.createScreenFactoryRegistry(ConfigGuiFabricPluginFinder.getPlugins());
+			ConfigGui.createScreenListFactory(registry, FabricConfigScreenOwnerMetadata::get);
+			return registry;
+		}
 	}
 
 	private static boolean isChannelAvailable() {
