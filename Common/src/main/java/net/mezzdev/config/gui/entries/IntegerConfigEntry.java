@@ -139,7 +139,6 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 		ConfigInfo info = super.getInfo();
 		List<Component> lines = new ArrayList<>(info.lines());
 		lines.add(ConfigNumberInfo.getRange(new ConfigValueRange<>(min, max)));
-		lines.add(Component.translatable("mezz_config.config.screen.number.shiftStep", SHIFT_STEP));
 		return new ConfigInfo(info.title(), lines);
 	}
 
