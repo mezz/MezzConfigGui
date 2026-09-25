@@ -122,8 +122,13 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public T getValue() {
-		return snapshot(configValue.getRaw());
+		T value = configValue.getRaw();
+		if (value instanceof List<?> list && serializer instanceof NeoForgeListSerializer<?> listSerializer) {
+			return (T) listSerializer.normalize(list);
+		}
+		return snapshot(value);
 	}
 
 	@Override
