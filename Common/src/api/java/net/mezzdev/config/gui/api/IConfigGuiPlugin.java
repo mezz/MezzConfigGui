@@ -34,4 +34,16 @@ public interface IConfigGuiPlugin {
 	 * @since 0.1.0
 	 */
 	void register(IConfigGuiRegistration registration);
+
+	/**
+	 * Receive this mod's config screen factory once, after all plugins have registered.
+	 * Only called during client setup if this mod has a config screen.
+	 * <p>
+	 * Store the factory and use it later on the client thread to create and display a screen.
+	 *
+	 * @param screenFactory creates this mod's config screen
+	 *
+	 * @since 0.5.9
+	 */
+	default void onScreenFactoryAvailable(IConfigScreenFactory screenFactory) {}
 }
