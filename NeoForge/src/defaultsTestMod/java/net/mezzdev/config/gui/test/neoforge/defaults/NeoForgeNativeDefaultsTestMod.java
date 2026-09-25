@@ -9,6 +9,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Mod(NeoForgeNativeDefaultsTestMod.MOD_ID)
@@ -21,11 +22,11 @@ public final class NeoForgeNativeDefaultsTestMod {
 	static final ModConfigSpec.IntValue MAX_VISIBLE_ROWS;
 	static final ModConfigSpec.ConfigValue<List<? extends Integer>> FAVORITE_NUMBERS;
 	static final ModConfigSpec.EnumValue<TestMode> MODE;
-	static final ModConfigSpec.ConfigValue<List<? extends TestMode>> FAVORITE_MODES;
+	static final ModConfigSpec.ConfigValue<List<?>> FAVORITE_MODES;
 	static final ModConfigSpec.ConfigValue<String> SCREEN_LABEL;
 	static final ModConfigSpec.ConfigValue<List<? extends String>> ALIASES;
 	static final ModConfigSpec.LongValue CACHE_BUDGET;
-	static final ModConfigSpec.ConfigValue<List<? extends Long>> LONG_BREAKPOINTS;
+	static final ModConfigSpec.ConfigValue<List<? extends Number>> LONG_BREAKPOINTS;
 	static final ModConfigSpec.DoubleValue SCALE;
 	static final ModConfigSpec.ConfigValue<List<? extends Double>> THRESHOLDS;
 
@@ -49,7 +50,8 @@ public final class NeoForgeNativeDefaultsTestMod {
 			.defineEnum("mode", TestMode.BALANCED);
 		FAVORITE_MODES = clientBuilder.comment("Enum list adapted from a native NeoForge config.")
 			.translation(MOD_ID + ".configuration.general.favoriteModes")
-			.defineList("favoriteModes", List.of(TestMode.BALANCED, TestMode.FAST), () -> TestMode.BALANCED, value -> value instanceof TestMode);
+			.defineList("favoriteModes", List.of(TestMode.BALANCED, TestMode.FAST), () -> TestMode.BALANCED,
+				value -> value instanceof TestMode || value instanceof String name && Arrays.stream(TestMode.values()).anyMatch(mode -> mode.name().equals(name)));
 		SCREEN_LABEL = clientBuilder.comment("String adapted from a native NeoForge config.")
 			.translation(MOD_ID + ".configuration.general.screenLabel")
 			.define("screenLabel", "NeoForge Defaults", value -> value instanceof String string && !string.isBlank() && string.length() <= 40);
@@ -66,7 +68,8 @@ public final class NeoForgeNativeDefaultsTestMod {
 			.defineInRange("cacheBudget", 4096L, 0L, 65_536L);
 		LONG_BREAKPOINTS = commonBuilder.comment("Long list adapted from a native NeoForge config.")
 			.translation(MOD_ID + ".configuration.limits.longBreakpoints")
-			.defineList("longBreakpoints", List.of(128L, 256L, 512L), () -> 0L, value -> value instanceof Long longValue && longValue >= 0L && longValue <= 1024L);
+			.defineList("longBreakpoints", List.of(128L, 256L, 512L), () -> 0L,
+				value -> (value instanceof Integer || value instanceof Long) && ((Number) value).longValue() >= 0L && ((Number) value).longValue() <= 1024L);
 		SCALE = commonBuilder.comment("Double value adapted from a native NeoForge config.")
 			.translation(MOD_ID + ".configuration.limits.scale")
 			.defineInRange("scale", 1.0D, 0.25D, 4.0D);

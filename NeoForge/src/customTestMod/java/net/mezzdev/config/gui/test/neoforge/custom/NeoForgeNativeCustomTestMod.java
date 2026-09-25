@@ -6,6 +6,7 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Mod(NeoForgeNativeCustomTestMod.MOD_ID)
@@ -24,10 +25,10 @@ public final class NeoForgeNativeCustomTestMod {
 	public static final ModConfigSpec.ConfigValue<Double> OPACITY;
 	public static final ModConfigSpec.ConfigValue<List<? extends Boolean>> ENABLED_HISTORY;
 	public static final ModConfigSpec.ConfigValue<List<? extends Integer>> FAVORITE_ROWS;
-	public static final ModConfigSpec.ConfigValue<List<? extends TestMode>> FAVORITE_MODES;
+	public static final ModConfigSpec.ConfigValue<List<?>> FAVORITE_MODES;
 	public static final ModConfigSpec.ConfigValue<List<? extends String>> ALIASES;
 	public static final ModConfigSpec.ConfigValue<Long> CACHE_BUDGET;
-	public static final ModConfigSpec.ConfigValue<List<? extends Long>> CACHE_BREAKPOINTS;
+	public static final ModConfigSpec.ConfigValue<List<? extends Number>> CACHE_BREAKPOINTS;
 	public static final ModConfigSpec.ConfigValue<List<? extends Double>> OPACITY_STEPS;
 	static final ModConfigSpec.ConfigValue<Boolean> COMMON_ENABLED;
 	static final ModConfigSpec.ConfigValue<List<? extends String>> COMMON_ALIASES;
@@ -66,7 +67,8 @@ public final class NeoForgeNativeCustomTestMod {
 			.defineList("favoriteRows", List.of(2, 4, 8), () -> 1, value -> value instanceof Integer integer && integer >= 1 && integer <= 12);
 		FAVORITE_MODES = builder.comment("Enum list moved into a custom list category.")
 			.translation(MOD_ID + ".configuration.client.favoriteModes")
-			.defineList("favoriteModes", List.of(TestMode.SLOW, TestMode.BALANCED), () -> TestMode.BALANCED, value -> value instanceof TestMode);
+			.defineList("favoriteModes", List.of(TestMode.SLOW, TestMode.BALANCED), () -> TestMode.BALANCED,
+				value -> value instanceof TestMode || value instanceof String name && Arrays.stream(TestMode.values()).anyMatch(mode -> mode.name().equals(name)));
 		ALIASES = builder.comment("String list moved into a custom list category.")
 			.translation(MOD_ID + ".configuration.client.aliases")
 			.defineList("aliases", List.of("custom", "native"), () -> "custom", value -> value instanceof String string && !string.isBlank() && string.length() <= 40);
@@ -75,7 +77,8 @@ public final class NeoForgeNativeCustomTestMod {
 			.defineInRange("cacheBudget", 2048L, 0L, 65_536L);
 		CACHE_BREAKPOINTS = builder.comment("Long list moved into a custom list category.")
 			.translation(MOD_ID + ".configuration.client.cacheBreakpoints")
-			.defineList("cacheBreakpoints", List.of(128L, 256L, 512L), () -> 0L, value -> value instanceof Long longValue && longValue >= 0L && longValue <= 1024L);
+			.defineList("cacheBreakpoints", List.of(128L, 256L, 512L), () -> 0L,
+				value -> (value instanceof Integer || value instanceof Long) && ((Number) value).longValue() >= 0L && ((Number) value).longValue() <= 1024L);
 		OPACITY_STEPS = builder.comment("Double list moved into a custom list category.")
 			.translation(MOD_ID + ".configuration.client.opacitySteps")
 			.defineList("opacitySteps", List.of(0.25D, 0.5D, 0.85D), () -> 0.1D, value -> value instanceof Double doubleValue && doubleValue >= 0.1D && doubleValue <= 1.0D);
