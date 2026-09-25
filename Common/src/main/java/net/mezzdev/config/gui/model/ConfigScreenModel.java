@@ -25,7 +25,7 @@ public final class ConfigScreenModel {
 	private String searchText = "";
 
 	public ConfigScreenModel(List<ConfigScreenCategory> categories) {
-		this.categoryTree = ConfigCategoryTree.create(categories, ConfigGuiOptions.getInlineSubsectionLimit());
+		this.categoryTree = ConfigCategoryTree.create(categories, ConfigGuiOptions.getInlineSubsectionLimit(), ConfigGuiOptions.getMinimumNavigationDepth(), ConfigGuiOptions.getMaximumNavigationDepth());
 		this.categories = categoryTree.stream().map(ConfigCategoryTree.Node::category).toList();
 		List<List<Integer>> children = new ArrayList<>();
 		for (int index = 0; index < categoryTree.size(); index++) {

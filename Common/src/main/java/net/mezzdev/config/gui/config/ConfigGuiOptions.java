@@ -10,6 +10,7 @@ import net.mezzdev.config.api.schema.builder.IConfigSchemaBuilder;
 import net.mezzdev.config.api.value.editor.ConfigValueEditMode;
 import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IConfigValue;
+import net.mezzdev.config.api.value.serializer.ConfigValueRange;
 import net.mezzdev.config.gui.screenlist.ConfigScreenListEntry;
 import org.jspecify.annotations.Nullable;
 
@@ -30,6 +31,7 @@ public final class ConfigGuiOptions {
 	private static final int DEFAULT_WINDOW_WIDTH = 380;
 	private static final int DEFAULT_WINDOW_HEIGHT = 300;
 	private static final int DEFAULT_NAVIGATION_WIDTH = 110;
+	private static final ConfigValueRange<Integer> DEFAULT_NAVIGATION_DEPTH = new ConfigValueRange<>(1, NavigationDepthRangeSerializer.MAX_DEPTH);
 	private static final int DEFAULT_INLINE_SUBSECTION_LIMIT = 10;
 
 	@Nullable
@@ -52,6 +54,8 @@ public final class ConfigGuiOptions {
 	private static IConfigValue<Boolean> showRowStriping;
 	@Nullable
 	private static IConfigValue<Boolean> rememberLastCategory;
+	@Nullable
+	private static IConfigValue<ConfigValueRange<Integer>> navigationDepth;
 	@Nullable
 	private static IConfigValue<Integer> inlineSubsectionLimit;
 	@Nullable
@@ -117,7 +121,10 @@ public final class ConfigGuiOptions {
 			.build();
 
 		IConfigCategoryBuilder navigation = schemaBuilder.addCategory("navigation");
-		inlineSubsectionLimit = navigation.addInteger("inlineSubsectionLimit", DEFAULT_INLINE_SUBSECTION_LIMIT, 0, Integer.MAX_VALUE)
+		navigationDepth = navigation.addValue("navigationDepth", DEFAULT_NAVIGATION_DEPTH, NavigationDepthRangeSerializer.INSTANCE)
+			.setEditMode(ConfigValueEditMode.IMMEDIATE)
+			.build();
+		inlineSubsectionLimit = navigation.addInteger("inlineSubsectionLimit", DEFAULT_INLINE_SUBSECTION_LIMIT, 0, 50)
 			.setEditMode(ConfigValueEditMode.IMMEDIATE)
 			.build();
 		rememberLastCategory = navigation.addBoolean("rememberLastCategory", true)
@@ -260,6 +267,14 @@ public final class ConfigGuiOptions {
 
 	public static boolean rememberLastCategory() {
 		return getValue(rememberLastCategory, true);
+	}
+
+	public static int getMinimumNavigationDepth() {
+		return getValue(navigationDepth, DEFAULT_NAVIGATION_DEPTH).min();
+	}
+
+	public static int getMaximumNavigationDepth() {
+		return getValue(navigationDepth, DEFAULT_NAVIGATION_DEPTH).max();
 	}
 
 	public static int getInlineSubsectionLimit() {
