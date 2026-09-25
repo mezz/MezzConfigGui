@@ -119,6 +119,8 @@ val customTestModSourceSet = sourceSets.create("customTestMod") {
     compileClasspath += sourceSets.main.get().output
     runtimeClasspath += sourceSets.main.get().output
 }
+// Defaults GameTests also exercise the custom test mod's native config specs.
+defaultsTestModSourceSet.compileClasspath += customTestModSourceSet.output
 val testModSourceSets = listOf(defaultsTestModSourceSet, customTestModSourceSet)
 
 for (testModSourceSet in testModSourceSets) {

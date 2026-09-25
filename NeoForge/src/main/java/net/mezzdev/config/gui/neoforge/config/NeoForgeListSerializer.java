@@ -29,6 +29,20 @@ final class NeoForgeListSerializer<T> implements IConfigListValueSerializer<T> {
 		return elementSerializer;
 	}
 
+	public List<T> normalize(List<?> values) {
+		// TOML loads enum names as strings and small long values as integers.
+		return values.stream()
+			.map(value -> {
+				if (value instanceof Enum<?> enumValue) {
+					return enumValue.name();
+				}
+				return String.valueOf(value);
+			})
+			.map(value -> elementSerializer.deserialize(value).getResult()
+				.orElseThrow(() -> new IllegalArgumentException("Invalid native list element: " + value)))
+			.toList();
+	}
+
 	@Override
 	public String serialize(List<T> value) {
 		return value.stream()
