@@ -26,7 +26,7 @@ final class ConfigCategoryTree {
 
 	}
 
-	static List<Node> create(List<ConfigScreenCategory> categories, int inlineSubsectionLimit) {
+	static List<Node> create(List<ConfigScreenCategory> categories, int inlineSubsectionLimit, int minimumNavigationDepth, int maximumNavigationDepth) {
 		List<Node> result = new ArrayList<>();
 		Map<String, List<ConfigScreenCategory>> groupedCategories = new LinkedHashMap<>();
 		for (ConfigScreenCategory category : categories) {
@@ -42,12 +42,12 @@ final class ConfigCategoryTree {
 				if (members.size() > 1) {
 					if (members.get(0) == category) {
 						MutableNode root = createGroup(grouping, members);
-						appendNodes(result, root, category.getGroup(), -1, 0, inlineSubsectionLimit);
+						appendNodes(result, root, category.getGroup(), -1, 0, inlineSubsectionLimit, minimumNavigationDepth, maximumNavigationDepth);
 					}
 					continue;
 				}
 			}
-			appendNodes(result, createRoot(category), category.getGroup(), -1, 0, inlineSubsectionLimit);
+			appendNodes(result, createRoot(category), category.getGroup(), -1, 0, inlineSubsectionLimit, minimumNavigationDepth, maximumNavigationDepth);
 		}
 		return List.copyOf(result);
 	}
@@ -122,7 +122,7 @@ final class ConfigCategoryTree {
 		return root;
 	}
 
-	private static void appendNodes(List<Node> result, MutableNode node, ConfigScreenCategoryGroup group, int parentIndex, int depth, int inlineSubsectionLimit) {
+	private static void appendNodes(List<Node> result, MutableNode node, ConfigScreenCategoryGroup group, int parentIndex, int depth, int inlineSubsectionLimit, int minimumNavigationDepth, int maximumNavigationDepth) {
 		while (node.values.isEmpty() && node.children.size() == 1) {
 			MutableNode child = node.children.values().iterator().next();
 			if (!node.title.getString().equalsIgnoreCase(child.title.getString())) {
@@ -143,10 +143,10 @@ final class ConfigCategoryTree {
 		List<IConfigScreenValue<?>> values = new ArrayList<>(node.values);
 		List<ConfigCategoryWidget.Section> inlineSections = new ArrayList<>();
 		List<MutableNode> navigationChildren = new ArrayList<>();
+		boolean maximumDepthReached = depth >= maximumNavigationDepth;
 		for (MutableNode child : node.children.values()) {
-			if (inlineSubsectionLimit > 0 && child.children.isEmpty() && child.values.size() <= inlineSubsectionLimit) {
-				inlineSections.add(new ConfigCategoryWidget.Section(values.size(), child.title, child.description));
-				values.addAll(child.values);
+			if (maximumDepthReached || (depth >= minimumNavigationDepth && inlineSubsectionLimit > 0 && child.children.isEmpty() && child.values.size() <= inlineSubsectionLimit)) {
+				appendInlineSections(values, inlineSections, child, child.title, child.description);
 			} else {
 				navigationChildren.add(child);
 			}
@@ -164,7 +164,26 @@ final class ConfigCategoryTree {
 			result.add(new Node(category, parentIndex, depth, false, List.copyOf(inlineSections)));
 		}
 		for (MutableNode child : navigationChildren) {
-			appendNodes(result, child, group, index, depth + 1, inlineSubsectionLimit);
+			appendNodes(result, child, group, index, depth + 1, inlineSubsectionLimit, minimumNavigationDepth, maximumNavigationDepth);
+		}
+	}
+
+	private static void appendInlineSections(List<IConfigScreenValue<?>> values, List<ConfigCategoryWidget.Section> sections, MutableNode node, Component title, Component description) {
+		if (!node.values.isEmpty()) {
+			sections.add(new ConfigCategoryWidget.Section(values.size(), title, description));
+			values.addAll(node.values);
+		}
+		for (MutableNode child : node.children.values()) {
+			Component childTitle = title.copy().append(" › ").append(child.title);
+			Component childDescription = child.description;
+			if (node.values.isEmpty() && !description.getString().isBlank()) {
+				// Empty branches have no header of their own, so keep their help on the descendant groups.
+				childDescription = description;
+				if (!child.description.getString().isBlank() && !description.equals(child.description)) {
+					childDescription = description.copy().append("\n\n").append(child.description);
+				}
+			}
+			appendInlineSections(values, sections, child, childTitle, childDescription);
 		}
 	}
 
