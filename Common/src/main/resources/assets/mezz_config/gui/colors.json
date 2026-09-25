@@ -26,6 +26,7 @@
   "configEntryPendingAccent": "0xFF5E9AD6",
   "configEntryReadOnlyOverlay": "0x50000000",
   "configEntryButtonUnderlay": "0xFF111216",
+  "configEntryRangeFill": "0xFF555555",
   "configEntryInvalidText": "0xFFFF7070",
   "sectionHeaderBackground": "0xFF303844",
   "sectionHeaderText": "0xFFF3F6FF",
