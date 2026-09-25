@@ -142,6 +142,7 @@ public final class ConfigGuiColors {
 		CONFIG_ENTRY_PENDING_ACCENT("configEntryPendingAccent", 0xFF5E9AD6),
 		CONFIG_ENTRY_READ_ONLY_OVERLAY("configEntryReadOnlyOverlay", 0x50000000),
 		CONFIG_ENTRY_BUTTON_UNDERLAY("configEntryButtonUnderlay", 0xFF111216),
+		CONFIG_ENTRY_RANGE_FILL("configEntryRangeFill", 0xFF555555),
 		CONFIG_ENTRY_INVALID_TEXT("configEntryInvalidText", 0xFFFF7070),
 
 		SECTION_HEADER_BACKGROUND("sectionHeaderBackground", 0xFF303844),

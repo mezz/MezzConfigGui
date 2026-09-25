@@ -6,6 +6,7 @@ import net.mezzdev.config.api.value.color.PackedColor;
 import net.mezzdev.config.gui.api.ConfigValueEditorType;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
+import net.mezzdev.config.gui.api.IConfigRangeValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueEditor;
 import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
@@ -47,6 +48,7 @@ public final class ConfigEntryWidgetFactory {
 		register(ConfigValueEditorTypes.COLOR, this::createColorEntry);
 		register(ConfigValueEditorTypes.getText(), this::createTextEntry);
 		register(ConfigValueEditorTypes.getList(), this::createListEntry);
+		register(ConfigValueEditorTypes.getRange(), this::createRangeEntry);
 		registerSelectionEditor();
 		valueEditorFactories.forEach(this::registerCustomEditor);
 	}
@@ -143,6 +145,16 @@ public final class ConfigEntryWidgetFactory {
 
 	private <T> ConfigEntryWidget<T> createTextEntry(IConfigScreenValue<T> value) {
 		return new TextConfigEntry<>(value, value.getSerializer(), valueSelectorOpener, textures);
+	}
+
+	@SuppressWarnings("unchecked")
+	private <T> ConfigEntryWidget<ConfigValueRange<T>> createRangeEntry(IConfigScreenValue<ConfigValueRange<T>> value) {
+		IConfigRangeValueEditorSerializer<T> serializer = (IConfigRangeValueEditorSerializer<T>) value.getSerializer();
+		ConfigEntryWidget<ConfigValueRange<T>> textEntry = createTextEntry(value);
+		return NumberSliderModel.create(serializer.getBounds())
+			.<ConfigEntryWidget<ConfigValueRange<T>>>map(numbers -> new NumberDisplayConfigEntry<>(
+				value, new RangeSliderConfigEntry<>(value, numbers, textures), textEntry, textures))
+			.orElse(textEntry);
 	}
 
 	@SuppressWarnings("unchecked")

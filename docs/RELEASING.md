@@ -5,10 +5,10 @@ versions, and Git tags use `mc<minecraft>-<mod-version>`, for example `mc26.3-0.
 `specificationVersion` and loader metadata keep the numeric mod version (`0.5.3`)
 so API and loader dependency ranges continue to work.
 
-1. Update `specificationVersion` on the branch being released. Increase the minor
-   version for public API additions and the patch version for fixes or dependency
-   updates. Preserve API compatibility; breaking API changes require a major bump
-   and are only allowed with a Minecraft update.
+1. Update `specificationVersion` on the branch being released. For beta `0.x.y`
+   versions, increase only `y` for backward-compatible changes, including public
+   API additions, fixes, and dependency updates. Preserve API compatibility;
+   breaking API changes are only allowed with a Minecraft update.
    Keep `apiBaselineVersion` pinned to the first published API's exact Maven version:
    `0.4.0` on 1.21.1 and `0.5.1` on 26.3. A branch with no published API starts with
    its first full release version as the baseline. Never reset a published baseline.
