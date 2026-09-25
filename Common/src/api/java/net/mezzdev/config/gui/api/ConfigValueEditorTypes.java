@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui.api;
 
 import net.mezzdev.config.api.value.color.PackedColor;
+import net.mezzdev.config.api.value.serializer.ConfigValueRange;
 
 import java.util.List;
 
@@ -20,6 +21,7 @@ public final class ConfigValueEditorTypes {
 	private static final ConfigValueEditorType<Object> SELECTION = ConfigValueEditorType.create(CONFIG_ID, "selection");
 	private static final ConfigValueEditorType<List<Object>> LIST = ConfigValueEditorType.create(CONFIG_ID, "list");
 	private static final ConfigValueEditorType<Object> KEY_MAPPING = ConfigValueEditorType.create(CONFIG_ID, "key_mapping");
+	private static final ConfigValueEditorType<ConfigValueRange<Object>> RANGE = ConfigValueEditorType.create(CONFIG_ID, "range");
 
 	private ConfigValueEditorTypes() {
 	}
@@ -62,5 +64,16 @@ public final class ConfigValueEditorTypes {
 	@SuppressWarnings("unchecked")
 	public static <T> ConfigValueEditorType<T> getKeyMapping() {
 		return (ConfigValueEditorType<T>) KEY_MAPPING;
+	}
+
+	/**
+	 * An editor for numeric intervals with two independently adjustable endpoints.
+	 * Requires an {@link IConfigRangeValueEditorSerializer}.
+	 *
+	 * @since 0.5.8
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> ConfigValueEditorType<ConfigValueRange<T>> getRange() {
+		return (ConfigValueEditorType<ConfigValueRange<T>>) (Object) RANGE;
 	}
 }
