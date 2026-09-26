@@ -62,16 +62,21 @@ final class NeoForgeListElementSerializers {
 			return Optional.of(NeoForgeBooleanSerializer.INSTANCE);
 		}
 		if (elementClass == Integer.class) {
-			return Optional.of(new NeoForgeIntegerSerializer(Integer.MIN_VALUE, Integer.MAX_VALUE));
+			return Optional.of(new ValidatedListElementSerializer<>(
+				new NeoForgeIntegerSerializer(Integer.MIN_VALUE, Integer.MAX_VALUE), valueSpec,
+				"An integer accepted by this config"));
 		}
 		if (elementClass == String.class) {
-			return Optional.of(StringListElementSerializer.INSTANCE);
+			return Optional.of(new ValidatedListElementSerializer<>(
+				StringListElementSerializer.INSTANCE, valueSpec, "Text accepted by this config"));
 		}
 		if (elementClass == Long.class) {
-			return Optional.of(LongListElementSerializer.INSTANCE);
+			return Optional.of(new ValidatedListElementSerializer<>(
+				LongListElementSerializer.INSTANCE, valueSpec, "A long integer accepted by this config"));
 		}
 		if (elementClass == Double.class) {
-			return Optional.of(DoubleListElementSerializer.INSTANCE);
+			return Optional.of(new ValidatedListElementSerializer<>(
+				DoubleListElementSerializer.INSTANCE, valueSpec, "A finite decimal number accepted by this config"));
 		}
 		if (Enum.class.isAssignableFrom(elementClass)) {
 			return createEnum(elementClass, valueSpec);
@@ -99,6 +104,46 @@ final class NeoForgeListElementSerializers {
 			}
 		}
 		return true;
+	}
+
+	/**
+	 * Native element validators can enforce arbitrary constraints without exposing numeric bounds.
+	 * Keep parsing and validation consistent, without advertising the delegate's unrestricted range.
+	 */
+	private record ValidatedListElementSerializer<T>(
+		IConfigValueSerializer<T> delegate,
+		ModConfigSpec.ValueSpec valueSpec,
+		String validValuesDescription
+	) implements IConfigValueSerializer<T> {
+		@Override
+		public String serialize(T value) {
+			return delegate.serialize(value);
+		}
+
+		@Override
+		public IDeserializeResult<T> deserialize(String string) {
+			IDeserializeResult<T> result = delegate.deserialize(string);
+			if (result.getResult().filter(value -> !isValid(value)).isPresent()) {
+				return IDeserializeResult.failure("Value is not accepted by this config: " + string);
+			}
+			return result;
+		}
+
+		@Override
+		public boolean isValid(@Nullable T value) {
+			return value != null && delegate.isValid(value) && isValidListElement(valueSpec, value);
+		}
+
+		@Override
+		public Optional<List<T>> getAllValidValues() {
+			return delegate.getAllValidValues()
+				.map(values -> values.stream().filter(this::isValid).toList());
+		}
+
+		@Override
+		public String getValidValuesDescription() {
+			return validValuesDescription;
+		}
 	}
 
 	private enum StringListElementSerializer implements IConfigValueSerializer<String> {

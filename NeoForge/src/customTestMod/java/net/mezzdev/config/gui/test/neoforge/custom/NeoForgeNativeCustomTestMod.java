@@ -67,7 +67,7 @@ public final class NeoForgeNativeCustomTestMod {
 			.defineList("favoriteRows", List.of(2, 4, 8), () -> 1, value -> value instanceof Integer integer && integer >= 1 && integer <= 12);
 		FAVORITE_MODES = builder.comment("Enum list moved into a custom list category.")
 			.translation(MOD_ID + ".configuration.client.favoriteModes")
-			.defineList("favoriteModes", List.of(TestMode.SLOW, TestMode.BALANCED), () -> TestMode.BALANCED,
+			.defineListAllowEmpty("favoriteModes", List.of(TestMode.SLOW, TestMode.BALANCED), () -> TestMode.BALANCED,
 				value -> value instanceof TestMode || value instanceof String name && Arrays.stream(TestMode.values()).anyMatch(mode -> mode.name().equals(name)));
 		ALIASES = builder.comment("String list moved into a custom list category.")
 			.translation(MOD_ID + ".configuration.client.aliases")
