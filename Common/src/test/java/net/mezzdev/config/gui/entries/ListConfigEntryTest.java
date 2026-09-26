@@ -6,9 +6,11 @@ import net.mezzdev.config.api.value.serializer.ConfigListOrdering;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.IConfigListValueEditorOptions;
 import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
+import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.input.InputType;
 import net.mezzdev.config.gui.input.UserInput;
+import net.mezzdev.config.gui.popup.ConfigPopupSelector;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.Nullable;
@@ -16,6 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.util.AbstractList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -90,6 +93,84 @@ class ListConfigEntryTest {
 	}
 
 	@Test
+	@SuppressWarnings("DataFlowIssue")
+	void finiteListsAddOnlyTheChosenOptionAndOfferRemovedOptionsAgain() throws Exception {
+		for (ConfigListOrdering ordering : ConfigListOrdering.values()) {
+			TestListSerializer serializer = new TestListSerializer(true, List.of("first", "second", "third"), ordering);
+			List<ConfigPopupSelector> popups = new ArrayList<>();
+			ListConfigEntry<String> entry = new ListConfigEntry<>(
+				new TestConfigValue(serializer), serializer, popups::add, () -> {}, null
+			);
+			entry.area = new ImmutableRect2i(0, 0, 400, 300);
+			setField(entry, "addValueRowArea", new ImmutableRect2i(5, 70, 390, 24));
+
+			UserInput simulate = UserInput.fromVanilla(15.0, 75.0, InputConstants.MOUSE_BUTTON_LEFT, InputType.SIMULATE).orElseThrow();
+			assertTrue(entry.createInputHandler().handleUserInput(null, simulate).isPresent());
+			assertTrue(popups.isEmpty());
+			assertTrue(entry.createInputHandler().handleUserInput(null, mouseInput(15, 75)).isPresent());
+			assertEquals(List.of("first"), entry.getValue());
+			assertFalse(entry.hasPendingChange());
+			assertFalse(entry.isCapturingTextInput());
+			popups.getLast().onClosed();
+			assertEquals(List.of("first"), entry.getValue(), "Dismissing the chooser must not add a value");
+
+			entry.createInputHandler().handleUserInput(null, mouseInput(15, 75));
+			ConfigPopupSelector popup = popups.getLast();
+			setField(popup, "area", new ImmutableRect2i(10, 100, 200, 100));
+			assertTrue(popup.onMouseClicked(mouseInput(15, 123)));
+			assertEquals(List.of("first", "third"), entry.getValue(), "Choose the second available option, skipping the existing value");
+			assertTrue(popup.closesAfterClick());
+			popup.onClosed();
+
+			entry.createInputHandler().handleUserInput(null, mouseInput(15, 75));
+			popup = popups.getLast();
+			setField(popup, "area", new ImmutableRect2i(10, 100, 200, 100));
+			assertFalse(popup.onMouseClicked(mouseInput(15, 123)), "The previously added option must be absent");
+			assertTrue(popup.onMouseClicked(mouseInput(15, 103)));
+			assertEquals(List.of("first", "third", "second"), entry.getValue());
+			assertFalse(entry.createInputHandler().handleUserInput(null, mouseInput(15, 75)).isPresent(), "No Add control remains when all options are selected");
+
+			List<?> rows = (List<?>) getField(entry, "valueRows");
+			setField(rows.get(1), "deleteArea", new ImmutableRect2i(375, 45, 20, 20));
+			assertTrue(entry.createInputHandler().handleUserInput(null, mouseInput(380, 50)).isPresent());
+			assertEquals(List.of("first", "second"), entry.getValue());
+			assertTrue(entry.createInputHandler().handleUserInput(null, mouseInput(15, 75)).isPresent());
+			popup = popups.getLast();
+			setField(popup, "area", new ImmutableRect2i(10, 100, 200, 100));
+			assertTrue(popup.onMouseClicked(mouseInput(15, 103)));
+			assertEquals(List.of("first", "second", "third"), entry.getValue());
+		}
+	}
+
+	@Test
+	@SuppressWarnings("DataFlowIssue")
+	void emptyFiniteListsOfferAChooserAndUnusedOptionsDoNotIncreaseTheirHeight() throws Exception {
+		List<ConfigPopupSelector> popups = new ArrayList<>();
+		TestListSerializer serializer = new TestListSerializer(true, List.of("first", "second"), ConfigListOrdering.ORDERED);
+		ListConfigEntry<String> entry = new ListConfigEntry<>(
+			new TestConfigValue(serializer, List.of()), serializer, popups::add, () -> {}, null
+		);
+		entry.area = new ImmutableRect2i(0, 0, 400, 300);
+		setField(entry, "addValueRowArea", new ImmutableRect2i(5, 40, 390, 24));
+		assertTrue(entry.createInputHandler().handleUserInput(null, mouseInput(15, 45)).isPresent());
+		assertEquals(List.of(), entry.getValue());
+		ConfigPopupSelector popup = popups.getLast();
+		setField(popup, "area", new ImmutableRect2i(10, 100, 200, 100));
+		assertTrue(popup.onMouseClicked(mouseInput(15, 103)));
+		assertEquals(List.of("first"), entry.getValue());
+
+		ListConfigEntry<String> largeEntry = createEntry(true, IntStream.range(0, 2000).mapToObj(index -> "value" + index).toList());
+		var contentHeight = ListConfigEntry.class.getDeclaredMethod("getValueGroupContentHeight");
+		contentHeight.setAccessible(true);
+		assertEquals(contentHeight.invoke(entry), contentHeight.invoke(largeEntry), "Unused choices must not create rows in the list editor");
+
+		ListConfigEntry<String> noOptions = createEntry(true, List.of());
+		noOptions.area = entry.area;
+		setField(noOptions, "addValueRowArea", new ImmutableRect2i(5, 40, 390, 24));
+		assertFalse(noOptions.createInputHandler().handleUserInput(null, mouseInput(15, 45)).isPresent());
+	}
+
+	@Test
 	void showsTypedInputWhenElementSerializerIsOpenEndedAndRemovingValuesIsAllowed() {
 		ListConfigEntry<String> entry = createEntry(
 			true,
@@ -97,6 +178,24 @@ class ListConfigEntryTest {
 		);
 
 		assertTrue(getAllowsTypedInput(entry));
+	}
+
+	@Test
+	@SuppressWarnings("DataFlowIssue")
+	void addTooltipShowsTheConfigConstraintsBeforeAndDuringTextInput() throws Exception {
+		TestListSerializer serializer = new TestListSerializer(true, null, ConfigListOrdering.ORDERED);
+		TestConfigValue configValue = new TestConfigValue(serializer, List.of());
+		configValue.description = Component.translatableWithFallback("test.list.constraints", "Integers from 0 to 16 (inclusive).");
+		ListConfigEntry<String> entry = new ListConfigEntry<>(configValue, serializer, selector -> {}, () -> {}, null);
+		entry.area = new ImmutableRect2i(0, 0, 400, 300);
+		setField(entry, "addValueRowArea", new ImmutableRect2i(5, 40, 390, 24));
+		setField(entry, "addValueButtonArea", new ImmutableRect2i(375, 42, 20, 20));
+
+		var tooltip = entry.getTooltipInfo(380, 50);
+		assertEquals(List.of("Integers from 0 to 16 (inclusive)."), tooltip.lines().stream().map(Component::getString).toList());
+		assertTrue(entry.createInputHandler().handleUserInput(null, mouseInput(380, 50)).isPresent());
+		assertTrue(entry.charTyped('5', 0));
+		assertEquals(tooltip, entry.getTooltipInfo(15, 50), "The input field must keep the exact constraints visible while typing");
 	}
 
 	@Test
@@ -309,9 +408,10 @@ class ListConfigEntryTest {
 		return UserInput.fromVanilla(mouseX, mouseY, InputConstants.MOUSE_BUTTON_LEFT, InputType.EXECUTE).orElseThrow();
 	}
 
-	private static final class TestConfigValue implements IConfigScreenValue<List<String>> {
+	private static final class TestConfigValue implements IConfigScreenValue<List<String>>, IConfigLocalizedValue {
 		private final TestListSerializer serializer;
 		private final List<String> values;
+		private Component description = Component.empty();
 
 		private TestConfigValue(TestListSerializer serializer) {
 			this(serializer, List.of("first"));
@@ -330,6 +430,16 @@ class ListConfigEntryTest {
 		@Override
 		public String getLocalizationKey() {
 			return "test.list";
+		}
+
+		@Override
+		public Component getLocalizedName() {
+			return Component.literal(getName());
+		}
+
+		@Override
+		public Component getLocalizedDescription() {
+			return description;
 		}
 
 		@Override
