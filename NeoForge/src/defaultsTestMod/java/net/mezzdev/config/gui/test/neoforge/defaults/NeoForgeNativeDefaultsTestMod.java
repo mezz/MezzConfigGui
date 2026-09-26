@@ -42,7 +42,7 @@ public final class NeoForgeNativeDefaultsTestMod {
 		MAX_VISIBLE_ROWS = clientBuilder.comment("Bounded integer adapted from a native NeoForge config.")
 			.translation(MOD_ID + ".configuration.general.maxVisibleRows")
 			.defineInRange("maxVisibleRows", 9, 1, 18);
-		FAVORITE_NUMBERS = clientBuilder.comment("Integer list adapted from a native NeoForge config.")
+		FAVORITE_NUMBERS = clientBuilder.comment("Integer list adapted from a native NeoForge config. Values must be between 0 and 16 (inclusive).")
 			.translation(MOD_ID + ".configuration.general.favoriteNumbers")
 			.defineList("favoriteNumbers", List.of(1, 2, 3), () -> 0, value -> value instanceof Integer integer && integer >= 0 && integer <= 16);
 		MODE = clientBuilder.comment("Enum adapted from a native NeoForge config.")
@@ -50,7 +50,7 @@ public final class NeoForgeNativeDefaultsTestMod {
 			.defineEnum("mode", TestMode.BALANCED);
 		FAVORITE_MODES = clientBuilder.comment("Enum list adapted from a native NeoForge config.")
 			.translation(MOD_ID + ".configuration.general.favoriteModes")
-			.defineList("favoriteModes", List.of(TestMode.BALANCED, TestMode.FAST), () -> TestMode.BALANCED,
+			.defineListAllowEmpty("favoriteModes", List.of(TestMode.BALANCED, TestMode.FAST), () -> TestMode.BALANCED,
 				value -> value instanceof TestMode || value instanceof String name && Arrays.stream(TestMode.values()).anyMatch(mode -> mode.name().equals(name)));
 		SCREEN_LABEL = clientBuilder.comment("String adapted from a native NeoForge config.")
 			.translation(MOD_ID + ".configuration.general.screenLabel")

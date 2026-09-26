@@ -56,4 +56,27 @@ public final class NeoForgeNativeDefaultsTestGameTests {
 		}
 		helper.succeed();
 	}
+
+	@GameTest
+	@EmptyTemplate
+	@TestHolder
+	public static void emptyFavoriteModesSurviveSavingAndReloading(GameTestHelper helper) {
+		assertEmptyFavoriteModes(helper, NeoForgeNativeDefaultsTestMod.CLIENT_SPEC, List.of("general", "favoriteModes"));
+		assertEmptyFavoriteModes(helper, NeoForgeNativeCustomTestMod.CLIENT_SPEC, List.of("client", "favoriteModes"));
+		helper.succeed();
+	}
+
+	private static void assertEmptyFavoriteModes(GameTestHelper helper, ModConfigSpec spec, List<String> path) {
+		ModConfigSpec.ListValueSpec valueSpec = spec.getSpec().get(path);
+		helper.assertTrue(valueSpec.getSizeRange().test(0), Component.literal("Favorite Modes must allow removing the last entry."));
+		var config = TomlFormat.newConfig();
+		spec.correct(config);
+		config.set(path, List.of());
+		for (int reload = 0; reload < 2; reload++) {
+			config = new TomlParser().parse(new TomlWriter().writeToString(config));
+			helper.assertTrue(spec.isCorrect(config), Component.literal("An empty Favorite Modes list must remain valid after reloading."));
+			spec.correct(config);
+			helper.assertValueEqual(List.of(), config.get(path), Component.literal("Reloading must not restore the default modes over an empty selection."));
+		}
+	}
 }

@@ -11,7 +11,7 @@
   "mezz_config_gui_test_neoforge_defaults.configuration.general.maxVisibleRows": "Max Visible Rows",
   "mezz_config_gui_test_neoforge_defaults.configuration.general.maxVisibleRows.tooltip": "Bounded integer native config value.",
   "mezz_config_gui_test_neoforge_defaults.configuration.general.favoriteNumbers": "Favorite Numbers",
-  "mezz_config_gui_test_neoforge_defaults.configuration.general.favoriteNumbers.tooltip": "Integer list native config value.",
+  "mezz_config_gui_test_neoforge_defaults.configuration.general.favoriteNumbers.tooltip": "Integers from 0 to 16 (inclusive).",
   "mezz_config_gui_test_neoforge_defaults.configuration.general.mode": "Mode",
   "mezz_config_gui_test_neoforge_defaults.configuration.general.mode.tooltip": "Enum native config value.",
   "mezz_config_gui_test_neoforge_defaults.configuration.general.favoriteModes": "Favorite Modes",
