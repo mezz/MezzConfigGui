@@ -25,6 +25,8 @@ public final class NeoForgeNativeDefaultsTestGameTests {
 		helper.assertTrue(ModList.get().isLoaded(CONFIG_GUI_MOD_ID), "MezzConfig GUI must be loaded for the integrated GameTest run.");
 		helper.assertTrue(ModList.get().isLoaded(NeoForgeNativeDefaultsTestMod.MOD_ID), "NeoForge native defaults test mod must be loaded.");
 		helper.assertTrue(NeoForgeNativeDefaultsTestMod.COMMON_SPEC.isLoaded(), "Common native config spec must be loaded.");
+		helper.assertTrue(NeoForgeNativeDefaultsTestMod.SERVER_SPEC.isLoaded(), "Server native config spec must be loaded.");
+		helper.assertValueEqual(true, NeoForgeNativeDefaultsTestMod.SERVER_ENABLED.get(), "Native server default must load.");
 		helper.assertValueEqual(4096L, NeoForgeNativeDefaultsTestMod.CACHE_BUDGET.get(), "Native common long default must load.");
 		helper.assertValueEqual(List.of(128L, 256L, 512L), NeoForgeNativeDefaultsTestMod.LONG_BREAKPOINTS.get().stream().map(Number::longValue).toList(), "Native common long list default must load.");
 		helper.assertValueEqual(1.0D, NeoForgeNativeDefaultsTestMod.SCALE.get(), "Native common double default must load.");
