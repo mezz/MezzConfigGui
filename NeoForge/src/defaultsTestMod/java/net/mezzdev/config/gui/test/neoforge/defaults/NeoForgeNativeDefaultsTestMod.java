@@ -17,6 +17,8 @@ public final class NeoForgeNativeDefaultsTestMod {
 	public static final String MOD_ID = "mezz_config_gui_test_neoforge_defaults";
 	static final ModConfigSpec CLIENT_SPEC;
 	static final ModConfigSpec COMMON_SPEC;
+	static final ModConfigSpec SERVER_SPEC;
+	static final ModConfigSpec.BooleanValue SERVER_ENABLED;
 	static final ModConfigSpec.BooleanValue ENABLED;
 	static final ModConfigSpec.ConfigValue<List<? extends Boolean>> ENABLED_HISTORY;
 	static final ModConfigSpec.IntValue MAX_VISIBLE_ROWS;
@@ -78,6 +80,10 @@ public final class NeoForgeNativeDefaultsTestMod {
 			.defineList("thresholds", List.of(0.25D, 0.5D, 0.75D), () -> 0.0D, value -> value instanceof Double doubleValue && doubleValue >= 0.0D && doubleValue <= 1.0D);
 		commonBuilder.pop();
 		COMMON_SPEC = commonBuilder.build();
+
+		ModConfigSpec.Builder serverBuilder = new ModConfigSpec.Builder();
+		SERVER_ENABLED = serverBuilder.define("enabled", true);
+		SERVER_SPEC = serverBuilder.build();
 	}
 
 	public NeoForgeNativeDefaultsTestMod(IEventBus modEventBus, ModContainer modContainer, Dist dist) {
@@ -90,6 +96,7 @@ public final class NeoForgeNativeDefaultsTestMod {
 			.build().create().init(modEventBus, modContainer);
 		modContainer.registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC, "%s-client.toml".formatted(MOD_ID));
 		modContainer.registerConfig(ModConfig.Type.COMMON, COMMON_SPEC, "%s-common.toml".formatted(MOD_ID));
+		modContainer.registerConfig(ModConfig.Type.SERVER, SERVER_SPEC);
 	}
 
 	enum TestMode {
