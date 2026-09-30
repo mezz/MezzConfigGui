@@ -42,7 +42,7 @@ final class NeoForgeConfigLocalization {
 	public static Component getCategoryName(String localizationKey, ModConfig.Type type) {
 		String fallback = getDisplayNameFallback(type.extension());
 		Component title = Component.translatableWithFallback(localizationKey + ".title", fallback);
-		if (type == ModConfig.Type.COMMON) {
+		if (type == ModConfig.Type.LOCAL && Language.getInstance().has(localizationKey + ".title")) {
 			title = Component.translatableWithFallback("mezz_config.config.native.local.title", "%s (local)", title);
 		}
 		return title;
@@ -50,11 +50,11 @@ final class NeoForgeConfigLocalization {
 
 	@Nullable
 	static ConfigScreenCategoryNavigationGroup getNavigationGroup(String modId, ModConfig.Type type, String localizationKey) {
-		if (type != ModConfig.Type.COMMON || Language.getInstance().has(localizationKey + ".title")) {
+		if (type != ModConfig.Type.LOCAL || Language.getInstance().has(localizationKey + ".title")) {
 			return null;
 		}
 		return new ConfigScreenCategoryNavigationGroup(
-			"@neoforge:" + modId + ":common",
+			"@neoforge:" + modId + ":local",
 			getCategoryName(localizationKey, type),
 			Component.translatableWithFallback("mezz_config.config.native.description.common.group",
 				"These local configs may affect client or server behavior, depending on the mod. Changes here do not change a multiplayer server's config.")
@@ -129,9 +129,9 @@ final class NeoForgeConfigLocalization {
 	public static Component getCategoryDescription(String localizationKey, ModConfig modConfig) {
 		String tooltipKey = localizationKey + ".tooltip";
 		String fallbackKey = switch (modConfig.getType()) {
-			case COMMON -> "mezz_config.config.native.description.common";
+			case LOCAL -> "mezz_config.config.native.description.common";
 			case CLIENT -> "mezz_config.config.native.description.client";
-			case SERVER -> "mezz_config.config.native.description.server";
+			case SYNCED -> "mezz_config.config.native.description.server";
 			case STARTUP -> "mezz_config.config.native.description.startup";
 		};
 		Component scope = Component.translatable(fallbackKey, modConfig.getFileName());

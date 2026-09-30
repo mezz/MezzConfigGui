@@ -28,9 +28,9 @@ public final class NeoForgeConfigScreenConfigs {
 	private static final Logger LOGGER = LogManager.getLogger();
 	private static final List<ModConfig.Type> CONFIG_TYPE_ORDER = List.of(
 		ModConfig.Type.CLIENT,
-		ModConfig.Type.COMMON,
+		ModConfig.Type.LOCAL,
 		ModConfig.Type.STARTUP,
-		ModConfig.Type.SERVER
+		ModConfig.Type.SYNCED
 	);
 
 	private NeoForgeConfigScreenConfigs() {
@@ -72,8 +72,8 @@ public final class NeoForgeConfigScreenConfigs {
 				.map(config -> createCategory(modId, config))
 				.flatMap(Optional::stream)
 				.toList();
-			if (configType == ModConfig.Type.COMMON) {
-				// Common files are grouped after plugin customization, keeping filenames as API identities.
+			if (configType == ModConfig.Type.LOCAL) {
+				// Local files are grouped after plugin customization, keeping filenames as API identities.
 				categories.addAll(typeCategories);
 				continue;
 			}
@@ -128,7 +128,7 @@ public final class NeoForgeConfigScreenConfigs {
 	}
 
 	private static ConfigScreenCategoryGroup getScreenCategoryGroup(ModConfig.Type type) {
-		if (type == ModConfig.Type.SERVER) {
+		if (type == ModConfig.Type.SYNCED) {
 			return ConfigScreenCategoryGroup.LOADER_NATIVE_SERVER;
 		}
 		return ConfigScreenCategoryGroup.LOADER_NATIVE;

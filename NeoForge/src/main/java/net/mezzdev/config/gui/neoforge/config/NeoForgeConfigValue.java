@@ -107,7 +107,7 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 
 	@Override
 	public Optional<Supplier<ServerConfigAccess>> getServerAccess() {
-		if (modConfig.getType() == ModConfig.Type.SERVER) {
+		if (modConfig.getType() == ModConfig.Type.SYNCED) {
 			return Optional.of(SERVER_ACCESS);
 		}
 		return Optional.empty();
@@ -115,7 +115,7 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 
 	@Override
 	public boolean isEditable() {
-		if (modConfig.getType() != ModConfig.Type.SERVER) {
+		if (modConfig.getType() != ModConfig.Type.SYNCED) {
 			return true;
 		}
 		return SERVER_ACCESS.get() == ServerConfigAccess.LOCAL;

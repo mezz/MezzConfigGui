@@ -97,7 +97,7 @@
   "mezz_config.config.server.access.opRequired": "This server lets operators change these settings from the client. You do not have permission to edit them.",
   "mezz_config.config.server.access.editable": "You can edit these server settings. Apply sends your changes to the server for all players.",
   "mezz_config.config.server.access.unavailable": "These server settings are not currently available for editing.",
-  "mezz_config.config.native.description.server": "Settings controlled by the world or server. File: %s",
+  "mezz_config.config.native.description.server": "Settings controlled by the world or server and synchronized to connected clients. File: %s",
   "mezz_config.config.native.description.startup": "Settings loaded while the game starts. Changes require a game restart. File: %s",
   "mezz_config_gui.config.screen.title": "MezzConfig GUI Options",
   "mezz_config_gui.config.appearance": "Screen Layout",

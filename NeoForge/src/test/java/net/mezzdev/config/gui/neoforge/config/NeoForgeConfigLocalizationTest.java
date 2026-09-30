@@ -17,14 +17,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NeoForgeConfigLocalizationTest {
 	@Test
-	void onlyCommonFilesOptIntoSharedNavigationWithoutChangingTheirValueCategories() {
-		ConfigScreenCategoryNavigationGroup first = NeoForgeConfigLocalization.getNavigationGroup("test", ModConfig.Type.COMMON, "test.first");
-		ConfigScreenCategoryNavigationGroup second = NeoForgeConfigLocalization.getNavigationGroup("test", ModConfig.Type.COMMON, "test.second");
+	void onlyLocalFilesOptIntoSharedNavigationWithoutChangingTheirValueCategories() {
+		ConfigScreenCategoryNavigationGroup first = NeoForgeConfigLocalization.getNavigationGroup("test", ModConfig.Type.LOCAL, "test.first");
+		ConfigScreenCategoryNavigationGroup second = NeoForgeConfigLocalization.getNavigationGroup("test", ModConfig.Type.LOCAL, "test.second");
 		assertNotNull(first);
 		assertNotNull(second);
 		assertEquals(first.name(), second.name());
-		assertEquals("Common (local)", first.title().getString());
-		for (ModConfig.Type type : List.of(ModConfig.Type.CLIENT, ModConfig.Type.SERVER, ModConfig.Type.STARTUP)) {
+		assertEquals("Local", first.title().getString());
+		for (ModConfig.Type type : List.of(ModConfig.Type.CLIENT, ModConfig.Type.SYNCED, ModConfig.Type.STARTUP)) {
 			assertNull(NeoForgeConfigLocalization.getNavigationGroup("test", type, "test.first"));
 		}
 	}
@@ -135,11 +135,11 @@ class NeoForgeConfigLocalizationTest {
 		ModConfigSpec.BooleanValue world = builder.worldRestart().define("world", false);
 		ModConfigSpec.BooleanValue game = builder.gameRestart().define("game", false);
 		builder.build();
-		for (ModConfig.Type type : List.of(ModConfig.Type.CLIENT, ModConfig.Type.COMMON, ModConfig.Type.SERVER)) {
+		for (ModConfig.Type type : List.of(ModConfig.Type.CLIENT, ModConfig.Type.LOCAL, ModConfig.Type.SYNCED)) {
 			assertEquals(ConfigValueRestartRequirement.NONE, NeoForgeConfigValue.getRestartRequirement(type, live.getSpec()));
 			assertEquals(ConfigValueRestartRequirement.WORLD_RESTART, NeoForgeConfigValue.getRestartRequirement(type, world.getSpec()));
 		}
-		for (ModConfig.Type type : List.of(ModConfig.Type.CLIENT, ModConfig.Type.COMMON)) {
+		for (ModConfig.Type type : List.of(ModConfig.Type.CLIENT, ModConfig.Type.LOCAL)) {
 			assertEquals(ConfigValueRestartRequirement.GAME_RESTART, NeoForgeConfigValue.getRestartRequirement(type, game.getSpec()));
 		}
 		assertEquals(ConfigValueRestartRequirement.GAME_RESTART, NeoForgeConfigValue.getRestartRequirement(ModConfig.Type.STARTUP, live.getSpec()));
@@ -160,12 +160,13 @@ class NeoForgeConfigLocalizationTest {
 	}
 
 	@Test
-	void singleCommonFileStillMakesItsLocalScopeVisible() {
-		Component common = NeoForgeConfigLocalization.getCategoryName("test.common", ModConfig.Type.COMMON);
-		assertEquals("Common (local)", common.getString());
+	void nativeTypeNamesMakeTheirScopeVisible() {
+		Component local = NeoForgeConfigLocalization.getCategoryName("test.local", ModConfig.Type.LOCAL);
+		assertEquals("Local", local.getString());
 		assertEquals("Client", NeoForgeConfigLocalization.getCategoryName("test.client", ModConfig.Type.CLIENT).getString());
-		assertEquals(List.of(common), NeoForgeConfigLocalization.getDistinctCategoryNames(List.of(
-			new NeoForgeConfigLocalization.CategoryName(common, List.of(Component.literal("Animals")))
+		assertEquals("Synced", NeoForgeConfigLocalization.getCategoryName("test.synced", ModConfig.Type.SYNCED).getString());
+		assertEquals(List.of(local), NeoForgeConfigLocalization.getDistinctCategoryNames(List.of(
+			new NeoForgeConfigLocalization.CategoryName(local, List.of(Component.literal("Animals")))
 		)));
 	}
 

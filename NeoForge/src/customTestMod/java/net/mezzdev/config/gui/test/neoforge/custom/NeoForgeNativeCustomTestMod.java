@@ -104,7 +104,7 @@ public final class NeoForgeNativeCustomTestMod {
 		NeoForgeNativeCustomTestMezzConfig.register();
 
 		modContainer.registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC, CLIENT_FILE_NAME);
-		modContainer.registerConfig(ModConfig.Type.COMMON, COMMON_SPEC, COMMON_FILE_NAME);
+		modContainer.registerConfig(ModConfig.Type.LOCAL, COMMON_SPEC, COMMON_FILE_NAME);
 	}
 
 	public enum TestMode {
