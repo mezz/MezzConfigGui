@@ -126,6 +126,7 @@ public final class ForgeNativeConfigTestMod {
 		server.acceptSyncedConfig("enabled = true".getBytes(StandardCharsets.UTF_8));
 		check(nativeScreen.getSchema().getCategories().size() == 4, "Opening a screen must pick up newly loaded Server configs.");
 		var serverValue = (IConfigScreenValue<Boolean>) nativeScreen.getSchema().getCategories().get(3).getConfigValues().iterator().next();
+		check(serverValue.getValue(), "The server default must be synchronized to the client.");
 		check(!ConfigValueAccess.isEditable(serverValue), "A native Server config must be read-only without a singleplayer server.");
 		try {
 			serverValue.set(false);
