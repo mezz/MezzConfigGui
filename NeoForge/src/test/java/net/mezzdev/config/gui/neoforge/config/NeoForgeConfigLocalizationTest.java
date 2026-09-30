@@ -161,10 +161,11 @@ class NeoForgeConfigLocalizationTest {
 	}
 
 	@Test
-	void singleCommonFileStillMakesItsLocalScopeVisible() {
+	void nativeTypeNamesMakeTheirScopeVisible() {
 		Component common = NeoForgeConfigLocalization.getCategoryName("test.common", ModConfig.Type.COMMON);
 		assertEquals("Common (local)", common.getString());
 		assertEquals("Client", NeoForgeConfigLocalization.getCategoryName("test.client", ModConfig.Type.CLIENT).getString());
+		assertEquals("Server", NeoForgeConfigLocalization.getCategoryName("test.server", ModConfig.Type.SERVER).getString());
 		assertEquals(List.of(common), NeoForgeConfigLocalization.getDistinctCategoryNames(List.of(
 			new NeoForgeConfigLocalization.CategoryName(common, List.of(Component.literal("Animals")))
 		)));
