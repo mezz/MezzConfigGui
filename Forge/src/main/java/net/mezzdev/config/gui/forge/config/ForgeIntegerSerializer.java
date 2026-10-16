@@ -1,0 +1,110 @@
+package net.mezzdev.config.gui.forge.config;
+
+import net.mezzdev.config.api.value.serializer.ConfigValueRange;
+import net.mezzdev.config.api.value.serializer.IDeserializeResult;
+import net.mezzdev.config.gui.api.ConfigValueEditorType;
+import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
+import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
+import net.minecraft.network.chat.Component;
+import net.minecraftforge.common.ForgeConfigSpec.ValueSpec;
+import org.jspecify.annotations.Nullable;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.IntStream;
+
+final class ForgeIntegerSerializer implements IConfigValueEditorSerializer<Integer> {
+	private final ConfigValueRange<Integer> range;
+	@Nullable
+	private final ValueSpec valueSpec;
+
+	public ForgeIntegerSerializer(int min, int max) {
+		this(null, min, max);
+	}
+
+	public ForgeIntegerSerializer(@Nullable ValueSpec valueSpec, int min, int max) {
+		this.range = new ConfigValueRange<>(min, max);
+		this.valueSpec = valueSpec;
+	}
+
+	@Override
+	public Optional<ConfigValueRange<Integer>> getRange() {
+		if (valueSpec != null && valueSpec.getRange() == null) {
+			return Optional.empty();
+		}
+		return Optional.of(range);
+	}
+
+	@Override
+	public String serialize(Integer value) {
+		return value.toString();
+	}
+
+	@Override
+	public IDeserializeResult<Integer> deserialize(String string) {
+		string = string.trim();
+		try {
+			int value = Integer.parseInt(string);
+			if (!isValid(value)) {
+				return IDeserializeResult.failure("Invalid integer. Must be: " + getValidValuesDescription());
+			}
+			return IDeserializeResult.success(value);
+		} catch (NumberFormatException e) {
+			return IDeserializeResult.failure("Unable to parse int: '%s' with error:\n%s".formatted(string, e.getMessage()));
+		}
+	}
+
+	@Override
+	public boolean isValid(@Nullable Integer value) {
+		if (value == null || value < range.min() || value > range.max()) {
+			return false;
+		}
+		try {
+			return valueSpec == null || valueSpec.test(value);
+		} catch (RuntimeException ignored) {
+			return false;
+		}
+	}
+
+	@Override
+	public Optional<List<Integer>> getAllValidValues() {
+		int min = range.min();
+		int max = range.max();
+		int count = max - min + 1;
+		if (count > 0 && count < 20) {
+			List<Integer> values = IntStream.rangeClosed(min, max)
+				.boxed()
+				.filter(this::isValid)
+				.toList();
+			return Optional.of(values);
+		}
+		return Optional.empty();
+	}
+
+	@Override
+	public Component getLocalizedValueName(String configValueLocalizationKey, Integer value) {
+		return Component.literal(value.toString());
+	}
+
+	@Override
+	public String getValidValuesDescription() {
+		if (valueSpec != null && valueSpec.getRange() == null) {
+			return "An integer accepted by this config";
+		}
+		int min = range.min();
+		int max = range.max();
+		if (min == Integer.MIN_VALUE && max == Integer.MAX_VALUE) {
+			return "Any integer";
+		}
+		if (max == Integer.MAX_VALUE) {
+			return "Any integer greater than or equal to %s".formatted(min);
+		}
+		return "An integer in the range [%s, %s] (inclusive)".formatted(min, max);
+	}
+
+	@Override
+	public ConfigValueEditorType<Integer> getEditorType() {
+		return ConfigValueEditorTypes.INTEGER;
+	}
+
+}

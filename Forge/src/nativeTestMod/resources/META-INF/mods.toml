@@ -1,0 +1,16 @@
+modLoader="javafml"
+loaderVersion="${forgeLoaderVersionRange}"
+license="The MIT License (MIT)"
+
+[[mods]]
+modId="mezz_config_gui_test_forge_native"
+version="${version}"
+displayName="Forge Native Config Test"
+description='''Client integration test for native Forge config discovery and editing.'''
+
+[[dependencies.mezz_config_gui_test_forge_native]]
+    modId="${configGuiModId}"
+    mandatory=true
+    versionRange="[${specificationVersion},)"
+    ordering="AFTER"
+    side="CLIENT"
