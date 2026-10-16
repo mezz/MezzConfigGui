@@ -7,13 +7,13 @@
 # MezzConfig GUI
 
 MezzConfig GUI is a client-side config screen for Minecraft mods.
-It can discover config schemas registered with [MezzConfig](https://github.com/mezz/MezzConfig), supplies editors for common value types, and supports additional screen customization through its API.
+It can discover config schemas registered with [MezzConfig](https://github.com/mezz/MezzConfig) and native Forge configs, supplies editors for common value types, and supports additional screen customization through its API.
 
 ## Developing with MezzConfig GUI
 
 Pack authors can [customize mod order and visibility](docs/PACK_CONFIGURATION.md).
 See [server configuration support](docs/SERVER_CONFIGS.md) for the difference
-between MezzConfig remote editing and native NeoForge configs.
+between MezzConfig remote editing and native Forge configs.
 
 See [Dependency Setup](docs/DEPENDENCY_SETUP.md) for loader-specific Gradle examples.
 This branch builds Minecraft 1.19.2 for Fabric and Forge.
@@ -33,6 +33,21 @@ directly with:
 ```console
 ./gradlew check
 ```
+
+The Forge client integration test discovers native configs, checks editing and
+reload notifications, and renders the generated screen before exiting:
+
+```console
+./gradlew :Forge:runNativeConfigTest
+```
+
+This test requires a display; Linux CI runs it with `xvfb-run -a`.
+
+Native Forge discovery supports booleans, integers, longs, doubles, strings,
+enums, and lists with supported, consistently typed defaults. Empty list
+defaults do not expose an element type in Forge 1.19.2 and are skipped.
+The Enable Native Config Discovery option disables automatic registration
+after restarting the game. Existing mod-provided config screens are preserved.
 
 CI also checks platform release metadata separately with
 `./gradlew publishMods -PpublishDryRun=true`.

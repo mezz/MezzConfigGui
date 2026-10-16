@@ -1,4 +1,5 @@
 import org.slf4j.event.Level
+import java.time.Duration
 
 plugins {
     java
@@ -34,6 +35,12 @@ val smokeMod = sourceSets.create("serverSmokeTestMod") {
     compileClasspath += sourceSets.main.get().output
     runtimeClasspath += sourceSets.main.get().output
 }
+val nativeTestMod = sourceSets.create("nativeTestMod") {
+    compileClasspath += sourceSets.main.get().output
+    runtimeClasspath += sourceSets.main.get().output
+}
+configurations.named(nativeTestMod.implementationConfigurationName) { extendsFrom(configurations.implementation.get()) }
+configurations.named(nativeTestMod.compileOnlyConfigurationName) { extendsFrom(configurations.compileOnly.get()) }
 configurations.named(smokeMod.implementationConfigurationName) { extendsFrom(configurations.implementation.get()) }
 configurations.named(smokeMod.compileOnlyConfigurationName) { extendsFrom(configurations.compileOnly.get()) }
 val mezzConfigRun = configurations.create("mezzConfigRun") {
@@ -73,15 +80,26 @@ dependencies {
     compileOnly(mezzConfigApiDependency)
     compileOnly("org.jetbrains:annotations:${project.extra["jetbrainsAnnotationsVersion"]}")
     compileOnly("com.google.code.findbugs:jsr305:${project.extra["jsr305Version"]}")
+    testImplementation(commonSources["main"].output)
+    testImplementation(commonSources["api"].output)
+    testImplementation(mezzConfigApiDependency)
+    testImplementation("org.junit.jupiter:junit-jupiter:${project.extra["jUnitVersion"]}")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 val smokeDirectory = layout.buildDirectory.dir("run/server-smoke")
 val smokeResult = smokeDirectory.map { it.file("smoke-test-passed") }
+val nativeTestDirectory = layout.buildDirectory.dir("run/native-config-test")
+val nativeTestResult = nativeTestDirectory.map { it.file("native-config-test-passed") }
 val targetForgeArtifact = "$minecraftVersion-$forgeVersion"
 legacyForge {
     enable {
         setForgeVersion(targetForgeArtifact)
-        setEnabledSourceSets(setOf(sourceSets.main.get(), smokeMod))
+        setEnabledSourceSets(setOf(sourceSets.main.get(), sourceSets.test.get(), smokeMod, nativeTestMod))
         // Forge 1.19.2's signed universal jar fails signature verification after the no-recompile CI transforms.
         setDisableRecompilation(false)
     }
@@ -92,6 +110,7 @@ legacyForge {
             commonOutputs.forEach { sourceSet(it) }
         }
         create("mezz_config_gui_test_forge_smoke") { sourceSet(smokeMod) }
+        create("mezz_config_gui_test_forge_native") { sourceSet(nativeTestMod) }
     }
     runs {
         create("client") {
@@ -122,6 +141,17 @@ legacyForge {
                 mods.getByName(configModId),
                 mods.getByName(configGuiModId),
                 mods.getByName("mezz_config_gui_test_forge_smoke")
+            ))
+        }
+        create("nativeConfigTest") {
+            client()
+            gameDirectory = nativeTestDirectory.get().asFile
+            systemProperty("mezzConfigGui.nativeTest.successFile", nativeTestResult.get().asFile.absolutePath)
+            logLevel = Level.INFO
+            loadedMods.set(setOf(
+                mods.getByName(configModId),
+                mods.getByName(configGuiModId),
+                mods.getByName("mezz_config_gui_test_forge_native")
             ))
         }
     }
@@ -183,6 +213,21 @@ tasks.named("runServerSmokeTest") {
     }
 }
 tasks.check { dependsOn(tasks.named(smokeMod.classesTaskName), tasks.named("runServerSmokeTest")) }
+
+tasks.named("runNativeConfigTest") {
+    timeout.set(Duration.ofMinutes(5))
+    dependsOn(prepareMezzConfigRun, tasks.named(nativeTestMod.classesTaskName))
+    outputs.file(nativeTestResult)
+    outputs.upToDateWhen { false }
+    doFirst {
+        nativeTestDirectory.get().asFile.resolve("config").deleteRecursively()
+        nativeTestDirectory.get().asFile.resolve("options.txt").writeText("onboardAccessibility:false\n")
+        outputs.files.singleFile.delete()
+    }
+    doLast {
+        check(outputs.files.singleFile.isFile) { "The Forge native config client test did not report success." }
+    }
+}
 
 idea.module {
     for (directory in listOf("build", "run", "out", "logs")) excludeDirs.add(file(directory))

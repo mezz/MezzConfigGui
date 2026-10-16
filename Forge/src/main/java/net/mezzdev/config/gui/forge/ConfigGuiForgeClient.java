@@ -3,8 +3,10 @@ package net.mezzdev.config.gui.forge;
 import net.mezzdev.config.gui.api.IConfigScreenFactory;
 import net.mezzdev.config.gui.ConfigGui;
 import net.mezzdev.config.gui.ConfigGuiColors;
+import net.mezzdev.config.gui.ConfigScreenConfig;
 import net.mezzdev.config.gui.MezzConfigScreen;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
+import net.mezzdev.config.gui.forge.config.ForgeConfigScreenConfigs;
 import net.mezzdev.config.gui.remote.RemoteConfigEditor;
 import net.mezzdev.config.gui.remote.RemoteConfigNetworking;
 import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryRegistry;
@@ -25,6 +27,9 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.network.simple.SimpleChannel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.Collection;
+import java.util.List;
 
 public final class ConfigGuiForgeClient {
 	private static final Logger LOGGER = LogManager.getLogger();
@@ -75,10 +80,15 @@ public final class ConfigGuiForgeClient {
 	}
 
 	private static void onClientSetup(FMLClientSetupEvent event) {
-		event.enqueueWork(() -> registerConfigScreens(ConfigGui.createScreenFactoryRegistry(ConfigGuiForgePluginFinder.getPlugins())));
+		event.enqueueWork(ConfigGuiForgeClient::registerConfigScreens);
 	}
 
-	private static void registerConfigScreens(ConfigScreenFactoryRegistry registry) {
+	private static void registerConfigScreens() {
+		Collection<? extends ConfigScreenConfig> configScreens = List.of();
+		if (ConfigGuiOptions.enableNativeConfigDiscovery()) {
+			configScreens = ForgeConfigScreenConfigs.getConfigScreens();
+		}
+		ConfigScreenFactoryRegistry registry = ConfigGui.createScreenFactoryRegistryFromInternalConfigs(configScreens, ConfigGuiForgePluginFinder.getPlugins());
 		ConfigGui.createScreenListFactory(registry, ForgeConfigScreenOwnerMetadata::get);
 		registry.getFactories().forEach(ConfigGuiForgeClient::registerConfigScreen);
 	}
@@ -87,10 +97,16 @@ public final class ConfigGuiForgeClient {
 		ModList.get()
 			.getModContainerById(modId)
 			.ifPresentOrElse(
-				modContainer -> modContainer.registerExtensionPoint(
-					ConfigScreenHandler.ConfigScreenFactory.class,
-					() -> new ConfigScreenHandler.ConfigScreenFactory(configScreenFactory::create)
-				),
+				modContainer -> {
+					if (modContainer.getCustomExtension(ConfigScreenHandler.ConfigScreenFactory.class).isPresent()) {
+						LOGGER.debug("Config screen already registered for mod id: {}", modId);
+						return;
+					}
+					modContainer.registerExtensionPoint(
+						ConfigScreenHandler.ConfigScreenFactory.class,
+						() -> new ConfigScreenHandler.ConfigScreenFactory((minecraft, parent) -> configScreenFactory.create(parent))
+					);
+				},
 				() -> LOGGER.error("No mod container found for config screen mod id: {}", modId)
 			);
 	}
