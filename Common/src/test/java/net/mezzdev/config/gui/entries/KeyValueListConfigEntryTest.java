@@ -1,17 +1,17 @@
 package net.mezzdev.config.gui.entries;
 
+import net.mezzdev.config.gui.ListValueEditorMetadata;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.api.value.serializer.ConfigValueRange;
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.api.value.serializer.IConfigKeyValueSerializer;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
-import net.mezzdev.config.gui.api.IConfigListValueEditorOptions;
-import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
+import net.mezzdev.config.api.value.serializer.IConfigListValueSerializer;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.input.InputType;
 import net.mezzdev.config.gui.input.UserInput;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
-import net.minecraft.network.chat.Component;
+import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
@@ -223,9 +223,14 @@ class KeyValueListConfigEntryTest {
 		public IConfigValueSerializer<List<NamedNumber>> getSerializer() {
 			return SERIALIZER;
 		}
+
+		@Override
+		public IConfigValueEditorMetadata<List<NamedNumber>> getEditorMetadata() {
+			return new ListValueEditorMetadata<>(SERIALIZER, false);
+		}
 	}
 
-	private static final class KeyValueListSerializer implements IConfigListValueEditorSerializer<NamedNumber>, IConfigListValueEditorOptions {
+	private static final class KeyValueListSerializer implements IConfigListValueSerializer<NamedNumber> {
 		private static final NamedNumberSerializer ELEMENT_SERIALIZER = new NamedNumberSerializer();
 
 		@Override
@@ -253,15 +258,6 @@ class KeyValueListConfigEntryTest {
 			return "name:number entries";
 		}
 
-		@Override
-		public Component getLocalizedValueName(String configValueLocalizationKey, List<NamedNumber> value) {
-			return Component.literal(value.toString());
-		}
-
-		@Override
-		public boolean allowsRemovingValues() {
-			return false;
-		}
 	}
 
 	private static final class NamedNumberSerializer implements IConfigKeyValueSerializer<NamedNumber, String, Integer> {

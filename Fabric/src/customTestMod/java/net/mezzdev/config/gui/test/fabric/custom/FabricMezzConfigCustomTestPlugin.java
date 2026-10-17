@@ -13,20 +13,21 @@ import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.api.ConfigValueEditorType;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.api.value.IConfigValue;
-import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
+
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.ConfigGuiPlugin;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigGuiRegistration;
-import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
+import net.mezzdev.config.api.value.serializer.IConfigListValueSerializer;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenCategoryBuilder;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueEditor;
 import net.mezzdev.config.gui.api.IConfigValuePopup;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;
+import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -46,6 +47,7 @@ import java.util.function.Consumer;
 @ConfigGuiPlugin
 public final class FabricMezzConfigCustomTestPlugin implements ClientModInitializer, IConfigGuiPlugin {
 	private static final String MOD_ID = "mezz_config_gui_test_fabric_custom";
+	private static final ConfigValueEditorType<TestColor> TEST_COLOR_EDITOR_TYPE = ConfigValueEditorType.create(MOD_ID, "test_color");
 	private static final String LOCALIZATION_PATH = "mezz_config_gui_test.fabric.custom";
 	private static final KeyMapping OPEN_SCREEN_KEY = new KeyMapping(
 		"key.%s.openScreen".formatted(MOD_ID),
@@ -100,7 +102,7 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 
 	@Override
 	public void register(IConfigGuiRegistration registration) {
-		registration.registerValueEditor(TestColorSerializer.EDITOR_TYPE, ignored -> new TestColorEditor());
+		registration.registerValueEditor(TEST_COLOR_EDITOR_TYPE, ignored -> new TestColorEditor());
 		registration.configureScreen(screenBuilder -> {
 			screenBuilder.setTitle(Component.translatable("%s.config.screen.custom.title".formatted(MOD_ID)));
 			screenBuilder.addCategory("overview")
@@ -108,7 +110,8 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 				.setDescription(Component.translatable("%s.config.category.overview.description".formatted(MOD_ID)))
 				.setDefaultApplyMode(ConfigValueApplyMode.IMMEDIATE)
 				.addScreenValue(new CombinedEnabledValue(getPrimaryEnabled(), getSecondaryEnabled()))
-				.addValue(getAccentColor());
+				.addScreenValue(IConfigScreenValue.configValue(getAccentColor(),
+					registration.getEditorMetadataFactory().create(TestColorSerializer.INSTANCE, TEST_COLOR_EDITOR_TYPE)));
 			screenBuilder.addCategory("controls")
 				.setTitle(Component.translatable("%s.config.category.controls".formatted(MOD_ID)))
 				.setDescription(Component.translatable("%s.config.category.controls.description".formatted(MOD_ID)))
@@ -198,7 +201,7 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 		}
 	}
 
-	private enum TextSerializer implements IConfigValueEditorSerializer<String> {
+	private enum TextSerializer implements IConfigValueSerializer<String> {
 		INSTANCE;
 
 		@Override
@@ -226,25 +229,14 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 		}
 
 		@Override
-		public Component getLocalizedValueName(String configValueLocalizationKey, String value) {
-			return Component.literal(value);
-		}
-
-		@Override
 		public String getValidValuesDescription() {
 			return "Text between 1 and 40 characters";
 		}
 
-		@Override
-		public ConfigValueEditorType<String> getEditorType() {
-			return ConfigValueEditorTypes.getText();
-		}
 	}
 
-	private enum TestColorSerializer implements IConfigValueEditorSerializer<TestColor> {
+	private enum TestColorSerializer implements IConfigValueSerializer<TestColor> {
 		INSTANCE;
-
-		private static final ConfigValueEditorType<TestColor> EDITOR_TYPE = ConfigValueEditorType.create(MOD_ID, "test_color");
 
 		@Override
 		public String serialize(TestColor value) {
@@ -271,67 +263,13 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 		}
 
 		@Override
-		public Component getLocalizedValueName(String configValueLocalizationKey, TestColor value) {
-			String key = "%s.%s".formatted(configValueLocalizationKey, value.name().toLowerCase(Locale.ROOT));
-			return Component.translatableWithFallback(key, getDisplayName(value.name()));
-		}
-
-		@Override
 		public String getValidValuesDescription() {
 			return Arrays.toString(TestColor.values());
 		}
 
-		@Override
-		public ConfigValueEditorType<TestColor> getEditorType() {
-			return EDITOR_TYPE;
-		}
 	}
 
-	private enum CombinedEnabledSerializer implements IConfigValueEditorSerializer<CombinedEnabled> {
-		INSTANCE;
-
-		@Override
-		public String serialize(CombinedEnabled value) {
-			return value.name();
-		}
-
-		@Override
-		public IDeserializeResult<CombinedEnabled> deserialize(String string) {
-			try {
-				return IDeserializeResult.success(CombinedEnabled.valueOf(string.trim().toUpperCase(Locale.ROOT)));
-			} catch (IllegalArgumentException e) {
-				return IDeserializeResult.failure("Expected one of: " + getValidValuesDescription());
-			}
-		}
-
-		@Override
-		public boolean isValid(@Nullable CombinedEnabled value) {
-			return value != null;
-		}
-
-		@Override
-		public Optional<List<CombinedEnabled>> getAllValidValues() {
-			return Optional.of(List.of(CombinedEnabled.values()));
-		}
-
-		@Override
-		public Component getLocalizedValueName(String configValueLocalizationKey, CombinedEnabled value) {
-			String key = "%s.%s".formatted(configValueLocalizationKey, value.name().toLowerCase(Locale.ROOT));
-			return Component.translatableWithFallback(key, getDisplayName(value.name()));
-		}
-
-		@Override
-		public String getValidValuesDescription() {
-			return Arrays.toString(CombinedEnabled.values());
-		}
-
-		@Override
-		public ConfigValueEditorType<CombinedEnabled> getEditorType() {
-			return ConfigValueEditorTypes.getSelection();
-		}
-	}
-
-	private enum ModeSerializer implements IConfigValueEditorSerializer<TestMode> {
+	private enum ModeSerializer implements IConfigValueSerializer<TestMode> {
 		INSTANCE;
 
 		@Override
@@ -359,23 +297,38 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 		}
 
 		@Override
-		public Component getLocalizedValueName(String configValueLocalizationKey, TestMode value) {
+		public String getValidValuesDescription() {
+			return Arrays.toString(TestMode.values());
+		}
+
+	}
+
+	private enum CombinedEnabledMetadata implements IConfigValueEditorMetadata<CombinedEnabled> {
+		INSTANCE;
+
+		@Override
+		public boolean isValid(@Nullable CombinedEnabled value) {
+			return value != null;
+		}
+
+		@Override
+		public Optional<List<CombinedEnabled>> getAllValidValues() {
+			return Optional.of(List.of(CombinedEnabled.values()));
+		}
+
+		@Override
+		public Component getLocalizedValueName(String configValueLocalizationKey, CombinedEnabled value) {
 			String key = "%s.%s".formatted(configValueLocalizationKey, value.name().toLowerCase(Locale.ROOT));
 			return Component.translatableWithFallback(key, getDisplayName(value.name()));
 		}
 
 		@Override
-		public String getValidValuesDescription() {
-			return Arrays.toString(TestMode.values());
-		}
-
-		@Override
-		public ConfigValueEditorType<TestMode> getEditorType() {
+		public ConfigValueEditorType<CombinedEnabled> getEditorType() {
 			return ConfigValueEditorTypes.getSelection();
 		}
 	}
 
-	private enum ModeListSerializer implements IConfigListValueEditorSerializer<TestMode> {
+	private enum ModeListSerializer implements IConfigListValueSerializer<TestMode> {
 		INSTANCE;
 
 		@Override
@@ -414,11 +367,6 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 		@Override
 		public Optional<List<List<TestMode>>> getAllValidValues() {
 			return Optional.empty();
-		}
-
-		@Override
-		public Component getLocalizedValueName(String configValueLocalizationKey, List<TestMode> value) {
-			return Component.literal(serialize(value));
 		}
 
 		@Override
@@ -467,7 +415,7 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 
 		@Override
 		public boolean set(CombinedEnabled value) {
-			if (!CombinedEnabledSerializer.INSTANCE.isValid(value)) {
+			if (!CombinedEnabledMetadata.INSTANCE.isValid(value)) {
 				throw new IllegalArgumentException("Invalid combined enabled value: " + value);
 			}
 			boolean primaryChanged = primary.set(value.primary);
@@ -491,8 +439,8 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 		}
 
 		@Override
-		public IConfigValueEditorSerializer<CombinedEnabled> getSerializer() {
-			return CombinedEnabledSerializer.INSTANCE;
+		public IConfigValueEditorMetadata<CombinedEnabled> getEditorMetadata() {
+			return CombinedEnabledMetadata.INSTANCE;
 		}
 	}
 

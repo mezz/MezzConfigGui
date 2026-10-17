@@ -617,7 +617,7 @@ public abstract class ConfigEntryWidget<T> {
 	}
 
 	protected boolean setValue(T value) {
-		if (!isEditable() || !configValue.getSerializer().isValid(value) || this.value.equals(value)) {
+		if (!isEditable() || !configValue.getEditorMetadata().isValid(value) || this.value.equals(value)) {
 			return false;
 		}
 		if (appliesImmediately()) {

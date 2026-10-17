@@ -16,6 +16,7 @@ import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
+import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
@@ -59,8 +60,8 @@ class MezzConfigScreenSchemaTest {
 
 	@Test
 	void configValueUsesMezzConfigEditMode() {
-		IConfigScreenValue<String> immediateValue = IConfigScreenValue.configValue(new TestConfigValue("immediate", ConfigValueEditMode.IMMEDIATE));
-		IConfigScreenValue<String> batchValue = IConfigScreenValue.configValue(new TestConfigValue("batch", ConfigValueEditMode.BATCH));
+		IConfigScreenValue<String> immediateValue = ConfigScreenValues.create(new TestConfigValue("immediate", ConfigValueEditMode.IMMEDIATE));
+		IConfigScreenValue<String> batchValue = ConfigScreenValues.create(new TestConfigValue("batch", ConfigValueEditMode.BATCH));
 
 		assertEquals(ConfigValueApplyMode.IMMEDIATE, immediateValue.getApplyMode());
 		assertEquals(ConfigValueApplyMode.ON_APPLY, batchValue.getApplyMode());
@@ -68,13 +69,13 @@ class MezzConfigScreenSchemaTest {
 
 	@Test
 	void configValueUsesMezzConfigRestartRequirement() {
-		IConfigScreenValue<String> noRestartValue = IConfigScreenValue.configValue(new TestConfigValue("noRestart", ConfigValueEditMode.BATCH));
-		IConfigScreenValue<String> worldRestartValue = IConfigScreenValue.configValue(new TestConfigValue(
+		IConfigScreenValue<String> noRestartValue = ConfigScreenValues.create(new TestConfigValue("noRestart", ConfigValueEditMode.BATCH));
+		IConfigScreenValue<String> worldRestartValue = ConfigScreenValues.create(new TestConfigValue(
 			"worldRestart",
 			ConfigValueEditMode.BATCH,
 			ConfigValueRestartRequirement.WORLD_RESTART
 		));
-		IConfigScreenValue<String> gameRestartValue = IConfigScreenValue.configValue(new TestConfigValue(
+		IConfigScreenValue<String> gameRestartValue = ConfigScreenValues.create(new TestConfigValue(
 			"restart",
 			ConfigValueEditMode.BATCH,
 			ConfigValueRestartRequirement.GAME_RESTART
@@ -87,7 +88,7 @@ class MezzConfigScreenSchemaTest {
 
 	@Test
 	void explicitApplyModeKeepsMezzConfigRestartRequirement() {
-		IConfigScreenValue<String> restartValue = IConfigScreenValue.configValue(
+		IConfigScreenValue<String> restartValue = ConfigScreenValues.create(
 			new TestConfigValue("restart", ConfigValueEditMode.BATCH, ConfigValueRestartRequirement.GAME_RESTART),
 			ConfigValueApplyMode.IMMEDIATE
 		);
@@ -99,7 +100,7 @@ class MezzConfigScreenSchemaTest {
 	@Test
 	void configValueUsesMezzConfigPendingValueAndListener() {
 		TestPendingConfigValue backingValue = new TestPendingConfigValue("effective");
-		IConfigScreenValue<String> screenValue = IConfigScreenValue.configValue(backingValue);
+		IConfigScreenValue<String> screenValue = ConfigScreenValues.create(backingValue);
 		List<String> listenerValues = new ArrayList<>();
 		screenValue.addListener(listenerValues::add);
 
@@ -263,7 +264,7 @@ class MezzConfigScreenSchemaTest {
 		TestConfigSchema schema = new TestConfigSchema(List.of(category), List.of(category));
 		ConfigScreenSchema screenSchema = ConfigScreenSchema.from(schema);
 		IConfigScreenValue<String> customizedValue = new IdentityOnlyScreenValue(
-			IConfigScreenValue.configValue(value)
+			ConfigScreenValues.create(value)
 		);
 
 		assertSame(schema, screenSchema.findBackingSchema(customizedValue).orElseThrow());
@@ -676,6 +677,11 @@ class MezzConfigScreenSchemaTest {
 		@Override
 		public IConfigValueSerializer<String> getSerializer() {
 			return delegate.getSerializer();
+		}
+
+		@Override
+		public IConfigValueEditorMetadata<String> getEditorMetadata() {
+			return ConfigValueEditorMetadataFactory.INSTANCE.create(getSerializer(), getDefaultValue());
 		}
 	}
 

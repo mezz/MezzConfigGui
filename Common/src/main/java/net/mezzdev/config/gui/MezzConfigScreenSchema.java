@@ -65,7 +65,7 @@ final class MezzConfigScreenSchema implements ConfigScreenSchema {
 				() -> "Storage category is not in this schema's editor categories: " + category.getName()
 			);
 			for (IConfigValue<?> value : category.getConfigValues()) {
-				IConfigScreenValue<?> screenValue = IConfigScreenValue.configValue(value);
+				IConfigScreenValue<?> screenValue = ConfigScreenValues.create(value);
 				List<? extends IConfigEditorCategory> valueEditorCategories = value.getEditorInfo().getEditorCategories();
 				if (valueEditorCategories.isEmpty()) {
 					storageCategory.addValue(screenValue);

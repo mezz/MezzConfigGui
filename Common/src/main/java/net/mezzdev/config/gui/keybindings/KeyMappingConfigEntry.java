@@ -5,6 +5,7 @@ import net.mezzdev.config.gui.ConfigInputUtil;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.gui.ConfigGuiColors;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
+import net.mezzdev.config.gui.api.keybindings.IKeyMappingBinding;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
@@ -32,10 +33,7 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 	private final IConfigKeyMapping configKeyMapping;
 	private ImmutableRect2i buttonArea = ImmutableRect2i.EMPTY;
 	private boolean listening = false;
-	private String lastPressedModifier = ConfigKeyBinding.UNKNOWN.keyName();
-	private String lastPressedKey = ConfigKeyBinding.UNKNOWN.keyName();
-	private boolean lastModifierHeldDown = false;
-	private boolean lastKeyHeldDown = false;
+	private IKeyMappingBinding pendingValue = ConfigKeyBinding.UNKNOWN;
 
 	public KeyMappingConfigEntry(IConfigScreenValue<KeyMappingValue> value, ConfigTextures textures) {
 		super(value, textures);
@@ -151,9 +149,14 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 			return true;
 		}
 		if (listening) {
-			if (!input.isSimulate()) {
-				ConfigKeyModifier modifier = getPendingModifier();
-				setBindingValue(new ConfigKeyBinding(input.getKey().getName(), modifier));
+			IKeyMappingBinding value = configKeyMapping.createBinding(input.getKey(), input.getModifiers());
+			if (input.isSimulate()) {
+				pendingValue = value;
+			} else {
+				if (pendingValue.getKey().equals(value.getKey())) {
+					value = pendingValue;
+				}
+				setBindingValue(value);
 				stopListening();
 			}
 			return true;
@@ -178,17 +181,9 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 			return true;
 		}
 		InputConstants.Key key = ConfigInputUtil.getKey(keyCode, scanCode);
-		String keyName = key.getName();
-		ConfigKeyModifier keyModifier = configKeyMapping.getKeyModifier(keyName);
-		if (keyModifier != ConfigKeyModifier.NONE) {
-			if (!lastPressedModifier.equals(keyName)) {
-				lastPressedModifier = keyName;
-			}
-			lastModifierHeldDown = true;
-		} else {
-			lastPressedKey = keyName;
-			lastKeyHeldDown = true;
-			setBindingValue(getPendingValue());
+		pendingValue = configKeyMapping.createBinding(key, modifiers);
+		if (!configKeyMapping.isModifier(key)) {
+			setBindingValue(pendingValue);
 			stopListening();
 		}
 		return true;
@@ -200,15 +195,8 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 			return false;
 		}
 		InputConstants.Key key = ConfigInputUtil.getKey(keyCode, scanCode);
-		String keyName = key.getName();
-		if (lastPressedKey.equals(keyName)) {
-			lastKeyHeldDown = false;
-		} else if (lastPressedModifier.equals(keyName)) {
-			lastModifierHeldDown = false;
-		}
-
-		if (!lastKeyHeldDown && !lastModifierHeldDown) {
-			setBindingValue(getPendingValue());
+		if (key.equals(pendingValue.getKey())) {
+			setBindingValue(pendingValue);
 			stopListening();
 		}
 		return true;
@@ -229,12 +217,7 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 		stopListening();
 	}
 
-	@Override
-	protected boolean setValue(KeyMappingValue value) {
-		return super.setValue(value.withBinding(value.configKeyMapping().normalize(value.binding())));
-	}
-
-	private boolean setBindingValue(ConfigKeyBinding value) {
+	private boolean setBindingValue(IKeyMappingBinding value) {
 		return setValue(getValue().withBinding(value));
 	}
 
@@ -242,7 +225,7 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 		if (!ConfigGuiOptions.showKeyConflictDetails()) {
 			return List.of();
 		}
-		ConfigKeyBinding value = getBindingValue();
+		IKeyMappingBinding value = getBindingValue();
 		if (value.isUnbound()) {
 			return List.of();
 		}
@@ -304,49 +287,24 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 	}
 
 	private void startListening() {
+		stopListening();
 		listening = true;
-		lastPressedModifier = ConfigKeyBinding.UNKNOWN.keyName();
-		lastPressedKey = ConfigKeyBinding.UNKNOWN.keyName();
-		lastModifierHeldDown = false;
-		lastKeyHeldDown = false;
 	}
 
 	private void stopListening() {
 		listening = false;
-		lastPressedModifier = ConfigKeyBinding.UNKNOWN.keyName();
-		lastPressedKey = ConfigKeyBinding.UNKNOWN.keyName();
-		lastModifierHeldDown = false;
-		lastKeyHeldDown = false;
+		pendingValue = ConfigKeyBinding.UNKNOWN;
 	}
 
-	private ConfigKeyBinding getDisplayValue() {
-		if (listening) {
-			ConfigKeyBinding pendingValue = getPendingValue();
-			if (!pendingValue.isUnbound()) {
-				return pendingValue;
-			}
+	private IKeyMappingBinding getDisplayValue() {
+		if (listening && !pendingValue.isUnbound()) {
+			return pendingValue;
 		}
 		return getBindingValue();
 	}
 
-	private ConfigKeyBinding getBindingValue() {
+	private IKeyMappingBinding getBindingValue() {
 		return getValue().binding();
 	}
 
-	private ConfigKeyBinding getPendingValue() {
-		if (!lastPressedKey.equals(ConfigKeyBinding.UNKNOWN.keyName())) {
-			return new ConfigKeyBinding(lastPressedKey, getPendingModifier());
-		}
-		if (!lastPressedModifier.equals(ConfigKeyBinding.UNKNOWN.keyName())) {
-			return new ConfigKeyBinding(lastPressedModifier, ConfigKeyModifier.NONE);
-		}
-		return ConfigKeyBinding.UNKNOWN;
-	}
-
-	private ConfigKeyModifier getPendingModifier() {
-		if (lastPressedModifier.equals(ConfigKeyBinding.UNKNOWN.keyName())) {
-			return KeyModifiers.getActive();
-		}
-		return configKeyMapping.getKeyModifier(lastPressedModifier);
-	}
 }

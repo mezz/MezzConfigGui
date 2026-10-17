@@ -1,6 +1,6 @@
 package net.mezzdev.config.gui.info;
 
-import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
+import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import net.mezzdev.config.api.value.color.PackedColor;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueIcon;
@@ -23,27 +23,35 @@ public final class ConfigValueIcon {
 	}
 
 	public static <T> int getTextOffset(IConfigScreenValue<T> configValue, T value) {
-		return getTextOffset(configValue.getSerializer(), value);
+		if (getIcon(configValue, value).isEmpty()) {
+			return 0;
+		}
+		return ICON_SIZE + TEXT_GAP;
 	}
 
-	public static <T> int getTextOffset(IConfigValueSerializer<T> serializer, T value) {
-		if (getIcon(serializer, value).isEmpty()) {
+	public static <T> int getTextOffset(IConfigValueEditorMetadata<T> metadata, T value) {
+		if (getIcon(metadata, value).isEmpty()) {
 			return 0;
 		}
 		return ICON_SIZE + TEXT_GAP;
 	}
 
 	public static <T> void draw(GuiGraphicsExtractor guiGraphics, IConfigScreenValue<T> configValue, T value, int x, int y) {
-		draw(guiGraphics, configValue.getSerializer(), value, x, y);
-	}
-
-	public static <T> void draw(GuiGraphicsExtractor guiGraphics, IConfigValueSerializer<T> serializer, T value, int x, int y) {
-		getIcon(serializer, value)
+		getIcon(configValue, value)
 			.ifPresent(icon -> icon.draw(guiGraphics, new Rect2i(x, y, ICON_SIZE, ICON_SIZE)));
 	}
 
-	private static <T> Optional<IConfigValueIcon> getIcon(IConfigValueSerializer<T> serializer, T value) {
-		Optional<IConfigValueIcon> icon = getProvidedIcon(serializer, value);
+	public static <T> void draw(GuiGraphicsExtractor guiGraphics, IConfigValueEditorMetadata<T> metadata, T value, int x, int y) {
+		getIcon(metadata, value)
+			.ifPresent(icon -> icon.draw(guiGraphics, new Rect2i(x, y, ICON_SIZE, ICON_SIZE)));
+	}
+
+	private static <T> Optional<IConfigValueIcon> getIcon(IConfigScreenValue<T> configValue, T value) {
+		return getIcon(configValue.getEditorMetadata(), value);
+	}
+
+	private static <T> Optional<IConfigValueIcon> getIcon(Object provider, T value) {
+		Optional<IConfigValueIcon> icon = getProvidedIcon(provider, value);
 		if (icon.isPresent()) {
 			return icon;
 		}
@@ -57,8 +65,8 @@ public final class ConfigValueIcon {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static <T> Optional<IConfigValueIcon> getProvidedIcon(IConfigValueSerializer<T> serializer, T value) {
-		if (serializer instanceof IConfigValueIconProvider<?> iconProvider) {
+	private static <T> Optional<IConfigValueIcon> getProvidedIcon(Object provider, T value) {
+		if (provider instanceof IConfigValueIconProvider<?> iconProvider) {
 			IConfigValueIconProvider<T> typedIconProvider = (IConfigValueIconProvider<T>) iconProvider;
 			return typedIconProvider.getIcon(value);
 		}

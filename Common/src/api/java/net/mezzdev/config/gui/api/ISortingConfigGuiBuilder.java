@@ -40,7 +40,7 @@ public interface ISortingConfigGuiBuilder<T> {
 	/**
 	 * Set display names for sortable values.
 	 * <p>
-	 * Values missing from the map use the default value name from their serializer.
+	 * Values missing from the map use the standard localized value name.
 	 *
 	 * @param valueNames display names by sortable value
 	 * @return this builder
@@ -62,7 +62,7 @@ public interface ISortingConfigGuiBuilder<T> {
 	/**
 	 * Set descriptions for sortable values.
 	 * <p>
-	 * Values missing from the map use the default value description from their serializer.
+	 * Values missing from the map use the standard localized value description.
 	 *
 	 * @param valueDescriptions descriptions by sortable value
 	 * @return this builder

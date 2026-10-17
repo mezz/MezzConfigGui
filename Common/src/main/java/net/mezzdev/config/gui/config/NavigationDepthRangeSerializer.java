@@ -2,21 +2,15 @@ package net.mezzdev.config.gui.config;
 
 import net.mezzdev.config.api.value.serializer.ConfigValueRange;
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
-import net.mezzdev.config.gui.api.IConfigRangeValueEditorSerializer;
-import net.minecraft.network.chat.Component;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import org.jspecify.annotations.Nullable;
 
 /** Serializes the finite minimum and maximum sidebar depths. */
-final class NavigationDepthRangeSerializer implements IConfigRangeValueEditorSerializer<Integer> {
+final class NavigationDepthRangeSerializer implements IConfigValueSerializer<ConfigValueRange<Integer>> {
 	static final NavigationDepthRangeSerializer INSTANCE = new NavigationDepthRangeSerializer();
 	static final int MAX_DEPTH = 10;
 
 	private NavigationDepthRangeSerializer() {
-	}
-
-	@Override
-	public ConfigValueRange<Integer> getBounds() {
-		return new ConfigValueRange<>(0, MAX_DEPTH);
 	}
 
 	@Override
@@ -53,8 +47,4 @@ final class NavigationDepthRangeSerializer implements IConfigRangeValueEditorSer
 		return "Enter min..max (0 to 10).";
 	}
 
-	@Override
-	public Component getLocalizedValueName(String localizationKey, ConfigValueRange<Integer> value) {
-		return Component.translatableWithFallback("mezz_config.config.screen.range.value", "%s – %s", value.min(), value.max());
-	}
 }

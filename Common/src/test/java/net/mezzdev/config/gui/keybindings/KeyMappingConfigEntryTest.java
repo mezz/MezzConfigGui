@@ -1,27 +1,54 @@
 package net.mezzdev.config.gui.keybindings;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.gui.TestMinecraft;
-import net.mezzdev.config.api.value.serializer.IDeserializeResult;
-import net.mezzdev.config.gui.api.ConfigValueEditorType;
-import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
+import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
+import net.mezzdev.config.gui.api.ConfigValueApplyMode;
+import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
-import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
+import net.mezzdev.config.gui.api.keybindings.IKeyMappingBinding;
 import net.mezzdev.config.gui.config.ConfigGuiOptionsTestUtil;
+import net.mezzdev.config.gui.entries.ConfigEntryWidgetFactory;
+import net.mezzdev.config.gui.info.ConfigValueIcon;
+import net.mezzdev.config.gui.info.ConfigValueInfoFactory;
 import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.function.Consumer;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class KeyMappingConfigEntryTest {
+	@Test
+	@SuppressWarnings("DataFlowIssue")
+	void decoratedKeyMappingsProvideEditorAndDisplayInformationWithoutSerialization() {
+		var mapping = new ConfigKeyMapping(TestMinecraft.keyMapping("key.test_mod.open", InputConstants.KEY_K, "key.categories.misc"));
+		var value = new KeyMappingConfigValue(mapping, () -> {});
+		IConfigScreenValue<KeyMappingValue> wrapped = IConfigScreenValue.withApplyMode(
+			IConfigScreenValue.withRestartRequirement(value, ConfigValueRestartRequirement.GAME_RESTART),
+			ConfigValueApplyMode.ON_APPLY
+		);
+		var factory = new ConfigEntryWidgetFactory(popup -> {}, () -> {}, null, Map.of());
+		assertInstanceOf(KeyMappingConfigEntry.class, factory.create(wrapped));
+
+		assertEquals(mapping.getValueName(mapping.getValue()), ConfigValueLocalization.getValueName(wrapped, wrapped.getValue()));
+		assertTrue(ConfigValueLocalization.getValueDescription(wrapped, wrapped.getValue()).isEmpty());
+		assertEquals(0, ConfigValueIcon.getTextOffset(wrapped, wrapped.getValue()));
+		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("showAdvancedValueDetails", true)) {
+			var lines = ConfigValueInfoFactory.createSharedInfo(wrapped, false).lines().stream().map(Component::getString).toList();
+			assertTrue(lines.stream().anyMatch(line -> line.startsWith("Editor: ")));
+			assertFalse(lines.stream().anyMatch(line -> line.startsWith("Serializer: ")));
+		}
+	}
+
 	@Test
 	void conflictTooltipsSeparateEachBindingAndKeepItsDetailsTogether() {
 		ConfigKeyMappingConflict first = new ConfigKeyMappingConflict(
@@ -67,7 +94,7 @@ class KeyMappingConfigEntryTest {
 		List<KeyMappingValue> listenerValues = new ArrayList<>();
 		Runnable removeListener = configValue.addListener(listenerValues::add);
 		KeyMappingValue changedValue = new KeyMappingValue(
-			new ConfigKeyBinding("key.keyboard.l", ConfigKeyModifier.NONE),
+			ConfigKeyMappingHelper.INSTANCE.createBinding(InputConstants.getKey("key.keyboard.l"), Set.of()),
 			keyMapping
 		);
 
@@ -84,7 +111,7 @@ class KeyMappingConfigEntryTest {
 	@SuppressWarnings("DataFlowIssue")
 	void conflictDetailsOptionControlsConflictLookup() {
 		TestConfigKeyMapping keyMapping = new TestConfigKeyMapping();
-		KeyMappingConfigEntry entry = new KeyMappingConfigEntry(new TestScreenValue(keyMapping), null);
+		KeyMappingConfigEntry entry = new KeyMappingConfigEntry(new KeyMappingConfigValue(keyMapping, () -> {}), null);
 
 		try (ConfigGuiOptionsTestUtil.OptionOverride ignored = ConfigGuiOptionsTestUtil.setValue("showKeyConflictDetails", false)) {
 			assertEquals(List.of(), getConflicts(entry));
@@ -108,59 +135,11 @@ class KeyMappingConfigEntryTest {
 		}
 	}
 
-	private static final class TestScreenValue implements IConfigScreenValue<KeyMappingValue> {
-		private final TestConfigKeyMapping keyMapping;
-		private final KeyMappingValue defaultValue;
-		private KeyMappingValue value;
-
-		private TestScreenValue(TestConfigKeyMapping keyMapping) {
-			this.keyMapping = keyMapping;
-			this.defaultValue = new KeyMappingValue(keyMapping.getDefaultValue(), keyMapping);
-			this.value = new KeyMappingValue(keyMapping.getValue(), keyMapping);
-		}
-
-		@Override
-		public String getName() {
-			return keyMapping.getName();
-		}
-
-		@Override
-		public String getLocalizationKey() {
-			return keyMapping.getName();
-		}
-
-		@Override
-		public KeyMappingValue getValue() {
-			return value;
-		}
-
-		@Override
-		public KeyMappingValue getDefaultValue() {
-			return defaultValue;
-		}
-
-		@Override
-		public boolean set(KeyMappingValue value) {
-			this.value = value;
-			return true;
-		}
-
-		@Override
-		public Runnable addListener(Consumer<KeyMappingValue> listener) {
-			return () -> {};
-		}
-
-		@Override
-		public IConfigValueEditorSerializer<KeyMappingValue> getSerializer() {
-			return TestKeyMappingSerializer.INSTANCE;
-		}
-	}
-
 	private static final class TestConfigKeyMapping implements IConfigKeyMapping {
-		private static final ConfigKeyBinding DEFAULT_BINDING = new ConfigKeyBinding("key.keyboard.k", ConfigKeyModifier.NONE);
+		private static final IKeyMappingBinding DEFAULT_BINDING = ConfigKeyMappingHelper.INSTANCE.createBinding(InputConstants.getKey("key.keyboard.k"), Set.of());
 
 		private int conflictLookupCount;
-		private ConfigKeyBinding value = DEFAULT_BINDING;
+		private IKeyMappingBinding value = DEFAULT_BINDING;
 
 		@Override
 		public String getName() {
@@ -183,83 +162,46 @@ class KeyMappingConfigEntryTest {
 		}
 
 		@Override
-		public ConfigKeyBinding getValue() {
+		public IKeyMappingBinding getValue() {
 			return value;
 		}
 
 		@Override
-		public ConfigKeyBinding getDefaultValue() {
+		public IKeyMappingBinding getDefaultValue() {
 			return DEFAULT_BINDING;
 		}
 
 		@Override
-		public ConfigKeyBinding normalize(ConfigKeyBinding value) {
-			return value;
-		}
-
-		@Override
-		public void set(ConfigKeyBinding value) {
+		public void set(IKeyMappingBinding value) {
 			this.value = value;
 		}
 
 		@Override
-		public Component getValueName(ConfigKeyBinding value) {
-			return Component.literal(value.keyName());
+		public Component getValueName(IKeyMappingBinding value) {
+			return Component.literal(value.getKey().getName());
 		}
 
 		@Override
-		public ConfigKeyModifier getKeyModifier(String keyName) {
-			return ConfigKeyModifier.NONE;
+		public boolean isModifier(InputConstants.Key key) {
+			return ConfigKeyMappingHelper.INSTANCE.getModifier(key) != null;
 		}
 
 		@Override
-		public List<ConfigKeyMappingConflict> getConflicts(ConfigKeyBinding value) {
+		public IKeyMappingBinding createBinding(InputConstants.Key key, int eventModifiers) {
+			var helper = ConfigKeyMappingHelper.INSTANCE;
+			return helper.createInputFromEvent(key, eventModifiers).toBinding();
+		}
+
+		@Override
+		public List<ConfigKeyMappingConflict> getConflicts(IKeyMappingBinding value) {
 			conflictLookupCount++;
 			return List.of(new ConfigKeyMappingConflict(
 				Component.literal("Conflict"),
-				Component.literal(value.keyName()),
+				Component.literal(value.getKey().getName()),
 				Component.literal("Test Mod"),
 				Component.literal("Test Category")
 			));
 		}
 	}
 
-	private enum TestKeyMappingSerializer implements IConfigValueEditorSerializer<KeyMappingValue> {
-		INSTANCE;
-
-		@Override
-		public String serialize(KeyMappingValue value) {
-			return value.binding().keyName();
-		}
-
-		@Override
-		public IDeserializeResult<KeyMappingValue> deserialize(String string) {
-			return IDeserializeResult.failure("Not supported by test serializer.");
-		}
-
-		@Override
-		public boolean isValid(KeyMappingValue value) {
-			return true;
-		}
-
-		@Override
-		public Optional<List<KeyMappingValue>> getAllValidValues() {
-			return Optional.empty();
-		}
-
-		@Override
-		public ConfigValueEditorType<KeyMappingValue> getEditorType() {
-			return ConfigValueEditorTypes.getKeyMapping();
-		}
-
-		@Override
-		public Component getLocalizedValueName(String configValueLocalizationKey, KeyMappingValue value) {
-			return value.configKeyMapping().getValueName(value.binding());
-		}
-
-		@Override
-		public String getValidValuesDescription() {
-			return "";
-		}
-	}
 }

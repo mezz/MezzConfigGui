@@ -5,20 +5,17 @@ import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
-import net.mezzdev.config.gui.api.ConfigValueEditorType;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
-import net.mezzdev.config.gui.api.ConfigValueLocalization;
-import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
-import net.mezzdev.config.gui.api.IConfigListValueEditorOptions;
+import net.mezzdev.config.api.value.serializer.IConfigListValueSerializer;
+
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueIcon;
 import net.mezzdev.config.gui.api.IConfigValueIconProvider;
-import net.mezzdev.config.gui.api.IConfigValueLocalizationProvider;
 import net.mezzdev.config.gui.api.ISortingConfigGuiBuilder;
 import net.mezzdev.config.gui.api.ISortableConfigValueFactory;
+import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jspecify.annotations.Nullable;
@@ -148,18 +145,15 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 	) {
 		List<T> valuesCopy = List.copyOf(values);
 		List<T> defaultValues = List.copyOf(sortingConfig.getDefaultSortedValues(valuesCopy));
-		IConfigListValueEditorSerializer<T> listSerializer = new SortableListSerializer<>(
-			defaultValues,
-			sortingConfig.allowsRemovingValues(),
-			valueSerializer,
-			display
-		);
+		var listSerializer = new SortableListSerializer<>(defaultValues, valueSerializer);
+		var metadata = new SortableListMetadata<>(listSerializer, sortingConfig.allowsRemovingValues(), display);
 		return new SortableConfigValue<>(
 			name,
 			localizationKey,
 			sortingConfig,
 			defaultValues,
 			listSerializer,
+			metadata,
 			applyMode,
 			restartRequirement
 		);
@@ -269,7 +263,8 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		private final String localizationKey;
 		private final ISortingConfig<T> sortingConfig;
 		private final List<T> values;
-		private final IConfigListValueEditorSerializer<T> serializer;
+		private final IConfigListValueSerializer<T> serializer;
+		private final IConfigValueEditorMetadata<List<T>> metadata;
 		private final ConfigValueApplyMode applyMode;
 		private final ConfigValueRestartRequirement restartRequirement;
 		private final List<Consumer<List<T>>> listeners = new ArrayList<>();
@@ -283,7 +278,8 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 			String localizationKey,
 			ISortingConfig<T> sortingConfig,
 			List<T> values,
-			IConfigListValueEditorSerializer<T> serializer,
+			IConfigListValueSerializer<T> serializer,
+			IConfigValueEditorMetadata<List<T>> metadata,
 			ConfigValueApplyMode applyMode,
 			ConfigValueRestartRequirement restartRequirement
 		) {
@@ -292,6 +288,7 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 			this.sortingConfig = sortingConfig;
 			this.values = List.copyOf(values);
 			this.serializer = serializer;
+			this.metadata = metadata;
 			this.applyMode = applyMode;
 			this.restartRequirement = restartRequirement;
 		}
@@ -401,8 +398,13 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		}
 
 		@Override
-		public IConfigListValueEditorSerializer<T> getSerializer() {
+		public IConfigListValueSerializer<T> getSerializer() {
 			return serializer;
+		}
+
+		@Override
+		public IConfigValueEditorMetadata<List<T>> getEditorMetadata() {
+			return metadata;
 		}
 	}
 
@@ -424,18 +426,14 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		}
 	}
 
-	private static final class SortableListSerializer<T> implements IConfigListValueEditorSerializer<T>, IConfigListValueEditorOptions {
+	private static final class SortableListSerializer<T> implements IConfigListValueSerializer<T> {
 		private final RuntimeValueSerializer<T> valueSerializer;
-		private final boolean allowsRemovingValues;
 
 		private SortableListSerializer(
 			List<T> validValues,
-			boolean allowsRemovingValues,
-			IConfigValueSerializer<T> valueSerializer,
-			RuntimeValueDisplay<T> display
+			IConfigValueSerializer<T> valueSerializer
 		) {
-			this.valueSerializer = new RuntimeValueSerializer<>(validValues, valueSerializer, display);
-			this.allowsRemovingValues = allowsRemovingValues;
+			this.valueSerializer = new RuntimeValueSerializer<>(validValues, valueSerializer);
 		}
 
 		@Override
@@ -495,21 +493,6 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		}
 
 		@Override
-		public Component getLocalizedValueName(String configValueLocalizationKey, List<T> values) {
-			if (values.isEmpty()) {
-				return Component.translatable("mezz_config.config.value.list.empty");
-			}
-			MutableComponent result = Component.empty();
-			for (int i = 0; i < values.size(); i++) {
-				if (i > 0) {
-					result.append(Component.literal(", "));
-				}
-				result.append(ConfigValueLocalization.getValueName(valueSerializer, configValueLocalizationKey, values.get(i)));
-			}
-			return result;
-		}
-
-		@Override
 		public String getValidValuesDescription() {
 			return "A comma-separated list containing values of:\n%s".formatted(valueSerializer.getValidValuesDescription());
 		}
@@ -519,30 +502,18 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 			return valueSerializer;
 		}
 
-		@Override
-		public ConfigValueEditorType<List<T>> getEditorType() {
-			return ConfigValueEditorTypes.getList();
-		}
-
-		@Override
-		public boolean allowsRemovingValues() {
-			return allowsRemovingValues;
-		}
 	}
 
-	private static final class RuntimeValueSerializer<T> implements IConfigValueSerializer<T>, IConfigValueLocalizationProvider<T>, IConfigValueIconProvider<T> {
+	private static final class RuntimeValueSerializer<T> implements IConfigValueSerializer<T> {
 		private final List<T> validValues;
 		private final IConfigValueSerializer<T> valueSerializer;
-		private final RuntimeValueDisplay<T> display;
 
 		private RuntimeValueSerializer(
 			List<T> validValues,
-			IConfigValueSerializer<T> valueSerializer,
-			RuntimeValueDisplay<T> display
+			IConfigValueSerializer<T> valueSerializer
 		) {
 			this.validValues = List.copyOf(validValues);
 			this.valueSerializer = valueSerializer;
-			this.display = display;
 		}
 
 		@Override
@@ -573,38 +544,6 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		}
 
 		@Override
-		public Component getLocalizedValueName(String configValueLocalizationKey, T value) {
-			Optional<Component> providedName = display.getValueName(value);
-			if (providedName.isPresent()) {
-				return providedName.get();
-			}
-			return ConfigValueLocalization.getValueName(valueSerializer, configValueLocalizationKey, value);
-		}
-
-		@Override
-		public Optional<Component> getLocalizedValueDescription(String configValueLocalizationKey, T value) {
-			Optional<Component> providedDescription = display.getValueDescription(value);
-			if (providedDescription.isPresent()) {
-				return providedDescription;
-			}
-			return ConfigValueLocalization.getValueDescription(valueSerializer, configValueLocalizationKey, value);
-		}
-
-		@Override
-		public Optional<IConfigValueIcon> getIcon(T value) {
-			Optional<IConfigValueIcon> providedIcon = display.getValueIcon(value);
-			if (providedIcon.isPresent()) {
-				return providedIcon;
-			}
-			if (valueSerializer instanceof IConfigValueIconProvider<?> iconProvider) {
-				@SuppressWarnings("unchecked")
-				IConfigValueIconProvider<T> typedIconProvider = (IConfigValueIconProvider<T>) iconProvider;
-				return typedIconProvider.getIcon(value);
-			}
-			return Optional.empty();
-		}
-
-		@Override
 		public String getValidValuesDescription() {
 			if (validValues.isEmpty()) {
 				return "no values are currently available";
@@ -616,6 +555,44 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 
 		private boolean isRuntimeValue(T value) {
 			return validValues.contains(value);
+		}
+	}
+
+	private static final class SortableListMetadata<T> extends ListValueEditorMetadata<T> {
+		private final IConfigValueEditorMetadata<T> elementMetadata;
+
+		private SortableListMetadata(SortableListSerializer<T> serializer, boolean allowsRemovingValues, RuntimeValueDisplay<T> display) {
+			super(serializer, allowsRemovingValues);
+			this.elementMetadata = new RuntimeValueMetadata<>(serializer.valueSerializer, display);
+		}
+
+		@Override
+		public IConfigValueEditorMetadata<T> getElementMetadata(T value) {
+			return elementMetadata;
+		}
+	}
+
+	private static final class RuntimeValueMetadata<T> extends ConfigValueEditorMetadata<T> implements IConfigValueIconProvider<T> {
+		private final RuntimeValueDisplay<T> display;
+
+		private RuntimeValueMetadata(IConfigValueSerializer<T> serializer, RuntimeValueDisplay<T> display) {
+			super(serializer, ConfigValueEditorTypes.getSelection());
+			this.display = display;
+		}
+
+		@Override
+		public Component getLocalizedValueName(String localizationKey, T value) {
+			return display.getValueName(value).orElseGet(() -> super.getLocalizedValueName(localizationKey, value));
+		}
+
+		@Override
+		public Optional<Component> getLocalizedValueDescription(String localizationKey, T value) {
+			return display.getValueDescription(value).or(() -> super.getLocalizedValueDescription(localizationKey, value));
+		}
+
+		@Override
+		public Optional<IConfigValueIcon> getIcon(T value) {
+			return display.getValueIcon(value);
 		}
 	}
 

@@ -1,27 +1,59 @@
 package net.mezzdev.config.gui.keybindings;
 
+import com.mojang.blaze3d.platform.InputConstants;
+import net.mezzdev.config.gui.api.keybindings.IKeyMappingBinding;
+import net.mezzdev.config.gui.api.keybindings.IKeyMappingInput;
+import net.mezzdev.config.gui.api.keybindings.KeyMappingModifier;
+import net.minecraft.network.chat.Component;
+
 import java.util.Objects;
+import java.util.Set;
 
-/**
- * A key or mouse binding with an optional modifier used by the config screen.
- */
-public record ConfigKeyBinding(String keyName, ConfigKeyModifier modifier) {
-	private static final String UNKNOWN_KEY_NAME = "key.keyboard.unknown";
-
-	/**
-	 * An unbound key binding.
-	 */
-	public static final ConfigKeyBinding UNKNOWN = new ConfigKeyBinding(UNKNOWN_KEY_NAME, ConfigKeyModifier.NONE);
+/** An immutable keyboard or mouse binding with standard and custom modifiers. */
+public record ConfigKeyBinding(InputConstants.Key key, Set<KeyMappingModifier> modifiers, Set<String> customModifiers) implements IKeyMappingBinding {
+	public static final ConfigKeyBinding UNKNOWN = new ConfigKeyBinding(InputConstants.UNKNOWN, Set.of());
 
 	public ConfigKeyBinding {
-		keyName = Objects.requireNonNullElse(keyName, UNKNOWN_KEY_NAME);
-		modifier = Objects.requireNonNullElse(modifier, ConfigKeyModifier.NONE);
+		Objects.requireNonNull(key);
+		modifiers = Set.copyOf(modifiers);
+		customModifiers = ConfigKeyMappingHelper.copyCustomModifiers(customModifiers);
+		if (key.equals(InputConstants.UNKNOWN)) {
+			modifiers = Set.of();
+			customModifiers = Set.of();
+		}
 	}
 
-	/**
-	 * Returns true when this binding has no key or mouse button assigned.
-	 */
+	public ConfigKeyBinding(InputConstants.Key key, Set<KeyMappingModifier> modifiers) {
+		this(key, modifiers, Set.of());
+	}
+
+	@Override
+	public InputConstants.Key getKey() {
+		return key;
+	}
+
+	@Override
+	public Set<KeyMappingModifier> getModifiers() {
+		return modifiers;
+	}
+
+	@Override
 	public boolean isUnbound() {
-		return keyName.equals(UNKNOWN_KEY_NAME);
+		return key.equals(InputConstants.UNKNOWN);
+	}
+
+	@Override
+	public IKeyMappingInput resolve() {
+		return ConfigKeyMappingHelper.INSTANCE.resolve(this);
+	}
+
+	@Override
+	public Component getDisplayName() {
+		return ConfigKeyMappingHelper.INSTANCE.getDisplayName(this);
+	}
+
+	@Override
+	public Set<String> getCustomModifiers() {
+		return customModifiers;
 	}
 }

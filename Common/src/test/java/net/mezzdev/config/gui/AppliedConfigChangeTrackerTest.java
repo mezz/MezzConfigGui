@@ -6,6 +6,7 @@ import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.model.AppliedConfigValueChange;
 import net.mezzdev.config.gui.model.ConfigValueChange;
+import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -139,6 +140,11 @@ class AppliedConfigChangeTrackerTest {
 		@Override
 		public IConfigValueSerializer<String> getSerializer() {
 			return TestSerializer.INSTANCE;
+		}
+
+		@Override
+		public IConfigValueEditorMetadata<String> getEditorMetadata() {
+			return ConfigValueEditorMetadataFactory.INSTANCE.create(getSerializer(), getDefaultValue());
 		}
 	}
 

@@ -18,6 +18,9 @@ val modCompileConfiguration = "compileOnly"
 val modRuntimeConfiguration = "runtimeOnly"
 
 repositories {
+    maven("https://maven.siphalor.de/") {
+        content { includeGroup("de.siphalor.amecs.amecs-key-modifiers") }
+    }
     val deployDir = rootProject.findProperty("DEPLOY_DIR")
     if (deployDir != null) {
         maven(deployDir) {
@@ -124,6 +127,8 @@ dependencies {
     add("minecraft", "com.mojang:minecraft:$minecraftVersion")
     add(modDependencyConfiguration, "net.fabricmc:fabric-loader:$fabricLoaderVersion")
     add(modDependencyConfiguration, "net.fabricmc.fabric-api:fabric-api:$fabricApiVersion")
+
+    compileOnly("de.siphalor.amecs.amecs-key-modifiers:amecs-key-modifiers-mc26.2.0:1.0.2") { isTransitive = false }
 
     add(modCompileConfiguration, "com.terraformersmc:modmenu:$modMenuVersionFabric") { isTransitive = false }
     compileOnly("com.google.code.findbugs:jsr305:$jsr305Version")

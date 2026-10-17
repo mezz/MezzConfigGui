@@ -2,11 +2,12 @@ package net.mezzdev.config.gui.entries;
 
 import net.mezzdev.config.api.value.serializer.ConfigValueRange;
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
-import net.mezzdev.config.gui.api.IConfigRangeValueEditorSerializer;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.config.ConfigGuiOptionsTestUtil;
-import net.minecraft.network.chat.Component;
+import net.mezzdev.config.gui.ConfigValueEditorMetadataFactory;
+import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -56,11 +57,14 @@ class RangeSliderConfigEntryTest {
 		public Runnable addListener(Consumer<ConfigValueRange<Integer>> listener) { return () -> {}; }
 		@Override
 		public TestRangeSerializer getSerializer() { return serializer; }
+
+		@Override
+		public IConfigValueEditorMetadata<ConfigValueRange<Integer>> getEditorMetadata() {
+			return ConfigValueEditorMetadataFactory.INSTANCE.createRange(serializer, serializer.bounds());
+		}
 	}
 
-	private record TestRangeSerializer(ConfigValueRange<Integer> bounds) implements IConfigRangeValueEditorSerializer<Integer> {
-		@Override
-		public ConfigValueRange<Integer> getBounds() { return bounds; }
+	private record TestRangeSerializer(ConfigValueRange<Integer> bounds) implements IConfigValueSerializer<ConfigValueRange<Integer>> {
 		@Override
 		public String serialize(ConfigValueRange<Integer> value) { return value.min() + ".." + value.max(); }
 		@Override
@@ -84,7 +88,5 @@ class RangeSliderConfigEntryTest {
 		}
 		@Override
 		public String getValidValuesDescription() { return "min..max"; }
-		@Override
-		public Component getLocalizedValueName(String key, ConfigValueRange<Integer> value) { return Component.literal(serialize(value)); }
 	}
 }

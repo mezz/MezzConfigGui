@@ -1,8 +1,7 @@
 package net.mezzdev.config.gui;
 
-import net.mezzdev.config.gui.api.ConfigValueLocalization;
-import net.mezzdev.config.gui.api.IConfigListValueEditorOptions;
-import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
+import net.mezzdev.config.gui.api.IConfigListValueEditorMetadata;
+import net.mezzdev.config.api.value.serializer.IConfigListValueSerializer;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueIconProvider;
 import net.mezzdev.config.gui.config.ModNavigationConfig;
@@ -35,10 +34,10 @@ class ModNavigationConfigTest {
 		IConfigScreenValue<List<String>> editor = createEditor(config);
 
 		assertEquals(List.of("b", "c", "a"), editor.getValue());
-		IConfigListValueEditorSerializer<String> serializer = listSerializer(editor);
-		assertTrue(assertInstanceOf(IConfigListValueEditorOptions.class, serializer).allowsRemovingValues());
-		assertEquals("Alpha", ConfigValueLocalization.getValueName(serializer.getElementSerializer(), "mods", "b").getString());
-		assertTrue(iconProvider(serializer).getIcon("b").isPresent());
+		IConfigListValueSerializer<String> serializer = listSerializer(editor);
+		assertTrue(assertInstanceOf(IConfigListValueEditorMetadata.class, editor.getEditorMetadata()).allowsRemovingValues());
+		assertEquals("Alpha", listMetadata(editor).getElementMetadata("b").getLocalizedValueName("mods", "b").getString());
+		assertTrue(iconProvider(listMetadata(editor).getElementMetadata("b")).getIcon("b").isPresent());
 
 		editor.set(List.of("a", "b"));
 		assertEquals(List.of("a", "b"), ids(config.applyPreferences(entries)));
@@ -130,13 +129,18 @@ class ModNavigationConfigTest {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static IConfigListValueEditorSerializer<String> listSerializer(IConfigScreenValue<List<String>> editor) {
-		return (IConfigListValueEditorSerializer<String>) assertInstanceOf(IConfigListValueEditorSerializer.class, editor.getSerializer());
+	private static IConfigListValueSerializer<String> listSerializer(IConfigScreenValue<List<String>> editor) {
+		return (IConfigListValueSerializer<String>) assertInstanceOf(IConfigListValueSerializer.class, editor.getSerializer());
 	}
 
 	@SuppressWarnings("unchecked")
-	private static IConfigValueIconProvider<String> iconProvider(IConfigListValueEditorSerializer<String> serializer) {
-		return (IConfigValueIconProvider<String>) assertInstanceOf(IConfigValueIconProvider.class, serializer.getElementSerializer());
+	private static IConfigValueIconProvider<String> iconProvider(Object metadata) {
+		return (IConfigValueIconProvider<String>) assertInstanceOf(IConfigValueIconProvider.class, metadata);
+	}
+
+	@SuppressWarnings("unchecked")
+	private static IConfigListValueEditorMetadata<String> listMetadata(IConfigScreenValue<List<String>> value) {
+		return (IConfigListValueEditorMetadata<String>) value.getEditorMetadata();
 	}
 
 	private static List<String> ids(List<ConfigScreenListEntry> entries) {

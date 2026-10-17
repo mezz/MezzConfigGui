@@ -12,6 +12,10 @@ public abstract class ConfigScreenBase extends Screen {
 	private boolean doubleClick;
 	private int mouseModifiers;
 
+	protected int getMouseModifiers() {
+		return mouseModifiers;
+	}
+
 	protected ConfigScreenBase(Component title) {
 		super(title);
 	}

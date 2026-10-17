@@ -5,11 +5,10 @@ import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.api.value.color.PackedColor;
 import net.mezzdev.config.gui.api.ConfigValueEditorType;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
-import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
-import net.mezzdev.config.gui.api.IConfigRangeValueEditorSerializer;
+import net.mezzdev.config.api.value.serializer.IConfigListValueSerializer;
+import net.mezzdev.config.gui.api.IConfigRangeValueEditorMetadata;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueEditor;
-import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.mezzdev.config.gui.api.IConfigValueEditorFactory;
 import net.mezzdev.config.gui.keybindings.KeyMappingConfigEntry;
 import net.mezzdev.config.gui.keybindings.KeyMappingValue;
@@ -73,7 +72,7 @@ public final class ConfigEntryWidgetFactory {
 	}
 
 	private <T> ConfigEntryWidget<T> createTyped(IConfigScreenValue<T> value) {
-		ConfigValueEditorType<?> editorType = getEditorType(value);
+		ConfigValueEditorType<?> editorType = value.getEditorMetadata().getEditorType();
 		ConfigEntryWidgetCreator<?> creator = creators.get(editorType);
 		if (creator == null) {
 			throw new UnsupportedOperationException("Unsupported config value editor type: " + editorType);
@@ -92,35 +91,8 @@ public final class ConfigEntryWidgetFactory {
 		if (!(value.getValue() instanceof Number)) {
 			return false;
 		}
-		IConfigValueSerializer<?> serializer = value.getSerializer();
-		if (serializer instanceof IConfigValueEditorSerializer<?> editorSerializer) {
-			ConfigValueEditorType<?> editorType = editorSerializer.getEditorType();
-			return editorType == ConfigValueEditorTypes.INTEGER || editorType == ConfigValueEditorTypes.getText();
-		}
-		return true;
-	}
-
-	private static ConfigValueEditorType<?> getEditorType(IConfigScreenValue<?> value) {
-		IConfigValueSerializer<?> serializer = value.getSerializer();
-		if (serializer instanceof IConfigValueEditorSerializer<?> editorSerializer) {
-			return editorSerializer.getEditorType();
-		}
-		if (value.getValue() instanceof List<?> && ConfigListValueEditorSerializers.canAdapt(serializer)) {
-			return ConfigValueEditorTypes.getList();
-		}
-		if (value.getValue() instanceof PackedColor) {
-			return ConfigValueEditorTypes.COLOR;
-		}
-		if (value.getValue() instanceof Integer && serializer.getRange().isPresent()) {
-			return ConfigValueEditorTypes.INTEGER;
-		}
-		if (value.getValue() instanceof Boolean) {
-			return ConfigValueEditorTypes.BOOLEAN;
-		}
-		if (serializer.getAllValidValues().isPresent()) {
-			return ConfigValueEditorTypes.getSelection();
-		}
-		return ConfigValueEditorTypes.getText();
+		ConfigValueEditorType<?> editorType = value.getEditorMetadata().getEditorType();
+		return editorType == ConfigValueEditorTypes.INTEGER || editorType == ConfigValueEditorTypes.getText();
 	}
 
 	private ConfigEntryWidget<KeyMappingValue> createKeyMappingEntry(IConfigScreenValue<KeyMappingValue> value) {
@@ -149,9 +121,9 @@ public final class ConfigEntryWidgetFactory {
 
 	@SuppressWarnings("unchecked")
 	private <T> ConfigEntryWidget<ConfigValueRange<T>> createRangeEntry(IConfigScreenValue<ConfigValueRange<T>> value) {
-		IConfigRangeValueEditorSerializer<T> serializer = (IConfigRangeValueEditorSerializer<T>) value.getSerializer();
+		IConfigRangeValueEditorMetadata<T> metadata = (IConfigRangeValueEditorMetadata<T>) value.getEditorMetadata();
 		ConfigEntryWidget<ConfigValueRange<T>> textEntry = createTextEntry(value);
-		return NumberSliderModel.create(serializer.getBounds())
+		return NumberSliderModel.create(metadata.getBounds())
 			.<ConfigEntryWidget<ConfigValueRange<T>>>map(numbers -> new NumberDisplayConfigEntry<>(
 				value, new RangeSliderConfigEntry<>(value, numbers, textures), textEntry, textures))
 			.orElse(textEntry);
@@ -159,7 +131,7 @@ public final class ConfigEntryWidgetFactory {
 
 	@SuppressWarnings("unchecked")
 	private <T> ConfigEntryWidget<List<T>> createListEntry(IConfigScreenValue<List<T>> value) {
-		IConfigListValueEditorSerializer<T> serializer = ConfigListValueEditorSerializers.adapt((IConfigValueSerializer<List<T>>) value.getSerializer());
+		IConfigListValueSerializer<T> serializer = (IConfigListValueSerializer<T>) value.getSerializer();
 		return new ListConfigEntry<>(value, serializer, valueSelectorOpener, layoutUpdater, textures);
 	}
 

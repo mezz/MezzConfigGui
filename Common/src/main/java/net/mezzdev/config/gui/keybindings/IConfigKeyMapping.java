@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui.keybindings;
 
+import com.mojang.blaze3d.platform.InputConstants;
+import net.mezzdev.config.gui.api.keybindings.IKeyMappingBinding;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Unmodifiable;
 
@@ -32,36 +34,36 @@ public interface IConfigKeyMapping {
 	/**
 	 * Get the current binding value.
 	 */
-	ConfigKeyBinding getValue();
+	IKeyMappingBinding getValue();
 
 	/**
 	 * Get the default binding value.
 	 */
-	ConfigKeyBinding getDefaultValue();
-
-	/**
-	 * Normalize a binding before display or storage.
-	 */
-	ConfigKeyBinding normalize(ConfigKeyBinding value);
+	IKeyMappingBinding getDefaultValue();
 
 	/**
 	 * Set the binding value.
 	 */
-	void set(ConfigKeyBinding value);
+	void set(IKeyMappingBinding value);
 
 	/**
 	 * Get the localized display name for a binding value.
 	 */
-	Component getValueName(ConfigKeyBinding value);
+	Component getValueName(IKeyMappingBinding value);
 
 	/**
-	 * Get the modifier represented by the given key, if any.
+	 * Check whether the input can act as a modifier.
 	 */
-	ConfigKeyModifier getKeyModifier(String keyName);
+	boolean isModifier(InputConstants.Key key);
+
+	/**
+	 * Choose a supported binding from an input event and its held modifiers.
+	 */
+	IKeyMappingBinding createBinding(InputConstants.Key key, int eventModifiers);
 
 	/**
 	 * Get display information for key mappings that conflict with the given value.
 	 */
 	@Unmodifiable
-	List<ConfigKeyMappingConflict> getConflicts(ConfigKeyBinding value);
+	List<ConfigKeyMappingConflict> getConflicts(IKeyMappingBinding value);
 }

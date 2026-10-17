@@ -22,6 +22,8 @@ import net.mezzdev.config.gui.entries.ConfigEntryWidget;
 import net.mezzdev.config.gui.input.InputType;
 import net.mezzdev.config.gui.input.UserInput;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
+import net.mezzdev.config.gui.ConfigValueEditorMetadataFactory;
+import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.Nullable;
@@ -719,6 +721,11 @@ class ConfigCategoryTreeTest {
 		@Override
 		public IConfigValueSerializer<Boolean> getSerializer() {
 			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public IConfigValueEditorMetadata<Boolean> getEditorMetadata() {
+			return ConfigValueEditorMetadataFactory.INSTANCE.create(getSerializer(), getDefaultValue());
 		}
 	}
 

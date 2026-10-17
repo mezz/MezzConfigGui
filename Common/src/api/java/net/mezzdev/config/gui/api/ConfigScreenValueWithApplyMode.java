@@ -69,6 +69,11 @@ class ConfigScreenValueWithApplyMode<T> implements IConfigScreenValue<T> {
 	}
 
 	@Override
+	public IConfigValueEditorMetadata<T> getEditorMetadata() {
+		return configValue.getEditorMetadata();
+	}
+
+	@Override
 	public Optional<IConfigValue<T>> getConfigValue() {
 		return configValue.getConfigValue();
 	}

@@ -7,6 +7,7 @@ import net.mezzdev.config.gui.info.ServerConfigAccess;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
+import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import net.minecraft.network.chat.Component;
 import net.minecraft.client.Minecraft;
 import net.neoforged.fml.config.ModConfig;
@@ -44,6 +45,7 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 	private final ModConfigSpec.ConfigValue<T> configValue;
 	private final T defaultValue;
 	private final IConfigValueSerializer<T> serializer;
+	private final IConfigValueEditorMetadata<T> metadata;
 	private final ConfigValueRestartRequirement restartRequirement;
 	@Nullable
 	private List<Consumer<T>> listeners;
@@ -69,6 +71,7 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 		this.configValue = configValue;
 		this.defaultValue = snapshot(configValue.getDefault());
 		this.serializer = serializer;
+		this.metadata = NeoForgeValueEditorMetadata.create(serializer, defaultValue);
 	}
 
 	static ConfigValueRestartRequirement getRestartRequirement(
@@ -231,5 +234,10 @@ final class NeoForgeConfigValue<T> implements IConfigScreenValue<T>, IConfigLoca
 	@Override
 	public IConfigValueSerializer<T> getSerializer() {
 		return serializer;
+	}
+
+	@Override
+	public IConfigValueEditorMetadata<T> getEditorMetadata() {
+		return metadata;
 	}
 }

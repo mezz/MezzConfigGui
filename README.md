@@ -14,6 +14,7 @@ It can discover config schemas registered with [MezzConfig](https://github.com/m
 Pack authors can [customize mod order and visibility](docs/PACK_CONFIGURATION.md).
 See [server configuration support](docs/SERVER_CONFIGS.md) for the difference
 between MezzConfig remote editing and native NeoForge configs.
+See [key modifiers](docs/KEY_MODIFIERS.md) for loader support and custom key mapping adapters.
 
 See [Dependency Setup](docs/DEPENDENCY_SETUP.md) for loader-specific Gradle examples.
 This branch builds Minecraft 26.3 for Fabric and NeoForge.

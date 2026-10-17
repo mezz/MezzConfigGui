@@ -102,7 +102,7 @@ final class SelectionConfigValueEditor<T> implements IConfigValueEditor<T> {
 	}
 
 	private static <T> List<T> getValidValues(IConfigScreenValue<T> configValue) {
-		return configValue.getSerializer()
+		return configValue.getEditorMetadata()
 			.getAllValidValues()
 			.map(List::copyOf)
 			.orElseThrow(() -> new UnsupportedOperationException("Selection config value has no valid values: " + configValue.getName()));

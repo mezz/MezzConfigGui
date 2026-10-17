@@ -6,14 +6,12 @@ import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
-import net.mezzdev.config.gui.api.ConfigValueLocalization;
-import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
-import net.mezzdev.config.gui.api.IConfigListValueEditorOptions;
+import net.mezzdev.config.api.value.serializer.IConfigListValueSerializer;
+import net.mezzdev.config.gui.api.IConfigListValueEditorMetadata;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
-import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.IConfigValueIcon;
 import net.mezzdev.config.gui.api.IConfigValueIconProvider;
-import net.mezzdev.config.gui.api.IConfigValueLocalizationProvider;
 import net.mezzdev.config.gui.api.ISortableConfigValueFactory;
 import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.Nullable;
@@ -58,19 +56,19 @@ class SortableConfigValueFactoryTest {
 		assertEquals(List.of("first", "second"), configValue.getValue());
 		assertEquals(ConfigValueApplyMode.ON_APPLY, configValue.getApplyMode());
 
-		IConfigListValueEditorSerializer<String> listSerializer = getListSerializer(configValue);
-		assertSame(ConfigValueEditorTypes.getList(), getEditorSerializer(listSerializer).getEditorType());
+		IConfigListValueSerializer<String> listSerializer = getListSerializer(configValue);
+		assertSame(ConfigValueEditorTypes.getList(), configValue.getEditorMetadata().getEditorType());
 		assertEquals(List.of("first", "second"), List.copyOf(listSerializer.getElementSerializer().getAllValidValues().orElseThrow()));
-		assertEquals("First", ConfigValueLocalization
-			.getValueName(listSerializer.getElementSerializer(), "test.sortOrder", "first")
+		assertEquals("First", getListMetadata(configValue).getElementMetadata("first")
+			.getLocalizedValueName("test.sortOrder", "first")
 			.getString());
-		assertEquals("First description", ConfigValueLocalization
-			.getValueDescription(listSerializer.getElementSerializer(), "test.sortOrder", "first")
+		assertEquals("First description", getListMetadata(configValue).getElementMetadata("first")
+			.getLocalizedValueDescription("test.sortOrder", "first")
 			.orElseThrow()
 			.getString());
-		IConfigValueIconProvider<String> iconProvider = getIconProvider(listSerializer.getElementSerializer());
+		IConfigValueIconProvider<String> iconProvider = getIconProvider(getListMetadata(configValue).getElementMetadata("first"));
 		assertSame(firstIcon, iconProvider.getIcon("first").orElseThrow());
-		IConfigListValueEditorOptions editorOptions = assertInstanceOf(IConfigListValueEditorOptions.class, listSerializer);
+		IConfigListValueEditorMetadata<?> editorOptions = getListMetadata(configValue);
 		assertTrue(editorOptions.allowsRemovingValues());
 	}
 
@@ -104,7 +102,7 @@ class SortableConfigValueFactoryTest {
 			Map.of(),
 			Map.of()
 		);
-		IConfigListValueEditorSerializer<String> listSerializer = getListSerializer(configValue);
+		IConfigListValueSerializer<String> listSerializer = getListSerializer(configValue);
 		IConfigValueSerializer<String> elementSerializer = listSerializer.getElementSerializer();
 
 		assertFalse(elementSerializer.isValid("third"));
@@ -177,9 +175,9 @@ class SortableConfigValueFactoryTest {
 			TestStringSerializer.INSTANCE
 		);
 
-		IConfigListValueEditorSerializer<String> listSerializer = getListSerializer(configValue);
+		IConfigListValueSerializer<String> listSerializer = getListSerializer(configValue);
 		assertEquals(List.of("first", "second"), List.copyOf(listSerializer.getElementSerializer().getAllValidValues().orElseThrow()));
-		IConfigListValueEditorOptions editorOptions = assertInstanceOf(IConfigListValueEditorOptions.class, listSerializer);
+		IConfigListValueEditorMetadata<?> editorOptions = getListMetadata(configValue);
 		assertFalse(editorOptions.allowsRemovingValues());
 	}
 
@@ -201,23 +199,23 @@ class SortableConfigValueFactoryTest {
 		assertEquals(List.of(), sortingConfig.savedValues);
 	}
 
-	private static IConfigListValueEditorSerializer<String> getListSerializer(IConfigScreenValue<List<String>> configValue) {
+	private static IConfigListValueSerializer<String> getListSerializer(IConfigScreenValue<List<String>> configValue) {
 		return getListSerializer(configValue.getSerializer());
 	}
 
 	@SuppressWarnings("unchecked")
-	private static IConfigListValueEditorSerializer<String> getListSerializer(Object serializer) {
-		return (IConfigListValueEditorSerializer<String>) assertInstanceOf(IConfigListValueEditorSerializer.class, serializer);
-	}
-
-	@SuppressWarnings("unchecked")
-	private static IConfigValueEditorSerializer<List<String>> getEditorSerializer(Object serializer) {
-		return (IConfigValueEditorSerializer<List<String>>) assertInstanceOf(IConfigValueEditorSerializer.class, serializer);
+	private static IConfigListValueSerializer<String> getListSerializer(Object serializer) {
+		return (IConfigListValueSerializer<String>) assertInstanceOf(IConfigListValueSerializer.class, serializer);
 	}
 
 	@SuppressWarnings("unchecked")
 	private static IConfigValueIconProvider<String> getIconProvider(Object serializer) {
 		return (IConfigValueIconProvider<String>) assertInstanceOf(IConfigValueIconProvider.class, serializer);
+	}
+
+	@SuppressWarnings("unchecked")
+	private static IConfigListValueEditorMetadata<String> getListMetadata(IConfigScreenValue<List<String>> value) {
+		return (IConfigListValueEditorMetadata<String>) value.getEditorMetadata();
 	}
 
 	private static final class TestSortingConfig implements ISortingConfig<String> {
@@ -230,6 +228,11 @@ class SortableConfigValueFactoryTest {
 
 		private TestSortingConfig(boolean allowsRemovingValues) {
 			this.allowsRemovingValues = allowsRemovingValues;
+		}
+
+		@Override
+		public boolean allowsRemovingValues() {
+			return allowsRemovingValues;
 		}
 
 		@Override
@@ -270,11 +273,6 @@ class SortableConfigValueFactoryTest {
 		}
 
 		@Override
-		public boolean allowsRemovingValues() {
-			return allowsRemovingValues;
-		}
-
-		@Override
 		public Runnable addChangeListener(Runnable listener) {
 			listeners.add(listener);
 			return () -> listeners.remove(listener);
@@ -286,7 +284,7 @@ class SortableConfigValueFactoryTest {
 		}
 	}
 
-	private enum TestStringSerializer implements IConfigValueSerializer<String>, IConfigValueLocalizationProvider<String> {
+	private enum TestStringSerializer implements IConfigValueSerializer<String> {
 		INSTANCE;
 
 		@Override
@@ -307,11 +305,6 @@ class SortableConfigValueFactoryTest {
 		@Override
 		public Optional<List<String>> getAllValidValues() {
 			return Optional.empty();
-		}
-
-		@Override
-		public Component getLocalizedValueName(String configValueLocalizationKey, String value) {
-			return Component.literal(value);
 		}
 
 		@Override

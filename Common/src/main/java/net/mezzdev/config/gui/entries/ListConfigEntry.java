@@ -18,8 +18,8 @@ import net.mezzdev.config.gui.ConfigInputUtil;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
-import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
-import net.mezzdev.config.gui.api.IConfigListValueEditorOptions;
+import net.mezzdev.config.api.value.serializer.IConfigListValueSerializer;
+import net.mezzdev.config.gui.api.IConfigListValueEditorMetadata;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValuePopup;
@@ -38,6 +38,8 @@ import net.mezzdev.config.gui.textures.ConfigButtonIcon;
 import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.mezzdev.config.gui.util.HexColorString;
+import net.mezzdev.config.gui.ConfigValueEditorMetadataFactory;
+import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -92,6 +94,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	private List<T> availableValues = List.of();
 	private final List<T> allValidValues;
 	private final IConfigValueSerializer<T> elementSerializer;
+	private final IConfigListValueEditorMetadata<T> metadata;
 	@Nullable
 	private final KeyValueElementSerializerAdapter<T> keyValueSerializer;
 	private final Consumer<ConfigPopupSelector> valueSelectorOpener;
@@ -113,9 +116,10 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	@Nullable
 	private ComponentEditSession componentEditSession;
 
+	@SuppressWarnings("unchecked")
 	ListConfigEntry(
 		IConfigScreenValue<List<T>> listValue,
-		IConfigListValueEditorSerializer<T> listSerializer,
+		IConfigListValueSerializer<T> listSerializer,
 		Consumer<ConfigPopupSelector> valueSelectorOpener,
 		Runnable layoutUpdater,
 		ConfigTextures textures
@@ -124,11 +128,10 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		this.valueSelectorOpener = valueSelectorOpener;
 		this.layoutUpdater = layoutUpdater;
 		this.elementSerializer = listSerializer.getElementSerializer();
+		this.metadata = (IConfigListValueEditorMetadata<T>) listValue.getEditorMetadata();
 		this.keyValueSerializer = KeyValueElementSerializerAdapter.create(elementSerializer).orElse(null);
 		this.ordered = listSerializer.getOrdering() == ConfigListOrdering.ORDERED;
-		boolean configuredAllowsRemovingValues = !(listSerializer instanceof IConfigListValueEditorOptions editorOptions) ||
-			editorOptions.allowsRemovingValues();
-		this.allowsRemovingValues = configuredAllowsRemovingValues || keyValueSerializer != null;
+		this.allowsRemovingValues = metadata.allowsRemovingValues() || keyValueSerializer != null;
 		Optional<List<T>> allValidValues = elementSerializer.getAllValidValues();
 		this.allowsTypedInput = allowsRemovingValues && allValidValues.isEmpty();
 		this.allowsEditingValues = allValidValues.isEmpty();
@@ -1107,7 +1110,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		return findSingleMove(oldValue, newValue)
 			.<Component>map(move -> Component.translatable(
 				"mezz_config.config.screen.pendingChanges.list.move",
-				ConfigValueLocalization.getValueName(elementSerializer, configValue.getLocalizationKey(), move.value()),
+				metadata.getElementMetadata(move.value()).getLocalizedValueName(configValue.getLocalizationKey(), move.value()),
 				move.oldIndex() + 1,
 				move.newIndex() + 1
 			))
@@ -1715,8 +1718,8 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 				ColorSwatch.draw(guiGraphics, swatch, hexColor.color());
 				textX += swatch.getWidth() + COLOR_COMPONENT_GAP;
 			} else {
-				ConfigValueIcon.draw(guiGraphics, elementSerializer, value, textX, iconY);
-				textX += ConfigValueIcon.getTextOffset(elementSerializer, value);
+				ConfigValueIcon.draw(guiGraphics, metadata.getElementMetadata(value), value, textX, iconY);
+				textX += ConfigValueIcon.getTextOffset(metadata.getElementMetadata(value), value);
 			}
 			ImmutableRect2i textArea = new ImmutableRect2i(
 				textX,
@@ -1733,7 +1736,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 					textColor = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_INVALID_TEXT);
 				}
 			} else {
-				valueName = ConfigValueLocalization.getValueName(elementSerializer, configValue.getLocalizationKey(), value);
+				valueName = metadata.getElementMetadata(value).getLocalizedValueName(configValue.getLocalizationKey(), value);
 			}
 			ConfigEntryWidget.drawFittedText(guiGraphics, font, valueName, textArea, textColor, false);
 		}
@@ -1809,13 +1812,14 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 			}
 			int textX = componentArea.getX() + KEY_VALUE_TEXT_PADDING;
 			int iconY = componentArea.getY() + (componentArea.getHeight() - ConfigValueIcon.ICON_SIZE) / 2;
+			var componentMetadata = ConfigValueEditorMetadataFactory.INSTANCE.create(componentSerializer, component);
 			if (valueComponent && hexColor != null) {
 				ImmutableRect2i swatch = createColorComponentAreas(componentArea).swatchArea();
 				ColorSwatch.draw(guiGraphics, swatch, hexColor.color());
 				textX += swatch.getWidth() + COLOR_COMPONENT_GAP;
 			} else {
-				ConfigValueIcon.draw(guiGraphics, componentSerializer, component, textX, iconY);
-				textX += ConfigValueIcon.getTextOffset(componentSerializer, component);
+				ConfigValueIcon.draw(guiGraphics, componentMetadata, component, textX, iconY);
+				textX += ConfigValueIcon.getTextOffset(componentMetadata, component);
 			}
 			ImmutableRect2i textArea = new ImmutableRect2i(
 				textX,
@@ -1836,8 +1840,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 				if (valueComponent) {
 					localizationKeySuffix = ".value";
 				}
-				text = ConfigValueLocalization.getValueName(
-					componentSerializer,
+				text = componentMetadata.getLocalizedValueName(
 					configValue.getLocalizationKey() + localizationKeySuffix,
 					component
 				);
@@ -1958,11 +1961,13 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	}
 
 	private final class AddValueScreenValue implements IConfigScreenValue<T>, IConfigLocalizedValue {
+		private final IConfigValueEditorMetadata<T> metadata;
 		private T value;
 		private final List<Consumer<T>> listeners = new ArrayList<>();
 
 		private AddValueScreenValue(T value) {
 			this.value = value;
+			this.metadata = ListConfigEntry.this.metadata.getElementMetadata(value);
 		}
 
 		@Override
@@ -2027,9 +2032,15 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		public IConfigValueSerializer<T> getSerializer() {
 			return elementSerializer;
 		}
+
+		@Override
+		public IConfigValueEditorMetadata<T> getEditorMetadata() {
+			return metadata;
+		}
 	}
 
 	private final class ListComponentScreenValue implements IConfigScreenValue<Object>, IConfigLocalizedValue {
+		private final IConfigValueEditorMetadata<Object> metadata;
 		private final int rowIndex;
 		private final boolean keyComponent;
 		private final List<Consumer<Object>> listeners = new ArrayList<>();
@@ -2037,6 +2048,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		private ListComponentScreenValue(int rowIndex, boolean keyComponent) {
 			this.rowIndex = rowIndex;
 			this.keyComponent = keyComponent;
+			this.metadata = ConfigValueEditorMetadataFactory.INSTANCE.create(getComponentSerializer(keyComponent), getValue());
 		}
 
 		@Override
@@ -2133,6 +2145,11 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		@Override
 		public IConfigValueSerializer<Object> getSerializer() {
 			return getComponentSerializer(keyComponent);
+		}
+
+		@Override
+		public IConfigValueEditorMetadata<Object> getEditorMetadata() {
+			return metadata;
 		}
 
 		private Object getComponent(List<T> entries, int index) {
