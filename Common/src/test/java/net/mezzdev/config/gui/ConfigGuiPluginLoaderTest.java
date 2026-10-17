@@ -18,9 +18,7 @@ import net.mezzdev.config.api.value.change.IConfigValueBatchChangeListener;
 import net.mezzdev.config.api.value.change.IConfigValueChangeListener;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.ConfigValueEditorType;
-import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
-import net.mezzdev.config.gui.api.ConfigValueLocalization;
-import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
+import net.mezzdev.config.api.value.serializer.IConfigListValueSerializer;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigGuiRegistration;
@@ -28,7 +26,7 @@ import net.mezzdev.config.gui.api.IConfigScreenBuilder;
 import net.mezzdev.config.gui.api.IConfigScreenCategoryBuilder;
 import net.mezzdev.config.gui.api.IConfigScreenFactory;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
-import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.IConfigValueIcon;
 import net.mezzdev.config.gui.api.IConfigValueIconProvider;
 import net.mezzdev.config.gui.config.ConfigGuiOptionsTestUtil;
@@ -36,6 +34,8 @@ import net.mezzdev.config.gui.model.ConfigScreenModel;
 import net.mezzdev.config.gui.model.ConfigValueChange;
 import net.mezzdev.config.gui.remote.RemoteConfigEditor;
 import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryRegistry;
+import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
+import net.mezzdev.config.gui.api.IConfigListValueEditorMetadata;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.Nullable;
@@ -296,7 +296,7 @@ class ConfigGuiPluginLoaderTest {
 		TestBackingConfigValue backingValue = new TestBackingConfigValue("restartRequiredValue");
 		TestRemoteConfigSchema backingSchema = new TestRemoteConfigSchema(backingValue);
 		IConfigScreenValue<String> customizedValue = IConfigScreenValue.withApplyMode(
-			IConfigScreenValue.configValue(backingValue),
+			ConfigScreenValues.create(backingValue),
 			ConfigValueApplyMode.IMMEDIATE
 		);
 		RemoteConfigEditor.onClientConnected(false);
@@ -402,23 +402,23 @@ class ConfigGuiPluginLoaderTest {
 		assertEquals(ConfigValueApplyMode.IMMEDIATE, value.getApplyMode());
 		assertEquals(ConfigValueRestartRequirement.WORLD_RESTART, value.getRestartRequirement());
 
-		IConfigListValueEditorSerializer<String> listSerializer = getStringListSerializer(value);
+		IConfigListValueSerializer<String> listSerializer = getStringListSerializer(value);
 		assertEquals(List.of("first", "second"), List.copyOf(listSerializer.getElementSerializer().getAllValidValues().orElseThrow()));
-		assertEquals("First", ConfigValueLocalization
-			.getValueName(listSerializer.getElementSerializer(), "test.sortOrder", "first")
+		assertEquals("First", getStringListMetadata(value).getElementMetadata("first")
+			.getLocalizedValueName("test.sortOrder", "first")
 			.getString());
-		assertEquals("second", ConfigValueLocalization
-			.getValueName(listSerializer.getElementSerializer(), "test.sortOrder", "second")
+		assertEquals("second", getStringListMetadata(value).getElementMetadata("second")
+			.getLocalizedValueName("test.sortOrder", "second")
 			.getString());
-		assertEquals("First description", ConfigValueLocalization
-			.getValueDescription(listSerializer.getElementSerializer(), "test.sortOrder", "first")
+		assertEquals("First description", getStringListMetadata(value).getElementMetadata("first")
+			.getLocalizedValueDescription("test.sortOrder", "first")
 			.orElseThrow()
 			.getString());
-		assertTrue(ConfigValueLocalization
-			.getValueDescription(listSerializer.getElementSerializer(), "test.sortOrder", "second")
+		assertTrue(getStringListMetadata(value).getElementMetadata("second")
+			.getLocalizedValueDescription("test.sortOrder", "second")
 			.isEmpty());
 
-		IConfigValueIconProvider<String> iconProvider = getStringIconProvider(listSerializer);
+		IConfigValueIconProvider<String> iconProvider = getStringIconProvider(getStringListMetadata(value).getElementMetadata("first"));
 		assertSame(firstIcon, iconProvider.getIcon("first").orElseThrow());
 		assertTrue(iconProvider.getIcon("second").isEmpty());
 
@@ -942,9 +942,31 @@ class ConfigGuiPluginLoaderTest {
 	}
 
 	@Test
+	void replacesManagedValueMetadataWithoutMovingTheRow() {
+		TestBackingConfigValue value = new TestBackingConfigValue("mode");
+		var editorType = ConfigValueEditorType.<String>create(MOD_ID, "custom_metadata");
+		var metadata = ConfigValueEditorMetadataFactory.INSTANCE.create(value.getSerializer(), editorType);
+		TestCategory originalCategory = new TestCategory("general", List.of(
+			new TestConfigValue("before"), ConfigScreenValues.create(value), new TestConfigValue("after")));
+
+		List<ConfigScreenCategory> categories = createCategories(
+			List.of(originalCategory),
+			screenBuilder -> screenBuilder.configureCategory("general").getValueBuilder(value)
+				.hide()
+				.insertBefore(IConfigScreenValue.configValue(value, metadata)),
+			lookup -> List.of()
+		);
+
+		assertEquals(List.of("before", "mode", "after"), valueNames(categories.getFirst()));
+		IConfigScreenValue<?> configuredValue = List.copyOf(categories.getFirst().getConfigValues()).get(1);
+		assertSame(value, configuredValue.getIdentityKey());
+		assertSame(metadata, configuredValue.getEditorMetadata());
+	}
+
+	@Test
 	void valueBuilderConfiguresMezzConfigValue() {
 		TestBackingConfigValue backingValue = new TestBackingConfigValue("mode");
-		IConfigScreenValue<String> screenValue = IConfigScreenValue.configValue(backingValue);
+		IConfigScreenValue<String> screenValue = ConfigScreenValues.create(backingValue);
 		TestCategory originalCategory = new TestCategory("general", List.of(screenValue));
 
 		List<ConfigScreenCategory> categories = createCategories(
@@ -1178,13 +1200,18 @@ class ConfigGuiPluginLoaderTest {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static IConfigListValueEditorSerializer<String> getStringListSerializer(IConfigScreenValue<?> value) {
-		return (IConfigListValueEditorSerializer<String>) value.getSerializer();
+	private static IConfigListValueSerializer<String> getStringListSerializer(IConfigScreenValue<?> value) {
+		return (IConfigListValueSerializer<String>) value.getSerializer();
 	}
 
 	@SuppressWarnings("unchecked")
-	private static IConfigValueIconProvider<String> getStringIconProvider(IConfigListValueEditorSerializer<String> listSerializer) {
-		return (IConfigValueIconProvider<String>) listSerializer.getElementSerializer();
+	private static IConfigValueIconProvider<String> getStringIconProvider(IConfigValueEditorMetadata<String> metadata) {
+		return (IConfigValueIconProvider<String>) metadata;
+	}
+
+	@SuppressWarnings("unchecked")
+	private static IConfigListValueEditorMetadata<String> getStringListMetadata(IConfigScreenValue<?> value) {
+		return (IConfigListValueEditorMetadata<String>) value.getEditorMetadata();
 	}
 
 	private static KeyMapping keyMapping(String name, int keyCode) {
@@ -1317,8 +1344,13 @@ class ConfigGuiPluginLoaderTest {
 		}
 
 		@Override
-		public IConfigValueEditorSerializer<String> getSerializer() {
+		public IConfigValueSerializer<String> getSerializer() {
 			return TestSerializer.INSTANCE;
+		}
+
+		@Override
+		public IConfigValueEditorMetadata<String> getEditorMetadata() {
+			return ConfigValueEditorMetadataFactory.INSTANCE.create(getSerializer(), getDefaultValue());
 		}
 
 		@Override
@@ -1335,6 +1367,11 @@ class ConfigGuiPluginLoaderTest {
 
 		private TestSortingConfig(boolean allowsRemovingValues) {
 			this.allowsRemovingValues = allowsRemovingValues;
+		}
+
+		@Override
+		public boolean allowsRemovingValues() {
+			return allowsRemovingValues;
 		}
 
 		@Override
@@ -1369,11 +1406,6 @@ class ConfigGuiPluginLoaderTest {
 		@Override
 		public boolean isVisible(Collection<String> allValues, String value) {
 			return getSortedValues(allValues).contains(value);
-		}
-
-		@Override
-		public boolean allowsRemovingValues() {
-			return allowsRemovingValues;
 		}
 
 		@Override
@@ -1461,7 +1493,7 @@ class ConfigGuiPluginLoaderTest {
 		}
 
 		@Override
-		public IConfigValueEditorSerializer<String> getSerializer() {
+		public IConfigValueSerializer<String> getSerializer() {
 			return TestSerializer.INSTANCE;
 		}
 	}
@@ -1543,7 +1575,7 @@ class ConfigGuiPluginLoaderTest {
 		}
 	}
 
-	private enum TestSerializer implements IConfigValueEditorSerializer<String> {
+	private enum TestSerializer implements IConfigValueSerializer<String> {
 		INSTANCE;
 
 		@Override
@@ -1567,19 +1599,10 @@ class ConfigGuiPluginLoaderTest {
 		}
 
 		@Override
-		public Component getLocalizedValueName(String configValueLocalizationKey, String value) {
-			return Component.literal(value);
-		}
-
-		@Override
 		public String getValidValuesDescription() {
 			return "";
 		}
 
-		@Override
-		public ConfigValueEditorType<String> getEditorType() {
-			return ConfigValueEditorTypes.getText();
-		}
 	}
 
 }

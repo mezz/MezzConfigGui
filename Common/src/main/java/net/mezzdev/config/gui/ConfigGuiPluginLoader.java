@@ -1,5 +1,11 @@
 package net.mezzdev.config.gui;
 
+import net.mezzdev.config.gui.keybindings.KeyMappingAdapters;
+import net.mezzdev.config.gui.api.keybindings.IKeyMappingAdapter;
+import net.mezzdev.config.gui.api.keybindings.IKeyMappingHelper;
+import net.mezzdev.config.gui.keybindings.ConfigKeyMappingHelper;
+import java.util.function.Function;
+
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.sorting.ISortingConfig;
 import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
@@ -11,6 +17,7 @@ import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigGuiRegistration;
+import net.mezzdev.config.gui.api.IConfigValueEditorMetadataFactory;
 import net.mezzdev.config.gui.api.IConfigScreenBuilder;
 import net.mezzdev.config.gui.api.IConfigScreenCategoryBuilder;
 import net.mezzdev.config.gui.api.IConfigScreenFactory;
@@ -88,6 +95,7 @@ final class ConfigGuiPluginLoader {
 		if (includeAutomaticMezzConfigScreens) {
 			allConfigScreens = addAutomaticMezzConfigScreens(configScreens);
 		}
+		KeyMappingAdapters.clearRegistrations();
 		Map<String, ConfigGuiRegistration> registrations = createConfigGuiRegistrations(allConfigScreens);
 		for (IConfigGuiPlugin plugin : plugins) {
 			addPlugin(registrations, plugin);
@@ -240,6 +248,16 @@ final class ConfigGuiPluginLoader {
 		}
 
 		@Override
+		public <T extends KeyMapping> void registerKeyMappingAdapter(Class<T> type, Function<T, IKeyMappingAdapter> factory) {
+			KeyMappingAdapters.register(type, factory);
+		}
+
+		@Override
+		public IKeyMappingHelper getKeyMappingHelper() {
+			return ConfigKeyMappingHelper.INSTANCE;
+		}
+
+		@Override
 		public <T> void registerValueEditor(ConfigValueEditorType<T> editorType, IConfigValueEditorFactory<T> editorFactory) {
 			ConfigValueEditorType<T> checkedEditorType = ErrorUtil.checkNotNull(editorType, "editorType");
 			IConfigValueEditorFactory<T> checkedEditorFactory = ErrorUtil.checkNotNull(editorFactory, "editorFactory");
@@ -259,6 +277,11 @@ final class ConfigGuiPluginLoader {
 			if (previous != null) {
 				LOGGER.error("Duplicate config value editor for mod id: {}, editor type: {}", modId, checkedEditorType);
 			}
+		}
+
+		@Override
+		public IConfigValueEditorMetadataFactory getEditorMetadataFactory() {
+			return ConfigValueEditorMetadataFactory.INSTANCE;
 		}
 
 		@Override
@@ -510,7 +533,7 @@ final class ConfigGuiPluginLoader {
 		@Override
 		public IConfigScreenCategoryBuilder addValue(IConfigValue<?> value) {
 			IConfigValue<?> checkedValue = ErrorUtil.checkNotNull(value, "value");
-			return addScreenValue(IConfigScreenValue.configValue(checkedValue));
+			return addScreenValue(ConfigScreenValues.create(checkedValue));
 		}
 
 		@Override
@@ -574,7 +597,7 @@ final class ConfigGuiPluginLoader {
 		@Override
 		public IConfigScreenCategoryBuilder hideValue(IConfigValue<?> value) {
 			IConfigValue<?> checkedValue = ErrorUtil.checkNotNull(value, "value");
-			return hideScreenValue(IConfigScreenValue.configValue(checkedValue));
+			return hideScreenValue(ConfigScreenValues.create(checkedValue));
 		}
 
 		@Override
@@ -729,7 +752,7 @@ final class ConfigGuiPluginLoader {
 			@Override
 			public IConfigScreenValueBuilder insertBefore(IConfigValue<?> value) {
 				IConfigValue<?> checkedValue = ErrorUtil.checkNotNull(value, "value");
-				IConfigScreenValue<?> screenValue = IConfigScreenValue.configValue(checkedValue);
+				IConfigScreenValue<?> screenValue = ConfigScreenValues.create(checkedValue);
 				return insertBefore(screenValue);
 			}
 
@@ -747,7 +770,7 @@ final class ConfigGuiPluginLoader {
 			@Override
 			public IConfigScreenValueBuilder insertAfter(IConfigValue<?> value) {
 				IConfigValue<?> checkedValue = ErrorUtil.checkNotNull(value, "value");
-				IConfigScreenValue<?> screenValue = IConfigScreenValue.configValue(checkedValue);
+				IConfigScreenValue<?> screenValue = ConfigScreenValues.create(checkedValue);
 				return insertAfter(screenValue);
 			}
 
@@ -1873,7 +1896,7 @@ final class ConfigGuiPluginLoader {
 	}
 
 	private static IConfigScreenValue<?> createConfigScreenValue(IConfigValue<?> value) {
-		return IConfigScreenValue.configValue(value);
+		return ConfigScreenValues.create(value);
 	}
 
 	@FunctionalInterface

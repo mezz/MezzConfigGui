@@ -6,6 +6,8 @@ import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.config.ConfigGuiOptionsTestUtil;
+import net.mezzdev.config.gui.ConfigValueEditorMetadataFactory;
+import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -150,6 +152,11 @@ class NumberSliderModelTest {
 		@Override
 		public IConfigValueSerializer<Integer> getSerializer() {
 			return SERIALIZER;
+		}
+
+		@Override
+		public IConfigValueEditorMetadata<Integer> getEditorMetadata() {
+			return ConfigValueEditorMetadataFactory.INSTANCE.create(getSerializer(), getDefaultValue());
 		}
 	}
 

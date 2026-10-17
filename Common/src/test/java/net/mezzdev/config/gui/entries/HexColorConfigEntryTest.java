@@ -5,7 +5,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.api.value.color.PackedColor;
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
-import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
+import net.mezzdev.config.api.value.serializer.IConfigListValueSerializer;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.input.InputType;
 import net.mezzdev.config.gui.input.UserInput;
@@ -14,7 +14,8 @@ import net.mezzdev.config.gui.popup.ColorPickerPopup;
 import net.mezzdev.config.gui.popup.MappedConfigValuePopup;
 import net.mezzdev.config.gui.util.HexColorString;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
-import net.minecraft.network.chat.Component;
+import net.mezzdev.config.gui.ConfigValueEditorMetadataFactory;
+import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
@@ -233,6 +234,11 @@ class HexColorConfigEntryTest {
 		public IConfigValueSerializer<T> getSerializer() {
 			return serializer;
 		}
+
+		@Override
+		public IConfigValueEditorMetadata<T> getEditorMetadata() {
+			return ConfigValueEditorMetadataFactory.INSTANCE.create(getSerializer(), getDefaultValue());
+		}
 	}
 
 	private record StringSerializer(Predicate<String> validator) implements IConfigValueSerializer<String> {
@@ -257,7 +263,7 @@ class HexColorConfigEntryTest {
 		}
 	}
 
-	private record ListSerializer(Predicate<List<String>> validator) implements IConfigListValueEditorSerializer<String> {
+	private record ListSerializer(Predicate<List<String>> validator) implements IConfigListValueSerializer<String> {
 		@Override
 		public IConfigValueSerializer<String> getElementSerializer() {
 			return new StringSerializer(value -> true);
@@ -283,13 +289,9 @@ class HexColorConfigEntryTest {
 			return "test list";
 		}
 
-		@Override
-		public Component getLocalizedValueName(String key, List<String> value) {
-			return Component.literal(value.toString());
-		}
 	}
 
-	private static final class PackedColorListSerializer implements IConfigListValueEditorSerializer<PackedColor> {
+	private static final class PackedColorListSerializer implements IConfigListValueSerializer<PackedColor> {
 		private static final IConfigValueSerializer<PackedColor> ELEMENT_SERIALIZER = new IConfigValueSerializer<>() {
 			@Override
 			public String serialize(PackedColor value) {
@@ -333,11 +335,6 @@ class HexColorConfigEntryTest {
 		@Override
 		public boolean isValid(List<PackedColor> values) {
 			return values != null && values.stream().allMatch(ELEMENT_SERIALIZER::isValid);
-		}
-
-		@Override
-		public Component getLocalizedValueName(String key, List<PackedColor> value) {
-			return Component.literal(value.toString());
 		}
 
 		@Override

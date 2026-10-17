@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui.config;
 
+import net.mezzdev.config.gui.ConfigValueEditorMetadataFactory;
 import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.api.value.editor.ConfigValueEditMode;
 import net.mezzdev.config.api.value.serializer.ConfigValueRange;
@@ -8,6 +9,7 @@ import net.mezzdev.config.file.ConfigManager;
 import net.mezzdev.config.file.ConfigSerializer;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.model.AppliedConfigValueChange;
+import net.mezzdev.config.gui.ConfigScreenValues;
 import net.mezzdev.config.schema.ConfigSchema;
 import net.mezzdev.config.schema.ConfigSchemaBuilder;
 import org.junit.jupiter.api.Test;
@@ -30,7 +32,7 @@ class NavigationDepthRangeTest {
 		Path path = directory.resolve("gui.ini");
 		Files.writeString(path, "[navigation]\nnavigationDepth = 3..8\n");
 		Fixture fixture = create(path);
-		IConfigScreenValue<ConfigValueRange<Integer>> value = IConfigScreenValue.configValue(fixture.value());
+		IConfigScreenValue<ConfigValueRange<Integer>> value = ConfigScreenValues.create(fixture.value());
 		ConfigValueRange<Integer> original = new ConfigValueRange<>(3, 8);
 		assertEquals(original, value.getValue());
 		List<ConfigValueRange<Integer>> observed = new ArrayList<>();
@@ -75,7 +77,7 @@ class NavigationDepthRangeTest {
 	void invalidEditsAreRejectedAndFileReloadNotifiesOnce(@TempDir Path directory) throws IOException {
 		Path path = directory.resolve("gui.ini");
 		Fixture fixture = create(path);
-		IConfigScreenValue<ConfigValueRange<Integer>> value = IConfigScreenValue.configValue(fixture.value());
+		IConfigScreenValue<ConfigValueRange<Integer>> value = ConfigScreenValues.create(fixture.value());
 		ConfigValueRange<Integer> original = value.getValue();
 		List<ConfigValueRange<Integer>> observed = new ArrayList<>();
 		value.addListener(observed::add);
@@ -103,7 +105,8 @@ class NavigationDepthRangeTest {
 			assertTrue(serializer.deserialize(invalid).getResult().isEmpty(), invalid);
 		}
 		assertEquals(new ConfigValueRange<>(2, 10), serializer.deserialize(" 2 .. 10 ").getResult().orElseThrow());
-		assertEquals("1 – 10", serializer.getLocalizedValueName("depth", new ConfigValueRange<>(1, 10)).getString());
+		assertEquals("1 – 10", ConfigValueEditorMetadataFactory.INSTANCE.createRange(serializer, new ConfigValueRange<>(0, 10))
+			.getLocalizedValueName("depth", new ConfigValueRange<>(1, 10)).getString());
 	}
 
 	private static Fixture create(Path path) {

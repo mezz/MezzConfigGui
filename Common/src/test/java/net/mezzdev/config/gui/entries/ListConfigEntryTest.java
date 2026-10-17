@@ -1,17 +1,18 @@
 package net.mezzdev.config.gui.entries;
 
+import net.mezzdev.config.gui.ListValueEditorMetadata;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.api.value.serializer.ConfigListOrdering;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
-import net.mezzdev.config.gui.api.IConfigListValueEditorOptions;
-import net.mezzdev.config.gui.api.IConfigListValueEditorSerializer;
+import net.mezzdev.config.api.value.serializer.IConfigListValueSerializer;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.input.InputType;
 import net.mezzdev.config.gui.input.UserInput;
 import net.mezzdev.config.gui.popup.ConfigPopupSelector;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
+import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -466,6 +467,11 @@ class ListConfigEntryTest {
 		public IConfigValueSerializer<List<String>> getSerializer() {
 			return serializer;
 		}
+
+		@Override
+		public IConfigValueEditorMetadata<List<String>> getEditorMetadata() {
+			return new ListValueEditorMetadata<>(serializer, serializer.allowsRemovingValues);
+		}
 	}
 
 	private static final class CountingList extends AbstractList<String> {
@@ -488,7 +494,7 @@ class ListConfigEntryTest {
 		}
 	}
 
-	private static final class TestListSerializer implements IConfigListValueEditorSerializer<String>, IConfigListValueEditorOptions {
+	private static final class TestListSerializer implements IConfigListValueSerializer<String> {
 		private final boolean allowsRemovingValues;
 		private final TestElementSerializer elementSerializer;
 		private final ConfigListOrdering ordering;
@@ -538,15 +544,6 @@ class ListConfigEntryTest {
 			return ordering;
 		}
 
-		@Override
-		public Component getLocalizedValueName(String configValueLocalizationKey, List<String> value) {
-			return Component.literal(String.join(", ", value));
-		}
-
-		@Override
-		public boolean allowsRemovingValues() {
-			return allowsRemovingValues;
-		}
 	}
 
 	private static final class TestElementSerializer implements IConfigValueSerializer<String> {

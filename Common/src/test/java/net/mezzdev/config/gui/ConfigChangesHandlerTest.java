@@ -18,6 +18,7 @@ import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.model.AppliedConfigValueChange;
 import net.mezzdev.config.gui.model.ConfigValueChange;
+import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
@@ -62,8 +63,8 @@ class ConfigChangesHandlerTest {
 	void batchesLocalClientSchemaChangesSynchronously() {
 		TestMezzConfigValue first = new TestMezzConfigValue("first");
 		TestMezzConfigValue second = new TestMezzConfigValue("second");
-		IConfigScreenValue<String> firstScreenValue = new IdentityOnlyScreenValue(IConfigScreenValue.configValue(first));
-		IConfigScreenValue<String> secondScreenValue = IConfigScreenValue.configValue(second);
+		IConfigScreenValue<String> firstScreenValue = new IdentityOnlyScreenValue(ConfigScreenValues.create(first));
+		IConfigScreenValue<String> secondScreenValue = ConfigScreenValues.create(second);
 		TestConfigSchema schema = new TestConfigSchema(ConfigSchemaType.CLIENT, Path.of("client.ini"), first, second);
 
 		CompletableFuture<ConfigChangesResult> resultFuture = ConfigChangesHandler.applyBySchema(
@@ -87,7 +88,7 @@ class ConfigChangesHandlerTest {
 	@Test
 	void batchesLocallyAuthoritativeServerSchemaChangesSynchronously() {
 		TestMezzConfigValue value = new TestMezzConfigValue("server");
-		IConfigScreenValue<String> screenValue = IConfigScreenValue.configValue(value);
+		IConfigScreenValue<String> screenValue = ConfigScreenValues.create(value);
 		TestConfigSchema schema = new TestConfigSchema(
 			ConfigSchemaType.SERVER,
 			Path.of("serverconfig/server.ini"),
@@ -108,7 +109,7 @@ class ConfigChangesHandlerTest {
 	@Test
 	void recordsPendingRestartRequiredChangesWithoutChangingEffectiveValue() {
 		TestMezzConfigValue restartRequiredValue = new TestMezzConfigValue("restartRequired", true);
-		IConfigScreenValue<String> screenValue = IConfigScreenValue.configValue(restartRequiredValue);
+		IConfigScreenValue<String> screenValue = ConfigScreenValues.create(restartRequiredValue);
 		TestConfigSchema schema = new TestConfigSchema(
 			ConfigSchemaType.CLIENT,
 			Path.of("client.ini"),
@@ -135,7 +136,7 @@ class ConfigChangesHandlerTest {
 	@Test
 	void continuesFollowingBatchesOnTheConfiguredExecutor() {
 		TestMezzConfigValue remote = new TestMezzConfigValue("remote");
-		IConfigScreenValue<String> remoteScreenValue = IConfigScreenValue.configValue(remote);
+		IConfigScreenValue<String> remoteScreenValue = ConfigScreenValues.create(remote);
 		TestConfigValue localScreenValue = new TestConfigValue(
 			"local",
 			ConfigValueRestartRequirement.NONE,
@@ -232,6 +233,11 @@ class ConfigChangesHandlerTest {
 		@Override
 		public IConfigValueSerializer<String> getSerializer() {
 			return TestSerializer.INSTANCE;
+		}
+
+		@Override
+		public IConfigValueEditorMetadata<String> getEditorMetadata() {
+			return ConfigValueEditorMetadataFactory.INSTANCE.create(getSerializer(), getDefaultValue());
 		}
 	}
 
@@ -385,6 +391,11 @@ class ConfigChangesHandlerTest {
 		@Override
 		public IConfigValueSerializer<String> getSerializer() {
 			return delegate.getSerializer();
+		}
+
+		@Override
+		public IConfigValueEditorMetadata<String> getEditorMetadata() {
+			return delegate.getEditorMetadata();
 		}
 	}
 

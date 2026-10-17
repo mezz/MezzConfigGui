@@ -23,6 +23,9 @@ import net.mezzdev.config.gui.ConfigScreenSchema;
 import net.mezzdev.config.gui.info.ConfigServerInfo;
 import net.mezzdev.config.gui.info.ServerConfigAccess;
 import net.mezzdev.config.gui.model.ConfigCategoryWidget;
+import net.mezzdev.config.gui.ConfigScreenValues;
+import net.mezzdev.config.gui.ConfigValueEditorMetadataFactory;
+import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
@@ -111,14 +114,14 @@ class RemoteConfigEditorTest {
 		TestConfigSchema schema = new TestConfigSchema(value);
 		schema.path = Path.of("serverconfig", "test.ini");
 		ConfigScreenSchema screenSchema = ConfigScreenSchema.from(schema);
-		var descriptions = new ConfigServerInfo(screenSchema).forValues(Stream.of(IConfigScreenValue.configValue(value)));
+		var descriptions = new ConfigServerInfo(screenSchema).forValues(Stream.of(ConfigScreenValues.create(value)));
 		assertEquals(List.of(ServerConfigAccess.LOCAL.getDescription()), descriptions.get());
 		assertTrue(editor.isEditable(schema));
 		schema.active = false;
 		assertEquals(List.of(ServerConfigAccess.UNAVAILABLE.getDescription()), descriptions.get());
 		assertFalse(editor.isEditable(schema));
 		schema.type = ConfigSchemaType.CLIENT;
-		assertTrue(new ConfigServerInfo(screenSchema).forValues(Stream.of(IConfigScreenValue.configValue(value))).get().isEmpty());
+		assertTrue(new ConfigServerInfo(screenSchema).forValues(Stream.of(ConfigScreenValues.create(value))).get().isEmpty());
 	}
 
 	@Test
@@ -173,7 +176,7 @@ class RemoteConfigEditorTest {
 		Component customDescription = Component.literal("Server rendering radius");
 		IConfigScreenValue<String> customizedValue = new LocalizedScreenValue<>(
 			IConfigScreenValue.withApplyMode(
-				IConfigScreenValue.configValue(value),
+				ConfigScreenValues.create(value),
 				ConfigValueApplyMode.IMMEDIATE
 			),
 			customName,
@@ -576,6 +579,11 @@ class RemoteConfigEditorTest {
 		@Override
 		public IConfigValueSerializer<T> getSerializer() {
 			return delegate.getSerializer();
+		}
+
+		@Override
+		public IConfigValueEditorMetadata<T> getEditorMetadata() {
+			return ConfigValueEditorMetadataFactory.INSTANCE.create(getSerializer(), getDefaultValue());
 		}
 
 		@Override
