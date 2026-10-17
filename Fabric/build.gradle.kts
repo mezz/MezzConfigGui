@@ -138,7 +138,7 @@ dependencies {
     })
     add(modDependencyConfiguration, "net.fabricmc:fabric-loader:$fabricLoaderVersion")
     add(modDependencyConfiguration, "net.fabricmc.fabric-api:fabric-api:$fabricApiVersion")
-    val amecsArtifact = "de.siphalor:amecsapi-${amecsMinecraftVersion}:$amecsVersionFabric"
+    val amecsArtifact = "de.siphalor.amecs.amecs-key-modifiers:amecs-key-modifiers-${amecsMinecraftVersion}:$amecsVersionFabric"
     add(modCompileConfiguration, amecsArtifact) { isTransitive = false }
 
     add(modCompileConfiguration, "com.terraformersmc:modmenu:$modMenuVersionFabric") { isTransitive = false }

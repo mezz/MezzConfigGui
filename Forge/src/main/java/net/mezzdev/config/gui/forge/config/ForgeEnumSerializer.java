@@ -1,11 +1,7 @@
 package net.mezzdev.config.gui.forge.config;
 
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
-import net.mezzdev.config.gui.api.ConfigValueEditorType;
-import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
-import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
-import net.minecraft.client.resources.language.I18n;
-import net.minecraft.network.chat.Component;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
@@ -13,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-final class ForgeEnumSerializer<T extends Enum<T>> implements IConfigValueEditorSerializer<T> {
+final class ForgeEnumSerializer<T extends Enum<T>> implements IConfigValueSerializer<T> {
 	private final Class<T> enumClass;
 	private final List<T> validValues;
 
@@ -55,37 +51,11 @@ final class ForgeEnumSerializer<T extends Enum<T>> implements IConfigValueEditor
 	}
 
 	@Override
-	public Component getLocalizedValueName(String configValueLocalizationKey, T value) {
-		return getTranslatedEnumValue(configValueLocalizationKey, value, ".name")
-			.orElseGet(() -> {
-				return Component.literal(ForgeConfigLocalization.getDisplayNameFallback(value.name()));
-			});
-	}
-
-	@Override
-	public Optional<Component> getLocalizedValueDescription(String configValueLocalizationKey, T value) {
-		return getTranslatedEnumValue(configValueLocalizationKey, value, ".description");
-	}
-
-	private Optional<Component> getTranslatedEnumValue(String configValueLocalizationKey, T value, String suffix) {
-		String translationKey = configValueLocalizationKey + ".value." + value.name() + suffix;
-		if (I18n.exists(translationKey)) {
-			return Optional.of(Component.translatable(translationKey));
-		}
-		return Optional.empty();
-	}
-
-	@Override
 	public String getValidValuesDescription() {
 		String names = validValues.stream()
 			.map(Enum::name)
 			.collect(Collectors.joining(", "));
 		return "[%s]".formatted(names);
-	}
-
-	@Override
-	public ConfigValueEditorType<T> getEditorType() {
-		return ConfigValueEditorTypes.getSelection();
 	}
 
 }
