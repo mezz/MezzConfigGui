@@ -13,6 +13,7 @@ import net.mezzdev.config.gui.screenlist.ConfigScreenListEntry;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * User-configurable options for MezzConfig GUI's own screen behavior.
@@ -188,6 +189,10 @@ public final class ConfigGuiOptions {
 			throw new IllegalStateException("MezzConfig GUI options have not been registered yet.");
 		}
 		return schema;
+	}
+
+	static IConfigValue<ConfigValueRange<Integer>> getNavigationDepthValue() {
+		return Objects.requireNonNull(navigationDepth, "navigationDepth");
 	}
 
 	public static GuiMode getGuiMode() {

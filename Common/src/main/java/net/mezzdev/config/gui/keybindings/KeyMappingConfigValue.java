@@ -1,9 +1,12 @@
 package net.mezzdev.config.gui.keybindings;
 
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
+import net.mezzdev.config.gui.api.ConfigValueEditorType;
+import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
-import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
+import net.mezzdev.config.gui.api.keybindings.IKeyMappingBinding;
+import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -14,16 +17,16 @@ import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
  * Adapts key mapping metadata into a config value for the config screen.
  */
-public final class KeyMappingConfigValue implements IConfigScreenValue<KeyMappingValue>, IConfigLocalizedValue {
+public final class KeyMappingConfigValue implements IConfigScreenValue<KeyMappingValue>, IConfigLocalizedValue, IConfigValueEditorMetadata<KeyMappingValue> {
 	private static final Logger LOGGER = LogManager.getLogger();
 
 	private final IConfigKeyMapping configKeyMapping;
-	private final KeyMappingSerializer serializer;
 	private final Runnable saveHandler;
 	private final List<Consumer<KeyMappingValue>> listeners = new ArrayList<>();
 
@@ -33,7 +36,6 @@ public final class KeyMappingConfigValue implements IConfigScreenValue<KeyMappin
 
 	KeyMappingConfigValue(IConfigKeyMapping configKeyMapping, Runnable saveHandler) {
 		this.configKeyMapping = Objects.requireNonNull(configKeyMapping, "configKeyMapping");
-		this.serializer = new KeyMappingSerializer(createValue(configKeyMapping.getDefaultValue()));
 		this.saveHandler = Objects.requireNonNull(saveHandler, "saveHandler");
 	}
 
@@ -69,17 +71,22 @@ public final class KeyMappingConfigValue implements IConfigScreenValue<KeyMappin
 
 	@Override
 	public boolean set(@Nullable KeyMappingValue value) {
-		if (!serializer.isValid(value)) {
+		if (!isValid(value)) {
 			throw new IllegalArgumentException("Invalid key mapping value: " + value);
 		}
 		KeyMappingValue checkedValue = Objects.requireNonNull(value);
-		ConfigKeyBinding binding = configKeyMapping.normalize(checkedValue.binding());
-		if (getValue().binding().equals(binding)) {
+		IKeyMappingBinding binding = checkedValue.binding();
+		IKeyMappingBinding original = configKeyMapping.getValue();
+		if (original.equals(binding)) {
 			return false;
 		}
 		configKeyMapping.set(binding);
+		IKeyMappingBinding applied = configKeyMapping.getValue();
+		if (original.equals(applied)) {
+			return false;
+		}
 		saveHandler.run();
-		notifyListeners(createValue(configKeyMapping.getValue()));
+		notifyListeners(createValue(applied));
 		return true;
 	}
 
@@ -112,11 +119,31 @@ public final class KeyMappingConfigValue implements IConfigScreenValue<KeyMappin
 	}
 
 	@Override
-	public IConfigValueEditorSerializer<KeyMappingValue> getSerializer() {
-		return serializer;
+	public IConfigValueEditorMetadata<KeyMappingValue> getEditorMetadata() {
+		return this;
 	}
 
-	private KeyMappingValue createValue(ConfigKeyBinding binding) {
+	@Override
+	public ConfigValueEditorType<KeyMappingValue> getEditorType() {
+		return ConfigValueEditorTypes.getKeyMapping();
+	}
+
+	@Override
+	public boolean isValid(@Nullable KeyMappingValue value) {
+		return value != null;
+	}
+
+	@Override
+	public Optional<List<KeyMappingValue>> getAllValidValues() {
+		return Optional.empty();
+	}
+
+	@Override
+	public Component getLocalizedValueName(String configValueLocalizationKey, KeyMappingValue value) {
+		return configKeyMapping.getValueName(value.binding());
+	}
+
+	private KeyMappingValue createValue(IKeyMappingBinding binding) {
 		return new KeyMappingValue(binding, configKeyMapping);
 	}
 }

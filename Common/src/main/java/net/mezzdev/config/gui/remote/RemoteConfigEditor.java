@@ -12,6 +12,8 @@ import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.model.ConfigValueChange;
 import net.mezzdev.config.gui.info.ServerConfigAccess;
+import net.mezzdev.config.gui.ConfigScreenValues;
+import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import net.minecraft.network.chat.Component;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -113,7 +115,7 @@ public final class RemoteConfigEditor {
 	public <T> IConfigScreenValue<T> createScreenValue(IConfigSchema schema, IConfigValue<T> value) {
 		Objects.requireNonNull(schema, "schema");
 		Objects.requireNonNull(value, "value");
-		return createScreenValue(schema, IConfigScreenValue.configValue(value));
+		return createScreenValue(schema, ConfigScreenValues.create(value));
 	}
 
 	public <T> IConfigScreenValue<T> createScreenValue(IConfigSchema schema, IConfigScreenValue<T> value) {
@@ -823,6 +825,11 @@ public final class RemoteConfigEditor {
 		@Override
 		public IConfigValueSerializer<T> getSerializer() {
 			return delegate.getSerializer();
+		}
+
+		@Override
+		public IConfigValueEditorMetadata<T> getEditorMetadata() {
+			return delegate.getEditorMetadata();
 		}
 
 		@Override

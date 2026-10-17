@@ -1,20 +1,15 @@
 package net.mezzdev.config.gui.keybindings;
 
-import com.mojang.blaze3d.platform.InputConstants;
-import net.minecraft.client.KeyMapping;
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
+import net.mezzdev.config.gui.ConfigInputUtil;
 
-import java.util.function.Function;
+import com.mojang.blaze3d.platform.InputConstants;
+import org.lwjgl.glfw.GLFW;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.network.chat.Component;
 
 public final class ConfigKeyBindingUtil {
 	private ConfigKeyBindingUtil() {
 
-	}
-
-	public static ConfigKeyBinding create(InputConstants.Key key, ConfigKeyModifier modifier) {
-		return new ConfigKeyBinding(key.getName(), modifier);
 	}
 
 	public static InputConstants.Key getKey(String keyName) {
@@ -29,43 +24,18 @@ public final class ConfigKeyBindingUtil {
 		return getKey(keyMapping.saveString());
 	}
 
-	public static ConfigKeyBinding normalize(
-		ConfigKeyBinding value,
-		Function<InputConstants.Key, ConfigKeyModifier> getKeyModifier
-	) {
-		InputConstants.Key key = getKey(value.keyName());
-		if (value.isUnbound() || value.modifier() == getKeyModifier.apply(key)) {
-			return new ConfigKeyBinding(value.keyName(), ConfigKeyModifier.NONE);
-		}
-		return value;
-	}
-
-	public static Component getDisplayName(
-		ConfigKeyBinding value,
-		Function<InputConstants.Key, ConfigKeyModifier> getKeyModifier
-	) {
-		InputConstants.Key key = getKey(value.keyName());
-		if (value.modifier() == ConfigKeyModifier.NONE) {
-			ConfigKeyModifier keyModifier = getKeyModifier.apply(key);
-			if (keyModifier != ConfigKeyModifier.NONE) {
-				return getDisplayName(keyModifier);
-			}
-		}
-		return getCombinedName(value.modifier(), getKeyDisplayName(key));
-	}
-
 	public static Component getKeyDisplayName(InputConstants.Key key) {
 		if (key.getType() == InputConstants.Type.MOUSE) {
 			int value = key.getValue();
-			if (value == InputConstants.MOUSE_BUTTON_LEFT) {
+			if (value == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
 				return Component.translatable("mezz_config.key.mouse.left");
-			} else if (value == InputConstants.MOUSE_BUTTON_RIGHT) {
+			} else if (value == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
 				return Component.translatable("mezz_config.key.mouse.right");
 			}
 		}
 		if (key.getType() == InputConstants.Type.KEYSYM) {
 			int value = key.getValue();
-			if (Minecraft.ON_OSX && (value == GLFW.GLFW_KEY_LEFT_SUPER || value == GLFW.GLFW_KEY_RIGHT_SUPER)) {
+			if (ConfigInputUtil.isMac() && (value == GLFW.GLFW_KEY_LEFT_SUPER || value == GLFW.GLFW_KEY_RIGHT_SUPER)) {
 				return Component.translatable("mezz_config.key.modifier.command");
 			}
 			return switch (value) {
@@ -78,56 +48,4 @@ public final class ConfigKeyBindingUtil {
 		return key.getDisplayName();
 	}
 
-	public static ConfigKeyModifier getKeyModifier(InputConstants.Key key) {
-		if (!key.getType().equals(InputConstants.Type.KEYSYM)) {
-			return ConfigKeyModifier.NONE;
-		}
-		int keyCode = key.getValue();
-		return switch (keyCode) {
-			case GLFW.GLFW_KEY_LEFT_SHIFT, GLFW.GLFW_KEY_RIGHT_SHIFT -> ConfigKeyModifier.SHIFT;
-			case GLFW.GLFW_KEY_LEFT_ALT, GLFW.GLFW_KEY_RIGHT_ALT -> ConfigKeyModifier.ALT;
-			case GLFW.GLFW_KEY_LEFT_CONTROL, GLFW.GLFW_KEY_RIGHT_CONTROL -> ConfigKeyModifier.CONTROL_OR_COMMAND;
-			case GLFW.GLFW_KEY_LEFT_SUPER, GLFW.GLFW_KEY_RIGHT_SUPER -> getMacControlOrCommandModifier();
-			default -> ConfigKeyModifier.NONE;
-		};
-	}
-
-	public static Component getCombinedName(ConfigKeyModifier modifier, Component component) {
-		return switch (modifier) {
-			case CONTROL_OR_COMMAND -> getControlOrCommandName(component);
-			case SHIFT -> Component.translatable("mezz_config.key.combo.shift", component);
-			case ALT -> Component.translatable("mezz_config.key.combo.alt", component);
-			case NONE -> component;
-		};
-	}
-
-	private static Component getDisplayName(ConfigKeyModifier modifier) {
-		return switch (modifier) {
-			case CONTROL_OR_COMMAND -> getControlOrCommandDisplayName();
-			case SHIFT -> Component.translatable("mezz_config.key.modifier.shift");
-			case ALT -> Component.translatable("mezz_config.key.modifier.alt");
-			case NONE -> Component.empty();
-		};
-	}
-
-	private static ConfigKeyModifier getMacControlOrCommandModifier() {
-		if (Minecraft.ON_OSX) {
-			return ConfigKeyModifier.CONTROL_OR_COMMAND;
-		}
-		return ConfigKeyModifier.NONE;
-	}
-
-	private static Component getControlOrCommandName(Component component) {
-		if (Minecraft.ON_OSX) {
-			return Component.translatable("mezz_config.key.combo.command", component);
-		}
-		return Component.translatable("mezz_config.key.combo.control", component);
-	}
-
-	private static Component getControlOrCommandDisplayName() {
-		if (Minecraft.ON_OSX) {
-			return Component.translatable("mezz_config.key.modifier.command");
-		}
-		return Component.translatable("mezz_config.key.modifier.control");
-	}
 }

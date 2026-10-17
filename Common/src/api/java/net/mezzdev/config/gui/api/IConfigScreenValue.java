@@ -5,6 +5,7 @@ import net.mezzdev.config.api.value.editor.IConfigValueEditorInfo;
 import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
+import net.mezzdev.config.gui.internal.ConfigValueEditorMetadataFactory;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -13,7 +14,7 @@ import java.util.function.Consumer;
 /**
  * Represents a value shown on a config screen.
  * <p>
- * MezzConfig-managed values can be adapted with {@link #configValue(IConfigValue)}. Screen-only values can implement
+ * MezzConfig-managed values can be adapted with {@link #configValue(IConfigValue, IConfigValueEditorMetadata)}. Screen-only values can implement
  * this interface directly without implementing MezzConfig's non-extendable {@link IConfigValue}. Platform-native
  * config adapters, such as the native NeoForge config adapter, should also implement this interface directly and use
  * the {@code ByName} methods on {@link IConfigScreenCategoryBuilder} for GUI customization.
@@ -28,30 +29,72 @@ import java.util.function.Consumer;
  */
 public interface IConfigScreenValue<T> {
 	/**
+	 * Adapt a MezzConfig value using its serializer's editor and validation rules.
+	 *
+	 * @deprecated Pass editor metadata to {@link #configValue(IConfigValue, IConfigValueEditorMetadata)}.
+	 * @since 0.1.0
+	 */
+	@Deprecated(since = "0.6.0")
+	static <T> IConfigScreenValue<T> configValue(IConfigValue<T> configValue) {
+		return configValue(configValue, ConfigValueEditorMetadataFactory.INSTANCE.create(configValue));
+	}
+
+	/**
+	 * Adapt a MezzConfig value with the requested apply mode.
+	 *
+	 * @deprecated Pass editor metadata to {@link #configValue(IConfigValue, IConfigValueEditorMetadata, ConfigValueApplyMode)}.
+	 * @since 0.1.0
+	 */
+	@Deprecated(since = "0.6.0")
+	static <T> IConfigScreenValue<T> configValue(IConfigValue<T> configValue, ConfigValueApplyMode applyMode) {
+		return configValue(configValue, ConfigValueEditorMetadataFactory.INSTANCE.create(configValue), applyMode);
+	}
+
+	/**
+	 * Adapt a MezzConfig value with the requested apply mode and restart requirement.
+	 *
+	 * @deprecated Pass editor metadata to
+	 * {@link #configValue(IConfigValue, IConfigValueEditorMetadata, ConfigValueApplyMode, ConfigValueRestartRequirement)}.
+	 * @since 0.1.0
+	 */
+	@Deprecated(since = "0.6.0")
+	static <T> IConfigScreenValue<T> configValue(
+		IConfigValue<T> configValue,
+		ConfigValueApplyMode applyMode,
+		ConfigValueRestartRequirement restartRequirement
+	) {
+		return configValue(configValue, ConfigValueEditorMetadataFactory.INSTANCE.create(configValue), applyMode, restartRequirement);
+	}
+
+	/**
 	 * Adapt a MezzConfig-managed config value for display on a config screen.
 	 * Restart-required config values display their pending saved value while their effective value remains fixed until the
 	 * applicable lifecycle boundary.
 	 *
-	 * @since 0.1.0
+	 * @param metadata the editor selection, validation, choices, and localized value text
+	 *
+	 * @since 0.6.0
 	 */
-	static <T> IConfigScreenValue<T> configValue(IConfigValue<T> configValue) {
+	static <T> IConfigScreenValue<T> configValue(IConfigValue<T> configValue, IConfigValueEditorMetadata<T> metadata) {
 		IConfigValue<T> checkedConfigValue = Objects.requireNonNull(configValue, "configValue");
 		IConfigValueEditorInfo<T> editorInfo = Objects.requireNonNull(checkedConfigValue.getEditorInfo(), "configValue editorInfo");
 		ConfigValueEditMode editMode = Objects.requireNonNull(editorInfo.getEditMode(), "configValue editMode");
 		ConfigValueRestartRequirement restartRequirement = Objects.requireNonNull(editorInfo.getRestartRequirement(), "configValue restartRequirement");
-		return configValue(checkedConfigValue, getApplyMode(editMode), restartRequirement);
+		return configValue(checkedConfigValue, metadata, getApplyMode(editMode), restartRequirement);
 	}
 
 	/**
 	 * Adapt a MezzConfig-managed config value for display on a config screen.
 	 *
-	 * @since 0.1.0
+	 * @param metadata the editor selection, validation, choices, and localized value text
+	 *
+	 * @since 0.6.0
 	 */
-	static <T> IConfigScreenValue<T> configValue(IConfigValue<T> configValue, ConfigValueApplyMode applyMode) {
+	static <T> IConfigScreenValue<T> configValue(IConfigValue<T> configValue, IConfigValueEditorMetadata<T> metadata, ConfigValueApplyMode applyMode) {
 		IConfigValue<T> checkedConfigValue = Objects.requireNonNull(configValue, "configValue");
 		IConfigValueEditorInfo<T> editorInfo = Objects.requireNonNull(checkedConfigValue.getEditorInfo(), "configValue editorInfo");
 		ConfigValueRestartRequirement restartRequirement = Objects.requireNonNull(editorInfo.getRestartRequirement(), "configValue restartRequirement");
-		return configValue(checkedConfigValue, applyMode, restartRequirement);
+		return configValue(checkedConfigValue, metadata, applyMode, restartRequirement);
 	}
 
 	private static ConfigValueApplyMode getApplyMode(ConfigValueEditMode editMode) {
@@ -64,15 +107,19 @@ public interface IConfigScreenValue<T> {
 	/**
 	 * Adapt a MezzConfig-managed config value for display on a config screen.
 	 *
-	 * @since 0.1.0
+	 * @param metadata the editor selection, validation, choices, and localized value text
+	 *
+	 * @since 0.6.0
 	 */
 	static <T> IConfigScreenValue<T> configValue(
 		IConfigValue<T> configValue,
+		IConfigValueEditorMetadata<T> metadata,
 		ConfigValueApplyMode applyMode,
 		ConfigValueRestartRequirement restartRequirement
 	) {
 		IConfigValue<T> checkedConfigValue = Objects.requireNonNull(configValue, "configValue");
 		IConfigValueEditorInfo<T> editorInfo = Objects.requireNonNull(checkedConfigValue.getEditorInfo(), "configValue editorInfo");
+		IConfigValueEditorMetadata<T> checkedMetadata = Objects.requireNonNull(metadata, "metadata");
 		ConfigValueApplyMode checkedApplyMode = Objects.requireNonNull(applyMode, "applyMode");
 		ConfigValueRestartRequirement checkedRestartRequirement = Objects.requireNonNull(restartRequirement, "restartRequirement");
 		return new IConfigScreenValue<>() {
@@ -119,6 +166,11 @@ public interface IConfigScreenValue<T> {
 			@Override
 			public IConfigValueSerializer<T> getSerializer() {
 				return editorInfo.getSerializer();
+			}
+
+			@Override
+			public IConfigValueEditorMetadata<T> getEditorMetadata() {
+				return checkedMetadata;
 			}
 
 			@Override
@@ -260,11 +312,27 @@ public interface IConfigScreenValue<T> {
 	}
 
 	/**
-	 * Get the helper for serializing values to and from Strings, and validating values.
+	 * Get the helper for converting values to and from text.
+	 *
+	 * @throws UnsupportedOperationException if this value has no text serializer
 	 *
 	 * @since 0.1.0
 	 */
-	IConfigValueSerializer<T> getSerializer();
+	default IConfigValueSerializer<T> getSerializer() {
+		throw new UnsupportedOperationException("This screen value has no text serializer.");
+	}
+
+	/**
+	 * Get editor selection, validation, and localized text independently of string serialization.
+	 *
+	 * @return the editor metadata for this value
+	 * @throws UnsupportedOperationException if the value supplies neither editor metadata nor a text serializer
+	 *
+	 * @since 0.6.0
+	 */
+	default IConfigValueEditorMetadata<T> getEditorMetadata() {
+		return ConfigValueEditorMetadataFactory.INSTANCE.create(getSerializer(), getValue());
+	}
 
 	/**
 	 * Get the backing MezzConfig value, if this screen value adapts one.

@@ -1,89 +1,29 @@
 package net.mezzdev.config.gui.fabric;
 
-import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.loader.api.FabricLoader;
-import net.mezzdev.config.gui.keybindings.ConfigKeyBinding;
-import net.mezzdev.config.gui.keybindings.ConfigKeyBindingUtil;
-import net.mezzdev.config.gui.keybindings.ConfigKeyModifier;
+import net.mezzdev.config.gui.api.keybindings.IKeyMappingAdapter;
+import net.mezzdev.config.gui.api.keybindings.IKeyMappingBinding;
+import net.mezzdev.config.gui.keybindings.ConfigKeyMappingHelper;
 import net.mezzdev.config.gui.keybindings.VanillaConfigKeyMappingPlatformHelper;
+import net.mezzdev.config.gui.keybindings.VanillaKeyMappingAdapter;
 import net.minecraft.client.KeyMapping;
-import net.minecraft.network.chat.Component;
+
+import java.util.Set;
 
 public final class FabricConfigKeyMappingPlatformHelper extends VanillaConfigKeyMappingPlatformHelper {
 	@Override
-	public ConfigKeyBinding getValue(KeyMapping keyMapping) {
-		InputConstants.Key key = KeyBindingHelper.getBoundKeyOf(keyMapping);
-		ConfigKeyModifier modifier = getBoundModifier(keyMapping);
-		return ConfigKeyBindingUtil.create(key, modifier);
-	}
-
-	@Override
-	public ConfigKeyBinding getDefaultValue(KeyMapping keyMapping) {
-		ConfigKeyModifier modifier = getDefaultModifier(keyMapping);
-		return ConfigKeyBindingUtil.create(keyMapping.getDefaultKey(), modifier);
-	}
-
-	@Override
-	public void set(KeyMapping keyMapping, ConfigKeyBinding value) {
-		keyMapping.setKey(ConfigKeyBindingUtil.getKey(value.keyName()));
+	public IKeyMappingAdapter createAdapter(KeyMapping mapping) {
 		if (FabricAmecsSupport.isEnabled()) {
-			AmecsConfigKeyMappingHelper.setModifier(keyMapping, value.modifier());
+			return new AmecsKeyMappingAdapter(mapping);
 		}
-	}
-
-	@Override
-	public ConfigKeyBinding normalize(ConfigKeyBinding value) {
-		if (!FabricAmecsSupport.isEnabled()) {
-			return new ConfigKeyBinding(value.keyName(), ConfigKeyModifier.NONE);
-		}
-		return ConfigKeyBindingUtil.normalize(value, this::getKeyModifier);
-	}
-
-	@Override
-	public Component getValueName(ConfigKeyBinding value) {
-		if (FabricAmecsSupport.isEnabled()) {
-			return AmecsConfigKeyMappingHelper.getDisplayName(value);
-		}
-		return ConfigKeyBindingUtil.getDisplayName(value, this::getKeyModifier);
-	}
-
-	@Override
-	public ConfigKeyModifier getKeyModifier(InputConstants.Key key) {
-		if (FabricAmecsSupport.isEnabled()) {
-			return AmecsConfigKeyMappingHelper.getKeyModifier(key);
-		}
-		return ConfigKeyBindingUtil.getKeyModifier(key);
-	}
-
-	@Override
-	public boolean hasKeyMappingConflict(
-		KeyMapping candidateKeyMapping,
-		ConfigKeyBinding candidateValue,
-		KeyMapping existingKeyMapping
-	) {
-		if (candidateValue.isUnbound()) {
-			return false;
-		}
-		ConfigKeyBinding existingValue = getValue(existingKeyMapping);
-		if (existingValue.isUnbound()) {
-			return false;
-		}
-
-		ConfigKeyBinding original = getValue(candidateKeyMapping);
-		try {
-			set(candidateKeyMapping, candidateValue);
-			return candidateKeyMapping.same(existingKeyMapping) || existingKeyMapping.same(candidateKeyMapping);
-		} finally {
-			set(candidateKeyMapping, original);
-		}
+		return new VanillaAdapter(mapping);
 	}
 
 	@Override
 	public String getModNameForModId(String modId) {
-		return FabricLoader.getInstance()
-			.getModContainer(modId)
-			.map(modContainer -> modContainer.getMetadata().getName())
+		return FabricLoader.getInstance().getModContainer(modId)
+			.map(container -> container.getMetadata().getName())
 			.orElseGet(() -> super.getModNameForModId(modId));
 	}
 
@@ -92,17 +32,14 @@ public final class FabricConfigKeyMappingPlatformHelper extends VanillaConfigKey
 		return FabricLoader.getInstance().isDevelopmentEnvironment();
 	}
 
-	private static ConfigKeyModifier getBoundModifier(KeyMapping keyMapping) {
-		if (!FabricAmecsSupport.isEnabled()) {
-			return ConfigKeyModifier.NONE;
+	private static final class VanillaAdapter extends VanillaKeyMappingAdapter {
+		private VanillaAdapter(KeyMapping mapping) {
+			super(mapping);
 		}
-		return AmecsConfigKeyMappingHelper.getBoundModifier(keyMapping);
-	}
 
-	private static ConfigKeyModifier getDefaultModifier(KeyMapping keyMapping) {
-		if (!FabricAmecsSupport.isEnabled()) {
-			return ConfigKeyModifier.NONE;
+		@Override
+		public IKeyMappingBinding getValue() {
+			return ConfigKeyMappingHelper.INSTANCE.createBinding(KeyBindingHelper.getBoundKeyOf(getKeyMapping()), Set.of());
 		}
-		return AmecsConfigKeyMappingHelper.getDefaultModifier(keyMapping);
 	}
 }
