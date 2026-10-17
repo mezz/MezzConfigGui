@@ -53,7 +53,10 @@ public final class ConfigValueLocalization {
 	 * @since 0.1.0
 	 */
 	public static Component getName(IConfigValue<?> configValue) {
-		return getName(IConfigScreenValue.configValue(configValue));
+		if (configValue instanceof IConfigLocalizedValue localizedValue) {
+			return localizedValue.getLocalizedName();
+		}
+		return Component.translatable(configValue.getEditorInfo().getLocalizationKey());
 	}
 
 	/**
@@ -78,7 +81,10 @@ public final class ConfigValueLocalization {
 	 * @since 0.1.0
 	 */
 	public static Component getDescription(IConfigValue<?> configValue) {
-		return getDescription(IConfigScreenValue.configValue(configValue));
+		if (configValue instanceof IConfigLocalizedValue localizedValue) {
+			return localizedValue.getLocalizedDescription();
+		}
+		return Component.translatable(configValue.getEditorInfo().getLocalizationKey() + DESCRIPTION_SUFFIX);
 	}
 
 	/**
@@ -103,7 +109,8 @@ public final class ConfigValueLocalization {
 	 * @since 0.1.0
 	 */
 	public static <T> Component getValueName(IConfigValue<T> configValue, T value) {
-		return getValueName(IConfigScreenValue.configValue(configValue), value);
+		var editorInfo = configValue.getEditorInfo();
+		return getValueName(editorInfo.getSerializer(), editorInfo.getLocalizationKey(), value);
 	}
 
 	/**
@@ -112,7 +119,8 @@ public final class ConfigValueLocalization {
 	 * @since 0.1.0
 	 */
 	public static <T> Component getValueName(IConfigScreenValue<T> configValue, T value) {
-		return getValueName(configValue.getSerializer(), configValue.getLocalizationKey(), value);
+		return configValue.getEditorMetadata()
+			.getLocalizedValueName(configValue.getLocalizationKey(), value);
 	}
 
 	/**
@@ -121,9 +129,10 @@ public final class ConfigValueLocalization {
 	 * @since 0.1.0
 	 */
 	public static <T> Component getValueName(IConfigValueSerializer<T> serializer, String configValueLocalizationKey, T value) {
-		Optional<Component> providedName = getProvidedValueName(serializer, configValueLocalizationKey, value);
-		if (providedName.isPresent()) {
-			return providedName.get();
+		if (serializer instanceof IConfigValueLocalizationProvider<?> provider) {
+			@SuppressWarnings("unchecked")
+			var typedProvider = (IConfigValueLocalizationProvider<T>) provider;
+			return typedProvider.getLocalizedValueName(configValueLocalizationKey, value);
 		}
 		if (value instanceof Boolean booleanValue) {
 			return Component.translatable(getBooleanValueNameTranslationKey(booleanValue));
@@ -144,7 +153,8 @@ public final class ConfigValueLocalization {
 	 * @since 0.1.0
 	 */
 	public static <T> Optional<Component> getValueDescription(IConfigValue<T> configValue, T value) {
-		return getValueDescription(IConfigScreenValue.configValue(configValue), value);
+		var editorInfo = configValue.getEditorInfo();
+		return getValueDescription(editorInfo.getSerializer(), editorInfo.getLocalizationKey(), value);
 	}
 
 	/**
@@ -153,19 +163,31 @@ public final class ConfigValueLocalization {
 	 * @since 0.1.0
 	 */
 	public static <T> Optional<Component> getValueDescription(IConfigScreenValue<T> configValue, T value) {
-		return getValueDescription(configValue.getSerializer(), configValue.getLocalizationKey(), value);
+		return configValue.getEditorMetadata()
+			.getLocalizedValueDescription(configValue.getLocalizationKey(), value);
+	}
+
+	/**
+	 * Get the localized description for a config value option, including descriptions supplied by the serializer.
+	 *
+	 * @since 0.1.0
+	 */
+	public static <T> Optional<Component> getValueDescription(IConfigValueSerializer<T> serializer, String configValueLocalizationKey, T value) {
+		if (serializer instanceof IConfigValueLocalizationProvider<?> provider) {
+			@SuppressWarnings("unchecked")
+			var typedProvider = (IConfigValueLocalizationProvider<T>) provider;
+			return typedProvider.getLocalizedValueDescription(configValueLocalizationKey, value)
+				.or(() -> getValueDescription(configValueLocalizationKey, value));
+		}
+		return getValueDescription(configValueLocalizationKey, value);
 	}
 
 	/**
 	 * Get the localized description for a config value option.
 	 *
-	 * @since 0.1.0
+	 * @since 0.7.0
 	 */
-	public static <T> Optional<Component> getValueDescription(IConfigValueSerializer<T> serializer, String configValueLocalizationKey, T value) {
-		Optional<Component> providedDescription = getProvidedValueDescription(serializer, configValueLocalizationKey, value);
-		if (providedDescription.isPresent()) {
-			return providedDescription;
-		}
+	public static <T> Optional<Component> getValueDescription(String configValueLocalizationKey, T value) {
 		if (value instanceof Boolean booleanValue) {
 			String key = configValueLocalizationKey + ".value." + booleanValue + DESCRIPTION_SUFFIX;
 			if (Language.getInstance().has(key)) {
@@ -178,24 +200,6 @@ public final class ConfigValueLocalization {
 			if (Language.getInstance().has(key)) {
 				return Optional.of(Component.translatable(key));
 			}
-		}
-		return Optional.empty();
-	}
-
-	@SuppressWarnings("unchecked")
-	private static <T> Optional<Component> getProvidedValueName(IConfigValueSerializer<T> serializer, String configValueLocalizationKey, T value) {
-		if (serializer instanceof IConfigValueLocalizationProvider<?> localizationProvider) {
-			IConfigValueLocalizationProvider<T> typedProvider = (IConfigValueLocalizationProvider<T>) localizationProvider;
-			return Optional.of(typedProvider.getLocalizedValueName(configValueLocalizationKey, value));
-		}
-		return Optional.empty();
-	}
-
-	@SuppressWarnings("unchecked")
-	private static <T> Optional<Component> getProvidedValueDescription(IConfigValueSerializer<T> serializer, String configValueLocalizationKey, T value) {
-		if (serializer instanceof IConfigValueLocalizationProvider<?> localizationProvider) {
-			IConfigValueLocalizationProvider<T> typedProvider = (IConfigValueLocalizationProvider<T>) localizationProvider;
-			return typedProvider.getLocalizedValueDescription(configValueLocalizationKey, value);
 		}
 		return Optional.empty();
 	}

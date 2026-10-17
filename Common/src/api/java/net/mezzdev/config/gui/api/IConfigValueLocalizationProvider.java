@@ -5,7 +5,7 @@ import net.minecraft.network.chat.Component;
 import java.util.Optional;
 
 /**
- * Provides localized display text for serialized config value options.
+ * Provides localized display text for config value options.
  *
  * @param <T> the config value option type
  *
