@@ -9,6 +9,7 @@ import net.mezzdev.config.gui.forge.config.ForgeConfigScreenConfigs;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraftforge.client.ConfigScreenHandler;
+import net.minecraftforge.client.gui.LoadingErrorScreen;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
@@ -17,6 +18,7 @@ import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ConfigTracker;
 import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.versions.forge.ForgeVersion;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -58,6 +60,7 @@ public final class ForgeNativeConfigTestMod {
 			return;
 		}
 		try {
+			check(!(minecraft.screen instanceof LoadingErrorScreen), "The loader reported startup warnings or errors; see the client log.");
 			if (!started && minecraft.screen instanceof TitleScreen) {
 				started = true;
 				testDiscoveryAndEditing(minecraft);
@@ -65,8 +68,9 @@ public final class ForgeNativeConfigTestMod {
 				check(minecraft.screen instanceof MezzConfigScreen, "The generated config screen must remain open while rendering.");
 				Path result = Path.of(System.getProperty("mezzConfigGui.nativeTest.successFile"));
 				Files.createDirectories(result.getParent());
-				Files.writeString(result, "passed\n");
-				System.out.println("MezzConfig GUI Forge native config client test passed.");
+				String loader = ForgeVersion.getGroup() + ":" + ForgeVersion.getVersion();
+				Files.writeString(result, "passed " + loader + "\n");
+				System.out.println("MezzConfig GUI native config client test passed on " + loader + ".");
 				minecraft.stop();
 			}
 		} catch (Exception | AssertionError exception) {
@@ -77,6 +81,10 @@ public final class ForgeNativeConfigTestMod {
 
 	@SuppressWarnings("unchecked")
 	private static void testDiscoveryAndEditing(Minecraft minecraft) throws Exception {
+		check(ForgeVersion.getGroup().equals(System.getProperty("mezzConfigGui.nativeTest.expectedGroup")),
+			"The test must run on the requested loader, not a fallback Forge runtime.");
+		check(ForgeVersion.getVersion().equals(System.getProperty("mezzConfigGui.nativeTest.expectedVersion")),
+			"The test must run on the pinned loader version.");
 		var container = ModList.get().getModContainerById(MOD_ID).orElseThrow();
 		check(container.getCustomExtension(ConfigScreenHandler.ConfigScreenFactory.class).orElseThrow() == CUSTOM_SCREEN,
 			"Automatic discovery must preserve an existing screen factory.");

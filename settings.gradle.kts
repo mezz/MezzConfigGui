@@ -30,4 +30,4 @@ pluginManagement {
 }
 
 rootProject.name = "MezzConfigGui"
-include("Changelog", "Common", "Fabric", "Forge")
+include("Changelog", "Common", "Fabric", "Forge", "NeoForgeCompatTest")

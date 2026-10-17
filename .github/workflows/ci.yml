@@ -36,8 +36,8 @@ jobs:
       - name: Build and check
         run: ./gradlew --stacktrace spotlessCheck build :Common:apiJavadoc :Common:checkJarCompatibility
 
-      - name: Check native Forge config discovery in the client
-        run: xvfb-run -a ./gradlew --stacktrace :Forge:runNativeConfigTest
+      - name: Check native config discovery on Forge and NeoForge
+        run: xvfb-run -a ./gradlew --stacktrace :Forge:runNativeConfigTest :NeoForgeCompatTest:runNativeConfigTest
 
       - name: Check release metadata without publishing
         run: ./gradlew --stacktrace publishMods -PpublishDryRun=true

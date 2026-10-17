@@ -39,9 +39,13 @@ reload notifications, and renders the generated screen before exiting:
 
 ```console
 ./gradlew :Forge:runNativeConfigTest
+./gradlew :NeoForgeCompatTest:runNativeConfigTest
 ```
 
-This test requires a display; Linux CI runs it with `xvfb-run -a`.
+The NeoForge compatibility test loads the Forge-built mod jar and the same
+Forge-compiled test fixture under the pinned NeoForge 1.20.1 runtime. Both tests
+verify the running loader and version before checking native config behavior.
+These tests require a display; Linux CI runs them with `xvfb-run -a`.
 
 Native Forge discovery supports booleans, integers, longs, doubles, strings,
 enums, and lists with supported, consistently typed defaults. Empty list
