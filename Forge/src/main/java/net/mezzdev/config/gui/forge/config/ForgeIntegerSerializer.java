@@ -2,10 +2,7 @@ package net.mezzdev.config.gui.forge.config;
 
 import net.mezzdev.config.api.value.serializer.ConfigValueRange;
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
-import net.mezzdev.config.gui.api.ConfigValueEditorType;
-import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
-import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
-import net.minecraft.network.chat.Component;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.minecraftforge.common.ForgeConfigSpec.ValueSpec;
 import org.jspecify.annotations.Nullable;
 
@@ -13,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
-final class ForgeIntegerSerializer implements IConfigValueEditorSerializer<Integer> {
+final class ForgeIntegerSerializer implements IConfigValueSerializer<Integer> {
 	private final ConfigValueRange<Integer> range;
 	@Nullable
 	private final ValueSpec valueSpec;
@@ -82,11 +79,6 @@ final class ForgeIntegerSerializer implements IConfigValueEditorSerializer<Integ
 	}
 
 	@Override
-	public Component getLocalizedValueName(String configValueLocalizationKey, Integer value) {
-		return Component.literal(value.toString());
-	}
-
-	@Override
 	public String getValidValuesDescription() {
 		if (valueSpec != null && valueSpec.getRange() == null) {
 			return "An integer accepted by this config";
@@ -100,11 +92,6 @@ final class ForgeIntegerSerializer implements IConfigValueEditorSerializer<Integ
 			return "Any integer greater than or equal to %s".formatted(min);
 		}
 		return "An integer in the range [%s, %s] (inclusive)".formatted(min, max);
-	}
-
-	@Override
-	public ConfigValueEditorType<Integer> getEditorType() {
-		return ConfigValueEditorTypes.INTEGER;
 	}
 
 }

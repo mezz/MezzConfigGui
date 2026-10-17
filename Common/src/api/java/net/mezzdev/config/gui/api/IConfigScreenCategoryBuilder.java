@@ -266,7 +266,7 @@ public interface IConfigScreenCategoryBuilder {
 	 * @param localizationKey translation key for this sort-order value's name
 	 * @param sortingConfig sorting config that stores and applies the edited order
 	 * @param values complete runtime value set to expose in the list editor
-	 * @param valueSerializer serializer and display metadata for one sortable value
+	 * @param valueSerializer text serializer for one sortable value
 	 * @param <T> the sortable value type
 	 * @return builder for configuring how this sorting config is shown
 	 *

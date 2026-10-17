@@ -10,8 +10,10 @@ import java.util.List;
  *
  * @param <T> the list element type
  *
+ * @deprecated Use {@link IConfigListValueEditorMetadata} to describe the editor.
  * @since 0.1.0
  */
+@Deprecated(since = "0.6.0")
 public interface IConfigListValueEditorSerializer<T> extends IConfigValueEditorSerializer<List<T>>, IConfigListValueSerializer<T> {
 	/**
 	 * Get the serializer for each list element.

@@ -16,11 +16,15 @@ public class UserInput {
 	}
 
 	public static Optional<UserInput> fromVanilla(double mouseX, double mouseY, int mouseButton, InputType inputType) {
+		return fromVanilla(mouseX, mouseY, mouseButton, 0, inputType);
+	}
+
+	public static Optional<UserInput> fromVanilla(double mouseX, double mouseY, int mouseButton, int modifiers, InputType inputType) {
 		if (mouseButton < 0) {
 			return Optional.empty();
 		}
 		InputConstants.Key input = InputConstants.Type.MOUSE.getOrCreate(mouseButton);
-		UserInput userInput = new UserInput(input, mouseX, mouseY, 0, inputType);
+		UserInput userInput = new UserInput(input, mouseX, mouseY, modifiers, inputType);
 		return Optional.of(userInput);
 	}
 
@@ -62,6 +66,10 @@ public class UserInput {
 
 	public double getMouseY() {
 		return mouseY;
+	}
+
+	public int getModifiers() {
+		return modifiers;
 	}
 
 	public InputType getInputType() {

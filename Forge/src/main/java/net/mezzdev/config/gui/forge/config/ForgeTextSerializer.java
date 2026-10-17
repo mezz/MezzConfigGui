@@ -1,16 +1,13 @@
 package net.mezzdev.config.gui.forge.config;
 
-import net.mezzdev.config.gui.api.ConfigValueEditorType;
-import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
-import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
-import net.minecraft.network.chat.Component;
+import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.minecraftforge.common.ForgeConfigSpec;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
 
-abstract class ForgeTextSerializer<T> implements IConfigValueEditorSerializer<T> {
+abstract class ForgeTextSerializer<T> implements IConfigValueSerializer<T> {
 	private final ForgeConfigSpec.ValueSpec valueSpec;
 	private final String validValuesDescription;
 
@@ -37,18 +34,8 @@ abstract class ForgeTextSerializer<T> implements IConfigValueEditorSerializer<T>
 	}
 
 	@Override
-	public Component getLocalizedValueName(String configValueLocalizationKey, T value) {
-		return Component.literal(serialize(value));
-	}
-
-	@Override
 	public String getValidValuesDescription() {
 		return validValuesDescription;
-	}
-
-	@Override
-	public ConfigValueEditorType<T> getEditorType() {
-		return ConfigValueEditorTypes.getText();
 	}
 
 }

@@ -3,6 +3,8 @@ package net.mezzdev.config.gui.config;
 import net.mezzdev.config.gui.api.ConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigGuiRegistration;
+import net.mezzdev.config.gui.api.IConfigScreenValue;
+import net.mezzdev.config.api.value.serializer.ConfigValueRange;
 import net.minecraft.network.chat.Component;
 
 /**
@@ -21,6 +23,14 @@ public final class ConfigGuiOptionsPlugin implements IConfigGuiPlugin {
 			Component.translatable("mezz_config_gui.config.screen.title"),
 			ConfigGuiOptions::getSchema
 		);
-		registration.configureScreen(screen -> ConfigGuiOptions.getModNavigationConfig().configureCategory(screen.configureCategory("modList")));
+		registration.configureScreen(screen -> {
+			ConfigGuiOptions.getModNavigationConfig().configureCategory(screen.configureCategory("modList"));
+			var value = ConfigGuiOptions.getNavigationDepthValue();
+			var metadata = registration.getEditorMetadataFactory().createRange(
+				value.getEditorInfo().getSerializer(), new ConfigValueRange<>(0, NavigationDepthRangeSerializer.MAX_DEPTH));
+			screen.configureCategory("navigation").getValueBuilder(value)
+				.hide()
+				.insertBefore(IConfigScreenValue.configValue(value, metadata));
+		});
 	}
 }

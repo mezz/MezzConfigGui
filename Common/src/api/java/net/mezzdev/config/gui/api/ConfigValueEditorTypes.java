@@ -68,7 +68,7 @@ public final class ConfigValueEditorTypes {
 
 	/**
 	 * An editor for numeric intervals with two independently adjustable endpoints.
-	 * Requires an {@link IConfigRangeValueEditorSerializer}.
+	 * Requires an {@link IConfigRangeValueEditorMetadata}.
 	 *
 	 * @since 0.5.8
 	 */

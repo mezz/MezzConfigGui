@@ -5,7 +5,6 @@ import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.ConfigInfo;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
-import net.mezzdev.config.gui.api.IConfigValueEditorSerializer;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.Nullable;
@@ -92,10 +91,7 @@ public final class ConfigValueInfoFactory {
 		lines.add(Component.literal("Name: " + configValue.getName()));
 		lines.add(Component.literal("Apply mode: " + configValue.getApplyMode()));
 		lines.add(Component.literal("Restart requirement: " + configValue.getRestartRequirement()));
-		lines.add(Component.literal("Serializer: " + configValue.getSerializer().getClass().getSimpleName()));
-		if (configValue.getSerializer() instanceof IConfigValueEditorSerializer<?> editorSerializer) {
-			lines.add(Component.literal("Editor: " + editorSerializer.getEditorType().getUid()));
-		}
+		lines.add(Component.literal("Editor: " + configValue.getEditorMetadata().getEditorType().getUid()));
 	}
 
 	private static Optional<Component> getUpdateInfo(IConfigScreenValue<?> configValue, boolean hasPendingChange) {
@@ -141,7 +137,7 @@ public final class ConfigValueInfoFactory {
 		if (valueDescription.isPresent()) {
 			return valueDescription;
 		}
-		if (configValue.getSerializer().getAllValidValues().isPresent()) {
+		if (configValue.getEditorMetadata().getAllValidValues().isPresent()) {
 			return Optional.empty();
 		}
 		return Optional.of(ConfigValueLocalization.getDescription(configValue));

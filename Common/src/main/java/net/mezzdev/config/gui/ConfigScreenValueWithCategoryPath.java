@@ -6,6 +6,7 @@ import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigLocalizedValue;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
+import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import net.minecraft.network.chat.Component;
 
 import java.util.List;
@@ -98,6 +99,11 @@ class ConfigScreenValueWithCategoryPath<T> implements IConfigScreenValue<T>, Con
 	@Override
 	public IConfigValueSerializer<T> getSerializer() {
 		return configValue.getSerializer();
+	}
+
+	@Override
+	public IConfigValueEditorMetadata<T> getEditorMetadata() {
+		return configValue.getEditorMetadata();
 	}
 
 	@Override

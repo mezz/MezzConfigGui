@@ -7,6 +7,8 @@ import net.mezzdev.config.gui.api.IConfigValuePopup;
 import net.mezzdev.config.gui.input.InputType;
 import net.mezzdev.config.gui.input.UserInput;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
+import net.mezzdev.config.gui.internal.ConfigValueEditorMetadataFactory;
+import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
 import org.jspecify.annotations.Nullable;
@@ -204,6 +206,11 @@ class ConfigValueSelectorTest {
 		@Override
 		public IConfigValueSerializer<String> getSerializer() {
 			return TestSerializer.INSTANCE;
+		}
+
+		@Override
+		public IConfigValueEditorMetadata<String> getEditorMetadata() {
+			return ConfigValueEditorMetadataFactory.INSTANCE.create(getSerializer(), getDefaultValue());
 		}
 	}
 
