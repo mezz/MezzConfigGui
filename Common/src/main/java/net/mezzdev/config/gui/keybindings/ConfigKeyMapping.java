@@ -1,8 +1,12 @@
 package net.mezzdev.config.gui.keybindings;
 
+import com.mojang.blaze3d.platform.InputConstants;
+import net.mezzdev.config.gui.api.keybindings.IKeyMappingAdapter;
+import net.mezzdev.config.gui.api.keybindings.IKeyMappingBinding;
+import net.mezzdev.config.gui.api.keybindings.IKeyMappingInput;
+
 import net.mezzdev.config.gui.ConfigInputUtil;
 
-import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.locale.Language;
@@ -18,8 +22,13 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 record ConfigKeyMapping(
-	KeyMapping keyMapping
+	KeyMapping keyMapping,
+	IKeyMappingAdapter adapter
 ) implements IConfigKeyMapping {
+	ConfigKeyMapping(KeyMapping mapping) {
+		this(mapping, KeyMappingAdapters.resolve(mapping));
+	}
+
 	private static final Logger LOGGER = LogManager.getLogger();
 	private static final Set<String> MISSING_LOCALIZATION_KEYS = ConcurrentHashMap.newKeySet();
 
@@ -44,48 +53,48 @@ record ConfigKeyMapping(
 	}
 
 	@Override
-	public ConfigKeyBinding getValue() {
-		return ConfigKeyMappingPlatformServices.PLATFORM_HELPER.getValue(keyMapping);
+	public IKeyMappingBinding getValue() {
+		return adapter.getValue();
 	}
 
 	@Override
-	public ConfigKeyBinding getDefaultValue() {
-		return ConfigKeyMappingPlatformServices.PLATFORM_HELPER.getDefaultValue(keyMapping);
+	public IKeyMappingBinding getDefaultValue() {
+		return adapter.getDefaultValue();
 	}
 
 	@Override
-	public ConfigKeyBinding normalize(ConfigKeyBinding value) {
-		return ConfigKeyMappingPlatformServices.PLATFORM_HELPER.normalize(value);
+	public void set(IKeyMappingBinding value) {
+		adapter.setValue(value);
 	}
 
 	@Override
-	public void set(ConfigKeyBinding value) {
-		ConfigKeyMappingPlatformServices.PLATFORM_HELPER.set(keyMapping, value);
+	public Component getValueName(IKeyMappingBinding value) {
+		return adapter.getDisplayName(value);
 	}
 
 	@Override
-	public Component getValueName(ConfigKeyBinding value) {
-		return ConfigKeyMappingPlatformServices.PLATFORM_HELPER.getValueName(value);
+	public boolean isModifier(InputConstants.Key key) {
+		return ConfigKeyMappingHelper.INSTANCE.getModifier(key) != null || adapter.isCustomModifier(key);
 	}
 
 	@Override
-	public ConfigKeyModifier getKeyModifier(String keyName) {
-		InputConstants.Key key = ConfigKeyBindingUtil.getKey(keyName);
-		return ConfigKeyMappingPlatformServices.PLATFORM_HELPER.getKeyModifier(key);
+	public IKeyMappingBinding createBinding(InputConstants.Key key, int eventModifiers) {
+		IKeyMappingInput input = ConfigKeyMappingHelper.INSTANCE.createInputFromEvent(key, eventModifiers);
+		IKeyMappingInput captured = adapter.captureInput(input);
+		return adapter.createBinding(captured);
 	}
 
 	@Override
 	@Unmodifiable
-	public List<ConfigKeyMappingConflict> getConflicts(ConfigKeyBinding value) {
+	public List<ConfigKeyMappingConflict> getConflicts(IKeyMappingBinding value) {
 		IConfigKeyMappingPlatformHelper platformHelper = ConfigKeyMappingPlatformServices.PLATFORM_HELPER;
-		ConfigKeyBinding normalizedValue = platformHelper.normalize(value);
-		if (normalizedValue.isUnbound()) {
+		if (value.isUnbound()) {
 			return List.of();
 		}
 		KeyMapping[] keyMappings = Minecraft.getInstance().options.keyMappings;
 		List<ConfigKeyMappingConflict> conflicts = new ArrayList<>();
 		for (KeyMapping otherKey : keyMappings) {
-			if (otherKey != keyMapping && platformHelper.hasKeyMappingConflict(keyMapping, normalizedValue, otherKey)) {
+			if (otherKey != keyMapping && ConfigKeyMappingHelper.INSTANCE.conflicts(adapter, value, otherKey)) {
 				conflicts.add(createConflict(platformHelper, otherKey));
 			}
 		}
@@ -93,8 +102,8 @@ record ConfigKeyMapping(
 	}
 
 	private static ConfigKeyMappingConflict createConflict(IConfigKeyMappingPlatformHelper platformHelper, KeyMapping conflict) {
-		ConfigKeyBinding conflictValue = platformHelper.getValue(conflict);
-		Component conflictInput = platformHelper.getValueName(conflictValue);
+		var conflictAdapter = KeyMappingAdapters.resolve(conflict);
+		Component conflictInput = conflictAdapter.getDisplayName(conflictAdapter.getValue());
 		return new ConfigKeyMappingConflict(
 			getLocalized(conflict, conflict.getName(), "conflict name"),
 			conflictInput,

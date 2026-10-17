@@ -11,8 +11,10 @@ import net.mezzdev.config.api.value.serializer.ConfigValueRange;
  *
  * @param <T> the numeric endpoint type
  *
+ * @deprecated Use {@link IConfigRangeValueEditorMetadata} to describe the editor.
  * @since 0.5.8
  */
+@Deprecated(since = "0.6.0")
 public interface IConfigRangeValueEditorSerializer<T> extends IConfigValueEditorSerializer<ConfigValueRange<T>> {
 	/**
 	 * The inclusive bounds within which both handles can move.

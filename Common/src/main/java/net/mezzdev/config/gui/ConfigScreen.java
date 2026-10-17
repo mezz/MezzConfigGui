@@ -679,7 +679,7 @@ public class ConfigScreen extends MezzConfigScreen {
 		if (searchBox.isFocused() && !searchBox.isMouseOver(mouseX, mouseY)) {
 			searchBox.setFocused(false);
 		}
-		boolean ret = UserInput.fromVanilla(mouseX, mouseY, button, InputType.SIMULATE)
+		boolean ret = UserInput.fromVanilla(mouseX, mouseY, button, getMouseModifiers(), InputType.SIMULATE)
 			.map(this::handleInput)
 			.orElse(false);
 		return ret || super.mouseClicked(mouseX, mouseY, button);
@@ -719,7 +719,7 @@ public class ConfigScreen extends MezzConfigScreen {
 				return true;
 			}
 		}
-		boolean ret = UserInput.fromVanilla(mouseX, mouseY, button, InputType.EXECUTE)
+		boolean ret = UserInput.fromVanilla(mouseX, mouseY, button, getMouseModifiers(), InputType.EXECUTE)
 			.map(this::handleInput)
 			.orElse(false);
 		if (ret) {
