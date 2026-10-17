@@ -147,6 +147,8 @@ legacyForge {
             client()
             gameDirectory = nativeTestDirectory.get().asFile
             systemProperty("mezzConfigGui.nativeTest.successFile", nativeTestResult.get().asFile.absolutePath)
+            systemProperty("mezzConfigGui.nativeTest.expectedGroup", "net.minecraftforge")
+            systemProperty("mezzConfigGui.nativeTest.expectedVersion", forgeVersion)
             logLevel = Level.INFO
             loadedMods.set(setOf(
                 mods.getByName(configModId),
