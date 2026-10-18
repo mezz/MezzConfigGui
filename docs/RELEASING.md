@@ -10,9 +10,12 @@ so API and loader dependency ranges continue to work.
    API additions, fixes, and dependency updates. For breaking API changes,
    increase `x` and reset `y` to zero.
    Set `apiBaselineVersion` to the first API release in each compatible version
-   line, using its exact Maven version: `mc26.1.2-0.6.0` for the `0.6.x` line.
-   Advance the baseline only on a `0.x` minor bump or a major bump for `1.0.0`
-   and later. Keep it pinned for backward-compatible releases.
+   line using its exact Maven version. This branch compares the 0.6 API
+   with its published `mc26.1.2-0.5.1` baseline.
+   If earlier versions were never published, use the first version being released.
+   The baseline may start at any patch number.
+   Once published, advance the baseline only on a `0.x` minor bump or a major
+   bump for `1.0.0` and later. Keep it pinned for backward-compatible releases.
    A missing baseline is allowed only while building that baseline release;
    later releases require it and fail on API incompatibilities.
 2. Commit and push that branch, then wait for its CI checks to pass.
