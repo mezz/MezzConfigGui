@@ -36,12 +36,12 @@ public final class ConfigValueInfoFactory {
 	static Component getBooleanToggleAction(boolean value) {
 		if (value) {
 			return Component.translatableWithFallback(
-				"mezz_config.config.value.boolean.action.disable",
+				"mezz_config_gui.config.value.boolean.action.disable",
 				"Click to disable this setting."
 			);
 		}
 		return Component.translatableWithFallback(
-			"mezz_config.config.value.boolean.action.enable",
+			"mezz_config_gui.config.value.boolean.action.enable",
 			"Click to enable this setting."
 		);
 	}
@@ -53,8 +53,8 @@ public final class ConfigValueInfoFactory {
 
 	public static ConfigInfo createResetInfo(IConfigScreenValue<?> configValue) {
 		ConfigInfo info = new ConfigInfo(
-			Component.translatable("mezz_config.config.screen.reset"),
-			Component.translatable("mezz_config.config.screen.reset.value.info")
+			Component.translatable("mezz_config_gui.config.screen.reset"),
+			Component.translatable("mezz_config_gui.config.screen.reset.value.info")
 		);
 		return appendUpdateInfo(configValue, info, false);
 	}
@@ -99,22 +99,22 @@ public final class ConfigValueInfoFactory {
 		if (restartRequirement == ConfigValueRestartRequirement.WORLD_RESTART) {
 			return Optional.of(getUpdateInfoComponent(
 				hasPendingChange,
-				"mezz_config.config.screen.update.worldRestart.pending",
-				"mezz_config.config.screen.update.worldRestart.info"
+				"mezz_config_gui.config.screen.update.worldRestart.pending",
+				"mezz_config_gui.config.screen.update.worldRestart.info"
 			));
 		}
 		if (restartRequirement == ConfigValueRestartRequirement.GAME_RESTART) {
 			return Optional.of(getUpdateInfoComponent(
 				hasPendingChange,
-				"mezz_config.config.screen.update.gameRestart.pending",
-				"mezz_config.config.screen.update.gameRestart.info"
+				"mezz_config_gui.config.screen.update.gameRestart.pending",
+				"mezz_config_gui.config.screen.update.gameRestart.info"
 			));
 		}
 		if (configValue.getApplyMode() == ConfigValueApplyMode.ON_APPLY) {
 			return Optional.of(getUpdateInfoComponent(
 				hasPendingChange,
-				"mezz_config.config.screen.update.onApply.pending",
-				"mezz_config.config.screen.update.onApply.info"
+				"mezz_config_gui.config.screen.update.onApply.pending",
+				"mezz_config_gui.config.screen.update.onApply.info"
 			));
 		}
 		return Optional.empty();

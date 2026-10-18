@@ -156,10 +156,10 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 			lines.add(Component.literal(error));
 		}
 		if (lines.isEmpty()) {
-			lines.add(Component.translatable("mezz_config.config.screen.text.invalid.info"));
+			lines.add(Component.translatable("mezz_config_gui.config.screen.text.invalid.info"));
 		}
 		lines.add(ConfigNumberInfo.getValidValuesDescription(serializer));
-		return new ConfigInfo(Component.translatable("mezz_config.config.screen.text.invalid"), lines);
+		return new ConfigInfo(Component.translatable("mezz_config_gui.config.screen.text.invalid"), lines);
 	}
 
 	@Override

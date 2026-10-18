@@ -481,8 +481,8 @@ final class ConfigScreenView {
 		}
 		if (layout.isResizingNavigation() || layout.getNavDividerArea().contains(mouseX, mouseY)) {
 			return new ConfigInfo(
-				Component.translatable("mezz_config.config.screen.navigationResize.title"),
-				Component.translatable("mezz_config.config.screen.navigationResize.info")
+				Component.translatable("mezz_config_gui.config.screen.navigationResize.title"),
+				Component.translatable("mezz_config_gui.config.screen.navigationResize.info")
 			);
 		}
 		if (searchBackgroundArea.contains(mouseX, mouseY)) {
@@ -493,52 +493,52 @@ final class ConfigScreenView {
 
 	private static ConfigInfo getSearchInfo() {
 		return new ConfigInfo(
-			Component.translatable("mezz_config.config.screen.search.info.title"),
-			Component.translatable("mezz_config.config.screen.search.info")
+			Component.translatable("mezz_config_gui.config.screen.search.info.title"),
+			Component.translatable("mezz_config_gui.config.screen.search.info")
 		);
 	}
 
 	private static ConfigInfo getScreenListTooltipInfo() {
 		return new ConfigInfo(
-			Component.translatable("mezz_config.config.screen.allMods.title"),
-			Component.translatable("mezz_config.config.screen.allMods.info")
+			Component.translatable("mezz_config_gui.config.screen.allMods.title"),
+			Component.translatable("mezz_config_gui.config.screen.allMods.info")
 		);
 	}
 
 	private ConfigInfo getUndoChangesTooltipInfo() {
 		String infoKey = getUndoChangesInfoKey();
 		return new ConfigInfo(
-			Component.translatable("mezz_config.config.screen.undo.title"),
+			Component.translatable("mezz_config_gui.config.screen.undo.title"),
 			Component.translatable(infoKey)
 		);
 	}
 
 	private String getUndoChangesInfoKey() {
 		if (controller.hasUndoableChanges()) {
-			return "mezz_config.config.screen.undo.info";
+			return "mezz_config_gui.config.screen.undo.info";
 		}
-		return "mezz_config.config.screen.undo.disabled.info";
+		return "mezz_config_gui.config.screen.undo.disabled.info";
 	}
 
 	private ConfigInfo getApplyPendingChangesTooltipInfo() {
 		String infoKey = getApplyPendingChangesInfoKey();
 		return new ConfigInfo(
-			Component.translatable("mezz_config.config.screen.applyPending.title"),
+			Component.translatable("mezz_config_gui.config.screen.applyPending.title"),
 			Component.translatable(infoKey)
 		);
 	}
 
 	private String getApplyPendingChangesInfoKey() {
 		if (controller.hasPendingChanges()) {
-			return "mezz_config.config.screen.applyPending.info";
+			return "mezz_config_gui.config.screen.applyPending.info";
 		}
-		return "mezz_config.config.screen.applyPending.disabled.info";
+		return "mezz_config_gui.config.screen.applyPending.disabled.info";
 	}
 
 	private static ConfigInfo getResizeInfo() {
 		return new ConfigInfo(
-			Component.translatable("mezz_config.config.screen.resize.title"),
-			Component.translatable("mezz_config.config.screen.resize.info")
+			Component.translatable("mezz_config_gui.config.screen.resize.title"),
+			Component.translatable("mezz_config_gui.config.screen.resize.info")
 		);
 	}
 

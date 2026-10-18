@@ -84,7 +84,7 @@ final class AmecsKeyMappingAdapter implements IKeyMappingAdapter {
 			.toList();
 		Component result = value.getKey().getDisplayName();
 		for (AmecsKeyModifier modifier : modifiers) {
-			result = Component.translatable("mezz_config.key.combo", Component.translatable(modifier.getTranslationKey()), result);
+			result = Component.translatable("mezz_config_gui.key.combo", Component.translatable(modifier.getTranslationKey()), result);
 		}
 		return result;
 	}

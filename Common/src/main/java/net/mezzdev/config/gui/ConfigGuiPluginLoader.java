@@ -1992,7 +1992,7 @@ final class ConfigGuiPluginLoader {
 			.filter(message -> !message.isBlank())
 			.orElseGet(() -> exception.getClass().getSimpleName());
 		Component valueName = ConfigValueLocalization.getName(failure.change().configValue());
-		Component message = Component.translatable("mezz_config.config.screen.saveFailed", valueName, reason);
+		Component message = Component.translatable("mezz_config_gui.config.screen.saveFailed", valueName, reason);
 		Minecraft minecraft = Minecraft.getInstance();
 		if (minecraft.player != null) {
 			ConfigClientUtil.sendMessage(message);
@@ -2007,8 +2007,8 @@ final class ConfigGuiPluginLoader {
 	) {
 		String translationKey = switch (restartRequirement) {
 			case NONE -> throw new IllegalArgumentException("restartRequirement must require a restart.");
-			case WORLD_RESTART -> "mezz_config.config.screen.restart.nextWorldLoad";
-			case GAME_RESTART -> "mezz_config.config.screen.restart.nextGameStart";
+			case WORLD_RESTART -> "mezz_config_gui.config.screen.restart.nextWorldLoad";
+			case GAME_RESTART -> "mezz_config_gui.config.screen.restart.nextGameStart";
 		};
 		Component message = Component.translatable(translationKey, title);
 		Minecraft minecraft = Minecraft.getInstance();

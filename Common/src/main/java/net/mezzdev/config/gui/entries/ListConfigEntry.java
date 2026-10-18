@@ -497,26 +497,26 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 		for (ListValueRow row : valueRows) {
 			if (row.moveUpArea.contains(mouseX, mouseY)) {
 				return new ConfigInfo(
-					Component.translatable("mezz_config.config.screen.moveUp"),
+					Component.translatable("mezz_config_gui.config.screen.moveUp"),
 					List.of()
 				);
 			}
 			if (row.moveDownArea.contains(mouseX, mouseY)) {
 				return new ConfigInfo(
-					Component.translatable("mezz_config.config.screen.moveDown"),
+					Component.translatable("mezz_config_gui.config.screen.moveDown"),
 					List.of()
 				);
 			}
 			if (row.deleteArea.contains(mouseX, mouseY)) {
 				return new ConfigInfo(
-					Component.translatable("mezz_config.config.screen.remove"),
+					Component.translatable("mezz_config_gui.config.screen.remove"),
 					List.of()
 				);
 			}
 			if (row.resetArea.contains(mouseX, mouseY)) {
 				return new ConfigInfo(
-					Component.translatable("mezz_config.config.screen.reset"),
-					List.of(Component.translatable("mezz_config.config.screen.reset.value.info"))
+					Component.translatable("mezz_config_gui.config.screen.reset"),
+					List.of(Component.translatable("mezz_config_gui.config.screen.reset.value.info"))
 				);
 			}
 		}
@@ -526,7 +526,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 				description = List.of(getAddValueDescription());
 			}
 			return new ConfigInfo(
-				Component.translatable("mezz_config.config.screen.add"),
+				Component.translatable("mezz_config_gui.config.screen.add"),
 				description
 			);
 		}
@@ -1109,7 +1109,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	private Component getListChangeSummary(List<T> oldValue, List<T> newValue) {
 		return findSingleMove(oldValue, newValue)
 			.<Component>map(move -> Component.translatable(
-				"mezz_config.config.screen.pendingChanges.list.move",
+				"mezz_config_gui.config.screen.pendingChanges.list.move",
 				metadata.getElementMetadata(move.value()).getLocalizedValueName(configValue.getLocalizationKey(), move.value()),
 				move.oldIndex() + 1,
 				move.newIndex() + 1
@@ -1120,13 +1120,13 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	private Component createListChangeSummary(List<T> oldValue, List<T> newValue) {
 		if (oldValue.size() != newValue.size()) {
 			return Component.translatable(
-				"mezz_config.config.screen.pendingChanges.list.sizeChanged",
+				"mezz_config_gui.config.screen.pendingChanges.list.sizeChanged",
 				oldValue.size(),
 				newValue.size()
 			);
 		}
 		return Component.translatable(
-			"mezz_config.config.screen.pendingChanges.list.changed",
+			"mezz_config_gui.config.screen.pendingChanges.list.changed",
 			countChangedPositions(oldValue, newValue)
 		);
 	}

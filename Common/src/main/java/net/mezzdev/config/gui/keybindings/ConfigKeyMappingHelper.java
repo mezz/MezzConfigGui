@@ -54,7 +54,7 @@ public final class ConfigKeyMappingHelper implements IKeyMappingHelper {
 	Component getDisplayName(IKeyMappingBinding value) {
 		SortedSet<String> translationKeys = new TreeSet<>();
 		for (String name : value.getCustomModifiers()) {
-			translationKeys.add("mezz_config.key.modifier." + name);
+			translationKeys.add("mezz_config_gui.key.modifier." + name);
 		}
 		for (KeyInputModifier modifier : resolve(value).getModifiers()) {
 			translationKeys.add(getModifierTranslationKey(modifier));
@@ -62,7 +62,7 @@ public final class ConfigKeyMappingHelper implements IKeyMappingHelper {
 		Component result = value.getKey().getDisplayName();
 		for (String translationKey : translationKeys) {
 			Component modifierName = Component.translatable(translationKey);
-			result = Component.translatable("mezz_config.key.combo", modifierName, result);
+			result = Component.translatable("mezz_config_gui.key.combo", modifierName, result);
 		}
 		return result;
 	}
@@ -133,10 +133,10 @@ public final class ConfigKeyMappingHelper implements IKeyMappingHelper {
 
 	private static String getModifierTranslationKey(KeyInputModifier modifier) {
 		return switch (modifier) {
-			case SHIFT -> "mezz_config.key.modifier.shift";
-			case CONTROL -> "mezz_config.key.modifier.control";
-			case ALT -> "mezz_config.key.modifier.alt";
-			case COMMAND -> "mezz_config.key.modifier.command";
+			case SHIFT -> "mezz_config_gui.key.modifier.shift";
+			case CONTROL -> "mezz_config_gui.key.modifier.control";
+			case ALT -> "mezz_config_gui.key.modifier.alt";
+			case COMMAND -> "mezz_config_gui.key.modifier.command";
 		};
 	}
 

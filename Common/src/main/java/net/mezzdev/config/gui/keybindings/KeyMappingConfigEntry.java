@@ -119,7 +119,7 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 		}
 		Component context = getValue().context();
 		if (!context.getString().isBlank()) {
-			lines.add(Component.translatable("mezz_config.config.keyMapping.context.info", context));
+			lines.add(Component.translatable("mezz_config_gui.config.keyMapping.context.info", context));
 		}
 		List<ConfigKeyMappingConflict> conflicts = getConflicts();
 		if (!conflicts.isEmpty()) {
@@ -239,30 +239,30 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 				lines.add(Component.empty());
 			}
 			lines.add(Component.literal("• ").append(Component.translatable(
-				"mezz_config.config.keyMapping.conflict.binding",
+				"mezz_config_gui.config.keyMapping.conflict.binding",
 				conflict.name(),
 				conflict.binding()
 			))
 				.withStyle(ChatFormatting.BOLD));
 			lines.add(Component.literal("  ").append(Component.translatable(
-				"mezz_config.config.keyMapping.conflict.mod",
+				"mezz_config_gui.config.keyMapping.conflict.mod",
 				conflict.modName()
 			)));
 			lines.add(Component.literal("  ").append(Component.translatable(
-				"mezz_config.config.keyMapping.conflict.category",
+				"mezz_config_gui.config.keyMapping.conflict.category",
 				conflict.category()
 			)));
 		}
 		if (conflicts.size() > 3) {
 			lines.add(Component.empty());
 			lines.add(Component.translatable(
-				"mezz_config.config.keyMapping.conflict.more",
+				"mezz_config_gui.config.keyMapping.conflict.more",
 				conflicts.size() - 3
 			));
 		}
 		return new ConfigInfo(
 			withColor(
-				Component.translatable("mezz_config.config.keyMapping.conflict.title"),
+				Component.translatable("mezz_config_gui.config.keyMapping.conflict.title"),
 				ConfigGuiColors.GuiColor.KEY_MAPPING_CONFLICT_INFO_TEXT
 			),
 			lines
@@ -283,7 +283,7 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 		if (conflicts.size() > 3) {
 			conflictNames += ", ...";
 		}
-		return Component.translatable("mezz_config.config.keyMapping.conflict", conflictNames);
+		return Component.translatable("mezz_config_gui.config.keyMapping.conflict", conflictNames);
 	}
 
 	private void startListening() {

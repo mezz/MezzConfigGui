@@ -17,7 +17,7 @@ public enum ServerConfigAccess {
 	private final String fallback;
 
 	ServerConfigAccess(String key, String fallback) {
-		this.key = "mezz_config.config.server.access." + key;
+		this.key = "mezz_config_gui.config.server.access." + key;
 		this.fallback = fallback;
 	}
 

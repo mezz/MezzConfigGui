@@ -17,25 +17,25 @@ public final class ConfigNumberInfo {
 		return serializer.getRange()
 			.filter(range -> range.min() instanceof Number && range.max() instanceof Number)
 			.map(ConfigNumberInfo::getRange)
-			.orElseGet(() -> Component.translatable("mezz_config.config.screen.validValues", serializer.getValidValuesDescription()));
+			.orElseGet(() -> Component.translatable("mezz_config_gui.config.screen.validValues", serializer.getValidValuesDescription()));
 	}
 
 	public static Component getRange(ConfigValueRange<?> range) {
 		if (range.min().equals(range.max())) {
-			return Component.translatableWithFallback("mezz_config.config.screen.range.exact", "Range: %s", getBound(range.min()));
+			return Component.translatableWithFallback("mezz_config_gui.config.screen.range.exact", "Range: %s", getBound(range.min()));
 		}
 		boolean minimumLimit = isTypeLimit(range.min(), false);
 		boolean maximumLimit = isTypeLimit(range.max(), true);
 		if (minimumLimit && maximumLimit) {
-			return Component.translatableWithFallback("mezz_config.config.screen.range.full", "Range: any");
+			return Component.translatableWithFallback("mezz_config_gui.config.screen.range.full", "Range: any");
 		}
 		if (maximumLimit) {
-			return Component.translatableWithFallback("mezz_config.config.screen.range.atLeast", "Range: >= %s", getBound(range.min()));
+			return Component.translatableWithFallback("mezz_config_gui.config.screen.range.atLeast", "Range: >= %s", getBound(range.min()));
 		}
 		if (minimumLimit) {
-			return Component.translatableWithFallback("mezz_config.config.screen.range.atMost", "Range: <= %s", getBound(range.max()));
+			return Component.translatableWithFallback("mezz_config_gui.config.screen.range.atMost", "Range: <= %s", getBound(range.max()));
 		}
-		return Component.translatableWithFallback("mezz_config.config.screen.range", "Range: %s ~ %s",
+		return Component.translatableWithFallback("mezz_config_gui.config.screen.range", "Range: %s ~ %s",
 			getBound(range.min()), getBound(range.max()));
 	}
 
