@@ -7,7 +7,6 @@ plugins {
     `maven-publish`
     id("net.neoforged.moddev.legacyforge")
     id("me.modmuss50.mod-publish-plugin")
-    id("net.mezzdev.config-language-resources")
 }
 
 val minecraftVersion: String by extra
@@ -162,16 +161,8 @@ legacyForge {
 val remappedMezzConfig = obfuscation.createRemappingConfiguration(mezzConfigRun)
 dependencies { add(remappedMezzConfig.name, mezzConfigForgeDependency) }
 
-configLanguageResources {
-    from(common)
-}
-val languages = tasks.named("mergeConfigLanguageResources")
 tasks.jar {
-    from(commonOutputs.map { it.output }) {
-        exclude("assets/mezz_config/lang/*.json")
-        exclude("assets/mezz_config_gui/lang/*.json")
-    }
-    from(languages)
+    from(commonOutputs.map { it.output })
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 tasks.named<Jar>("sourcesJar") {
