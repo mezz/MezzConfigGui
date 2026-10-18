@@ -175,7 +175,7 @@ tasks.jar {
     dependencySourceSets.forEach { dependencySourceSet ->
         from(dependencySourceSet.output) {
             exclude("assets/mezz_config/lang/*.json")
-            exclude("assets/mezz_config_gui/lang/*.json")
+            exclude("assets/mezz_config_gui/lang/en_us.json")
         }
     }
     from(mergedConfigLanguageResources)
