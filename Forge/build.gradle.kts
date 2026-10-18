@@ -5,7 +5,6 @@ plugins {
     `maven-publish`
     id("net.minecraftforge.gradle")
     id("me.modmuss50.mod-publish-plugin")
-    id("net.mezzdev.config-language-resources")
 }
 
 val forgeVersion: String by extra
@@ -165,20 +164,10 @@ val runServerSmokeTest = tasks.register("runServerSmokeTest") {
 }
 tasks.check { dependsOn(runServerSmokeTest) }
 
-configLanguageResources {
-    from(commonProject)
-}
-val mergedConfigLanguageResources = tasks.named("mergeConfigLanguageResources")
-
 tasks.jar {
-    dependsOn(mergedConfigLanguageResources)
     dependencySourceSets.forEach { dependencySourceSet ->
-        from(dependencySourceSet.output) {
-            exclude("assets/mezz_config/lang/*.json")
-            exclude("assets/mezz_config_gui/lang/en_us.json")
-        }
+        from(dependencySourceSet.output)
     }
-    from(mergedConfigLanguageResources)
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 val sourcesJarTask = tasks.named<Jar>("sourcesJar") {

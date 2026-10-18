@@ -37,7 +37,7 @@ public class ListValueEditorMetadata<T> extends ConfigValueEditorMetadata<List<T
 			return super.getLocalizedValueName(localizationKey, values);
 		}
 		if (values.isEmpty()) {
-			return Component.translatable("mezz_config.config.value.list.empty");
+			return Component.translatable("mezz_config_gui.config.value.list.empty");
 		}
 		MutableComponent result = Component.empty();
 		for (int i = 0; i < values.size(); i++) {
