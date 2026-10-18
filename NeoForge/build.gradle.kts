@@ -28,7 +28,6 @@ plugins {
     id("maven-publish")
     id("net.neoforged.moddev")
     id("me.modmuss50.mod-publish-plugin")
-    id("net.mezzdev.config-language-resources")
 }
 
 publishMods {
@@ -130,11 +129,6 @@ for (testModSourceSet in testModSourceSets) {
     }
 }
 
-configLanguageResources {
-    from(*dependencyProjects.toTypedArray())
-}
-
-val mergedConfigLanguageResources = tasks.named("mergeConfigLanguageResources")
 val configGuiAccessTransformer = commonProject.layout.projectDirectory.file("src/main/accesstransformer.cfg")
 
 neoForge {
@@ -281,15 +275,9 @@ tasks.named<ProcessResources>(sourceSets.main.get().processResourcesTaskName) {
 }
 
 tasks.jar {
-    dependsOn(mergedConfigLanguageResources)
-    from(sourceSets.main.get().output)
     for (dependencySourceSet in dependencySourceSets) {
-        from(dependencySourceSet.output) {
-            exclude("assets/mezz_config/lang/*.json")
-            exclude("assets/mezz_config_gui/lang/*.json")
-        }
+        from(dependencySourceSet.output)
     }
-    from(mergedConfigLanguageResources)
     from(configGuiAccessTransformer) {
         into("META-INF")
         rename { "accesstransformer.cfg" }

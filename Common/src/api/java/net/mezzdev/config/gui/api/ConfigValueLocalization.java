@@ -190,16 +190,16 @@ public final class ConfigValueLocalization {
 
 	private static String getBooleanValueNameTranslationKey(boolean value) {
 		if (value) {
-			return "mezz_config.config.value.boolean.true";
+			return "mezz_config_gui.config.value.boolean.true";
 		}
-		return "mezz_config.config.value.boolean.false";
+		return "mezz_config_gui.config.value.boolean.false";
 	}
 
 	private static String getBooleanValueDescriptionTranslationKey(boolean value) {
 		if (value) {
-			return "mezz_config.config.value.boolean.true.description";
+			return "mezz_config_gui.config.value.boolean.true.description";
 		}
-		return "mezz_config.config.value.boolean.false.description";
+		return "mezz_config_gui.config.value.boolean.false.description";
 	}
 
 	private static String getDisplayNameFallback(String name) {

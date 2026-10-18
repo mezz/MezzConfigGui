@@ -77,7 +77,7 @@ public final class ConfigValueEditorMetadataFactory implements IConfigValueEdito
 
 		@Override
 		public Component getLocalizedValueName(String localizationKey, ConfigValueRange<T> value) {
-			return Component.translatableWithFallback("mezz_config.config.screen.range.value", "%s – %s", value.min(), value.max());
+			return Component.translatableWithFallback("mezz_config_gui.config.screen.range.value", "%s – %s", value.min(), value.max());
 		}
 	}
 }

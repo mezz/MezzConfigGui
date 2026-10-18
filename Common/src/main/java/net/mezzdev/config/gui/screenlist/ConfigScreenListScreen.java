@@ -33,8 +33,8 @@ import java.util.Optional;
  * Screen for choosing one of the config screens discovered for the current mod loader.
  */
 public final class ConfigScreenListScreen extends MezzConfigScreen {
-	private static final Component TITLE = Component.translatable("mezz_config.config.screen.list.title");
-	private static final Component SEARCH = Component.translatable("mezz_config.config.screen.list.search");
+	private static final Component TITLE = Component.translatable("mezz_config_gui.config.screen.list.title");
+	private static final Component SEARCH = Component.translatable("mezz_config_gui.config.screen.list.search");
 	private static final int BORDER_PADDING = 6;
 	private static final int SECTION_GAP = BORDER_PADDING / 2;
 	private static final int TITLE_HEIGHT = 18;
@@ -432,7 +432,7 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 	}
 
 	private void drawEmptyListMessage(GuiGraphicsExtractor guiGraphics, Font font) {
-		Component message = Component.translatable("mezz_config.config.screen.list.empty");
+		Component message = Component.translatable("mezz_config_gui.config.screen.list.empty");
 		ConfigEntryWidget.drawFittedText(
 			guiGraphics,
 			font,
