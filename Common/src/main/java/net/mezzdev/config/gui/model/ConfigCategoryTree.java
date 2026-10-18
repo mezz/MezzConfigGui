@@ -70,7 +70,7 @@ final class ConfigCategoryTree {
 			MutableNode fileRoot = createRoot(member);
 			if (!fileRoot.values.isEmpty()) {
 				MutableNode settings = new MutableNode(fileRoot.name + "/@values",
-					Component.translatableWithFallback("mezz_config.config.screen.sectionSettings", "Settings"), fileRoot.description);
+					Component.translatableWithFallback("mezz_config_gui.config.screen.sectionSettings", "Settings"), fileRoot.description);
 				settings.values.addAll(fileRoot.values);
 				root.children.put(settings.name, settings);
 			}
@@ -156,7 +156,7 @@ final class ConfigCategoryTree {
 			result.add(new Node(category, parentIndex, depth, true, List.of()));
 			if (!values.isEmpty()) {
 				ConfigScreenCategory settings = new SectionCategory(node.name + "/@values",
-					Component.translatableWithFallback("mezz_config.config.screen.sectionSettings", "Settings"), node.description, group, List.<IConfigScreenValue<?>>copyOf(values));
+					Component.translatableWithFallback("mezz_config_gui.config.screen.sectionSettings", "Settings"), node.description, group, List.<IConfigScreenValue<?>>copyOf(values));
 				result.add(new Node(settings, index, depth + 1, false, List.copyOf(inlineSections)));
 			}
 		} else {

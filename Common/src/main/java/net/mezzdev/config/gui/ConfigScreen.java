@@ -103,10 +103,10 @@ public class ConfigScreen extends MezzConfigScreen {
 		ConfigTextures textures = ConfigTextures.get();
 
 		Font font = Minecraft.getInstance().font;
-		this.searchBox = new EditBox(font, 0, 0, 0, ConfigScreenLayout.SEARCH_HEIGHT, Component.translatable("mezz_config.config.screen.search"));
+		this.searchBox = new EditBox(font, 0, 0, 0, ConfigScreenLayout.SEARCH_HEIGHT, Component.translatable("mezz_config_gui.config.screen.search"));
 		this.searchBox.setMaxLength(64);
 		this.searchBox.setBordered(false);
-		this.searchBox.setHint(Component.translatable("mezz_config.config.screen.search"));
+		this.searchBox.setHint(Component.translatable("mezz_config_gui.config.screen.search"));
 		updateSearchTextColor("");
 
 		this.model = new ConfigScreenModel(createCategories(clientSchema));

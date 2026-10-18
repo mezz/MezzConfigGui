@@ -48,8 +48,8 @@ public record PendingConfigChange(Component name, Component valueChange, ConfigI
 		@Nullable ConfigInfo newValueInfo
 	) {
 		List<Component> lines = new ArrayList<>(configInfo.lines());
-		addValueInfo(lines, Component.translatable("mezz_config.config.screen.pendingChanges.previousValue", oldValue), oldValueInfo);
-		addValueInfo(lines, Component.translatable("mezz_config.config.screen.pendingChanges.newValue", newValue), newValueInfo);
+		addValueInfo(lines, Component.translatable("mezz_config_gui.config.screen.pendingChanges.previousValue", oldValue), oldValueInfo);
+		addValueInfo(lines, Component.translatable("mezz_config_gui.config.screen.pendingChanges.newValue", newValue), newValueInfo);
 		return new ConfigInfo(configInfo.title(), lines);
 	}
 

@@ -52,7 +52,7 @@ final class PendingChangesScreen extends MezzConfigScreen {
 		ConfigValueRestartRequirement restartRequirement,
 		List<PendingConfigChange> pendingChanges
 	) {
-		super(Component.translatable("mezz_config.config.screen.pendingChanges.title"));
+		super(Component.translatable("mezz_config_gui.config.screen.pendingChanges.title"));
 		this.callback = callback;
 		this.backAction = backAction;
 		this.restartRequirement = restartRequirement;
@@ -67,15 +67,15 @@ final class PendingChangesScreen extends MezzConfigScreen {
 		int totalWidth = BUTTON_WIDTH * 2 + BUTTON_GAP;
 		int x = (width - totalWidth) / 2;
 		addRenderableWidget(ConfigWidgets.button(
-			Component.translatable("mezz_config.config.screen.apply"), button -> callback.accept(true),
+			Component.translatable("mezz_config_gui.config.screen.apply"), button -> callback.accept(true),
 			x, actionButtonY, BUTTON_WIDTH, BUTTON_HEIGHT, getApplyInfo(restartRequirement)));
 		addRenderableWidget(ConfigWidgets.button(
-			Component.translatable("mezz_config.config.screen.discard"), button -> callback.accept(false),
+			Component.translatable("mezz_config_gui.config.screen.discard"), button -> callback.accept(false),
 			x + BUTTON_WIDTH + BUTTON_GAP, actionButtonY, BUTTON_WIDTH, BUTTON_HEIGHT,
-			Component.translatable("mezz_config.config.screen.discard.info")));
+			Component.translatable("mezz_config_gui.config.screen.discard.info")));
 		addRenderableWidget(ConfigWidgets.button(CommonComponents.GUI_BACK, button -> backAction.run(),
 			(width - BUTTON_WIDTH) / 2, actionButtonY + BUTTON_HEIGHT + BACK_BUTTON_TOP_MARGIN, BUTTON_WIDTH, BUTTON_HEIGHT,
-			Component.translatable("mezz_config.config.screen.back.info")));
+			Component.translatable("mezz_config_gui.config.screen.back.info")));
 	}
 
 	@Override
@@ -379,17 +379,17 @@ final class PendingChangesScreen extends MezzConfigScreen {
 
 	private static Component getPendingChangesMessage(ConfigValueRestartRequirement restartRequirement) {
 		return switch (restartRequirement) {
-			case NONE -> Component.translatable("mezz_config.config.screen.pendingChanges.message");
-			case WORLD_RESTART -> Component.translatable("mezz_config.config.screen.pendingChanges.worldRestart.message");
-			case GAME_RESTART -> Component.translatable("mezz_config.config.screen.pendingChanges.gameRestart.message");
+			case NONE -> Component.translatable("mezz_config_gui.config.screen.pendingChanges.message");
+			case WORLD_RESTART -> Component.translatable("mezz_config_gui.config.screen.pendingChanges.worldRestart.message");
+			case GAME_RESTART -> Component.translatable("mezz_config_gui.config.screen.pendingChanges.gameRestart.message");
 		};
 	}
 
 	private static Component getApplyInfo(ConfigValueRestartRequirement restartRequirement) {
 		return switch (restartRequirement) {
-			case NONE -> Component.translatable("mezz_config.config.screen.apply.info");
-			case WORLD_RESTART -> Component.translatable("mezz_config.config.screen.apply.worldRestart.info");
-			case GAME_RESTART -> Component.translatable("mezz_config.config.screen.apply.gameRestart.info");
+			case NONE -> Component.translatable("mezz_config_gui.config.screen.apply.info");
+			case WORLD_RESTART -> Component.translatable("mezz_config_gui.config.screen.apply.worldRestart.info");
+			case GAME_RESTART -> Component.translatable("mezz_config_gui.config.screen.apply.gameRestart.info");
 		};
 	}
 
