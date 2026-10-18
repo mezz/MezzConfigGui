@@ -6,7 +6,6 @@ plugins {
     `maven-publish`
     id("net.fabricmc.fabric-loom") apply false
     id("me.modmuss50.mod-publish-plugin")
-    id("net.mezzdev.config-language-resources")
 }
 
 pluginManager.apply("net.fabricmc.fabric-loom")
@@ -105,12 +104,6 @@ val serverSmokeTestModSourceSet = sourceSets.create("serverSmokeTestMod") {
 }
 val serverSmokeTestRunDir = layout.buildDirectory.dir("run/server-smoke")
 val serverSmokeTestSuccessFile = serverSmokeTestRunDir.map { it.file("smoke-test-passed") }
-
-configLanguageResources {
-    from(*dependencyProjects.toTypedArray())
-}
-
-val mergedConfigLanguageResources = tasks.named("mergeConfigLanguageResources")
 
 java {
     toolchain {
@@ -220,16 +213,11 @@ configure<LoomGradleExtensionAPI> {
 }
 
 tasks.jar {
-    dependsOn(mergedConfigLanguageResources)
-    from(sourceSets.main.get().output)
     for (dependencySourceSet in dependencySourceSets) {
         from(dependencySourceSet.output) {
             exclude("fabric.mod.json")
-            exclude("assets/mezz_config/lang/*.json")
-            exclude("assets/mezz_config_gui/lang/*.json")
         }
     }
-    from(mergedConfigLanguageResources)
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
