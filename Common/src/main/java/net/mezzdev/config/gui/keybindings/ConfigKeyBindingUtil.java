@@ -28,20 +28,20 @@ public final class ConfigKeyBindingUtil {
 		if (key.getType() == InputConstants.Type.MOUSE) {
 			int value = key.getValue();
 			if (value == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-				return Component.translatable("mezz_config.key.mouse.left");
+				return Component.translatable("mezz_config_gui.key.mouse.left");
 			} else if (value == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
-				return Component.translatable("mezz_config.key.mouse.right");
+				return Component.translatable("mezz_config_gui.key.mouse.right");
 			}
 		}
 		if (key.getType() == InputConstants.Type.KEYSYM) {
 			int value = key.getValue();
 			if (ConfigInputUtil.isMac() && (value == GLFW.GLFW_KEY_LEFT_SUPER || value == GLFW.GLFW_KEY_RIGHT_SUPER)) {
-				return Component.translatable("mezz_config.key.modifier.command");
+				return Component.translatable("mezz_config_gui.key.modifier.command");
 			}
 			return switch (value) {
-				case GLFW.GLFW_KEY_LEFT_SHIFT, GLFW.GLFW_KEY_RIGHT_SHIFT -> Component.translatable("mezz_config.key.modifier.shift");
-				case GLFW.GLFW_KEY_LEFT_ALT, GLFW.GLFW_KEY_RIGHT_ALT -> Component.translatable("mezz_config.key.modifier.alt");
-				case GLFW.GLFW_KEY_LEFT_CONTROL, GLFW.GLFW_KEY_RIGHT_CONTROL -> Component.translatable("mezz_config.key.modifier.control");
+				case GLFW.GLFW_KEY_LEFT_SHIFT, GLFW.GLFW_KEY_RIGHT_SHIFT -> Component.translatable("mezz_config_gui.key.modifier.shift");
+				case GLFW.GLFW_KEY_LEFT_ALT, GLFW.GLFW_KEY_RIGHT_ALT -> Component.translatable("mezz_config_gui.key.modifier.alt");
+				case GLFW.GLFW_KEY_LEFT_CONTROL, GLFW.GLFW_KEY_RIGHT_CONTROL -> Component.translatable("mezz_config_gui.key.modifier.control");
 				default -> key.getDisplayName();
 			};
 		}

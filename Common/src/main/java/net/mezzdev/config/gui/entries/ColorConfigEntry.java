@@ -86,7 +86,7 @@ final class ColorConfigEntry extends ConfigEntryWidget<PackedColor> {
 	public ConfigInfo getInfo() {
 		ConfigInfo info = super.getInfo();
 		List<Component> lines = new ArrayList<>(info.lines());
-		lines.add(Component.translatable("mezz_config.config.screen.validValues", serializer.getValidValuesDescription()));
+		lines.add(Component.translatable("mezz_config_gui.config.screen.validValues", serializer.getValidValuesDescription()));
 		return new ConfigInfo(info.title(), lines);
 	}
 
@@ -99,7 +99,7 @@ final class ColorConfigEntry extends ConfigEntryWidget<PackedColor> {
 		}
 		if (swatchArea.contains(mouseX, mouseY)) {
 			return new ConfigInfo(
-				Component.translatable("mezz_config.config.screen.color.choose"),
+				Component.translatable("mezz_config_gui.config.screen.color.choose"),
 				List.of(Component.literal(ColorSwatch.formatHex(getValue())))
 			);
 		}

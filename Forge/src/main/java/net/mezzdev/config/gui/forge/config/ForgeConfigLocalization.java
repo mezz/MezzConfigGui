@@ -43,7 +43,7 @@ final class ForgeConfigLocalization {
 		String fallback = getDisplayNameFallback(type.extension());
 		Component title = Component.translatableWithFallback(localizationKey + ".title", fallback);
 		if (type == ModConfig.Type.COMMON) {
-			title = Component.translatableWithFallback("mezz_config.config.native.local.title", "%s (local)", title);
+			title = Component.translatableWithFallback("mezz_config_gui.config.native.local.title", "%s (local)", title);
 		}
 		return title;
 	}
@@ -56,7 +56,7 @@ final class ForgeConfigLocalization {
 		return new ConfigScreenCategoryNavigationGroup(
 			"@forge:" + modId + ":common",
 			getCategoryName(localizationKey, type),
-			Component.translatableWithFallback("mezz_config.config.native.description.common.group",
+			Component.translatableWithFallback("mezz_config_gui.config.native.description.common.group",
 				"These local configs may affect client or server behavior, depending on the mod. Changes here do not change a multiplayer server's config.")
 		);
 	}
@@ -85,13 +85,13 @@ final class ForgeConfigLocalization {
 				int index = group.get(ordinal);
 				CategoryName category = categories.get(index);
 				Component numberedName = Component.translatableWithFallback(
-					"mezz_config.config.native.numbered.title", "%s (%s)", category.title(), ordinal + 1
+					"mezz_config_gui.config.native.numbered.title", "%s (%s)", category.title(), ordinal + 1
 				);
 				Component name = category.nestedCategories().stream()
 					.filter(nestedCategory -> !nestedCategory.getString().isBlank() && nestedCategoryCounts.get(nestedCategory.getString()) == 1)
 					.findFirst()
 					.<Component>map(nestedCategory -> Component.translatableWithFallback(
-						"mezz_config.config.native.section.title", "%s · %s", category.title(), nestedCategory
+						"mezz_config_gui.config.native.section.title", "%s · %s", category.title(), nestedCategory
 					))
 					.orElse(numberedName);
 				Component baseName = name;
@@ -129,9 +129,9 @@ final class ForgeConfigLocalization {
 	public static Component getCategoryDescription(String localizationKey, ModConfig modConfig) {
 		String tooltipKey = localizationKey + ".tooltip";
 		String fallbackKey = switch (modConfig.getType()) {
-			case COMMON -> "mezz_config.config.native.description.common";
-			case CLIENT -> "mezz_config.config.native.description.client";
-			case SERVER -> "mezz_config.config.native.description.server";
+			case COMMON -> "mezz_config_gui.config.native.description.common";
+			case CLIENT -> "mezz_config_gui.config.native.description.client";
+			case SERVER -> "mezz_config_gui.config.native.description.server";
 		};
 		Component scope = Component.translatable(fallbackKey, modConfig.getFileName());
 		if (I18n.exists(tooltipKey)) {
