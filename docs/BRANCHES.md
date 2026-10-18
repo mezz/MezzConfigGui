@@ -31,10 +31,10 @@ The Minecraft prefix identifies compatibility, so adding an older Minecraft bran
 does not require renumbering any existing release line. Start a new branch from
 the mod version it ports, then advance it independently.
 
-Backport shared fixes as branch-level changes. Preserve the target branch's version,
-API baseline, dependencies, loaders, and Java requirements, then bump its own mod
-version when releasing. Matching numeric versions on different Minecraft branches
-do not imply identical changes; consult each branch's changelog.
+Backport shared fixes as branch-level changes. Preserve the target branch's loader
+and Java requirements. Advance its version and API baseline according to
+[the release policy](RELEASING.md). Consult each branch's changelog for the
+changes in its releases.
 
 Every branch runs the same verification and publishing flow. See [releasing](RELEASING.md)
 for the branch-specific release process.
