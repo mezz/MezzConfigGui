@@ -26,6 +26,7 @@ public final class ConfigGuiFabricClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		ConfigGuiOptions.register();
+		FabricQuickMenuHooks.register();
 		ClientLifecycleEvents.CLIENT_STARTED.register(client -> getScreenFactoryRegistry());
 		ScreenEvents.AFTER_INIT.register((client, screen, width, height) -> {
 			if (screen instanceof MezzConfigScreen configScreen) {

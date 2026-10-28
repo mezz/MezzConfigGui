@@ -42,3 +42,6 @@ Shared config GUI support for Minecraft mods.
     versionRange="[0,)"
     ordering="NONE"
     side="BOTH"
+
+[[mixins]]
+config="mezz_config_gui.neoforge.mixins.json"

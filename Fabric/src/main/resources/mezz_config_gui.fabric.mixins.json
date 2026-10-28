@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "net.mezzdev.config.gui.fabric.mixin",
+  "client": [
+    "QuickMenuScreenMixin",
+    "QuickMenuKeyboardMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
