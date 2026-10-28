@@ -1,10 +1,8 @@
 package net.mezzdev.config.gui;
 
-import net.mezzdev.config.gui.util.ConfigMath;
-
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
+import net.mezzdev.config.gui.util.ConfigMath;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
-import net.minecraft.util.Mth;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Optional;
@@ -33,8 +31,6 @@ public final class ConfigScreenLayout {
 	private static final int ACTION_BUTTON_GAP = 3;
 	private static final int MIN_SCROLL_MARKER_HEIGHT = 10;
 	private static final int SCROLL_MARKER_TRACK_INSET = 1;
-	private static final int DRAG_SCROLL_EDGE_SIZE = 20;
-	private static final double SCROLL_LERP = 0.35;
 	private final ConfigScreenResizer resizer = new ConfigScreenResizer();
 
 	private ImmutableRect2i area = ImmutableRect2i.EMPTY;
@@ -55,17 +51,11 @@ public final class ConfigScreenLayout {
 	private int requestedInfoAreaHeight = INFO_AREA_HEIGHT;
 	private ImmutableRect2i contentWithScrollArea = ImmutableRect2i.EMPTY;
 	private int totalContentHeight = 0;
-	private double targetScrollY = 0;
-	private double currentScrollY = 0;
-	private boolean draggingContentScroll = false;
-	private double scrollDragOffsetY = 0;
+	private final ConfigScrollState contentScroll = new ConfigScrollState(MIN_SCROLL_MARKER_HEIGHT, SCROLL_MARKER_TRACK_INSET);
 	private boolean contentScrollBarVisible = false;
 
 	private int totalNavHeight = 0;
-	private double navTargetScrollY = 0;
-	private double navCurrentScrollY = 0;
-	private boolean draggingNavScroll = false;
-	private double navScrollDragOffsetY = 0;
+	private final ConfigScrollState navScroll = new ConfigScrollState(MIN_SCROLL_MARKER_HEIGHT, SCROLL_MARKER_TRACK_INSET);
 	private boolean navScrollBarVisible = false;
 
 	public void updateScreenBounds(int screenWidth, int screenHeight, LegacyEditBox searchBox) {
@@ -269,30 +259,19 @@ public final class ConfigScreenLayout {
 	}
 
 	public ImmutableRect2i getScrollMarkerArea() {
-		int maxScroll = getMaxContentScroll();
-		if (maxScroll <= 0) {
-			return ImmutableRect2i.EMPTY;
-		}
-		return getScrollMarkerArea(scrollBarArea, getScrollMarkerHeight(), currentScrollY, maxScroll);
+		return contentScroll.getMarkerArea();
 	}
 
 	public ImmutableRect2i getNavScrollMarkerArea() {
-		if (navScrollBarArea.isEmpty()) {
-			return ImmutableRect2i.EMPTY;
-		}
-		int maxScroll = getMaxNavScroll();
-		if (maxScroll <= 0) {
-			return ImmutableRect2i.EMPTY;
-		}
-		return getScrollMarkerArea(navScrollBarArea, getNavScrollMarkerHeight(), navCurrentScrollY, maxScroll);
+		return navScroll.getMarkerArea();
 	}
 
 	public double getCurrentScrollY() {
-		return currentScrollY;
+		return contentScroll.getPosition();
 	}
 
 	public double getNavCurrentScrollY() {
-		return navCurrentScrollY;
+		return navScroll.getPosition();
 	}
 
 	public boolean setTotalContentHeight(int totalContentHeight) {
@@ -302,7 +281,7 @@ public final class ConfigScreenLayout {
 		if (wasContentScrollBarVisible != contentScrollBarVisible) {
 			updateContentAndScrollBarAreas();
 		}
-		return clampContentScroll() || wasContentScrollBarVisible != contentScrollBarVisible;
+		return contentScroll.updateBounds(contentArea, totalContentHeight, scrollBarArea) || wasContentScrollBarVisible != contentScrollBarVisible;
 	}
 
 	public boolean setTotalNavHeight(int totalNavHeight) {
@@ -312,155 +291,63 @@ public final class ConfigScreenLayout {
 		if (wasNavScrollBarVisible != navScrollBarVisible) {
 			updateNavScrollBarArea();
 		}
-		return clampNavScroll() || wasNavScrollBarVisible != navScrollBarVisible;
+		return navScroll.updateBounds(navArea, totalNavHeight, navScrollBarArea) || wasNavScrollBarVisible != navScrollBarVisible;
 	}
 
 	public void resetContentScroll() {
-		targetScrollY = 0;
-		currentScrollY = 0;
+		contentScroll.reset();
 	}
 
 	public void resetNavScroll() {
-		navTargetScrollY = 0;
-		navCurrentScrollY = 0;
+		navScroll.reset();
 	}
 
 	public boolean scroll(double mouseX, double mouseY, double scrollY) {
 		if (navArea.contains(mouseX, mouseY)) {
-			int maxNavScroll = getMaxNavScroll();
-			navTargetScrollY = Mth.clamp(navTargetScrollY - scrollY * ConfigGuiOptions.getScrollSpeed(), 0, maxNavScroll);
+			navScroll.scroll(scrollY);
 			return true;
 		}
 		if (contentArea.contains(mouseX, mouseY)) {
-			int maxScroll = Math.max(0, totalContentHeight - contentArea.getHeight());
-			targetScrollY = Mth.clamp(targetScrollY - scrollY * ConfigGuiOptions.getScrollSpeed(), 0, maxScroll);
+			contentScroll.scroll(scrollY);
 			return true;
 		}
 		return false;
 	}
 
 	public boolean startContentScrollDrag(double mouseX, double mouseY) {
-		ImmutableRect2i markerArea = getScrollMarkerArea();
-		if (markerArea.isEmpty() || !scrollBarArea.contains(mouseX, mouseY)) {
-			return false;
-		}
-
-		if (markerArea.contains(mouseX, mouseY)) {
-			scrollDragOffsetY = mouseY - markerArea.getY();
-		} else {
-			scrollDragOffsetY = markerArea.getHeight() / 2.0;
-			setContentScrollFromMarkerY(mouseY - scrollDragOffsetY);
-		}
-		draggingContentScroll = true;
-		return true;
+		return contentScroll.startDrag(mouseX, mouseY);
 	}
 
 	public boolean dragContentScroll(double mouseY) {
-		if (!draggingContentScroll) {
-			return false;
-		}
-		setContentScrollFromMarkerY(mouseY - scrollDragOffsetY);
-		return true;
+		return contentScroll.drag(mouseY);
 	}
 
 	public boolean autoScrollContentForDrag(double mouseY) {
-		if (contentArea.isEmpty()) {
-			return false;
-		}
-
-		int topEdge = contentArea.getY() + DRAG_SCROLL_EDGE_SIZE;
-		int bottomEdge = contentArea.getY() + contentArea.getHeight() - DRAG_SCROLL_EDGE_SIZE;
-		if (mouseY < topEdge) {
-			return scrollContentImmediately(-getDragScrollAmount(topEdge - mouseY));
-		}
-		if (mouseY > bottomEdge) {
-			return scrollContentImmediately(getDragScrollAmount(mouseY - bottomEdge));
-		}
-		return false;
-	}
-
-	private static double getDragScrollAmount(double edgeDistance) {
-		double factor = ConfigMath.clamp(edgeDistance / DRAG_SCROLL_EDGE_SIZE, 0.0, 1.0);
-		return factor * ConfigGuiOptions.getDragAutoScrollSpeed();
-	}
-
-	private boolean scrollContentImmediately(double amount) {
-		int maxScroll = getMaxContentScroll();
-		double previousScrollY = targetScrollY;
-		targetScrollY = Mth.clamp(targetScrollY + amount, 0, maxScroll);
-		currentScrollY = targetScrollY;
-		return targetScrollY != previousScrollY;
+		return contentScroll.autoScrollForDrag(mouseY);
 	}
 
 	public boolean stopContentScrollDrag() {
-		boolean wasDragging = draggingContentScroll;
-		draggingContentScroll = false;
-		return wasDragging;
+		return contentScroll.stopDrag();
 	}
 
 	public boolean startNavScrollDrag(double mouseX, double mouseY) {
-		ImmutableRect2i markerArea = getNavScrollMarkerArea();
-		if (markerArea.isEmpty() || !navScrollBarArea.contains(mouseX, mouseY)) {
-			return false;
-		}
-
-		if (markerArea.contains(mouseX, mouseY)) {
-			navScrollDragOffsetY = mouseY - markerArea.getY();
-		} else {
-			navScrollDragOffsetY = markerArea.getHeight() / 2.0;
-			setNavScrollFromMarkerY(mouseY - navScrollDragOffsetY);
-		}
-		draggingNavScroll = true;
-		return true;
+		return navScroll.startDrag(mouseX, mouseY);
 	}
 
 	public boolean dragNavScroll(double mouseY) {
-		if (!draggingNavScroll) {
-			return false;
-		}
-		setNavScrollFromMarkerY(mouseY - navScrollDragOffsetY);
-		return true;
+		return navScroll.drag(mouseY);
 	}
 
 	public boolean stopNavScrollDrag() {
-		boolean wasDragging = draggingNavScroll;
-		draggingNavScroll = false;
-		return wasDragging;
+		return navScroll.stopDrag();
 	}
 
 	public boolean stepContentScroll() {
-		double nextScroll = stepScroll(currentScrollY, targetScrollY);
-		if (nextScroll == currentScrollY) {
-			return false;
-		}
-		currentScrollY = nextScroll;
-		return true;
+		return contentScroll.step();
 	}
 
 	public boolean stepNavScroll() {
-		double nextScroll = stepScroll(navCurrentScrollY, navTargetScrollY);
-		if (nextScroll == navCurrentScrollY) {
-			return false;
-		}
-		navCurrentScrollY = nextScroll;
-		return true;
-	}
-
-	private static double stepScroll(double current, double target) {
-		if (!ConfigGuiOptions.smoothScrolling()) {
-			return target;
-		}
-		if (Math.abs(target - current) > 0.5) {
-			return current + (target - current) * SCROLL_LERP;
-		}
-		if (current != target) {
-			return target;
-		}
-		return current;
-	}
-
-	private int getMaxContentScroll() {
-		return Math.max(0, totalContentHeight - contentArea.getHeight());
+		return navScroll.step();
 	}
 
 	private static boolean shouldShowContentScrollBar(int totalContentHeight, ImmutableRect2i contentWithScrollArea) {
@@ -486,6 +373,7 @@ public final class ConfigScreenLayout {
 		if (contentScrollBarVisible) {
 			scrollBarArea = getScrollableContentArea(contentWithScrollArea.keepRight(SCROLLBAR_WIDTH));
 		}
+		contentScroll.updateBounds(contentArea, totalContentHeight, scrollBarArea);
 	}
 
 	private void updateNavScrollBarArea() {
@@ -493,6 +381,7 @@ public final class ConfigScreenLayout {
 		if (navScrollBarVisible) {
 			navScrollBarArea = navArea.keepRight(SCROLLBAR_WIDTH);
 		}
+		navScroll.updateBounds(navArea, totalNavHeight, navScrollBarArea);
 	}
 
 	private void updateTitleRowAreas(boolean hasScreenListButton) {
@@ -527,105 +416,6 @@ public final class ConfigScreenLayout {
 			area.getWidth(),
 			centeredHeight
 		);
-	}
-
-	private int getMaxNavScroll() {
-		return Math.max(0, totalNavHeight - navArea.getHeight());
-	}
-
-	private int getScrollMarkerHeight() {
-		ImmutableRect2i markerTrackArea = getScrollMarkerTrackArea(scrollBarArea);
-		if (totalContentHeight <= 0) {
-			return markerTrackArea.getHeight();
-		}
-		return getScrollMarkerHeight(markerTrackArea, contentArea.getHeight(), totalContentHeight);
-	}
-
-	private int getNavScrollMarkerHeight() {
-		ImmutableRect2i markerTrackArea = getScrollMarkerTrackArea(navScrollBarArea);
-		if (totalNavHeight <= 0) {
-			return markerTrackArea.getHeight();
-		}
-		return getScrollMarkerHeight(markerTrackArea, navArea.getHeight(), totalNavHeight);
-	}
-
-	private static ImmutableRect2i getScrollMarkerTrackArea(ImmutableRect2i scrollBarArea) {
-		return scrollBarArea.insetBy(SCROLL_MARKER_TRACK_INSET);
-	}
-
-	private static int getScrollMarkerHeight(ImmutableRect2i markerTrackArea, int visibleHeight, int totalHeight) {
-		int markerHeight = Math.max(MIN_SCROLL_MARKER_HEIGHT, markerTrackArea.getHeight() * visibleHeight / totalHeight);
-		return Math.min(markerTrackArea.getHeight(), markerHeight);
-	}
-
-	private static ImmutableRect2i getScrollMarkerArea(
-		ImmutableRect2i scrollBarArea,
-		int markerHeight,
-		double currentScrollY,
-		int maxScroll
-	) {
-		ImmutableRect2i markerTrackArea = getScrollMarkerTrackArea(scrollBarArea);
-		int trackSpace = markerTrackArea.getHeight() - markerHeight;
-		int markerY = markerTrackArea.getY() + (int) (trackSpace * currentScrollY / maxScroll);
-		markerY = Mth.clamp(markerY, markerTrackArea.getY(), markerTrackArea.getY() + trackSpace);
-		return new ImmutableRect2i(
-			markerTrackArea.getX(),
-			markerY,
-			markerTrackArea.getWidth(),
-			markerHeight
-		);
-	}
-
-	private void setContentScrollFromMarkerY(double markerY) {
-		int maxScroll = getMaxContentScroll();
-		int markerHeight = getScrollMarkerHeight();
-		ImmutableRect2i markerTrackArea = getScrollMarkerTrackArea(scrollBarArea);
-		int trackSpace = markerTrackArea.getHeight() - markerHeight;
-		if (maxScroll <= 0 || trackSpace <= 0) {
-			targetScrollY = 0;
-			currentScrollY = 0;
-			return;
-		}
-
-		double scrollPercent = (markerY - markerTrackArea.getY()) / trackSpace;
-		double nextScroll = Mth.clamp(scrollPercent * maxScroll, 0, maxScroll);
-		targetScrollY = nextScroll;
-		currentScrollY = nextScroll;
-	}
-
-	private void setNavScrollFromMarkerY(double markerY) {
-		int maxScroll = getMaxNavScroll();
-		int markerHeight = getNavScrollMarkerHeight();
-		ImmutableRect2i markerTrackArea = getScrollMarkerTrackArea(navScrollBarArea);
-		int trackSpace = markerTrackArea.getHeight() - markerHeight;
-		if (maxScroll <= 0 || trackSpace <= 0) {
-			navTargetScrollY = 0;
-			navCurrentScrollY = 0;
-			return;
-		}
-
-		double scrollPercent = (markerY - markerTrackArea.getY()) / trackSpace;
-		double nextScroll = Mth.clamp(scrollPercent * maxScroll, 0, maxScroll);
-		navTargetScrollY = nextScroll;
-		navCurrentScrollY = nextScroll;
-	}
-
-	private boolean clampContentScroll() {
-		int maxScroll = getMaxContentScroll();
-		double oldTarget = targetScrollY;
-		double oldCurrent = currentScrollY;
-		targetScrollY = Mth.clamp(targetScrollY, 0, maxScroll);
-		currentScrollY = Mth.clamp(currentScrollY, 0, maxScroll);
-		return oldTarget != targetScrollY || oldCurrent != currentScrollY;
-	}
-
-	private boolean clampNavScroll() {
-		int maxNavScroll = getMaxNavScroll();
-		double oldTarget = navTargetScrollY;
-		double oldCurrent = navCurrentScrollY;
-		navTargetScrollY = Mth.clamp(navTargetScrollY, 0, maxNavScroll);
-		navCurrentScrollY = Mth.clamp(navCurrentScrollY, 0, maxNavScroll);
-		return oldTarget != navTargetScrollY || oldCurrent != navCurrentScrollY;
 	}
 
 	public enum ResizeHandle {
@@ -679,19 +469,19 @@ public final class ConfigScreenLayout {
 			return NONE;
 		}
 
-		boolean left() {
+		public boolean left() {
 			return left;
 		}
 
-		boolean right() {
+		public boolean right() {
 			return right;
 		}
 
-		boolean top() {
+		public boolean top() {
 			return top;
 		}
 
-		boolean bottom() {
+		public boolean bottom() {
 			return bottom;
 		}
 	}
