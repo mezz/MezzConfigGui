@@ -56,7 +56,7 @@ final class ColorConfigEntry extends ConfigEntryWidget<PackedColor> {
 		int controlWidth = getValueColumnWidth(area, MIN_CONTROL_WIDTH);
 		int hexWidth = controlWidth - SWATCH_SIZE - CONTROL_GAP;
 		int y = area.getY() + (area.getHeight() - CONTROL_HEIGHT) / 2;
-		int x = area.getX() + area.getWidth() - controlWidth - VALUE_CONTROL_RIGHT_RESERVE;
+		int x = area.getX() + area.getWidth() - controlWidth - getValueControlRightReserve();
 		swatchArea = new ImmutableRect2i(x, y, SWATCH_SIZE, SWATCH_SIZE);
 		hexArea = new ImmutableRect2i(x + SWATCH_SIZE + CONTROL_GAP, y, hexWidth, CONTROL_HEIGHT);
 		recomputeNameArea(area, getValueColumnNameRightReserve(area, MIN_CONTROL_WIDTH));

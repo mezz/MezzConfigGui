@@ -44,7 +44,7 @@ public final class KeyMappingConfigEntry extends ConfigEntryWidget<KeyMappingVal
 		super.updateBounds(area);
 		int buttonWidth = getValueColumnWidth(area, MIN_BUTTON_WIDTH);
 		buttonArea = new ImmutableRect2i(
-			area.getX() + area.getWidth() - buttonWidth - VALUE_CONTROL_RIGHT_RESERVE,
+			area.getX() + area.getWidth() - buttonWidth - getValueControlRightReserve(),
 			area.getY() + (area.getHeight() - BUTTON_HEIGHT) / 2,
 			buttonWidth,
 			BUTTON_HEIGHT

@@ -1,0 +1,9 @@
+{
+  "required": true,
+  "package": "net.mezzdev.config.gui.test.fabric.custom.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "client": [
+    "QuickMenuTestKeyboardAccessor",
+    "QuickMenuTestMouseAccessor"
+  ]
+}

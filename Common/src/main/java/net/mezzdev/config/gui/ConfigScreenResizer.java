@@ -174,9 +174,7 @@ public final class ConfigScreenResizer {
 			return;
 		}
 		drawResizeGrip(guiGraphics, area, resizeHandle == ConfigScreenLayout.ResizeHandle.BOTTOM_RIGHT);
-		if (resizeHandle != ConfigScreenLayout.ResizeHandle.NONE) {
-			drawResizeEdgeHighlight(guiGraphics, area, resizeHandle);
-		}
+		drawResizeHandleHighlight(guiGraphics, area, resizeHandle);
 	}
 
 	private static void drawResizeGrip(LegacyGuiGraphics guiGraphics, ImmutableRect2i area, boolean hovered) {
@@ -204,7 +202,7 @@ public final class ConfigScreenResizer {
 		}
 	}
 
-	private static void drawResizeEdgeHighlight(
+	public static void drawResizeHandleHighlight(
 		LegacyGuiGraphics guiGraphics,
 		ImmutableRect2i area,
 		ConfigScreenLayout.ResizeHandle resizeHandle

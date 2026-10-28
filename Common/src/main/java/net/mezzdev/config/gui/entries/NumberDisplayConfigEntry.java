@@ -83,6 +83,17 @@ final class NumberDisplayConfigEntry<T> extends ConfigEntryWidget<T> {
 	}
 
 	@Override
+	public ImmutableRect2i getLabelArea() {
+		return getActiveEntry().getLabelArea();
+	}
+
+	@Override
+	public void setMinimumNameRightReserve(int width) {
+		sliderEntry.setMinimumNameRightReserve(width);
+		standardEntry.setMinimumNameRightReserve(width);
+	}
+
+	@Override
 	public void setShowSectionPath(boolean showSectionPath) {
 		super.setShowSectionPath(showSectionPath);
 		sliderEntry.setShowSectionPath(showSectionPath);
@@ -141,6 +152,12 @@ final class NumberDisplayConfigEntry<T> extends ConfigEntryWidget<T> {
 	}
 
 	@Override
+	public void setShowResetButton(boolean showResetButton) {
+		sliderEntry.setShowResetButton(showResetButton);
+		standardEntry.setShowResetButton(showResetButton);
+	}
+
+	@Override
 	public void setImmediateChangeHandler(Function<ConfigValueChange<?>, Boolean> immediateChangeHandler) {
 		sliderEntry.setImmediateChangeHandler(immediateChangeHandler::apply);
 		standardEntry.setImmediateChangeHandler(immediateChangeHandler::apply);
@@ -195,6 +212,11 @@ final class NumberDisplayConfigEntry<T> extends ConfigEntryWidget<T> {
 	@Override
 	public void draw(LegacyGuiGraphics guiGraphics, double mouseX, double mouseY, boolean allowHover, int rowIndex) {
 		getActiveEntry().draw(guiGraphics, mouseX, mouseY, allowHover, rowIndex);
+	}
+
+	@Override
+	public void drawSelectionPreview(LegacyGuiGraphics guiGraphics, double mouseX, double mouseY, boolean allowHover, int rowIndex, boolean selected) {
+		getActiveEntry().drawSelectionPreview(guiGraphics, mouseX, mouseY, allowHover, rowIndex, selected);
 	}
 
 	@Override
