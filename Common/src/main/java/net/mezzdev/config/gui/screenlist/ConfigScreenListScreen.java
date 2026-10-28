@@ -376,11 +376,11 @@ public final class ConfigScreenListScreen extends MezzConfigScreen {
 	private void draw(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
 		Font font = Minecraft.getInstance().font;
 		background.draw(guiGraphics, area);
-		ConfigScreenResizer.drawResizeHandles(guiGraphics, area, resizer.getActiveResizeHandle(mouseX, mouseY));
 		drawTitle(guiGraphics, font);
 		drawSearch(guiGraphics, mouseX, mouseY, partialTick);
 		drawList(guiGraphics, font, mouseX, mouseY);
 		drawScrollBar(guiGraphics);
+		ConfigScreenResizer.drawResizeHandles(guiGraphics, area, resizer.getActiveResizeHandle(mouseX, mouseY));
 	}
 
 	private void drawTitle(GuiGraphicsExtractor guiGraphics, Font font) {
