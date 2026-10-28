@@ -349,6 +349,14 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	}
 
 	@Override
+	protected void drawValuePreview(GuiGraphics guiGraphics) {
+		drawValueGroup(guiGraphics, valueGroupArea);
+		for (ListValueRow row : getVisibleRows(valueRows, 0)) {
+			row.drawDuringDrag(guiGraphics, row.area);
+		}
+	}
+
+	@Override
 	protected void drawContent(GuiGraphics guiGraphics, double mouseX, double mouseY) {
 		if (isVisible(headerArea)) {
 			drawName(guiGraphics);
@@ -1010,7 +1018,7 @@ final class ListConfigEntry<T> extends ConfigEntryWidget<List<T>> {
 	}
 
 	private boolean hasRowResetButtons() {
-		return keyValueSerializer != null && !configValue.getDefaultValue().isEmpty();
+		return showsResetButton() && keyValueSerializer != null && !configValue.getDefaultValue().isEmpty();
 	}
 
 	boolean resetComponentValue(int rowIndex) {

@@ -62,19 +62,19 @@ final class CustomConfigEntry<T> extends ConfigEntryWidget<T> {
 		int totalWidth = Math.min(preferredWidth, valueColumnWidth);
 		int totalHeight = Math.min(preferredHeight, area.getHeight());
 		valueArea = new ImmutableRect2i(
-			area.getX() + area.getWidth() - totalWidth - VALUE_CONTROL_RIGHT_RESERVE,
+			area.getX() + area.getWidth() - totalWidth - getValueControlRightReserve(),
 			area.getY() + (area.getHeight() - totalHeight) / 2,
 			totalWidth,
 			totalHeight
 		);
-		recomputeNameArea(area, getValueColumnNameRightReserve(area, MIN_CONTROL_WIDTH));
+		recomputeNameArea(area, getValueNameRightReserve(totalWidth));
 	}
 
 	@Override
 	protected void drawContent(GuiGraphics guiGraphics, double mouseX, double mouseY) {
 		drawName(guiGraphics);
 
-		boolean hovered = valueArea.contains(mouseX, mouseY);
+		boolean hovered = isValueMouseOver(mouseX, mouseY);
 		if (drawDefaultBackground) {
 			drawButtonBackground(guiGraphics, getTextures(), valueArea, true, hovered);
 		}
@@ -88,7 +88,7 @@ final class CustomConfigEntry<T> extends ConfigEntryWidget<T> {
 		if (resetInfo != null) {
 			return resetInfo;
 		}
-		if (valueArea.contains(mouseX, mouseY)) {
+		if (isValueMouseOver(mouseX, mouseY)) {
 			Optional<ConfigInfo> tooltipInfo = editor.getTooltipInfo(toRect2i(valueArea), configValue, getValue(), hasPendingChange(), mouseX, mouseY);
 			if (tooltipInfo.isPresent()) {
 				return tooltipInfo.get();
@@ -103,7 +103,7 @@ final class CustomConfigEntry<T> extends ConfigEntryWidget<T> {
 		if (super.onMouseClicked(input)) {
 			return true;
 		}
-		if (valueArea.contains(input.getMouseX(), input.getMouseY())) {
+		if (isValueMouseOver(input.getMouseX(), input.getMouseY())) {
 			Rect2i rect = toRect2i(valueArea);
 			int button = getMouseButton(input);
 			Optional<IConfigValuePopup<T>> popup = editor.createPopup(
@@ -144,6 +144,17 @@ final class CustomConfigEntry<T> extends ConfigEntryWidget<T> {
 			return true;
 		}
 		return false;
+	}
+
+	private boolean isValueMouseOver(double mouseX, double mouseY) {
+		if (editor instanceof BooleanConfigValueEditor) {
+			ImmutableRect2i toggleArea = area;
+			if (showsResetButton()) {
+				toggleArea = toggleArea.cropRight(getValueControlRightReserve());
+			}
+			return toggleArea.contains(mouseX, mouseY);
+		}
+		return valueArea.contains(mouseX, mouseY);
 	}
 
 	private static int getMouseButton(UserInput input) {

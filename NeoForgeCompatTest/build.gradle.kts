@@ -102,7 +102,11 @@ tasks.named("runNativeConfigTest") {
     doFirst {
         val directory = testDirectory.get().asFile
         directory.resolve("config").deleteRecursively()
-        directory.resolve("options.txt").writeText("onboardAccessibility:false\n")
+        val options = directory.resolve("options.txt")
+        val lines = if (options.isFile) options.readLines() else emptyList()
+        val testOptions = mapOf("soundCategory_master" to "0.0", "onboardAccessibility" to "false")
+        options.writeText((lines.filterNot { it.substringBefore(':') in testOptions } +
+            testOptions.map { (name, value) -> "$name:$value" }).joinToString("\n", postfix = "\n"))
         testResult.get().asFile.delete()
     }
     doLast {

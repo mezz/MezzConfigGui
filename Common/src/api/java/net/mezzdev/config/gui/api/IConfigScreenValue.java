@@ -299,11 +299,10 @@ public interface IConfigScreenValue<T> {
 	}
 
 	/**
-	 * Get the reference-stable identity key used to match and deduplicate this value.
+	 * Returns the key used to match and deduplicate this screen value by reference identity.
 	 * <p>
-	 * Keys are compared by reference, not with {@link Object#equals(Object)}. Decorators must return the wrapped
-	 * value's key. Values that share a key must represent the same logical value and type. The default gives direct
-	 * implementations identity for the lifetime of the object.
+	 * Use one shared key object per logical value and type, including decorators and recreated adapters.
+	 * Composite controls must use a key distinct from their component values.
 	 *
 	 * @since 0.1.0
 	 */

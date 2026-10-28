@@ -40,6 +40,7 @@ public final class ConfigGuiForgeClient {
 
 	public static void register(IEventBus modEventBus, ConfigGuiForgeNetwork network) {
 		ConfigGuiOptions.register();
+		ForgeQuickMenuHooks.register();
 		MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, (ScreenEvent.Render.Pre event) -> {
 			if (event.getScreen() instanceof MezzConfigScreen screen) {
 				screen.clearTooltipForNextRenderPass();

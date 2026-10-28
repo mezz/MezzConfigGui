@@ -64,7 +64,7 @@ final class IntegerConfigEntry extends ConfigEntryWidget<Integer> {
 		int cy = area.getY() + (area.getHeight() - VALUE_BOX_HEIGHT) / 2;
 		int controlWidth = getValueColumnWidth(area, MIN_CONTROL_WIDTH);
 		int valueBoxWidth = controlWidth - STEPPER_BUTTONS_WIDTH;
-		int controlX = area.getX() + area.getWidth() - controlWidth - VALUE_CONTROL_RIGHT_RESERVE;
+		int controlX = area.getX() + area.getWidth() - controlWidth - getValueControlRightReserve();
 
 		valueBoxArea = new ImmutableRect2i(
 			controlX,

@@ -157,6 +157,8 @@ public abstract class ConfigEntryWidget<T> {
 	private final ConfigTextures textures;
 	private final Component fullName;
 	private boolean showSectionPath;
+	private boolean showResetButton = true;
+	private int minimumNameRightReserve;
 	private final Consumer<Runnable> clientThreadDispatcher;
 	private T value;
 	private T lastKnownConfigValue;
@@ -271,9 +273,25 @@ public abstract class ConfigEntryWidget<T> {
 		return Math.max(getMinimumHeight(), nameLines.size() * scaledLineHeight + ConfigGuiOptions.getRowDensity().getNameVerticalPadding());
 	}
 
+	public ImmutableRect2i getLabelArea() {
+		return nameArea;
+	}
+
+	public void setMinimumNameRightReserve(int width) {
+		minimumNameRightReserve = width;
+	}
+
 	public void updateBounds(ImmutableRect2i area) {
 		this.area = area;
-		updateNameLayout(area, NAME_RIGHT_RESERVE);
+		int nameRightReserve = NAME_RIGHT_RESERVE;
+		if (!showResetButton) {
+			nameRightReserve = getValueControlRightReserve();
+		}
+		updateNameLayout(area, nameRightReserve);
+		this.resetArea = ImmutableRect2i.EMPTY;
+		if (!showResetButton) {
+			return;
+		}
 		this.resetArea = new ImmutableRect2i(
 			area.getX() + area.getWidth() - RESET_BUTTON_SIZE - RESET_BUTTON_RIGHT_PADDING,
 			area.getY() + (area.getHeight() - RESET_BUTTON_SIZE) / 2,
@@ -282,18 +300,25 @@ public abstract class ConfigEntryWidget<T> {
 		);
 	}
 
-	protected static int getValueColumnWidth(ImmutableRect2i area, int minimumControlWidth) {
-		return getValueColumnWidth(area.getWidth(), minimumControlWidth);
+	protected int getValueColumnWidth(ImmutableRect2i area, int minimumControlWidth) {
+		return getValueColumnWidth(area.getWidth(), minimumControlWidth, getValueControlRightReserve());
 	}
 
 	static int getValueColumnWidth(int areaWidth, int minimumControlWidth) {
-		int availableWidth = areaWidth - VALUE_CONTROL_RIGHT_RESERVE - VALUE_CONTROL_GAP - NAME_LEFT_PADDING - MIN_VALUE_NAME_WIDTH;
+		return getValueColumnWidth(areaWidth, minimumControlWidth, VALUE_CONTROL_RIGHT_RESERVE);
+	}
+
+	private static int getValueColumnWidth(int areaWidth, int minimumControlWidth, int rightReserve) {
+		int availableWidth = areaWidth - rightReserve - VALUE_CONTROL_GAP - NAME_LEFT_PADDING - MIN_VALUE_NAME_WIDTH;
 		return Math.min(PREFERRED_VALUE_CONTROL_WIDTH, Math.max(minimumControlWidth, availableWidth));
 	}
 
-	protected static int getValueColumnNameRightReserve(ImmutableRect2i area, int minimumControlWidth) {
-		int valueColumnWidth = getValueColumnWidth(area, minimumControlWidth);
-		return valueColumnWidth + VALUE_CONTROL_RIGHT_RESERVE + VALUE_CONTROL_GAP;
+	protected int getValueColumnNameRightReserve(ImmutableRect2i area, int minimumControlWidth) {
+		return getValueNameRightReserve(getValueColumnWidth(area, minimumControlWidth));
+	}
+
+	protected int getValueNameRightReserve(int controlWidth) {
+		return controlWidth + getValueControlRightReserve() + VALUE_CONTROL_GAP;
 	}
 
 	protected void recomputeNameArea(ImmutableRect2i area, int rightReserve) {
@@ -302,6 +327,7 @@ public abstract class ConfigEntryWidget<T> {
 
 	private void updateNameLayout(ImmutableRect2i area, int rightReserve) {
 		Font font = Minecraft.getInstance().font;
+		rightReserve = Math.max(rightReserve, minimumNameRightReserve);
 		int nameColWidth = Math.max(40, area.getWidth() - rightReserve - NAME_LEFT_PADDING);
 		int wrapWidth = (int) (nameColWidth / TEXT_SCALE);
 		nameLines = font.split(getDisplayName(), wrapWidth);
@@ -327,6 +353,21 @@ public abstract class ConfigEntryWidget<T> {
 
 	public ConfigInputHandler createInputHandler() {
 		return new EntryWidgetInputHandler();
+	}
+
+	public void setShowResetButton(boolean showResetButton) {
+		this.showResetButton = showResetButton;
+	}
+
+	protected boolean showsResetButton() {
+		return showResetButton;
+	}
+
+	protected int getValueControlRightReserve() {
+		if (showResetButton) {
+			return VALUE_CONTROL_RIGHT_RESERVE;
+		}
+		return RESET_BUTTON_RIGHT_PADDING;
 	}
 
 	public void setImmediateChangeHandler(Function<ConfigValueChange<?>, Boolean> immediateChangeHandler) {
@@ -410,6 +451,24 @@ public abstract class ConfigEntryWidget<T> {
 	}
 
 	public void draw(GuiGraphics guiGraphics, double mouseX, double mouseY, boolean allowHover, int rowIndex) {
+		drawRowBackground(guiGraphics, mouseX, mouseY, allowHover, rowIndex);
+		drawValue(guiGraphics, mouseX, mouseY, allowHover);
+	}
+
+	public void drawSelectionPreview(GuiGraphics guiGraphics, double mouseX, double mouseY, boolean allowHover, int rowIndex, boolean selected) {
+		drawRowBackground(guiGraphics, mouseX, mouseY, allowHover, rowIndex);
+		int textColor = getConfiguredTextColor();
+		if (!selected) {
+			textColor = ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_DISABLED_TEXT);
+		}
+		drawName(guiGraphics, textColor);
+		drawValuePreview(guiGraphics);
+	}
+
+	protected void drawValuePreview(GuiGraphics guiGraphics) {
+	}
+
+	private void drawRowBackground(GuiGraphics guiGraphics, double mouseX, double mouseY, boolean allowHover, int rowIndex) {
 		drawRowStripe(guiGraphics, rowIndex);
 		ImmutableRect2i hoverArea = getHoverArea();
 		if (allowHover && hoverArea.contains(mouseX, mouseY)) {
@@ -421,6 +480,9 @@ public abstract class ConfigEntryWidget<T> {
 				ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_ENTRY_ROW_HOVER)
 			);
 		}
+	}
+
+	private void drawValue(GuiGraphics guiGraphics, double mouseX, double mouseY, boolean allowHover) {
 		if (hasPendingChange()) {
 			guiGraphics.fill(
 				area.getX() + 1,
@@ -583,6 +645,10 @@ public abstract class ConfigEntryWidget<T> {
 	}
 
 	protected final void drawName(GuiGraphics guiGraphics) {
+		drawName(guiGraphics, getConfiguredTextColor());
+	}
+
+	private void drawName(GuiGraphics guiGraphics, int color) {
 		Font font = Minecraft.getInstance().font;
 		int scaledLineHeight = getScaledLineHeight(font);
 		int y = nameArea.getY();
@@ -593,7 +659,7 @@ public abstract class ConfigEntryWidget<T> {
 				line,
 				nameArea.getX(),
 				y,
-				getConfiguredTextColor()
+				color
 			);
 			y += scaledLineHeight;
 		}

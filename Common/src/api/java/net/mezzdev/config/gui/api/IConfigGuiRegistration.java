@@ -59,6 +59,13 @@ public interface IConfigGuiRegistration {
 	IKeyMappingHelper getKeyMappingHelper();
 
 	/**
+	 * Get the factory for creating quick menus.
+	 *
+	 * @since 0.7.0
+	 */
+	IQuickConfigMenuFactory getQuickConfigMenuFactory();
+
+	/**
 	 * Get helper factories for config values backed by sortable runtime lists.
 	 * <p>
 	 * Prefer adding sorting configs directly with

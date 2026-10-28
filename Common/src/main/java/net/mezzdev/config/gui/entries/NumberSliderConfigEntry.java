@@ -65,7 +65,7 @@ final class NumberSliderConfigEntry<T> extends ConfigEntryWidget<T> {
 	public void updateBounds(ImmutableRect2i area) {
 		super.updateBounds(area);
 		int sliderWidth = getValueColumnWidth(area, HANDLE_WIDTH);
-		int sliderX = area.getX() + area.getWidth() - sliderWidth - VALUE_CONTROL_RIGHT_RESERVE;
+		int sliderX = area.getX() + area.getWidth() - sliderWidth - getValueControlRightReserve();
 		int sliderY = area.getY() + (area.getHeight() - SLIDER_HEIGHT) / 2;
 		sliderArea = new ImmutableRect2i(sliderX, sliderY, sliderWidth, SLIDER_HEIGHT);
 		recomputeNameArea(area, getValueColumnNameRightReserve(area, HANDLE_WIDTH));

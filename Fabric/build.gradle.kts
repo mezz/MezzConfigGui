@@ -106,6 +106,7 @@ val serverSmokeTestModSourceSet = sourceSets.create("serverSmokeTestMod") {
 }
 val serverSmokeTestRunDir = layout.buildDirectory.dir("run/server-smoke")
 val serverSmokeTestSuccessFile = serverSmokeTestRunDir.map { it.file("smoke-test-passed") }
+val quickMenuTestRunDir = layout.buildDirectory.dir("run/quick-menu-test")
 
 java {
     toolchain {
@@ -202,6 +203,16 @@ configure<LoomGradleExtensionAPI> {
                 "-Dfabric.log.level=info"
             )
         }
+        create("quickMenuTest") {
+            client()
+            configName = "MezzConfig GUI Quick Menu Test"
+            ideConfigGenerated(false)
+            runDir(quickMenuTestRunDir.get().asFile.relativeTo(projectDir).path)
+            vmArgs(
+                "-Dfabric.classPathGroups=${classPathGroupsString}",
+                "-DmezzConfigGui.runQuickMenuTest=true"
+            )
+        }
         create("serverSmokeTest") {
             server()
             configName = "MezzConfig GUI Fabric Server Smoke Test"
@@ -250,13 +261,36 @@ val testModPaths = testModSourceSets.joinToString(separator = File.pathSeparator
         .asFile
         .absolutePath
 }
-tasks.matching { it.name == "runClient" }.configureEach {
+tasks.matching { it.name == "runClient" || it.name == "runQuickMenuTest" }.configureEach {
     dependsOn(testModClassesTasks)
     if (this is JavaExec) {
         for (testModSourceSet in testModSourceSets) {
             classpath(testModSourceSet.output)
         }
         jvmArgs("-Dfabric.addMods=$testModPaths")
+    }
+}
+
+val prepareQuickMenuTest = tasks.register("prepareQuickMenuTest") {
+    val optionsFile = quickMenuTestRunDir.map { it.file("options.txt") }
+    outputs.file(optionsFile)
+    outputs.upToDateWhen { false }
+    doLast {
+        quickMenuTestRunDir.get().file("quick-menu-test-passed").asFile.delete()
+        val options = optionsFile.get().asFile
+        options.parentFile.mkdirs()
+        val lines = if (options.exists()) options.readLines() else emptyList()
+        val testOptions = mapOf("soundCategory_master" to "0.0", "onboardAccessibility" to "false")
+        options.writeText((lines.filterNot { it.substringBefore(':') in testOptions } +
+            testOptions.map { (name, value) -> "$name:$value" }).joinToString("\n", postfix = "\n"))
+    }
+}
+tasks.named("runQuickMenuTest") {
+    dependsOn(prepareQuickMenuTest)
+    doLast {
+        check(quickMenuTestRunDir.get().file("quick-menu-test-passed").asFile.isFile) {
+            "Quick-menu client tests did not finish successfully. See the run log."
+        }
     }
 }
 

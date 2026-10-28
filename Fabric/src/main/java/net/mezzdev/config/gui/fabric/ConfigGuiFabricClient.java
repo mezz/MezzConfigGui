@@ -27,6 +27,7 @@ public final class ConfigGuiFabricClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		ConfigGuiOptions.register();
+		FabricQuickMenuHooks.register();
 		// Mod Menu 7 requests factories before Minecraft initializes its language manager.
 		// Defer the localized screen list until the client has finished starting.
 		ClientLifecycleEvents.CLIENT_STARTED.register(client -> ConfigGui.createScreenListFactory(getScreenFactoryRegistry(), FabricConfigScreenOwnerMetadata::get));
