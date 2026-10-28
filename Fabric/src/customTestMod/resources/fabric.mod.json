@@ -18,6 +18,9 @@
     ],
     "mezz_config_gui_plugin": [
       "net.mezzdev.config.gui.test.fabric.custom.FabricMezzConfigCustomTestPlugin"
+    ],
+    "fabric-client-gametest": [
+      "net.mezzdev.config.gui.test.fabric.custom.QuickMenuClientGameTest"
     ]
   },
 
