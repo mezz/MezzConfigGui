@@ -15,7 +15,6 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -102,7 +101,6 @@ final class ConfigScreenView {
 
 		guiGraphics.pose().pushPose();
 		background.draw(guiGraphics, area);
-		ConfigScreenResizer.drawResizeHandles(guiGraphics, area, resizeHandle);
 		modTabs.draw(guiGraphics, font, textures, mouseX, mouseY);
 		drawTitle(guiGraphics, font, titleArea, title);
 		drawActionButtons(guiGraphics, screenListButtonArea, applyPendingChangesButtonArea, undoChangesButtonArea, mouseX, mouseY);
@@ -129,6 +127,7 @@ final class ConfigScreenView {
 		drawValueSelector(guiGraphics, valueSelector, valueSelectorClipArea, mouseX, mouseY);
 		drawTooltip(guiGraphics, mouseX, mouseY, tooltipInfo);
 		modTabs.drawTooltip(guiGraphics, mouseX, mouseY);
+		ConfigScreenResizer.drawResizeHandles(guiGraphics, area, resizeHandle);
 		return layout.requestInfoAreaHeight(infoPanel.getHeight());
 	}
 
@@ -570,18 +569,9 @@ final class ConfigScreenView {
 			return;
 		}
 		ConfigTooltip tooltip = new ConfigTooltip();
-		tooltip.add(withDefaultColor(info.title(), ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_TOOLTIP_TITLE_TEXT)));
-		for (Component line : info.lines()) {
-			tooltip.add(withDefaultColor(line, ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_TOOLTIP_TEXT)));
+		for (Component line : ConfigRenderUtil.getTooltipLines(info)) {
+			tooltip.add(line);
 		}
 		tooltip.draw(guiGraphics, mouseX, mouseY);
-	}
-
-	private static MutableComponent withDefaultColor(Component component, int color) {
-		MutableComponent result = component.copy();
-		if (result.getStyle().getColor() == null) {
-			result.setStyle(result.getStyle().withColor(color & 0xFFFFFF));
-		}
-		return result;
 	}
 }

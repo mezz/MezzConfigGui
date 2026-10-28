@@ -62,10 +62,14 @@ public final class ConfigScreenResizer {
 	}
 
 	ConfigScreenLayout.ResizeHandle getResizeHandle(double mouseX, double mouseY, ImmutableRect2i excludedArea) {
-		if (!ConfigGuiOptions.enableWindowResizing() || area.isEmpty() || !isInResizeArea(mouseX, mouseY)) {
+		if (isExcluded(mouseX, mouseY, excludedArea)) {
 			return ConfigScreenLayout.ResizeHandle.NONE;
 		}
-		if (isExcluded(mouseX, mouseY, excludedArea)) {
+		return getResizeHandle(area, mouseX, mouseY);
+	}
+
+	public static ConfigScreenLayout.ResizeHandle getResizeHandle(ImmutableRect2i area, double mouseX, double mouseY) {
+		if (!ConfigGuiOptions.enableWindowResizing() || area.isEmpty() || !area.contains(mouseX, mouseY)) {
 			return ConfigScreenLayout.ResizeHandle.NONE;
 		}
 		boolean left = mouseX < area.getX() + RESIZE_HANDLE_SIZE;
@@ -102,13 +106,6 @@ public final class ConfigScreenResizer {
 			return resizeDragSession.resizeHandle();
 		}
 		return getResizeHandle(mouseX, mouseY, excludedArea);
-	}
-
-	private boolean isInResizeArea(double mouseX, double mouseY) {
-		return mouseX >= area.getX() &&
-			mouseY >= area.getY() &&
-			mouseX < area.getX() + area.getWidth() &&
-			mouseY < area.getY() + area.getHeight();
 	}
 
 	public boolean startResizeDrag(double mouseX, double mouseY) {
