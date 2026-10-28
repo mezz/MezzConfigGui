@@ -19,7 +19,6 @@ import net.mezzdev.config.gui.model.ConfigScreenHistory;
 import net.mezzdev.config.gui.model.ConfigScreenModel;
 import net.mezzdev.config.gui.model.ConfigValueChange;
 import net.mezzdev.config.gui.popup.ConfigPopupSelector;
-import net.mezzdev.config.gui.popup.ConfigValueSelectorInputHandler;
 import net.mezzdev.config.gui.remote.RemoteConfigEditor;
 import net.mezzdev.config.gui.screenlist.ConfigScreenListEntry;
 import net.mezzdev.config.gui.textures.ConfigTextures;
@@ -69,7 +68,7 @@ public class ConfigScreen extends MezzConfigScreen {
 	}
 
 	public static boolean isCapturingKeyBinding(Screen screen) {
-		return screen instanceof ConfigScreen configScreen && configScreen.isCapturingKeyboardInput();
+		return screen instanceof ConfigScreen configScreen && configScreen.interaction.isCapturingKeyboardInput();
 	}
 
 	private final ConfigInputRouter inputHandler;
@@ -84,8 +83,7 @@ public class ConfigScreen extends MezzConfigScreen {
 	@Nullable
 	private final Screen parent;
 
-	@Nullable
-	private ConfigPopupSelector valueSelector;
+	private final ConfigEditorInteraction interaction;
 	private boolean changeRequestPending;
 
 	private ConfigScreen(
@@ -117,6 +115,8 @@ public class ConfigScreen extends MezzConfigScreen {
 				searchBox.setValue("");
 			}
 		}, index -> ConfigScreenHistory.rememberCategory(modId, model.getCategories().get(index)));
+		this.interaction = new ConfigEditorInteraction(controller::getVisibleEntryWidgets,
+			() -> ConfigScreenView.getValueSelectorClipArea(layout.getContentArea()));
 		this.modTabs = new ConfigScreenModTabs(modId, navigation.getScreenListEntries());
 		this.view = new ConfigScreenView(title, searchBox, model, layout, controller, modTabs, textures);
 		this.searchBox.setResponder(searchText -> {
@@ -126,7 +126,7 @@ public class ConfigScreen extends MezzConfigScreen {
 
 		List<ConfigInputHandler> allInputHandlers = new ArrayList<>();
 		ConfigEntryWidgetFactory entryWidgetFactory = new ConfigEntryWidgetFactory(
-			this::openValueSelector,
+			interaction::openPopup,
 			controller::updateContentLayout,
 			textures,
 			valueEditorFactories
@@ -174,12 +174,7 @@ public class ConfigScreen extends MezzConfigScreen {
 			.forEach(allInputHandlers::add);
 		allInputHandlers.addAll(model.getNavItems());
 
-		allInputHandlers.add(0, new ConfigValueSelectorInputHandler(
-			() -> valueSelector,
-			() -> ConfigScreenView.getValueSelectorClipArea(layout.getContentArea()),
-			this::closeValueSelector,
-			controller::updateContentLayout
-		));
+		allInputHandlers.add(0, interaction.createPopupInputHandler(controller::updateContentLayout));
 		this.inputHandler = new ConfigInputRouter(allInputHandlers);
 	}
 
@@ -256,36 +251,7 @@ public class ConfigScreen extends MezzConfigScreen {
 	}
 
 	private ConfigInputHandler createEntryInputHandler(ConfigEntryWidget<?> entry) {
-		ConfigInputHandler entryInputHandler = entry.createInputHandler();
-		return new ConfigInputHandler() {
-			@Override
-			public Optional<ConfigInputHandler> handleUserInput(@Nullable Screen screen, UserInput input) {
-				if (!entry.isEditable()) {
-					return Optional.empty();
-				}
-				ImmutableRect2i displayArea = layout.getContentArea();
-				if (!entry.getArea().equals(ImmutableRect2i.EMPTY) &&
-					displayArea.contains(input.getMouseX(), input.getMouseY()) &&
-					entry.isMouseOver(input.getMouseX(), input.getMouseY())
-				) {
-					return entryInputHandler.handleUserInput(screen, input);
-				}
-				return Optional.empty();
-			}
-
-			@Override
-			public void unfocus() {
-				entryInputHandler.unfocus();
-			}
-
-			@Override
-			public Optional<ConfigInputHandler> handleMouseScrolled(double mouseX, double mouseY, double scrollDeltaX, double scrollDeltaY) {
-				if (entry.isEditable() && !entry.getArea().equals(ImmutableRect2i.EMPTY)) {
-					return entryInputHandler.handleMouseScrolled(mouseX, mouseY, scrollDeltaX, scrollDeltaY);
-				}
-				return Optional.empty();
-			}
-		};
+		return new ConfigEntryInputHandler(entry, layout::getContentArea);
 	}
 
 	private void updateSearchTextColor(String searchText) {
@@ -299,36 +265,9 @@ public class ConfigScreen extends MezzConfigScreen {
 		return ConfigGuiColors.getColor(ConfigGuiColors.GuiColor.CONFIG_SCREEN_SEARCH_TEXT);
 	}
 
-	private void openValueSelector(ConfigPopupSelector selector) {
-		closeValueSelector();
-		selector.updateBounds(ConfigScreenView.getValueSelectorClipArea(layout.getContentArea()));
-		this.valueSelector = selector;
-		selector.onOpened();
-	}
-
-	private void closeValueSelector() {
-		ConfigPopupSelector valueSelector = this.valueSelector;
-		this.valueSelector = null;
-		if (valueSelector != null) {
-			valueSelector.onClosed();
-		}
-	}
-
-	private boolean isCapturingKeyboardInput() {
-		return controller.getVisibleEntryWidgets()
-			.stream()
-			.filter(ConfigEntryWidget::isEditable)
-			.anyMatch(ConfigEntryWidget::isCapturingKeyboardInput);
-	}
-
-	private void flushPendingInput() {
-		inputHandler.handleGuiChange();
-		closeValueSelector();
-	}
-
 	@Nullable
 	public Rect2i getValueSelectorArea() {
-		ConfigPopupSelector valueSelector = this.valueSelector;
+		ConfigPopupSelector valueSelector = interaction.getPopup();
 		if (valueSelector == null) {
 			return null;
 		}
@@ -410,7 +349,7 @@ public class ConfigScreen extends MezzConfigScreen {
 	@Override
 	public void removed() {
 		controller.stopListening();
-		closeValueSelector();
+		interaction.close();
 		super.removed();
 	}
 
@@ -435,7 +374,7 @@ public class ConfigScreen extends MezzConfigScreen {
 		if (changeRequestPending) {
 			return;
 		}
-		flushPendingInput();
+		interaction.flushPendingInput(inputHandler);
 		if (controller.hasPendingChanges()) {
 			if (ConfigGuiOptions.confirmPendingChangesOnClose()) {
 				openPendingChangesConfirmation(leaveAction);
@@ -544,7 +483,7 @@ public class ConfigScreen extends MezzConfigScreen {
 		modTabs.updateLayout(layout.getArea());
 		controller.updateNavLayout();
 		controller.updateContentLayout();
-		updateValueSelectorBounds();
+		interaction.updatePopupBounds();
 	}
 
 	private void updateScreenBounds() {
@@ -560,18 +499,18 @@ public class ConfigScreen extends MezzConfigScreen {
 
 	@Override
 	public boolean charTyped(char codePoint, int modifiers) {
-		ConfigPopupSelector valueSelector = this.valueSelector;
+		ConfigPopupSelector valueSelector = interaction.getPopup();
 		if (valueSelector != null && valueSelector.charTyped(codePoint, modifiers)) {
 			return true;
 		}
-		if (isCapturingKeyboardInput()) {
-			forwardCharTypedToEntries(codePoint, modifiers);
+		if (interaction.isCapturingKeyboardInput()) {
+			interaction.charTyped(codePoint, modifiers);
 			return true;
 		}
 		if (searchBox.isFocused() && ConfigInputUtil.charTyped(searchBox, codePoint, modifiers)) {
 			return true;
 		}
-		if (forwardCharTypedToEntries(codePoint, modifiers)) {
+		if (interaction.charTyped(codePoint, modifiers)) {
 			return true;
 		}
 		return super.charTyped(codePoint, modifiers);
@@ -579,19 +518,16 @@ public class ConfigScreen extends MezzConfigScreen {
 
 	@Override
 	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-		ConfigPopupSelector valueSelector = this.valueSelector;
-		if (valueSelector != null) {
-			if (valueSelector.keyPressed(keyCode, scanCode, modifiers)) {
-				return true;
-			}
-			if (keyCode == InputConstants.KEY_ESCAPE) {
-				closeValueSelector();
-				return true;
-			}
+		return handleKeyPressed(keyCode, scanCode, modifiers);
+	}
+
+	private boolean handleKeyPressed(int keyCode, int scanCode, int modifiers) {
+		if (interaction.popupKeyPressed(keyCode, scanCode, modifiers)) {
+			return true;
 		}
 		UserInput input = UserInput.fromVanilla(keyCode, scanCode, modifiers, InputType.IMMEDIATE);
-		if (isCapturingKeyboardInput()) {
-			forwardKeyPressedToEntries(keyCode, scanCode, modifiers);
+		if (interaction.isCapturingKeyboardInput()) {
+			interaction.keyPressed(keyCode, scanCode, modifiers);
 			return true;
 		}
 		if (searchBox.isFocused()) {
@@ -602,7 +538,7 @@ public class ConfigScreen extends MezzConfigScreen {
 				return true;
 			}
 		}
-		if (forwardKeyPressedToEntries(keyCode, scanCode, modifiers)) {
+		if (interaction.keyPressed(keyCode, scanCode, modifiers)) {
 			return true;
 		}
 		if (input.is(Minecraft.getInstance().options.keyInventory)) {
@@ -612,39 +548,12 @@ public class ConfigScreen extends MezzConfigScreen {
 		return super.keyPressed(keyCode, scanCode, modifiers);
 	}
 
-	private boolean forwardCharTypedToEntries(char codePoint, int modifiers) {
-		for (ConfigEntryWidget<?> entry : controller.getVisibleEntryWidgets()) {
-			if (entry.isEditable() && entry.charTyped(codePoint, modifiers)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	private boolean forwardKeyPressedToEntries(int keyCode, int scanCode, int modifiers) {
-		for (ConfigEntryWidget<?> entry : controller.getVisibleEntryWidgets()) {
-			if (entry.isEditable() && entry.keyPressed(keyCode, scanCode, modifiers)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
 	@Override
 	public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-		if (forwardKeyReleasedToEntries(keyCode, scanCode, modifiers)) {
+		if (interaction.keyReleased(keyCode, scanCode, modifiers)) {
 			return true;
 		}
 		return super.keyReleased(keyCode, scanCode, modifiers);
-	}
-
-	private boolean forwardKeyReleasedToEntries(int keyCode, int scanCode, int modifiers) {
-		for (ConfigEntryWidget<?> entry : controller.getVisibleEntryWidgets()) {
-			if (entry.isEditable() && entry.keyReleased(keyCode, scanCode, modifiers)) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	@Override
@@ -653,11 +562,11 @@ public class ConfigScreen extends MezzConfigScreen {
 			return true;
 		}
 		if (button == InputConstants.MOUSE_BUTTON_LEFT && layout.startResizeDrag(mouseX, mouseY, modTabs.getResizeExclusionArea(mouseY))) {
-			flushPendingInput();
+			interaction.flushPendingInput(inputHandler);
 			return true;
 		}
 		if (button == InputConstants.MOUSE_BUTTON_LEFT && layout.startNavigationResize(mouseX, mouseY)) {
-			flushPendingInput();
+			interaction.flushPendingInput(inputHandler);
 			return true;
 		}
 		if (button == InputConstants.MOUSE_BUTTON_LEFT && isActionButton(mouseX, mouseY)) {
@@ -743,7 +652,7 @@ public class ConfigScreen extends MezzConfigScreen {
 			return true;
 		}
 		if (layout.getApplyPendingChangesButtonArea().contains(mouseX, mouseY)) {
-			flushPendingInput();
+			interaction.flushPendingInput(inputHandler);
 			if (controller.hasPendingChanges()) {
 				applyPendingChanges();
 				return true;
@@ -751,7 +660,7 @@ public class ConfigScreen extends MezzConfigScreen {
 			return false;
 		}
 		if (layout.getUndoChangesButtonArea().contains(mouseX, mouseY)) {
-			flushPendingInput();
+			interaction.flushPendingInput(inputHandler);
 			if (controller.hasUndoableChanges()) {
 				undoChanges();
 				return true;
@@ -823,19 +732,12 @@ public class ConfigScreen extends MezzConfigScreen {
 		updateSearchTextColor(searchBox.getValue());
 		renderTransparentBackground(guiGraphics);
 		controller.stepScrollPositions();
-		updateValueSelectorBounds();
-		if (view.render(guiGraphics, mouseX, mouseY, partialTick, valueSelector)) {
+		interaction.updatePopupBounds();
+		if (view.render(guiGraphics, mouseX, mouseY, partialTick, interaction.getPopup())) {
 			updateScreenBounds();
 			controller.updateNavLayout();
 			controller.updateContentLayout();
-			updateValueSelectorBounds();
-		}
-	}
-
-	private void updateValueSelectorBounds() {
-		ConfigPopupSelector valueSelector = this.valueSelector;
-		if (valueSelector != null) {
-			valueSelector.updateBounds(ConfigScreenView.getValueSelectorClipArea(layout.getContentArea()));
+			interaction.updatePopupBounds();
 		}
 	}
 

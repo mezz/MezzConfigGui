@@ -1,5 +1,6 @@
 package net.mezzdev.config.gui;
 
+import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import net.mezzdev.config.gui.util.ConfigMath;
 
 import net.mezzdev.config.gui.ConfigGuiColors.GuiColor;
@@ -19,7 +20,6 @@ public final class ConfigScreenResizer {
 	private static final int MIN_RESIZABLE_HEIGHT = 230;
 	private static final int RESIZE_GRIP_SIZE = 11;
 	private static final int RESIZE_GRIP_LINE_GAP = 3;
-	private static final int RESIZE_EDGE_HIGHLIGHT_SIZE = 2;
 
 	private ImmutableRect2i area = ImmutableRect2i.EMPTY;
 	@Nullable
@@ -64,10 +64,14 @@ public final class ConfigScreenResizer {
 	}
 
 	ConfigScreenLayout.ResizeHandle getResizeHandle(double mouseX, double mouseY, ImmutableRect2i excludedArea) {
-		if (!ConfigGuiOptions.enableWindowResizing() || area.isEmpty() || !isInResizeArea(mouseX, mouseY)) {
+		if (isExcluded(mouseX, mouseY, excludedArea)) {
 			return ConfigScreenLayout.ResizeHandle.NONE;
 		}
-		if (isExcluded(mouseX, mouseY, excludedArea)) {
+		return getResizeHandle(area, mouseX, mouseY);
+	}
+
+	public static ConfigScreenLayout.ResizeHandle getResizeHandle(ImmutableRect2i area, double mouseX, double mouseY) {
+		if (!ConfigGuiOptions.enableWindowResizing() || area.isEmpty() || !area.contains(mouseX, mouseY)) {
 			return ConfigScreenLayout.ResizeHandle.NONE;
 		}
 		boolean left = mouseX < area.getX() + RESIZE_HANDLE_SIZE;
@@ -104,13 +108,6 @@ public final class ConfigScreenResizer {
 			return resizeDragSession.resizeHandle();
 		}
 		return getResizeHandle(mouseX, mouseY, excludedArea);
-	}
-
-	private boolean isInResizeArea(double mouseX, double mouseY) {
-		return mouseX >= area.getX() &&
-			mouseY >= area.getY() &&
-			mouseX < area.getX() + area.getWidth() &&
-			mouseY < area.getY() + area.getHeight();
 	}
 
 	public boolean startResizeDrag(double mouseX, double mouseY) {
@@ -176,14 +173,21 @@ public final class ConfigScreenResizer {
 		if (!ConfigGuiOptions.enableWindowResizing() || area.isEmpty()) {
 			return;
 		}
-		drawResizeGrip(guiGraphics, area, resizeHandle == ConfigScreenLayout.ResizeHandle.BOTTOM_RIGHT);
-		if (resizeHandle != ConfigScreenLayout.ResizeHandle.NONE) {
-			drawResizeEdgeHighlight(guiGraphics, area, resizeHandle);
+		drawResizeGrip(guiGraphics, area);
+		requestResizeCursor(guiGraphics, resizeHandle);
+	}
+
+	public static void requestResizeCursor(GuiGraphics guiGraphics, ConfigScreenLayout.ResizeHandle resizeHandle) {
+		switch (resizeHandle) {
+			case LEFT, RIGHT -> guiGraphics.requestCursor(CursorTypes.RESIZE_EW);
+			case TOP, BOTTOM -> guiGraphics.requestCursor(CursorTypes.RESIZE_NS);
+			case TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT -> guiGraphics.requestCursor(CursorTypes.RESIZE_ALL);
+			case NONE -> {}
 		}
 	}
 
-	private static void drawResizeGrip(GuiGraphics guiGraphics, ImmutableRect2i area, boolean hovered) {
-		int color = getResizeGripColor(hovered);
+	private static void drawResizeGrip(GuiGraphics guiGraphics, ImmutableRect2i area) {
+		int color = ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_RESIZE_GRIP);
 		int right = area.getX() + area.getWidth() - 4;
 		int bottom = area.getY() + area.getHeight() - 4;
 		for (int i = 0; i < 3; i++) {
@@ -193,41 +197,10 @@ public final class ConfigScreenResizer {
 		}
 	}
 
-	private static int getResizeGripColor(boolean hovered) {
-		if (hovered) {
-			return ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_RESIZE_HANDLE_HOVER);
-		}
-		return ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_RESIZE_GRIP);
-	}
-
 	private static void drawResizeGripLine(GuiGraphics guiGraphics, int x1, int y1, int x2, int y2, int color) {
 		int length = Math.min(x2 - x1, y1 - y2);
 		for (int i = 0; i <= length; i++) {
 			guiGraphics.fill(x1 + i, y1 - i, x1 + i + 1, y1 - i + 1, color);
-		}
-	}
-
-	private static void drawResizeEdgeHighlight(
-		GuiGraphics guiGraphics,
-		ImmutableRect2i area,
-		ConfigScreenLayout.ResizeHandle resizeHandle
-	) {
-		int x = area.getX();
-		int y = area.getY();
-		int right = x + area.getWidth();
-		int bottom = y + area.getHeight();
-		int color = ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_RESIZE_HANDLE_HOVER);
-		if (resizeHandle.left()) {
-			guiGraphics.fill(x, y, x + RESIZE_EDGE_HIGHLIGHT_SIZE, bottom, color);
-		}
-		if (resizeHandle.right()) {
-			guiGraphics.fill(right - RESIZE_EDGE_HIGHLIGHT_SIZE, y, right, bottom, color);
-		}
-		if (resizeHandle.top()) {
-			guiGraphics.fill(x, y, right, y + RESIZE_EDGE_HIGHLIGHT_SIZE, color);
-		}
-		if (resizeHandle.bottom()) {
-			guiGraphics.fill(x, bottom - RESIZE_EDGE_HIGHLIGHT_SIZE, right, bottom, color);
 		}
 	}
 

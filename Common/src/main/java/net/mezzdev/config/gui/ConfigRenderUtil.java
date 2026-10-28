@@ -1,12 +1,16 @@
 package net.mezzdev.config.gui;
 
 import java.util.Optional;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import net.mezzdev.config.gui.ConfigGuiColors.GuiColor;
+import net.mezzdev.config.gui.api.ConfigInfo;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.FormattedText;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
@@ -28,6 +32,23 @@ public final class ConfigRenderUtil {
 
 	public static void renderTooltip(GuiGraphics graphics, Font font, List<FormattedCharSequence> lines, int x, int y) {
 		renderTooltip(graphics, font, lines, DefaultTooltipPositioner.INSTANCE, x, y);
+	}
+
+	public static List<Component> getTooltipLines(ConfigInfo info) {
+		List<Component> lines = new ArrayList<>();
+		lines.add(withDefaultColor(info.title(), ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_TOOLTIP_TITLE_TEXT)));
+		for (Component line : info.lines()) {
+			lines.add(withDefaultColor(line, ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_TOOLTIP_TEXT)));
+		}
+		return lines;
+	}
+
+	private static Component withDefaultColor(Component component, int color) {
+		var result = component.copy();
+		if (result.getStyle().getColor() == null) {
+			result.setStyle(result.getStyle().withColor(color & 0xFFFFFF));
+		}
+		return result;
 	}
 	public static void blitSprite(GuiGraphics graphics, TextureAtlasSprite sprite, int textureWidth, int textureHeight, int u, int v, int x, int y, int z, int width, int height) {
 		blitSprite(graphics, sprite, textureWidth, textureHeight, u, v, x, y, z, width, height, -1);
