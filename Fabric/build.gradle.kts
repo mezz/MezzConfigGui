@@ -99,6 +99,7 @@ val serverSmokeTestModSourceSet = sourceSets.create("serverSmokeTestMod") {
 }
 val serverSmokeTestRunDir = layout.buildDirectory.dir("run/server-smoke")
 val serverSmokeTestSuccessFile = serverSmokeTestRunDir.map { it.file("smoke-test-passed") }
+val quickMenuTestRunDir = layout.buildDirectory.dir("run/quick-menu-test")
 
 java {
     toolchain {
@@ -191,6 +192,17 @@ configure<LoomGradleExtensionAPI> {
                 "-Dfabric.log.level=info"
             )
         }
+        create("quickMenuTest") {
+            client()
+            configName = "MezzConfig GUI Quick Menu Test"
+            ideConfigGenerated(false)
+            runDir(quickMenuTestRunDir.get().asFile.relativeTo(projectDir).path)
+            vmArgs(
+                "-Dfabric.classPathGroups=${classPathGroupsString}",
+                "-Dfabric.client.gametest=true",
+                "-Dfabric.client.gametest.modid=$fabricCustomTestModId"
+            )
+        }
         create("serverSmokeTest") {
             server()
             configName = "MezzConfig GUI Fabric Server Smoke Test"
@@ -239,7 +251,7 @@ val testModPaths = testModSourceSets.joinToString(separator = File.pathSeparator
         .asFile
         .absolutePath
 }
-tasks.matching { it.name == "runClient" }.configureEach {
+tasks.matching { it.name == "runClient" || it.name == "runQuickMenuTest" }.configureEach {
     dependsOn(testModClassesTasks)
     if (this is JavaExec) {
         for (testModSourceSet in testModSourceSets) {
@@ -247,6 +259,21 @@ tasks.matching { it.name == "runClient" }.configureEach {
         }
         jvmArgs("-Dfabric.addMods=$testModPaths")
     }
+}
+
+val prepareQuickMenuTest = tasks.register("prepareQuickMenuTest") {
+    val optionsFile = quickMenuTestRunDir.map { it.file("options.txt") }
+    outputs.file(optionsFile)
+    outputs.upToDateWhen { false }
+    doLast {
+        val options = optionsFile.get().asFile
+        options.parentFile.mkdirs()
+        val lines = if (options.exists()) options.readLines() else emptyList()
+        options.writeText((lines.filterNot { it.startsWith("soundCategory_master:") } + "soundCategory_master:0.0").joinToString("\n", postfix = "\n"))
+    }
+}
+tasks.named("runQuickMenuTest") {
+    dependsOn(prepareQuickMenuTest)
 }
 
 val runServerSmokeTestTasks = tasks.matching { it.name == "runServerSmokeTest" }

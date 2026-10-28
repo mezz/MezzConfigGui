@@ -40,6 +40,7 @@ public final class ConfigGuiNeoForgeClient {
 
 	public static void register(IEventBus modEventBus) {
 		ConfigGuiOptions.register();
+		NeoForgeQuickMenuHooks.register();
 		NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, (ScreenEvent.Render.Pre event) -> {
 			if (event.getScreen() instanceof MezzConfigScreen screen) {
 				screen.clearTooltipForNextRenderPass();

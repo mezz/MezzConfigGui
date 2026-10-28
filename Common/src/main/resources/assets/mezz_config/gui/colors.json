@@ -1,5 +1,6 @@
 {
   "_comment": "MezzConfig GUI colors. Override from a resource pack at assets/mezz_config/gui/colors.json. Values use hex format: 0xAARRGGBB, or 0xRRGGBB for fully opaque colors. Packs may include only the colors they change.",
+  "quickMenuScreenDim": "0x40000000",
   "configScreenSearchText": "0xFFE8EEF7",
   "configScreenSearchHint": "0xFF8F98A6",
   "configScreenInfoBackground": "0xE0101218",

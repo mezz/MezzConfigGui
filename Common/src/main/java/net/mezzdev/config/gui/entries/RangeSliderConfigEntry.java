@@ -41,7 +41,7 @@ final class RangeSliderConfigEntry<T> extends ConfigEntryWidget<ConfigValueRange
 	public void updateBounds(ImmutableRect2i area) {
 		super.updateBounds(area);
 		int width = getValueColumnWidth(area, HANDLE_WIDTH * 2);
-		sliderArea = new ImmutableRect2i(area.getX() + area.getWidth() - width - VALUE_CONTROL_RIGHT_RESERVE,
+		sliderArea = new ImmutableRect2i(area.getX() + area.getWidth() - width - getValueControlRightReserve(),
 			area.getY() + (area.getHeight() - HEIGHT) / 2, width, HEIGHT);
 		recomputeNameArea(area, getValueColumnNameRightReserve(area, HANDLE_WIDTH * 2));
 	}

@@ -6,6 +6,7 @@ import net.mezzdev.config.gui.api.keybindings.IKeyMappingHelper;
 import net.mezzdev.config.gui.keybindings.ConfigKeyMappingHelper;
 import java.util.function.Function;
 
+import net.mezzdev.config.api.Configs;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.sorting.ISortingConfig;
 import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
@@ -17,6 +18,8 @@ import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.gui.api.ConfigValueLocalization;
 import net.mezzdev.config.gui.api.IConfigGuiPlugin;
 import net.mezzdev.config.gui.api.IConfigGuiRegistration;
+import net.mezzdev.config.gui.api.IQuickConfigMenuFactory;
+import net.mezzdev.config.gui.quickmenu.QuickConfigMenuFactory;
 import net.mezzdev.config.gui.api.IConfigValueEditorMetadataFactory;
 import net.mezzdev.config.gui.api.IConfigScreenBuilder;
 import net.mezzdev.config.gui.api.IConfigScreenCategoryBuilder;
@@ -213,6 +216,8 @@ final class ConfigGuiPluginLoader {
 
 		@Nullable
 		private ConfigScreenFactoryConfig config;
+		@Nullable
+		private IConfigScreenFactory screenFactory;
 
 		private ConfigGuiRegistration(String modId) {
 			this(modId, null);
@@ -238,6 +243,7 @@ final class ConfigGuiPluginLoader {
 		}
 
 		private void notifyScreenFactory(IConfigScreenFactory factory) {
+			this.screenFactory = factory;
 			for (IConfigGuiPlugin plugin : plugins) {
 				try {
 					plugin.onScreenFactoryAvailable(factory);
@@ -250,6 +256,36 @@ final class ConfigGuiPluginLoader {
 		@Override
 		public <T extends KeyMapping> void registerKeyMappingAdapter(Class<T> type, Function<T, IKeyMappingAdapter> factory) {
 			KeyMappingAdapters.register(type, factory);
+		}
+
+		@Override
+		public IQuickConfigMenuFactory getQuickConfigMenuFactory() {
+			return new QuickConfigMenuFactory(modId, valueEditorFactories, () -> {
+				ConfigScreenFactoryConfig config = getConfigScreenFactoryConfig();
+				if (config == null) {
+					throw new IllegalStateException("No config screen registered for " + modId);
+				}
+				return createCustomizedScreenSchema(modId, config.schemaSupplier(), createScreenBuilder(modId, config, screenCustomizers));
+			}, this::findQuickMenuSchema, parent -> Objects.requireNonNull(screenFactory, "Config screen registration is not finished").create(parent));
+		}
+
+		private Optional<IConfigSchema> findQuickMenuSchema(IConfigScreenValue<?> value) {
+			ConfigScreenFactoryConfig config = getConfigScreenFactoryConfig();
+			if (config != null) {
+				Optional<IConfigSchema> schema = config.schemaSupplier().get().findBackingSchema(value);
+				if (schema.isPresent()) {
+					return schema;
+				}
+			}
+			Object key = value.getIdentityKey();
+			for (IConfigSchema schema : Configs.getSchemas()) {
+				if (schema.getCategories().stream()
+					.anyMatch(category -> category.getConfigValues().stream().anyMatch(candidate -> candidate == key))
+				) {
+					return Optional.of(schema);
+				}
+			}
+			return Optional.empty();
 		}
 
 		@Override
