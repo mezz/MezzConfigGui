@@ -12,6 +12,7 @@
   "license": "The MIT License (MIT)",
 
   "environment": "client",
+  "mixins": ["mezz_config_gui.fabric.quick_menu_test.mixins.json"],
   "entrypoints": {
     "client": [
       "net.mezzdev.config.gui.test.fabric.custom.FabricMezzConfigCustomTestPlugin"

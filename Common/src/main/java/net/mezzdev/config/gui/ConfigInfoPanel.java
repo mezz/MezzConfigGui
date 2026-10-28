@@ -18,7 +18,7 @@ import java.util.function.Supplier;
 /**
  * Wraps info text once for both measuring and drawing the bottom panel.
  */
-final class ConfigInfoPanel {
+public final class ConfigInfoPanel {
 	private static final int PADDING = 5;
 	private static final int TITLE_GAP = 2;
 	@Nullable
@@ -33,7 +33,7 @@ final class ConfigInfoPanel {
 	private List<FormattedCharSequence> titleLines = List.of();
 	private List<FormattedCharSequence> bodyLines = List.of();
 
-	void updateSource(Supplier<@Nullable ConfigInfo> source, Font font, int width, boolean readingPanel) {
+	public void updateSource(Supplier<@Nullable ConfigInfo> source, Font font, int width, boolean readingPanel) {
 		// Keep the hovered source when the panel grows under the pointer or the user
 		// moves into it to read. Resolve it again so server access changes stay live.
 		if (!readingPanel || info == null) {
@@ -69,11 +69,11 @@ final class ConfigInfoPanel {
 		}
 	}
 
-	int getHeight() {
+	public int getHeight() {
 		return height;
 	}
 
-	void draw(GuiGraphics guiGraphics, Font font, ImmutableRect2i area) {
+	public void draw(GuiGraphics guiGraphics, Font font, ImmutableRect2i area) {
 		guiGraphics.fill(area.getX(), area.getY(), area.getX() + area.getWidth(), area.getY() + area.getHeight(),
 			ConfigGuiColors.getColor(GuiColor.CONFIG_SCREEN_INFO_BACKGROUND));
 		guiGraphics.fill(area.getX(), area.getY(), area.getX() + area.getWidth(), area.getY() + 1,

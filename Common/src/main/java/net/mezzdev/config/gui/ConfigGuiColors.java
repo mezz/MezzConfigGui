@@ -115,6 +115,7 @@ public final class ConfigGuiColors {
 	}
 
 	public enum GuiColor {
+		QUICK_MENU_SCREEN_DIM("quickMenuScreenDim", 0x40000000),
 		CONFIG_SCREEN_SEARCH_TEXT("configScreenSearchText", 0xFFE8EEF7),
 		CONFIG_SCREEN_SEARCH_HINT("configScreenSearchHint", 0xFF8F98A6),
 		CONFIG_SCREEN_INFO_BACKGROUND("configScreenInfoBackground", 0xE0101218),

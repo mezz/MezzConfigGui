@@ -73,6 +73,9 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 	@Nullable
 	private static IConfigValue<TestMode> mode;
 
+	@Nullable
+	private static IConfigValue<Boolean> serverOption;
+
 	@Override
 	public String getModId() {
 		return MOD_ID;
@@ -84,7 +87,8 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 		IConfigSchemaBuilder schemaBuilder = registration.createClientSchemaBuilder("config-gui-fabric-custom-test.ini", LOCALIZATION_PATH);
 		IConfigCategoryBuilder controls = schemaBuilder.addCategory("controls");
 		primaryEnabled = controls.addBoolean("primaryEnabled", true).build();
-		secondaryEnabled = controls.addBoolean("secondaryEnabled", false).build();
+		secondaryEnabled = controls.addBoolean("secondaryEnabled", false)
+			.setEditMode(net.mezzdev.config.api.value.editor.ConfigValueEditMode.IMMEDIATE).build();
 		mode = controls.addEnum("mode", TestMode.BALANCED).build();
 		accentColor = controls.addValue("accentColor", TestColor.GREEN, TestColorSerializer.INSTANCE).build();
 
@@ -98,12 +102,24 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 			.build();
 		advanced.addInteger("refreshTicks", 20, 1, 200).build();
 		schema = schemaBuilder.build();
+		if (Boolean.getBoolean("mezzConfigGui.runQuickMenuTest")) {
+			var serverBuilder = registration.createServerSchemaBuilder("quick-menu-server-test.ini", LOCALIZATION_PATH);
+			serverOption = serverBuilder.addCategory("server").addBoolean("enabled", true).build();
+			serverBuilder.build();
+			QuickMenuTestContext.register();
+		}
 	}
 
 	@Override
 	public void register(IConfigGuiRegistration registration) {
 		registration.registerValueEditor(TEST_COLOR_EDITOR_TYPE, ignored -> new TestColorEditor());
+		if (Boolean.getBoolean("mezzConfigGui.quickMenuTest") || Boolean.getBoolean("mezzConfigGui.runQuickMenuTest")) {
+			QuickMenuTestScreen.install(registration.getQuickConfigMenuFactory(), Objects.requireNonNull(schema));
+		}
 		registration.configureScreen(screenBuilder -> {
+			if (serverOption != null) {
+				screenBuilder.addCategory("server").addValue(serverOption);
+			}
 			screenBuilder.setTitle(Component.translatable("%s.config.screen.custom.title".formatted(MOD_ID)));
 			screenBuilder.addCategory("overview")
 				.setTitle(Component.translatable("%s.config.category.overview".formatted(MOD_ID)))

@@ -62,7 +62,7 @@ final class TextConfigEntry<T> extends ConfigEntryWidget<T> {
 		}
 		int width = getValueColumnWidth(area, minimumWidth);
 		valueArea = new ImmutableRect2i(
-			area.getX() + area.getWidth() - width - VALUE_CONTROL_RIGHT_RESERVE,
+			area.getX() + area.getWidth() - width - getValueControlRightReserve(),
 			area.getY() + (area.getHeight() - VALUE_BOX_HEIGHT) / 2,
 			width,
 			VALUE_BOX_HEIGHT

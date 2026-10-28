@@ -34,6 +34,9 @@
     ]
   },
   "accessWidener" : "mezz_config.accesswidener",
+  "mixins": [
+    "mezz_config_gui.fabric.mixins.json"
+  ],
 
   "depends": {
     "fabricloader": "${fabricLoaderVersionRange}",
