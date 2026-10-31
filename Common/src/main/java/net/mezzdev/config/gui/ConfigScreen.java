@@ -84,6 +84,7 @@ public class ConfigScreen extends MezzConfigScreen {
 
 	private final ConfigEditorInteraction interaction;
 	private boolean changeRequestPending;
+	private boolean listeningForConfigChanges;
 
 	private ConfigScreen(
 		@Nullable Screen parent,
@@ -328,26 +329,25 @@ public class ConfigScreen extends MezzConfigScreen {
 	@Override
 	protected void init() {
 		super.init();
-		updateScreenBounds();
-		modTabs.updateLayout(layout.getArea());
 		addWidget(searchBox);
-
-		layout.resetNavScroll();
-		controller.updateNavLayout();
-		if (model.hasActiveCategory()) {
-			controller.setActiveCategory(model.getActiveCategoryIndex());
-		} else {
-			controller.updateContentLayout();
+		refreshLayout();
+		// Resizing rebuilds the widgets, so only apply the focus preference when the screen opens.
+		if (!listeningForConfigChanges) {
+			controller.startListening();
+			listeningForConfigChanges = true;
+			if (ConfigGuiOptions.focusSearchOnOpen()) {
+				searchBox.setFocused(true);
+			}
 		}
-		if (ConfigGuiOptions.focusSearchOnOpen()) {
-			searchBox.setFocused(true);
+		if (searchBox.isFocused()) {
+			setFocused(searchBox);
 		}
-		controller.startListening();
 	}
 
 	@Override
 	public void removed() {
 		controller.stopListening();
+		listeningForConfigChanges = false;
 		interaction.close();
 		super.removed();
 	}
