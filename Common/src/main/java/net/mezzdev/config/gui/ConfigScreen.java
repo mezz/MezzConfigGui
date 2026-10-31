@@ -329,21 +329,23 @@ public class ConfigScreen extends MezzConfigScreen {
 	@Override
 	protected void init() {
 		super.init();
-		updateScreenBounds();
-		modTabs.updateLayout(layout.getArea());
 		addWidget(searchBox);
+		refreshLayout();
+	}
 
-		layout.resetNavScroll();
-		controller.updateNavLayout();
-		if (model.hasActiveCategory()) {
-			controller.setActiveCategory(model.getActiveCategoryIndex());
-		} else {
-			controller.updateContentLayout();
-		}
-		if (ConfigGuiOptions.focusSearchOnOpen()) {
-			searchBox.setFocused(true);
-		}
+	@Override
+	protected void repositionElements() {
+		// These widgets belong to the screen instance; reloads and resizes only change their bounds.
+		refreshLayout();
+	}
+
+	@Override
+	public void added() {
+		super.added();
 		controller.startListening();
+		if (ConfigGuiOptions.focusSearchOnOpen()) {
+			setInitialFocus(searchBox);
+		}
 	}
 
 	@Override
