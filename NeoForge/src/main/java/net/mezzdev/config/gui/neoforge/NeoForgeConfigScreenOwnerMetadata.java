@@ -3,12 +3,12 @@ package net.mezzdev.config.gui.neoforge;
 import net.mezzdev.config.gui.screenlist.ConfigScreenOwnerMetadata;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
+import net.neoforged.fml.jarcontents.JarContents;
+import net.neoforged.fml.jarcontents.JarResource;
 import net.neoforged.neoforgespi.language.IConfigurable;
 import net.neoforged.neoforgespi.language.IModInfo;
 import org.jspecify.annotations.Nullable;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Optional;
 
 final class NeoForgeConfigScreenOwnerMetadata {
@@ -25,17 +25,17 @@ final class NeoForgeConfigScreenOwnerMetadata {
 
 	private static ConfigScreenOwnerMetadata get(ModContainer modContainer) {
 		IModInfo modInfo = modContainer.getModInfo();
-		return new ConfigScreenOwnerMetadata(getIconPath(modInfo));
+		return getPreferredIconFile(modInfo.getConfig(), modInfo.getOwningFile().getConfig(), modInfo.getLogoFile().orElse(null))
+			.map(iconFile -> getIcon(modInfo.getOwningFile().getFile().getContents(), iconFile))
+			.orElseGet(ConfigScreenOwnerMetadata::new);
 	}
 
-	@Nullable
-	private static Path getIconPath(IModInfo modInfo) {
-		return getPreferredIconFile(modInfo.getConfig(), modInfo.getOwningFile().getConfig(), modInfo.getLogoFile().orElse(null))
-			.map(NeoForgeConfigScreenOwnerMetadata::toPathParts)
-			.flatMap(pathParts -> modInfo.getOwningFile().getFile().getContents().findFile(String.join("/", pathParts)))
-			.map(Path::of)
-			.filter(Files::exists)
-			.orElse(null);
+	static ConfigScreenOwnerMetadata getIcon(JarContents contents, String iconFile) {
+		JarResource resource = contents.get(iconFile);
+		if (resource == null) {
+			return new ConfigScreenOwnerMetadata();
+		}
+		return ConfigScreenOwnerMetadata.fromStream(resource::open);
 	}
 
 	static Optional<String> getPreferredIconFile(
@@ -49,9 +49,5 @@ final class NeoForgeConfigScreenOwnerMetadata {
 			.or(() -> fileConfig.getConfigElement("logoFile"))
 			.or(() -> modConfig.getConfigElement("bannerFile"))
 			.or(() -> fileConfig.getConfigElement("bannerFile"));
-	}
-
-	private static String[] toPathParts(String path) {
-		return path.replace('\\', '/').split("/");
 	}
 }
