@@ -59,7 +59,7 @@ public record ConfigScreenListEntry(
 			modId,
 			title,
 			factoryEntry.factory(),
-			new ConfigScreenOwnerIcon(modId, title, metadata.iconPath())
+			ConfigScreenOwnerIcon.fromMetadata(modId, title, metadata)
 		);
 	}
 
