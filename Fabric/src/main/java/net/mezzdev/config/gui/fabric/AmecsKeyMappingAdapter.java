@@ -5,12 +5,12 @@ import de.siphalor.amecs.key_modifiers.api.AmecsKeyModifier;
 import de.siphalor.amecs.key_modifiers.api.AmecsKeyModifierCombination;
 import de.siphalor.amecs.key_modifiers.api.AmecsKeyModifiers;
 import de.siphalor.amecs.key_modifiers.api.AmecsKeyModifiersApi;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.mezzdev.config.gui.api.keybindings.IKeyMappingAdapter;
 import net.mezzdev.config.gui.api.keybindings.IKeyMappingBinding;
 import net.mezzdev.config.gui.api.keybindings.IKeyMappingInput;
 import net.mezzdev.config.gui.api.keybindings.KeyInputModifier;
 import net.mezzdev.config.gui.api.keybindings.KeyMappingModifier;
+import net.mezzdev.config.gui.keybindings.ConfigKeyBindingUtil;
 import net.mezzdev.config.gui.keybindings.ConfigKeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.network.chat.Component;
@@ -40,7 +40,7 @@ final class AmecsKeyMappingAdapter implements IKeyMappingAdapter {
 
 	@Override
 	public IKeyMappingBinding getValue() {
-		return createBinding(KeyBindingHelper.getBoundKeyOf(mapping), AmecsKeyModifiersApi.getBoundModifiers(mapping));
+		return createBinding(ConfigKeyBindingUtil.getKey(mapping), AmecsKeyModifiersApi.getBoundModifiers(mapping));
 	}
 
 	@Override
