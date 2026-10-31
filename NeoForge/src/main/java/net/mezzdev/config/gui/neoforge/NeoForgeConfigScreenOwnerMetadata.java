@@ -10,6 +10,7 @@ import org.jspecify.annotations.Nullable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.function.Function;
 
 final class NeoForgeConfigScreenOwnerMetadata {
 	private NeoForgeConfigScreenOwnerMetadata() {
@@ -25,16 +26,17 @@ final class NeoForgeConfigScreenOwnerMetadata {
 
 	private static ConfigScreenOwnerMetadata get(ModContainer modContainer) {
 		IModInfo modInfo = modContainer.getModInfo();
-		return new ConfigScreenOwnerMetadata(getIconPath(modInfo));
+		return getPreferredIconFile(modInfo.getConfig(), modInfo.getOwningFile().getConfig(), modInfo.getLogoFile().orElse(null))
+			.map(iconFile -> getIcon(modInfo.getOwningFile().getFile()::findResource, iconFile))
+			.orElseGet(ConfigScreenOwnerMetadata::new);
 	}
 
-	@Nullable
-	private static Path getIconPath(IModInfo modInfo) {
-		return getPreferredIconFile(modInfo.getConfig(), modInfo.getOwningFile().getConfig(), modInfo.getLogoFile().orElse(null))
-			.map(NeoForgeConfigScreenOwnerMetadata::toPathParts)
-			.map(pathParts -> modInfo.getOwningFile().getFile().findResource(pathParts))
-			.filter(Files::exists)
-			.orElse(null);
+	static ConfigScreenOwnerMetadata getIcon(Function<String[], Path> findResource, String iconFile) {
+		Path iconPath = findResource.apply(toPathParts(iconFile));
+		if (Files.isRegularFile(iconPath)) {
+			return new ConfigScreenOwnerMetadata(iconPath);
+		}
+		return new ConfigScreenOwnerMetadata();
 	}
 
 	static Optional<String> getPreferredIconFile(
