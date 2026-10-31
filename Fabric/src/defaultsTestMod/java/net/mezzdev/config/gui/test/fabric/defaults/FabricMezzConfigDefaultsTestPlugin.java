@@ -89,6 +89,9 @@ public final class FabricMezzConfigDefaultsTestPlugin implements ClientModInitia
 		selections.addEnumList("favoriteModes", List.of(TestMode.BALANCED, TestMode.FAST), TestMode.class).build();
 		selections.addEnumList("fastModes", List.of(TestMode.FAST), List.of(TestMode.BALANCED, TestMode.FAST)).build();
 		schema = schemaBuilder.build();
+		if (Boolean.getBoolean("mezzConfigGui.testSearchReload")) {
+			FabricSearchReloadTest.register(this);
+		}
 	}
 
 	@Override
