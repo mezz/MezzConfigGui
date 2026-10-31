@@ -20,6 +20,7 @@ public final class ConfigKeyBindingUtil {
 	}
 
 	public static InputConstants.Key getKey(KeyMapping keyMapping) {
+		// Subclasses can store their binding separately from KeyMapping's private key field.
 		return getKey(keyMapping.saveString());
 	}
 
