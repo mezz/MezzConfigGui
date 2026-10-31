@@ -18,7 +18,6 @@ import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
@@ -35,16 +34,23 @@ public final class ConfigScreenOwnerIcon {
 
 	private final String modId;
 	private final Component displayName;
-	@Nullable
-	private final Path iconPath;
+	private final ConfigScreenOwnerMetadata metadata;
 	@Nullable
 	private LoadedIcon loadedIcon;
 	private boolean loadAttempted;
 
 	public ConfigScreenOwnerIcon(String modId, Component displayName, @Nullable Path iconPath) {
+		this(modId, displayName, new ConfigScreenOwnerMetadata(iconPath));
+	}
+
+	private ConfigScreenOwnerIcon(String modId, Component displayName, ConfigScreenOwnerMetadata metadata) {
 		this.modId = Objects.requireNonNull(modId, "modId");
 		this.displayName = Objects.requireNonNull(displayName, "displayName");
-		this.iconPath = iconPath;
+		this.metadata = metadata;
+	}
+
+	static ConfigScreenOwnerIcon fromMetadata(String modId, Component displayName, ConfigScreenOwnerMetadata metadata) {
+		return new ConfigScreenOwnerIcon(modId, displayName, metadata);
 	}
 
 	public void draw(GuiGraphics guiGraphics, Font font, ImmutableRect2i iconArea) {
@@ -68,18 +74,23 @@ public final class ConfigScreenOwnerIcon {
 	}
 
 	private Optional<LoadedIcon> loadIcon() {
-		Path iconPath = this.iconPath;
-		if (iconPath == null) {
+		ConfigScreenOwnerMetadata.IconSource iconSource = metadata.iconSource();
+		if (iconSource == null) {
 			return Optional.empty();
 		}
-		try (InputStream inputStream = Files.newInputStream(iconPath)) {
+		try (InputStream inputStream = iconSource.open()) {
 			NativeImage image = NativeImage.read(inputStream);
-			int imageWidth = image.getWidth();
-			int imageHeight = image.getHeight();
-			ResourceLocation location = ConfigRenderUtil.registerIcon(image);
-			return Optional.of(new LoadedIcon(location, imageWidth, imageHeight));
+			try {
+				int imageWidth = image.getWidth();
+				int imageHeight = image.getHeight();
+				ResourceLocation location = ConfigRenderUtil.registerIcon(image);
+				return Optional.of(new LoadedIcon(location, imageWidth, imageHeight));
+			} catch (RuntimeException | Error e) {
+				image.close();
+				throw e;
+			}
 		} catch (IOException | RuntimeException e) {
-			LOGGER.debug("Failed to load config screen icon for mod id: {}, path: {}", modId, iconPath, e);
+			LOGGER.error("Failed to load config screen icon for mod id: {}", modId, e);
 			return Optional.empty();
 		}
 	}

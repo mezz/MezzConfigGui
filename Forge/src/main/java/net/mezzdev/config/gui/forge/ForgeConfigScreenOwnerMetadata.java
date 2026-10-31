@@ -4,10 +4,10 @@ import net.mezzdev.config.gui.screenlist.ConfigScreenOwnerMetadata;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.forgespi.language.IModInfo;
-import org.jspecify.annotations.Nullable;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.function.Function;
 
 final class ForgeConfigScreenOwnerMetadata {
 	private ForgeConfigScreenOwnerMetadata() {
@@ -23,16 +23,17 @@ final class ForgeConfigScreenOwnerMetadata {
 
 	private static ConfigScreenOwnerMetadata get(ModContainer modContainer) {
 		IModInfo modInfo = modContainer.getModInfo();
-		return new ConfigScreenOwnerMetadata(getIconPath(modInfo));
+		return modInfo.getLogoFile()
+			.map(iconFile -> getIcon(modInfo.getOwningFile().getFile()::findResource, iconFile))
+			.orElseGet(ConfigScreenOwnerMetadata::new);
 	}
 
-	@Nullable
-	private static Path getIconPath(IModInfo modInfo) {
-		return modInfo.getLogoFile()
-			.map(ForgeConfigScreenOwnerMetadata::toPathParts)
-			.map(pathParts -> modInfo.getOwningFile().getFile().findResource(pathParts))
-			.filter(Files::exists)
-			.orElse(null);
+	static ConfigScreenOwnerMetadata getIcon(Function<String[], Path> findResource, String iconFile) {
+		Path iconPath = findResource.apply(toPathParts(iconFile));
+		if (Files.isRegularFile(iconPath)) {
+			return new ConfigScreenOwnerMetadata(iconPath);
+		}
+		return new ConfigScreenOwnerMetadata();
 	}
 
 	private static String[] toPathParts(String path) {
