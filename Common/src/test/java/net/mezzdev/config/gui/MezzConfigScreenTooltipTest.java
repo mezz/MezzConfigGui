@@ -47,7 +47,9 @@ class MezzConfigScreenTooltipTest {
 		ClientTooltipPositioner positioner = (width, height, x, y, tooltipWidth, tooltipHeight) -> new Vector2i(x, y);
 		screen.setTooltipForNextRenderPass(focused, DefaultTooltipPositioner.INSTANCE, false);
 		screen.setTooltipForNextRenderPass(hovered, positioner, false);
-		assertEquals(focused, screen.takeDeferredTooltip().lines());
+		MezzConfigScreen.DeferredTooltip focusedTooltip = screen.takeDeferredTooltip();
+		assertNotNull(focusedTooltip);
+		assertEquals(focused, focusedTooltip.lines());
 
 		screen.setTooltipForNextRenderPass(focused, DefaultTooltipPositioner.INSTANCE, false);
 		screen.setTooltipForNextRenderPass(hovered, positioner, true);

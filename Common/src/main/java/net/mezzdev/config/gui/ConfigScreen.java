@@ -438,7 +438,9 @@ public class ConfigScreen extends MezzConfigScreen {
 		flushPendingInput();
 		if (controller.hasPendingChanges()) {
 			if (ConfigGuiOptions.confirmPendingChangesOnClose()) {
-				openPendingChangesConfirmation(leaveAction);
+				if (minecraft != null) {
+					openPendingChangesConfirmation(minecraft, leaveAction);
+				}
 				return;
 			}
 			applyPendingChanges(leaveAction, () -> {});
@@ -469,14 +471,11 @@ public class ConfigScreen extends MezzConfigScreen {
 		}
 	}
 
-	private void openPendingChangesConfirmation(Runnable leaveAction) {
-		if (minecraft == null) {
-			return;
-		}
+	private void openPendingChangesConfirmation(Minecraft client, Runnable leaveAction) {
 		PendingChangesScreen pendingChangesScreen = new PendingChangesScreen(
 			applyChanges -> {
 				if (applyChanges) {
-					minecraft.setScreen(this);
+					client.setScreen(this);
 					applyPendingChanges(leaveAction, () -> {});
 					return;
 				} else {
@@ -484,11 +483,11 @@ public class ConfigScreen extends MezzConfigScreen {
 				}
 				leaveAction.run();
 			},
-			() -> minecraft.setScreen(this),
+			() -> client.setScreen(this),
 			controller.getPendingChangesRestartRequirement(),
 			controller.getPendingConfigChanges()
 		);
-		minecraft.setScreen(pendingChangesScreen);
+		client.setScreen(pendingChangesScreen);
 	}
 
 	private void applyPendingChanges() {
