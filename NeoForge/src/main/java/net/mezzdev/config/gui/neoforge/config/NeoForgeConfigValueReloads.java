@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui.neoforge.config;
 
 import net.neoforged.fml.ModContainer;
+import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.config.ModConfigEvent;
 
@@ -20,11 +21,16 @@ final class NeoForgeConfigValueReloads {
 	}
 
 	public static void register(ModContainer modContainer) {
+		IEventBus eventBus = modContainer.getEventBus();
+		if (eventBus == null) {
+			// Skip reload listeners because Minecraft and low-code containers do not receive config events.
+			return;
+		}
 		synchronized (REGISTERED_MOD_CONTAINERS) {
 			if (REGISTERED_MOD_CONTAINERS.contains(modContainer)) {
 				return;
 			}
-			modContainer.getEventBus().addListener(NeoForgeConfigValueReloads::onConfigReloaded);
+			eventBus.addListener(NeoForgeConfigValueReloads::onConfigReloaded);
 			REGISTERED_MOD_CONTAINERS.add(modContainer);
 		}
 	}

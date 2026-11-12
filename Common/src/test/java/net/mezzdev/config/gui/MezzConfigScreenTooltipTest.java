@@ -28,7 +28,9 @@ class MezzConfigScreenTooltipTest {
 		var hovered = lines("Hovered widget");
 		state.set(focused, "default", false);
 		state.set(hovered, "custom", false);
-		assertEquals(focused, state.take().lines());
+		var focusedTooltip = state.take();
+		assertNotNull(focusedTooltip);
+		assertEquals(focused, focusedTooltip.lines());
 		state.set(focused, "default", false);
 		state.set(hovered, "custom", true);
 		var tooltip = state.take();
