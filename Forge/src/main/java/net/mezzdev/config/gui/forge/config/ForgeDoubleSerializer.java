@@ -16,6 +16,11 @@ final class ForgeDoubleSerializer extends ForgeTextSerializer<Double> {
 	}
 
 	@Override
+	public Class<Double> getValueClass() {
+		return Double.class;
+	}
+
+	@Override
 	public Optional<ConfigValueRange<Double>> getRange() {
 		return Optional.of(range);
 	}

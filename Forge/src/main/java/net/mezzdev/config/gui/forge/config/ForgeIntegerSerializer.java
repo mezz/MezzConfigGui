@@ -25,6 +25,11 @@ final class ForgeIntegerSerializer implements IConfigValueSerializer<Integer> {
 	}
 
 	@Override
+	public Class<Integer> getValueClass() {
+		return Integer.class;
+	}
+
+	@Override
 	public Optional<ConfigValueRange<Integer>> getRange() {
 		if (valueSpec != null && valueSpec.getRange() == null) {
 			return Optional.empty();

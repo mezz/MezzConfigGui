@@ -218,6 +218,11 @@ class ConfigValueSelectorTest {
 		INSTANCE;
 
 		@Override
+		public Class<String> getValueClass() {
+			return String.class;
+		}
+
+		@Override
 		public String serialize(String value) {
 			return value;
 		}

@@ -19,6 +19,11 @@ final class ForgeEnumSerializer<T extends Enum<T>> implements IConfigValueSerial
 	}
 
 	@Override
+	public Class<T> getValueClass() {
+		return enumClass;
+	}
+
+	@Override
 	public String serialize(T value) {
 		return value.name();
 	}

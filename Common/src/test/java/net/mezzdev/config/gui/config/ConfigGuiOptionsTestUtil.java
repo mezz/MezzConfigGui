@@ -59,12 +59,13 @@ public final class ConfigGuiOptionsTestUtil {
 	private static final class TestConfigValue<T> implements IConfigValue<T>, IConfigValueEditorInfo<T> {
 		private final String name;
 		private final T defaultValue;
-		private final IConfigValueSerializer<T> serializer = new TestConfigValueSerializer<>();
+		private final IConfigValueSerializer<T> serializer;
 		private T value;
 
 		private TestConfigValue(String name, T value) {
 			this.name = name;
 			this.defaultValue = value;
+			this.serializer = new TestConfigValueSerializer<>(value);
 			this.value = value;
 		}
 
@@ -147,6 +148,26 @@ public final class ConfigGuiOptionsTestUtil {
 	}
 
 	private static final class TestConfigValueSerializer<T> implements IConfigValueSerializer<T> {
+		private final Class<? extends T> valueClass;
+
+		@SuppressWarnings("unchecked")
+		private TestConfigValueSerializer(T value) {
+			Class<?> type;
+			if (value instanceof Enum<?> enumValue) {
+				type = enumValue.getDeclaringClass();
+			} else if (value instanceof List<?>) {
+				type = List.class;
+			} else {
+				type = value.getClass();
+			}
+			this.valueClass = (Class<? extends T>) type;
+		}
+
+		@Override
+		public Class<? extends T> getValueClass() {
+			return valueClass;
+		}
+
 		@Override
 		public String serialize(T value) {
 			return String.valueOf(value);
