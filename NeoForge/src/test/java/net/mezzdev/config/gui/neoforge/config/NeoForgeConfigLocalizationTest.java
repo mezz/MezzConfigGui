@@ -100,6 +100,7 @@ class NeoForgeConfigLocalizationTest {
 		for (ModConfigSpec.ConfigValue<?> value : values) {
 			ModConfigSpec.ValueSpec spec = value.getSpec();
 			String originalComment = spec.getComment();
+			assertNotNull(originalComment);
 			assertTrue(originalComment.contains("\n Range: "));
 			assertEquals(comment + "\n Default: " + value.getDefault(),
 				NeoForgeConfigLocalization.getValueDescription("test.setting", spec).getString());

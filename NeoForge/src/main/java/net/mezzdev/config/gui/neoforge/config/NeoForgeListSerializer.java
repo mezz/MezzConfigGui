@@ -112,7 +112,7 @@ final class NeoForgeListSerializer<T> implements IConfigListValueSerializer<T> {
 		return true;
 	}
 
-	private boolean isValidList(List<T> value) {
+	private boolean isValidList(List<@Nullable T> value) {
 		try {
 			return valueSpec.test(value);
 		} catch (RuntimeException ignored) {

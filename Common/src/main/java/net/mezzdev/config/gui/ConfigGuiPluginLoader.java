@@ -523,7 +523,7 @@ final class ConfigGuiPluginLoader {
 		public IConfigScreenCategoryBuilder addValues(Collection<? extends IConfigValue<?>> values) {
 			Collection<? extends IConfigValue<?>> checkedValues = ErrorUtil.checkNotNull(values, "values");
 			List<IConfigScreenValue<?>> valuesCopy = checkedValues.stream()
-				.map(ConfigGuiPluginLoader::createConfigScreenValue)
+				.<IConfigScreenValue<?>>map(ConfigGuiPluginLoader::createConfigScreenValue)
 				.toList();
 			return addScreenValues(valuesCopy);
 		}
@@ -587,7 +587,7 @@ final class ConfigGuiPluginLoader {
 		public IConfigScreenCategoryBuilder hideValues(Collection<? extends IConfigValue<?>> values) {
 			Collection<? extends IConfigValue<?>> checkedValues = ErrorUtil.checkNotNull(values, "values");
 			List<IConfigScreenValue<?>> valuesCopy = checkedValues.stream()
-				.map(ConfigGuiPluginLoader::createConfigScreenValue)
+				.<IConfigScreenValue<?>>map(ConfigGuiPluginLoader::createConfigScreenValue)
 				.toList();
 			return hideScreenValues(valuesCopy);
 		}
