@@ -18,6 +18,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -63,8 +64,8 @@ final class QuickMenuTestScreen extends Screen {
 		return Objects.requireNonNull(factory, "quick menu test factory").get();
 	}
 
-	Button topButton;
-	Button bottomButton;
+	final Button topButton;
+	final Button bottomButton;
 
 	@SuppressWarnings("unchecked")
 	private QuickMenuTestScreen(IQuickConfigMenuFactory factory, IConfigSchema schema) {
@@ -72,12 +73,16 @@ final class QuickMenuTestScreen extends Screen {
 		this.schema = schema;
 		topMenu = factory.create(Component.literal("Top menu"), TOP_DEFAULT_SELECTION, List.of(Option.SECONDARY));
 		bottomMenu = factory.create(Component.literal("Bottom menu"), BOTTOM_DEFAULT_SELECTION, List.of(Option.PRIMARY, Option.MODE));
+		topButton = new Button(0, 0, 110, 20, Component.literal("Open top menu"), button -> topMenu.open(button));
+		bottomButton = new Button(0, 0, 110, 20, Component.literal("Open bottom menu"), button -> bottomMenu.open(button));
 		// Inspect the models so test controls can change selections without opening the full config screen.
 		var topModel = QuickMenuClientGameTest.field(topMenu, "model");
 		var bottomModel = QuickMenuClientGameTest.field(bottomMenu, "model");
 		this.topSelection = (IConfigScreenValue<List<String>>) QuickMenuClientGameTest.field(QuickMenuClientGameTest.field(topModel, "selection"), "value");
 		this.bottomSelection = (IConfigScreenValue<List<String>>) QuickMenuClientGameTest.field(QuickMenuClientGameTest.field(bottomModel, "selection"), "value");
-		this.options = (Map<String, IConfigScreenValue<?>>) QuickMenuClientGameTest.field(topModel, "values");
+		Map<String, ?> availableRows = (Map<String, ?>) QuickMenuClientGameTest.field(topModel, "availableRows");
+		this.options = new LinkedHashMap<>();
+		availableRows.forEach((id, row) -> options.put(id, (IConfigScreenValue<?>) QuickMenuClientGameTest.field(row, "value")));
 		this.color = Objects.requireNonNull(options.get(Option.COLOR));
 		if (Boolean.getBoolean("mezzConfigGui.runQuickMenuTest")) {
 			QuickMenuClientGameTest.checkPathValidation(factory);
@@ -96,8 +101,12 @@ final class QuickMenuTestScreen extends Screen {
 			}
 			return true;
 		});
-		topButton = addRenderableWidget(new Button(width / 2 - 55, 4, 110, 20, Component.literal("Open top menu"), button -> topMenu.open(button)));
-		bottomButton = addRenderableWidget(new Button(width / 2 - 55, height - 24, 110, 20, Component.literal("Open bottom menu"), button -> bottomMenu.open(button)));
+		topButton.x = width / 2 - 55;
+		topButton.y = 4;
+		bottomButton.x = width / 2 - 55;
+		bottomButton.y = height - 24;
+		addRenderableWidget(topButton);
+		addRenderableWidget(bottomButton);
 		addRenderableWidget(new Button(width - 144, height / 2, 140, 20, Component.literal("Host action (H)"), button -> hostActions++));
 		addRenderableWidget(new Button(4, 4, 110, 20, Component.literal("Clear top"), button -> topSelection.set(List.of())));
 		addRenderableWidget(new Button(width - 114, 4, 110, 20, Component.literal("Reset top"), button -> topSelection.set(TOP_DEFAULT_SELECTION)));
