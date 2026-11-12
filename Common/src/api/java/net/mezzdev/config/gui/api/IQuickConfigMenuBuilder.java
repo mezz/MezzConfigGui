@@ -7,6 +7,8 @@ import org.jetbrains.annotations.ApiStatus;
  * Defines a quick menu's default and additional settings in insertion order.
  * Paths, MezzConfig values, and screen values can be mixed in either group.
  * Screen values match registered entries by {@link IConfigScreenValue#getIdentityKey()}.
+ * When a value appears more than once, its first entry in screen order supplies
+ * the editor and persistent path.
  *
  * @since 0.6.0
  */
@@ -24,7 +26,7 @@ public interface IQuickConfigMenuBuilder {
 	/**
 	 * Adds a MezzConfig value shown initially.
 	 *
-	 * @param value a value registered at a single config screen path
+	 * @param value a value registered on the config screen
 	 * @return this builder
 	 * @since 0.6.0
 	 */
@@ -33,7 +35,7 @@ public interface IQuickConfigMenuBuilder {
 	/**
 	 * Adds a screen value shown initially.
 	 *
-	 * @param value a screen value registered at a single config screen path
+	 * @param value a registered screen value
 	 * @return this builder
 	 * @since 0.6.0
 	 */
@@ -51,7 +53,7 @@ public interface IQuickConfigMenuBuilder {
 	/**
 	 * Adds a MezzConfig value available through Customize, initially hidden.
 	 *
-	 * @param value a value registered at a single config screen path
+	 * @param value a value registered on the config screen
 	 * @return this builder
 	 * @since 0.6.0
 	 */
@@ -60,7 +62,7 @@ public interface IQuickConfigMenuBuilder {
 	/**
 	 * Adds a screen value available through Customize, initially hidden.
 	 *
-	 * @param value a screen value registered at a single config screen path
+	 * @param value a registered screen value
 	 * @return this builder
 	 * @since 0.6.0
 	 */
