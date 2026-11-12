@@ -280,7 +280,7 @@ public final class QuickMenuClientGameTest implements FabricClientGameTest {
 				var remove = context.computeOnClient(client -> membershipButton(screen.topMenu));
 				click(context, remove.getX() + remove.getWidth() / 2.0, remove.getY() + remove.getHeight() / 2.0);
 				toggleCustomize(context, screen.topMenu);
-				context.runOnClient(client -> check(field(field(screen.topMenu, "model"), "rows").equals(List.of(QuickMenuTestScreen.Option.SECONDARY)),
+				context.runOnClient(client -> check(visibleOptionsMatch(screen, screen.topMenu, List.of(QuickMenuTestScreen.Option.SECONDARY)),
 					"Pending customization must immediately update the visible rows"));
 				List<Integer> batches = new ArrayList<>();
 				Runnable unsubscribe = context.computeOnClient(client -> screen.schema.addPendingBatchListener(changes -> batches.add(changes.size())));
@@ -332,7 +332,7 @@ public final class QuickMenuClientGameTest implements FabricClientGameTest {
 		click(context, screen.width - 59, screen.height - 14);
 		click(context, screen.width / 2.0, 14);
 		context.takeScreenshot("quick-menu-top-defaults");
-		context.runOnClient(client -> check(field(field(screen.topMenu, "model"), "rows").equals(QuickMenuTestScreen.TOP_DEFAULT_SELECTION), "The top menu must display its own saved selection"));
+		context.runOnClient(client -> check(visibleOptionsMatch(screen, screen.topMenu, QuickMenuTestScreen.TOP_DEFAULT_SELECTION), "The top menu must display its own saved selection"));
 		toggleCustomize(context, screen.topMenu);
 		var removeButton = context.computeOnClient(client -> membershipButton(screen.topMenu));
 		click(context, removeButton.getX() + removeButton.getWidth() / 2.0, removeButton.getY() + removeButton.getHeight() / 2.0);
@@ -345,7 +345,7 @@ public final class QuickMenuClientGameTest implements FabricClientGameTest {
 			"Closing must save the top menu's selection"));
 		click(context, screen.width / 2.0, screen.height - 14);
 		context.takeScreenshot("quick-menu-bottom-defaults");
-		context.runOnClient(client -> check(field(field(screen.bottomMenu, "model"), "rows").equals(QuickMenuTestScreen.BOTTOM_DEFAULT_SELECTION), "The bottom menu must display its own saved selection"));
+		context.runOnClient(client -> check(visibleOptionsMatch(screen, screen.bottomMenu, QuickMenuTestScreen.BOTTOM_DEFAULT_SELECTION), "The bottom menu must display its own saved selection"));
 		context.getInput().pressKey(InputConstants.KEY_ESCAPE);
 		click(context, 59, 14);
 		context.runOnClient(client -> {
@@ -358,6 +358,13 @@ public final class QuickMenuClientGameTest implements FabricClientGameTest {
 			check(screen.topSelection.getValue().equals(QuickMenuTestScreen.TOP_DEFAULT_SELECTION), "Reset top must restore its defaults");
 			check(screen.bottomSelection.getValue().isEmpty(), "Clear bottom must clear only the bottom selection");
 		});
+	}
+
+	private static boolean visibleOptionsMatch(QuickMenuTestScreen screen, IQuickConfigMenu menu, List<String> paths) {
+		var page = (ConfigContentPage) field(menu, "page");
+		var actual = page.getEntries().stream().map(entry -> entry.getConfigValue().getIdentityKey()).toList();
+		var expected = paths.stream().map(path -> screen.options.get(path).getIdentityKey()).toList();
+		return actual.equals(expected);
 	}
 
 	private static void colorPopup(ClientGameTestContext context, QuickMenuTestScreen screen, IQuickConfigMenu menu, String position) {
@@ -432,6 +439,7 @@ public final class QuickMenuClientGameTest implements FabricClientGameTest {
 		context.runOnClient(client -> {
 			menu.close();
 			var screen = (QuickMenuTestScreen) client.screen;
+			check(screen != null, "The quick menu host screen must remain open");
 			var button = screen.topButton;
 			if (menu == screen.bottomMenu) {
 				button = screen.bottomButton;
