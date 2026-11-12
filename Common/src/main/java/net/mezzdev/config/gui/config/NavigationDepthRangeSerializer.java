@@ -14,6 +14,13 @@ final class NavigationDepthRangeSerializer implements IConfigValueSerializer<Con
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
+	public Class<ConfigValueRange<Integer>> getValueClass() {
+		// Use the erased range class because Java has no class literal for ConfigValueRange<Integer>.
+		return (Class<ConfigValueRange<Integer>>) (Class<?>) ConfigValueRange.class;
+	}
+
+	@Override
 	public boolean isValid(@Nullable ConfigValueRange<Integer> value) {
 		return value != null && value.min() >= 0 && value.min() <= MAX_DEPTH &&
 			value.max() >= value.min() && value.max() <= MAX_DEPTH;

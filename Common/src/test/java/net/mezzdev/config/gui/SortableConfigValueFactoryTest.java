@@ -1,6 +1,7 @@
 package net.mezzdev.config.gui;
 
 import net.mezzdev.config.api.sorting.ISortingConfig;
+import net.mezzdev.config.api.sorting.ISortingSnapshot;
 import net.mezzdev.config.api.migration.ISortingConfigMigrator;
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
@@ -244,6 +245,11 @@ class SortableConfigValueFactoryTest {
 		}
 
 		@Override
+		public ISortingSnapshot<String> getSnapshot(Collection<String> allValues) {
+			throw new UnsupportedOperationException("Snapshots are not used by these GUI tests.");
+		}
+
+		@Override
 		public List<String> getDefaultSortedValues(Collection<String> allValues) {
 			return allValues.stream()
 				.distinct()
@@ -286,6 +292,11 @@ class SortableConfigValueFactoryTest {
 
 	private enum TestStringSerializer implements IConfigValueSerializer<String> {
 		INSTANCE;
+
+		@Override
+		public Class<String> getValueClass() {
+			return String.class;
+		}
 
 		@Override
 		public String serialize(String value) {
