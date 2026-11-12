@@ -162,6 +162,11 @@ class NumberSliderModelTest {
 
 	private static final class TestIntegerSerializer implements IConfigValueSerializer<Integer> {
 		@Override
+		public Class<Integer> getValueClass() {
+			return Integer.class;
+		}
+
+		@Override
 		public String serialize(Integer value) {
 			return value.toString();
 		}
