@@ -242,6 +242,11 @@ class HexColorConfigEntryTest {
 
 	private record StringSerializer(Predicate<String> validator) implements IConfigValueSerializer<String> {
 		@Override
+		public Class<String> getValueClass() {
+			return String.class;
+		}
+
+		@Override
 		public String serialize(String value) {
 			return value;
 		}
@@ -292,6 +297,11 @@ class HexColorConfigEntryTest {
 
 	private static final class PackedColorListSerializer implements IConfigListValueSerializer<PackedColor> {
 		private static final IConfigValueSerializer<PackedColor> ELEMENT_SERIALIZER = new IConfigValueSerializer<>() {
+			@Override
+			public Class<PackedColor> getValueClass() {
+				return PackedColor.class;
+			}
+
 			@Override
 			public String serialize(PackedColor value) {
 				return Integer.toHexString(value.packedValue());

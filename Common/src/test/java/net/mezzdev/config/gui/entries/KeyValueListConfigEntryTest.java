@@ -265,6 +265,11 @@ class KeyValueListConfigEntryTest {
 		private static final IntegerSerializer VALUE_SERIALIZER = new IntegerSerializer();
 
 		@Override
+		public Class<NamedNumber> getValueClass() {
+			return NamedNumber.class;
+		}
+
+		@Override
 		public IConfigValueSerializer<String> getKeySerializer() {
 			return KEY_SERIALIZER;
 		}
@@ -318,6 +323,11 @@ class KeyValueListConfigEntryTest {
 
 	private static final class StringSerializer implements IConfigValueSerializer<String> {
 		@Override
+		public Class<String> getValueClass() {
+			return String.class;
+		}
+
+		@Override
 		public String serialize(String value) {
 			return value;
 		}
@@ -339,6 +349,11 @@ class KeyValueListConfigEntryTest {
 	}
 
 	private static final class IntegerSerializer implements IConfigValueSerializer<Integer> {
+		@Override
+		public Class<Integer> getValueClass() {
+			return Integer.class;
+		}
+
 		@Override
 		public String serialize(Integer value) {
 			return value.toString();

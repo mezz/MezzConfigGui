@@ -17,6 +17,11 @@ final class NeoForgeIntegerSerializer implements IConfigValueSerializer<Integer>
 	}
 
 	@Override
+	public Class<Integer> getValueClass() {
+		return Integer.class;
+	}
+
+	@Override
 	public Optional<ConfigValueRange<Integer>> getRange() {
 		return Optional.of(range);
 	}

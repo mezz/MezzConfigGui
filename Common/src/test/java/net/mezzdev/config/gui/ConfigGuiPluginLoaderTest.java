@@ -7,6 +7,7 @@ import net.mezzdev.config.api.schema.category.IConfigCategory;
 import net.mezzdev.config.api.schema.category.IConfigEditorCategory;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.api.sorting.ISortingConfig;
+import net.mezzdev.config.api.sorting.ISortingSnapshot;
 import net.mezzdev.config.api.migration.ISortingConfigMigrator;
 import net.mezzdev.config.api.value.editor.ConfigValueEditMode;
 import net.mezzdev.config.api.value.editor.IConfigValueEditorInfo;
@@ -1385,6 +1386,11 @@ class ConfigGuiPluginLoaderTest {
 		}
 
 		@Override
+		public ISortingSnapshot<String> getSnapshot(Collection<String> allValues) {
+			throw new UnsupportedOperationException("Snapshots are not used by these GUI tests.");
+		}
+
+		@Override
 		public List<String> getDefaultSortedValues(Collection<String> allValues) {
 			return allValues.stream()
 				.distinct()
@@ -1579,6 +1585,11 @@ class ConfigGuiPluginLoaderTest {
 
 	private enum TestSerializer implements IConfigValueSerializer<String> {
 		INSTANCE;
+
+		@Override
+		public Class<String> getValueClass() {
+			return String.class;
+		}
 
 		@Override
 		public String serialize(String value) {
