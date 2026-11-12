@@ -432,6 +432,7 @@ public final class QuickMenuClientGameTest implements FabricClientGameTest {
 		context.runOnClient(client -> {
 			menu.close();
 			var screen = (QuickMenuTestScreen) client.gui.screen();
+			check(screen != null, "The quick menu host screen must remain open");
 			var button = screen.topButton;
 			if (menu == screen.bottomMenu) {
 				button = screen.bottomButton;

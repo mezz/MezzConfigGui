@@ -12,7 +12,7 @@ public record ConfigValueChange<T>(
 	IConfigScreenValue<T> configValue,
 	T value
 ) {
-	public static ConfigValueRestartRequirement getRestartRequirement(List<ConfigValueChange<?>> changes) {
+	public static <C extends ConfigValueChange<?>> ConfigValueRestartRequirement getRestartRequirement(List<C> changes) {
 		ConfigValueRestartRequirement result = ConfigValueRestartRequirement.NONE;
 		for (ConfigValueChange<?> change : changes) {
 			ConfigValueRestartRequirement restartRequirement = change.configValue().getRestartRequirement();

@@ -442,7 +442,7 @@ class RemoteConfigRequestHandlerTest {
 		private IAppliedConfigValueChange<T> apply() {
 			@SuppressWarnings("unchecked")
 			TestConfigValue testValue = (TestConfigValue) value;
-			@SuppressWarnings("unchecked") @Nullable
+			@SuppressWarnings("unchecked")
 			IAppliedConfigValueChange<T> change = (IAppliedConfigValueChange<T>) testValue.apply((String) proposedValue);
 			return change;
 		}

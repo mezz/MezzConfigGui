@@ -6,7 +6,10 @@ import net.mezzdev.config.gui.ConfigScreenLayout.ResizeHandle;
 import net.mezzdev.config.gui.ConfigScrollState;
 import net.mezzdev.config.gui.config.ConfigGuiOptions;
 import net.mezzdev.config.gui.quickmenu.QuickMenuReorderDrag.Preview;
-import net.mezzdev.config.gui.quickmenu.QuickMenuTarget.Action;
+import net.mezzdev.config.gui.quickmenu.QuickMenuTarget.Control;
+import net.mezzdev.config.gui.quickmenu.QuickMenuTarget.ControlAction;
+import net.mezzdev.config.gui.quickmenu.QuickMenuTarget.Option;
+import net.mezzdev.config.gui.quickmenu.QuickMenuTarget.OptionAction;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
@@ -77,24 +80,24 @@ final class QuickMenuInputHandler<T> {
 		ResizeHandle handle = layout.getResizeHandle(mouseX, mouseY);
 		if (!model.isEditing() && page.hasPopup() && (layout.area().contains(mouseX, mouseY) || page.isMouseOverPopup(mouseX, mouseY))) {
 			page.mousePressed(mouseX, mouseY, button, event.modifiers());
-			pressed = new QuickMenuTarget<>(null, Action.PAGE);
+			pressed = new Control<>(ControlAction.PAGE);
 		} else if (button == InputConstants.MOUSE_BUTTON_LEFT && handle != ResizeHandle.NONE) {
 			page.cancelInput();
 			resizeDrag = new ResizeDrag(handle, layout.area(), mouseX, mouseY);
-			pressed = new QuickMenuTarget<>(null, Action.RESIZE);
+			pressed = new Control<>(ControlAction.RESIZE);
 		} else if (button == InputConstants.MOUSE_BUTTON_LEFT && menu.isMouseOverAnchor(mouseX, mouseY)) {
-			pressed = new QuickMenuTarget<>(null, Action.ANCHOR);
+			pressed = new Control<>(ControlAction.ANCHOR);
 		} else if (!layout.area().contains(mouseX, mouseY)) {
-			pressed = new QuickMenuTarget<>(null, Action.CLOSE);
+			pressed = new Control<>(ControlAction.CLOSE);
 		} else if (model.isEditing() && button == InputConstants.MOUSE_BUTTON_LEFT && scroll.startDrag(mouseX, mouseY)) {
-			pressed = new QuickMenuTarget<>(null, Action.SCROLL);
+			pressed = new Control<>(ControlAction.SCROLL);
 		} else if (!model.isEditing() && layout.getListArea().contains(mouseX, mouseY)) {
 			page.mousePressed(mouseX, mouseY, button, event.modifiers());
-			pressed = new QuickMenuTarget<>(null, Action.PAGE);
+			pressed = new Control<>(ControlAction.PAGE);
 		} else if (button == InputConstants.MOUSE_BUTTON_LEFT) {
 			pressed = targetAt(mouseX, mouseY);
-			if (ConfigGuiOptions.enableDragReordering() && pressed != null && pressed.id() != null && pressed.action() != Action.MEMBERSHIP && model.selection().selected().contains(pressed.id())) {
-				reorderDrag = new QuickMenuReorderDrag<>(pressed.id(), model.selection().selected(), layout.getRowArea(model.rows().indexOf(pressed.id())), mouseX, mouseY);
+			if (ConfigGuiOptions.enableDragReordering() && pressed instanceof Option<T> option && option.action() != OptionAction.MEMBERSHIP && model.selection().selected().contains(option.id())) {
+				reorderDrag = new QuickMenuReorderDrag<T>(option.id(), model.selection().selected(), layout.getRowArea(model.rowIndex(option.id())), mouseX, mouseY);
 			}
 		}
 		return true;
@@ -121,57 +124,61 @@ final class QuickMenuInputHandler<T> {
 			menu.refresh();
 			return true;
 		}
-		if (target != null && target.action() == Action.RESIZE) {
+		if (isControl(target, ControlAction.RESIZE)) {
 			resizeTo(mouseX, mouseY);
 			resizeDrag = null;
 			return true;
 		}
-		if (target != null && target.action() == Action.SCROLL) {
+		if (isControl(target, ControlAction.SCROLL)) {
 			scroll.drag(mouseY);
 			scroll.stopDrag();
 			return true;
 		}
-		if (target != null && target.action() == Action.PAGE) {
+		if (isControl(target, ControlAction.PAGE)) {
 			page.mouseReleased(mouseX, mouseY, button, event.modifiers());
 			return true;
 		}
-		if (target != null && (target.action() == Action.CLOSE || target.equals(targetAt(mouseX, mouseY)))) {
+		if (target != null && (isControl(target, ControlAction.CLOSE) || target.equals(targetAt(mouseX, mouseY)))) {
 			menu.activate(target);
 		}
 		return true;
 	}
 
+	private static boolean isControl(@Nullable QuickMenuTarget<?> target, ControlAction action) {
+		return target instanceof Control<?> control && control.action() == action;
+	}
+
 	private @Nullable QuickMenuTarget<T> targetAt(double x, double y) {
 		if (menu.isMouseOverAnchor(x, y)) {
-			return new QuickMenuTarget<>(null, Action.ANCHOR);
+			return new Control<>(ControlAction.ANCHOR);
 		}
 		if (layout.fullConfigButtonArea().contains(x, y)) {
-			return new QuickMenuTarget<>(null, Action.FULL_CONFIG);
+			return new Control<>(ControlAction.FULL_CONFIG);
 		}
 		if (layout.headerButtonArea().contains(x, y)) {
-			return new QuickMenuTarget<>(null, Action.EDIT);
+			return new Control<>(ControlAction.EDIT);
 		}
 		if (!model.isEditing() || !layout.editorArea().contains(x, y)) {
 			return null;
 		}
 		List<T> selected = model.selection().selected();
 		for (int row = layout.firstVisibleRow(); row < layout.lastVisibleRow(); row++) {
-			T id = model.rows().get(row);
+			T id = model.rows().get(row).id();
 			if (!layout.getRowArea(row).contains(x, y)) {
 				continue;
 			}
 			if (layout.controlArea(row, 0).contains(x, y)) {
-				return new QuickMenuTarget<>(id, Action.MEMBERSHIP);
+				return new Option<>(id, OptionAction.MEMBERSHIP);
 			}
 			int index = selected.indexOf(id);
 			if (index >= 0) {
 				if (index > 0 && layout.controlArea(row, 2).contains(x, y)) {
-					return new QuickMenuTarget<>(id, Action.UP);
+					return new Option<>(id, OptionAction.UP);
 				}
 				if (index + 1 < selected.size() && layout.controlArea(row, 1).contains(x, y)) {
-					return new QuickMenuTarget<>(id, Action.DOWN);
+					return new Option<>(id, OptionAction.DOWN);
 				}
-				return new QuickMenuTarget<>(id, Action.REORDER);
+				return new Option<>(id, OptionAction.REORDER);
 			}
 		}
 		return null;
@@ -233,9 +240,9 @@ final class QuickMenuInputHandler<T> {
 			reorderDrag.moveTo(event.x(), event.y());
 		} else if (resizeDrag != null) {
 			resizeTo(event.x(), event.y());
-		} else if (pressed != null && pressed.action() == Action.SCROLL) {
+		} else if (isControl(pressed, ControlAction.SCROLL)) {
 			scroll.drag(event.y());
-		} else if (!model.isEditing() && pressed != null && pressed.action() == Action.PAGE) {
+		} else if (!model.isEditing() && isControl(pressed, ControlAction.PAGE)) {
 			page.mouseDragged(event.x(), event.y(), event.button(), dragX, dragY);
 		}
 		return true;

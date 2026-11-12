@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ConfigValueSelectorTest {
 	@Test
 	void scrollsValuesThatDoNotFitInThePopup() {
-		ConfigValueSelector<String> selector = new ConfigValueSelector<>(
+		ConfigValueSelector<String> selector = new ConfigValueSelector<String>(
 			new TestConfigValue(),
 			List.of("first", "second", "third"),
 			null

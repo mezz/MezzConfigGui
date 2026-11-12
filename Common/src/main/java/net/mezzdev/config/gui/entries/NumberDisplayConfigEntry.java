@@ -159,8 +159,8 @@ final class NumberDisplayConfigEntry<T> extends ConfigEntryWidget<T> {
 
 	@Override
 	public void setImmediateChangeHandler(Function<ConfigValueChange<?>, Boolean> immediateChangeHandler) {
-		sliderEntry.setImmediateChangeHandler(immediateChangeHandler);
-		standardEntry.setImmediateChangeHandler(immediateChangeHandler);
+		sliderEntry.setImmediateChangeHandler(immediateChangeHandler::apply);
+		standardEntry.setImmediateChangeHandler(immediateChangeHandler::apply);
 	}
 
 	@Override

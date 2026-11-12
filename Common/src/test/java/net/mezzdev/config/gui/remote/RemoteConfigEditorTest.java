@@ -78,7 +78,7 @@ class RemoteConfigEditorTest {
 		sendResponse(new RemoteConfigMessage.SnapshotResponse(request.requestId(), SCHEMA_KEY, true, true, "", 1, List.of(valueData("effective"))));
 		assertEquals(List.of(ServerConfigAccess.EDITABLE.getDescription()), descriptions.get());
 		assertEquals(ServerConfigAccess.EDITABLE.getDescription(), category.getCategoryHeader().getInfo().lines().get(0));
-		assertEquals(ServerConfigAccess.EDITABLE.getDescription(), category.getSectionHeader(0).getInfo().lines().get(0));
+		assertEquals(ServerConfigAccess.EDITABLE.getDescription(), Objects.requireNonNull(category.getSectionHeader(0)).getInfo().lines().get(0));
 		assertTrue(editor.isEditable(schema));
 
 		CompletableFuture<@Nullable Void> update = editor.requestUpdate(schema, List.of(new ConfigValueChange<>(screenValue, "changed")));

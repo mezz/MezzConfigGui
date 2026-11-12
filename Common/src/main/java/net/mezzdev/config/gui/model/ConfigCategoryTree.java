@@ -156,11 +156,11 @@ final class ConfigCategoryTree {
 			result.add(new Node(category, parentIndex, depth, true, List.of()));
 			if (!values.isEmpty()) {
 				ConfigScreenCategory settings = new SectionCategory(node.name + "/@values",
-					Component.translatableWithFallback("mezz_config_gui.config.screen.sectionSettings", "Settings"), node.description, group, List.copyOf(values));
+					Component.translatableWithFallback("mezz_config_gui.config.screen.sectionSettings", "Settings"), node.description, group, List.<IConfigScreenValue<?>>copyOf(values));
 				result.add(new Node(settings, index, depth + 1, false, List.copyOf(inlineSections)));
 			}
 		} else {
-			ConfigScreenCategory category = new SectionCategory(node.name, node.title, node.description, group, List.copyOf(values));
+			ConfigScreenCategory category = new SectionCategory(node.name, node.title, node.description, group, List.<IConfigScreenValue<?>>copyOf(values));
 			result.add(new Node(category, parentIndex, depth, false, List.copyOf(inlineSections)));
 		}
 		for (MutableNode child : navigationChildren) {
