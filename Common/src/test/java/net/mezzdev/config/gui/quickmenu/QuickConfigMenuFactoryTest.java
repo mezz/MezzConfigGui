@@ -117,7 +117,9 @@ class QuickConfigMenuFactoryTest {
 				nextBuilder.build();
 				var nextRegistered = ConfigValueCategoryPath.copyTo(registered, ConfigScreenValues.create(nextLabels));
 				var nextRuntime = new RuntimeValue(new Object(), adapted.getEditorMetadata());
-				ConfigScreenSchema nextSchema = () -> List.of(new Category("display", List.of(nextRegistered, nextRuntime)));
+				ConfigScreenSchema nextSchema = () -> List.of(
+					new Category("display", List.of(nextRegistered, nextRuntime)),
+					new Category("other", List.of(nextRegistered, nextRuntime)));
 				var nextEntries = resolve(nextSchema, menu -> menu.addDefault(nextLabels).addAdditional(nextRuntime));
 				var preferences = new QuickMenuPreferences(reload, "example", nextEntries.defaults(), nextEntries.additional());
 				assertEquals(selection, preferences.getValue());
@@ -132,14 +134,48 @@ class QuickConfigMenuFactoryTest {
 			var unregistered = unregisteredBuilder.addCategory("storage").addBoolean("labels", true).build();
 			unregisteredBuilder.build();
 			assertThrows(IllegalArgumentException.class, () -> resolve(schema, menu -> menu.addDefault(unregistered)));
-			ConfigScreenSchema aliases = () -> List.of(new Category("display", List.of(registered)), new Category("other", List.of(registered)));
-			assertThrows(IllegalArgumentException.class, () -> resolve(aliases, menu -> menu.addDefault(labels)));
-			assertThrows(IllegalArgumentException.class, () -> resolve(aliases, menu -> menu.addDefault(adapted)));
-			assertSame(registered, resolve(aliases, menu -> menu.addDefault("other.nested.labels")).options().get("other.nested.labels"));
 			ConfigScreenSchema collision = () -> List.of(new Category("display", List.of(runtime, extraRuntime)));
 			assertThrows(IllegalArgumentException.class, () -> resolve(collision, menu -> menu.addDefault("display.runtime")));
 			assertThrows(IllegalArgumentException.class, () -> resolve(collision, menu -> menu.addDefault(runtime)));
 
+		} finally {
+			((AutoCloseable) manager.getSaveScheduler()).close();
+		}
+	}
+
+	@Test
+	void referencesUseFirstRegisteredEntryWhenValuesAppearInMultipleCategories(@TempDir Path directory) throws Exception {
+		var disabled = ConfigFileWatcherSettings.clientDefaults().withEnabled(false);
+		var manager = new ConfigManager("Quick menu aliases", disabled, disabled);
+		try {
+			var builder = new ConfigSchemaBuilder(directory.resolve("config.ini"), "test", manager);
+			var labels = builder.addCategory("storage").addBoolean("labels", true).build();
+			builder.build();
+			var adapted = ConfigScreenValues.create(labels);
+			var registered = IConfigScreenValue.withApplyMode(adapted, ConfigValueApplyMode.IMMEDIATE);
+			var runtime = new RuntimeValue(new Object(), adapted.getEditorMetadata());
+			var runtimeReference = new RuntimeValue(runtime.getIdentityKey(), adapted.getEditorMetadata());
+			var registeredRuntime = IConfigScreenValue.withApplyMode(runtime, ConfigValueApplyMode.IMMEDIATE);
+			ConfigScreenSchema schema = () -> List.of(
+				new Category("display", List.of(registered, registeredRuntime)),
+				new Category("other", List.of(adapted, runtimeReference)),
+				new Category("display", List.of(adapted, runtimeReference)));
+
+			var entries = resolve(schema, menu -> menu.addDefault(labels).addAdditional(runtimeReference));
+			assertEquals(List.of("display.labels"), entries.defaults());
+			assertEquals(List.of("display.runtime"), entries.additional());
+			assertSame(registered, entries.options().get("display.labels"));
+			assertSame(registeredRuntime, entries.options().get("display.runtime"));
+			assertSame(registered, resolve(schema, menu -> menu.addDefault(adapted)).options().get("display.labels"));
+			assertSame(adapted, resolve(schema, menu -> menu.addDefault("other.labels")).options().get("other.labels"));
+
+			var notifications = new ArrayList<Boolean>();
+			runtime.addListener(notifications::add);
+			@SuppressWarnings("unchecked")
+			var resolvedRuntime = (IConfigScreenValue<Boolean>) entries.options().get("display.runtime");
+			resolvedRuntime.set(true);
+			assertEquals(List.of(true), notifications);
+			assertEquals(false, runtimeReference.getValue());
 		} finally {
 			((AutoCloseable) manager.getSaveScheduler()).close();
 		}
