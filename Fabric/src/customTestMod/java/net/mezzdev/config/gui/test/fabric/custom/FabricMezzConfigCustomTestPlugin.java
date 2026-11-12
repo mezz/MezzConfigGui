@@ -220,6 +220,11 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 		INSTANCE;
 
 		@Override
+		public Class<String> getValueClass() {
+			return String.class;
+		}
+
+		@Override
 		public String serialize(String value) {
 			return value;
 		}
@@ -254,6 +259,11 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 		INSTANCE;
 
 		@Override
+		public Class<TestColor> getValueClass() {
+			return TestColor.class;
+		}
+
+		@Override
 		public String serialize(TestColor value) {
 			return value.name();
 		}
@@ -286,6 +296,11 @@ public final class FabricMezzConfigCustomTestPlugin implements ClientModInitiali
 
 	private enum ModeSerializer implements IConfigValueSerializer<TestMode> {
 		INSTANCE;
+
+		@Override
+		public Class<TestMode> getValueClass() {
+			return TestMode.class;
+		}
 
 		@Override
 		public String serialize(TestMode value) {
