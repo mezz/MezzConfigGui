@@ -48,8 +48,7 @@ final class NumberSliderConfigEntry<T> extends ConfigEntryWidget<T> {
 	private ImmutableRect2i dragSliderArea = ImmutableRect2i.EMPTY;
 	private boolean sliding;
 	@Nullable
-	private T fineValueAnchor;
-	private double finePointerAnchor;
+	private FineControl<T> fineControl;
 	private double normalPointerOffset;
 
 	private NumberSliderConfigEntry(
@@ -118,15 +117,15 @@ final class NumberSliderConfigEntry<T> extends ConfigEntryWidget<T> {
 	private void updateValueFromMouse(double mouseX) {
 		T value;
 		if (ConfigInputUtil.hasShiftDown()) {
-			if (fineValueAnchor == null) {
-				beginFineControl(mouseX);
+			if (fineControl == null) {
+				fineControl = new FineControl<>(getValue(), mouseX);
 			}
-			long steps = Math.round(mouseX - finePointerAnchor);
-			value = model.getFineValue(fineValueAnchor, steps);
+			long steps = Math.round(mouseX - fineControl.pointerAnchor());
+			value = model.getFineValue(fineControl.valueAnchor(), steps);
 		} else {
-			if (fineValueAnchor != null) {
+			if (fineControl != null) {
 				normalPointerOffset = getPointerPosition(getValue()) - mouseX;
-				fineValueAnchor = null;
+				fineControl = null;
 			}
 			double position = getSliderPosition(mouseX + normalPointerOffset);
 			value = model.getValue(position);
@@ -158,22 +157,17 @@ final class NumberSliderConfigEntry<T> extends ConfigEntryWidget<T> {
 	private void beginSliding(double mouseX) {
 		sliding = true;
 		dragSliderArea = sliderArea;
-		fineValueAnchor = null;
+		fineControl = null;
 		normalPointerOffset = 0.0;
 		if (ConfigInputUtil.hasShiftDown()) {
-			beginFineControl(mouseX);
+			fineControl = new FineControl<>(getValue(), mouseX);
 		}
-	}
-
-	private void beginFineControl(double mouseX) {
-		fineValueAnchor = getValue();
-		finePointerAnchor = mouseX;
 	}
 
 	private void stopSliding() {
 		sliding = false;
 		dragSliderArea = ImmutableRect2i.EMPTY;
-		fineValueAnchor = null;
+		fineControl = null;
 		normalPointerOffset = 0.0;
 	}
 
@@ -197,6 +191,9 @@ final class NumberSliderConfigEntry<T> extends ConfigEntryWidget<T> {
 			return -1;
 		}
 		return steps;
+	}
+
+	private record FineControl<T>(T valueAnchor, double pointerAnchor) {
 	}
 
 	private final class SliderInputHandler implements ConfigInputHandler {

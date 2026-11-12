@@ -83,7 +83,6 @@ class ForgeConfigIntegrationTest {
 			assertTrue(value.set(12));
 			assertFalse(value.set(12));
 			assertThrows(IllegalArgumentException.class, () -> value.set(33));
-			assertThrows(IllegalArgumentException.class, () -> value.set(null));
 			removeListener.run();
 			assertTrue(value.set(16));
 

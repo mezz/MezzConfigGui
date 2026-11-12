@@ -93,7 +93,9 @@ public final class ForgeNativeConfigTestMod {
 		var categories = nativeScreen.getSchema().getCategories();
 		check(categories.size() == 3, "Discovery must include both Common files and omit the unloaded Server config.");
 		check(categories.get(0).getName().equals(CLIENT_FILE), "Client files must precede Common files.");
-		check(categories.get(1).getNavigationGroup().name().equals(categories.get(2).getNavigationGroup().name()),
+		var firstCommonGroup = categories.get(1).getNavigationGroup();
+		var secondCommonGroup = categories.get(2).getNavigationGroup();
+		check(firstCommonGroup != null && secondCommonGroup != null && firstCommonGroup.name().equals(secondCommonGroup.name()),
 			"Both Common files must share one navigation group.");
 		var value = (IConfigScreenValue<Integer>) categories.get(0).getConfigValues().stream()
 			.filter(option -> option.getName().equals("animals.limit")).findFirst().orElseThrow();
@@ -135,8 +137,9 @@ public final class ForgeNativeConfigTestMod {
 		var registry = ConfigGui.createScreenFactoryRegistryFromInternalConfigs(screens, List.of());
 		var factory = registry.getFactories().get(MOD_ID);
 		check(factory != null, "Native configs must produce a screen without a GUI plugin.");
-		minecraft.setScreen(factory.create(minecraft.screen));
-		check(!minecraft.screen.children().isEmpty(), "The generated config screen must create its controls.");
+		var screen = factory.create(minecraft.screen);
+		minecraft.setScreen(screen);
+		check(!screen.children().isEmpty(), "The generated config screen must create its controls.");
 	}
 
 	private static void check(boolean condition, String message) {
