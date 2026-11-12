@@ -50,7 +50,6 @@ final class QuickMenuView<T> {
 		textures.getConfigScreenBackground().draw(graphics, layout.area());
 		ImmutableRect2i listArea = layout.getListArea();
 		fill(graphics, listArea, GuiColor.CONFIG_SCREEN_VALUE_AREA_BACKGROUND);
-		@Nullable
 		ConfigInfo help;
 		if (model.isEditing()) {
 			help = drawOptions(graphics, mouseX, mouseY, reorderDrag);
@@ -111,8 +110,9 @@ final class QuickMenuView<T> {
 		List<T> selected = model.selection().selected();
 		graphics.enableScissor(viewport.getX(), viewport.getY(), viewport.getX() + viewport.getWidth(), viewport.getY() + viewport.getHeight());
 		for (int row = 0; row < model.rows().size(); row++) {
-			T id = model.rows().get(row);
-			IConfigScreenValue<?> value = model.value(id);
+			QuickMenuModel.Row<T> option = model.rows().get(row);
+			T id = option.id();
+			IConfigScreenValue<?> value = option.value();
 			if (reorderDrag != null && reorderDrag.active() && reorderDrag.id().equals(id)) {
 				continue;
 			}
@@ -163,7 +163,7 @@ final class QuickMenuView<T> {
 		if (drag == null || !drag.active()) {
 			return original;
 		}
-		int source = model.rows().indexOf(drag.id());
+		int source = model.rowIndex(drag.id());
 		int target = drag.targetIndex();
 		int offset = 0;
 		if (source < target && row > source && row <= target) {
@@ -175,7 +175,7 @@ final class QuickMenuView<T> {
 	}
 
 	private void drawReorderPreview(GuiGraphics graphics, Preview<T> drag) {
-		int source = model.rows().indexOf(drag.id());
+		int source = model.rowIndex(drag.id());
 		ImmutableRect2i original = layout.getRowArea(source);
 		int target = drag.targetIndex();
 		ImmutableRect2i targetArea = layout.getRowArea(target);

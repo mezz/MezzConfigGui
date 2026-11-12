@@ -3,6 +3,7 @@ package net.mezzdev.config.gui.quickmenu;
 import net.mezzdev.config.api.schema.ConfigSchemaType;
 import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.gui.ConfigScreenSchema;
+import net.mezzdev.config.gui.ConfigContentPage;
 import net.mezzdev.config.gui.ConfigValueAccess;
 import net.mezzdev.config.gui.api.IQuickConfigMenuFactory;
 import net.mezzdev.config.gui.api.IQuickConfigMenu;
@@ -52,8 +53,12 @@ public final class QuickConfigMenuFactory implements IQuickConfigMenuFactory {
 		entries.options().values().forEach(value -> validateValue(value, schemas));
 		var selection = new QuickMenuPreferences(Minecraft.getInstance().gameDirectory.toPath().resolve("config/mezz_config_gui/quick-menus"),
 			modId, entries.defaults(), entries.additional());
-		return new QuickConfigMenu<>(title, entries.options(), selection, editors,
-			value -> Optional.ofNullable(schemas.get(value.getIdentityKey())), screenFactory);
+		List<QuickMenuModel.Row<String>> options = entries.options().entrySet().stream()
+			.map(entry -> new QuickMenuModel.Row<>(entry.getKey(), entry.getValue()))
+			.toList();
+		ConfigContentPage page = new ConfigContentPage(editors, 3 + QuickMenuLayout.CONTROL_SIZE + 2 * 20,
+			value -> Optional.ofNullable(schemas.get(value.getIdentityKey())));
+		return new QuickConfigMenu<>(title, options, selection, page, screenFactory);
 	}
 
 	private void validateValue(IConfigScreenValue<?> value, Map<Object, IConfigSchema> schemas) {

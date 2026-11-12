@@ -1,16 +1,14 @@
 package net.mezzdev.config.gui.quickmenu;
 
-import net.mezzdev.config.api.schema.IConfigSchema;
 import net.mezzdev.config.gui.ConfigContentPage;
 import net.mezzdev.config.gui.ConfigScreenLayout.ResizeHandle;
 import net.mezzdev.config.gui.MezzConfigScreen;
 import net.mezzdev.config.gui.api.ConfigInfo;
-import net.mezzdev.config.gui.api.ConfigValueEditorType;
 import net.mezzdev.config.gui.api.IConfigScreenFactory;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
-import net.mezzdev.config.gui.api.IConfigValueEditorFactory;
 import net.mezzdev.config.gui.api.IQuickConfigMenu;
-import net.mezzdev.config.gui.quickmenu.QuickMenuTarget.Action;
+import net.mezzdev.config.gui.quickmenu.QuickMenuTarget.Control;
+import net.mezzdev.config.gui.quickmenu.QuickMenuTarget.Option;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -22,10 +20,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.Map;
 import java.util.function.BooleanSupplier;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /** Coordinates the menu lifecycle, model, view, and input handler. */
@@ -42,15 +37,13 @@ final class QuickConfigMenu<T> implements IQuickConfigMenu {
 	private Supplier<@Nullable ConfigInfo> anchorInfo = () -> null;
 	private @Nullable Screen parent;
 
-	QuickConfigMenu(Component title, Map<T, ? extends IConfigScreenValue<?>> options,
-		IConfigScreenValue<List<T>> selection,
-		Map<ConfigValueEditorType<?>, IConfigValueEditorFactory<?>> editors,
-		Function<IConfigScreenValue<?>, Optional<IConfigSchema>> schemaResolver, IConfigScreenFactory screenFactory) {
-		this.screenFactory = Objects.requireNonNull(screenFactory);
-		this.page = new ConfigContentPage(editors, 3 + QuickMenuLayout.CONTROL_SIZE + 2 * 20, schemaResolver);
+	QuickConfigMenu(Component title, List<QuickMenuModel.Row<T>> options,
+		IConfigScreenValue<List<T>> selection, ConfigContentPage page, IConfigScreenFactory screenFactory) {
+		this.screenFactory = screenFactory;
+		this.page = page;
 		this.model = new QuickMenuModel<>(options, selection, newValue -> page.applyChange(selection, newValue));
 		this.layout = new QuickMenuLayout(page);
-		this.view = new QuickMenuView<>(Objects.requireNonNull(title), model, page, layout);
+		this.view = new QuickMenuView<>(title, model, page, layout);
 		this.input = new QuickMenuInputHandler<>(this, model, page, layout);
 	}
 
@@ -128,29 +121,34 @@ final class QuickConfigMenu<T> implements IQuickConfigMenu {
 	}
 
 	void activate(QuickMenuTarget<T> target) {
-		T id = target.id();
-		switch (target.action()) {
-			case CLOSE -> close();
-			case ANCHOR -> {
-				Runnable action = onAnchorClick;
-				close();
-				action.run();
+		if (target instanceof Control<T> control) {
+			switch (control.action()) {
+				case CLOSE -> close();
+				case ANCHOR -> {
+					Runnable action = onAnchorClick;
+					close();
+					action.run();
+				}
+				case FULL_CONFIG -> {
+					Screen host = parent;
+					close();
+					Minecraft.getInstance().setScreen(screenFactory.create(host));
+				}
+				case EDIT -> {
+					page.cancelInput();
+					model.toggleEditing();
+				}
+				case PAGE, RESIZE, SCROLL -> {}
 			}
-			case FULL_CONFIG -> {
-				Screen host = parent;
-				close();
-				Minecraft.getInstance().setScreen(screenFactory.create(host));
+		} else if (target instanceof Option<T> option) {
+			switch (option.action()) {
+				case MEMBERSHIP -> model.selection().toggleMembership(option.id());
+				case UP -> model.selection().move(option.id(), -1);
+				case DOWN -> model.selection().move(option.id(), 1);
+				case REORDER -> {}
 			}
-			case EDIT -> {
-				page.cancelInput();
-				model.toggleEditing();
-			}
-			case MEMBERSHIP -> model.selection().toggleMembership(Objects.requireNonNull(id));
-			case UP -> model.selection().move(Objects.requireNonNull(id), -1);
-			case DOWN -> model.selection().move(Objects.requireNonNull(id), 1);
-			case PAGE, RESIZE, SCROLL, REORDER -> {}
 		}
-		if (target.action() != Action.CLOSE && target.action() != Action.SCROLL && target.action() != Action.REORDER) {
+		if (target.playsClickSound()) {
 			Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
 		}
 		refresh();
