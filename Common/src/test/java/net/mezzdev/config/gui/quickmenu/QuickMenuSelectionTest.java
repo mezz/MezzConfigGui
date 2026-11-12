@@ -18,6 +18,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import java.nio.file.Path;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.ArrayList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -78,6 +79,39 @@ class QuickMenuSelectionTest {
 			assertEquals(ConfigValueApplyMode.ON_APPLY, value.getApplyMode());
 			assertThrows(IllegalArgumentException.class, () -> selection(List.of(Choice.values()),
 				IConfigScreenValue.withRestartRequirement(value, ConfigValueRestartRequirement.GAME_RESTART)));
+		}
+	}
+
+	@Test
+	void rowsKeepRegisteredValuesWhenSavedChoicesContainUnknownOrDuplicateIds(@TempDir Path directory) throws Exception {
+		var disabled = ConfigFileWatcherSettings.clientDefaults().withEnabled(false);
+		var manager = new ConfigManager("Quick menu row bindings", disabled, disabled);
+		try {
+			var builder = new ConfigSchemaBuilder(directory.resolve("menu.ini"), "test", manager);
+			var category = builder.addCategory("menu");
+			var first = ConfigScreenValues.create(category.addBoolean("first", true).build());
+			var second = ConfigScreenValues.create(category.addBoolean("second", false).build());
+			var selection = ConfigScreenValues.create(category.addEnumList("selection", List.of(Choice.FIRST), Choice.class).build());
+			builder.build();
+			var options = new ArrayList<QuickMenuModel.Row<Choice>>();
+			options.add(new QuickMenuModel.Row<>(Choice.FIRST, first));
+			options.add(new QuickMenuModel.Row<>(Choice.SECOND, second));
+			var model = new QuickMenuModel<>(options, selection, selection::set);
+			assertThrows(IllegalArgumentException.class, () -> new QuickMenuModel<>(List.of(options.getFirst(), options.getFirst()), selection, selection::set));
+			options.clear();
+			selection.set(List.of(Choice.THIRD, Choice.SECOND, Choice.SECOND));
+
+			assertEquals(List.of(second), model.refreshRows());
+			assertEquals(List.of(new QuickMenuModel.Row<>(Choice.SECOND, second)), model.rows());
+			model.toggleEditing();
+			assertEquals(List.of(second, first), model.refreshRows());
+			assertEquals(List.of(new QuickMenuModel.Row<>(Choice.SECOND, second), new QuickMenuModel.Row<>(Choice.FIRST, first)), model.rows());
+			selection.set(List.of(Choice.FIRST));
+			assertEquals(List.of(first, second), model.refreshRows());
+			model.close();
+			assertEquals(List.of(first), model.refreshRows());
+		} finally {
+			((AutoCloseable) manager.getSaveScheduler()).close();
 		}
 	}
 
