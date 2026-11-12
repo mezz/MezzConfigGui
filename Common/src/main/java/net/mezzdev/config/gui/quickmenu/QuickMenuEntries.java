@@ -53,15 +53,11 @@ record QuickMenuEntries(LinkedHashMap<String, IConfigScreenValue<?>> options, Li
 		}
 
 		private String pathForIdentity(Object identityKey, String name) {
-			List<String> matches = entries.stream()
+			return entries.stream()
 				.filter(entry -> entry.value().getIdentityKey() == identityKey)
 				.map(Entry::path)
-				.distinct()
-				.toList();
-			if (matches.size() != 1) {
-				throw new IllegalArgumentException("Quick menu value must match exactly one registered path: " + name + " (found " + matches + ")");
-			}
-			return matches.get(0);
+				.findFirst()
+				.orElseThrow(() -> new IllegalArgumentException("Quick menu value is not registered: " + name));
 		}
 
 		QuickMenuEntries resolve(List<String> defaults, List<String> additional) {
@@ -73,7 +69,7 @@ record QuickMenuEntries(LinkedHashMap<String, IConfigScreenValue<?>> options, Li
 				Map<Object, IConfigScreenValue<?>> matches = new IdentityHashMap<>();
 				for (Entry entry : entries) {
 					if (path.equals(entry.path())) {
-						matches.put(entry.value().getIdentityKey(), entry.value());
+						matches.putIfAbsent(entry.value().getIdentityKey(), entry.value());
 					}
 				}
 				if (matches.size() != 1) {
