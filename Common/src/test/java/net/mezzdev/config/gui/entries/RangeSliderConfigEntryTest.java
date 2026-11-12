@@ -66,6 +66,13 @@ class RangeSliderConfigEntryTest {
 
 	private record TestRangeSerializer(ConfigValueRange<Integer> bounds) implements IConfigValueSerializer<ConfigValueRange<Integer>> {
 		@Override
+		@SuppressWarnings("unchecked")
+		public Class<ConfigValueRange<Integer>> getValueClass() {
+			// Use the erased range class because Java has no class literal for ConfigValueRange<Integer>.
+			return (Class<ConfigValueRange<Integer>>) (Class<?>) ConfigValueRange.class;
+		}
+
+		@Override
 		public String serialize(ConfigValueRange<Integer> value) { return value.min() + ".." + value.max(); }
 		@Override
 		public IDeserializeResult<ConfigValueRange<Integer>> deserialize(String string) {

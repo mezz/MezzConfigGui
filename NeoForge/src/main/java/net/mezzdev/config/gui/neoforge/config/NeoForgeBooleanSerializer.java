@@ -15,6 +15,11 @@ final class NeoForgeBooleanSerializer implements IConfigValueSerializer<Boolean>
 	}
 
 	@Override
+	public Class<Boolean> getValueClass() {
+		return Boolean.class;
+	}
+
+	@Override
 	public String serialize(Boolean value) {
 		return value.toString();
 	}

@@ -116,6 +116,11 @@ final class NeoForgeListElementSerializers {
 		String validValuesDescription
 	) implements IConfigValueSerializer<T> {
 		@Override
+		public Class<? extends T> getValueClass() {
+			return delegate.getValueClass();
+		}
+
+		@Override
 		public String serialize(T value) {
 			return delegate.serialize(value);
 		}
@@ -150,6 +155,11 @@ final class NeoForgeListElementSerializers {
 		INSTANCE;
 
 		@Override
+		public Class<String> getValueClass() {
+			return String.class;
+		}
+
+		@Override
 		public String serialize(String value) {
 			return value;
 		}
@@ -180,6 +190,11 @@ final class NeoForgeListElementSerializers {
 
 	private enum LongListElementSerializer implements IConfigValueSerializer<Long> {
 		INSTANCE;
+
+		@Override
+		public Class<Long> getValueClass() {
+			return Long.class;
+		}
 
 		@Override
 		public String serialize(Long value) {
@@ -215,6 +230,11 @@ final class NeoForgeListElementSerializers {
 
 	private enum DoubleListElementSerializer implements IConfigValueSerializer<Double> {
 		INSTANCE;
+
+		@Override
+		public Class<Double> getValueClass() {
+			return Double.class;
+		}
 
 		@Override
 		public String serialize(Double value) {

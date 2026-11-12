@@ -517,6 +517,11 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 		}
 
 		@Override
+		public Class<? extends T> getValueClass() {
+			return valueSerializer.getValueClass();
+		}
+
+		@Override
 		public String serialize(T value) {
 			return valueSerializer.serialize(value);
 		}
@@ -598,6 +603,11 @@ final class SortableConfigValueFactory implements ISortableConfigValueFactory {
 
 	private enum StringValueSerializer implements IConfigValueSerializer<String> {
 		INSTANCE;
+
+		@Override
+		public Class<String> getValueClass() {
+			return String.class;
+		}
 
 		@Override
 		public String serialize(String value) {

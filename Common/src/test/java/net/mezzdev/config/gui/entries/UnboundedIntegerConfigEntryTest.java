@@ -62,6 +62,11 @@ class UnboundedIntegerConfigEntryTest {
 	private static final class EvenIntegerValue implements IConfigScreenValue<Integer> {
 		private static final IConfigValueSerializer<Integer> SERIALIZER = new IConfigValueSerializer<>() {
 			@Override
+			public Class<Integer> getValueClass() {
+				return Integer.class;
+			}
+
+			@Override
 			public String serialize(Integer value) {
 				return value.toString();
 			}
