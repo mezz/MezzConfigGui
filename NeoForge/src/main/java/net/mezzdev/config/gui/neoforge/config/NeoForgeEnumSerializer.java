@@ -19,6 +19,11 @@ final class NeoForgeEnumSerializer<T extends Enum<T>> implements IConfigValueSer
 	}
 
 	@Override
+	public Class<T> getValueClass() {
+		return enumClass;
+	}
+
+	@Override
 	public String serialize(T value) {
 		return value.name();
 	}
