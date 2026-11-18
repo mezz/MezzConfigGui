@@ -38,7 +38,7 @@ import net.mezzdev.config.gui.textures.ConfigButtonIcon;
 import net.mezzdev.config.gui.textures.ConfigTextures;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
 import net.mezzdev.config.gui.util.HexColorString;
-import net.mezzdev.config.gui.ConfigValueEditorMetadataFactory;
+import net.mezzdev.config.gui.internal.ConfigValueEditorMetadataFactory;
 import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;

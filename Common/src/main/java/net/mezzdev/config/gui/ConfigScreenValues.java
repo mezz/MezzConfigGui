@@ -5,6 +5,7 @@ import net.mezzdev.config.api.value.editor.ConfigValueRestartRequirement;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
+import net.mezzdev.config.gui.internal.ConfigValueEditorMetadataFactory;
 
 /** Creates screen values for MezzConfig values using their serializer's editor metadata. */
 public final class ConfigScreenValues {
@@ -24,7 +25,6 @@ public final class ConfigScreenValues {
 	}
 
 	private static <T> IConfigValueEditorMetadata<T> createMetadata(IConfigValue<T> value) {
-		var editorInfo = value.getEditorInfo();
-		return ConfigValueEditorMetadataFactory.INSTANCE.create(editorInfo.getSerializer(), editorInfo.getPendingValue());
+		return ConfigValueEditorMetadataFactory.INSTANCE.create(value);
 	}
 }

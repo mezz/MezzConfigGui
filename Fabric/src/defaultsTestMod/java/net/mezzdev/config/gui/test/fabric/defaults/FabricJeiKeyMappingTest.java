@@ -3,6 +3,7 @@ package net.mezzdev.config.gui.test.fabric.defaults;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.loader.api.FabricLoader;
+import net.mezzdev.config.gui.ConfigScreen;
 import net.mezzdev.config.gui.api.keybindings.IKeyMappingAdapter;
 import net.mezzdev.config.gui.api.keybindings.IKeyMappingBinding;
 import net.mezzdev.config.gui.fabric.FabricConfigKeyMappingPlatformHelper;
@@ -13,11 +14,13 @@ import net.mezzdev.config.gui.keybindings.KeyMappingConfigValues;
 import net.mezzdev.config.gui.keybindings.KeyMappingValue;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import org.apache.logging.log4j.LogManager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /** Exercises the binding editor with an installed JEI mapping and Fabric's real mixins. */
@@ -27,7 +30,9 @@ final class FabricJeiKeyMappingTest {
 
 	static void run() {
 		check(FabricLoader.getInstance().isModLoaded("jei"), "JEI must be installed for its key mapping regression test");
-		KeyMapping mapping = Arrays.stream(Minecraft.getInstance().options.keyMappings)
+		Minecraft minecraft = Minecraft.getInstance();
+		verifyConfigScreen(minecraft);
+		KeyMapping mapping = Arrays.stream(minecraft.options.keyMappings)
 			.filter(candidate -> candidate.getClass().getName().equals("mezz.jei.fabric.input.FabricKeyMapping"))
 			.filter(candidate -> !candidate.getDefaultKey().equals(InputConstants.UNKNOWN))
 			.findFirst()
@@ -57,6 +62,21 @@ final class FabricJeiKeyMappingTest {
 			Minecraft.getInstance().options.save();
 		}
 		LogManager.getLogger().info("MEZZ_CONFIG_GUI_JEI_KEY_MAPPING_TEST_PASSED");
+	}
+
+	private static void verifyConfigScreen(Minecraft minecraft) {
+		Screen parent = minecraft.screen;
+		try {
+			Class<?> plugin = Class.forName("mezz.jei.gui.config.JeiConfigGuiPlugin");
+			var created = (Optional<?>) plugin.getMethod("createScreen", Screen.class).invoke(null, parent);
+			Object screen = created.orElseThrow(() -> new AssertionError("JEI's config screen was not registered"));
+			check(screen instanceof ConfigScreen, "JEI must provide its configured MezzConfig GUI screen");
+			minecraft.setScreen((Screen) screen);
+		} catch (ReflectiveOperationException e) {
+			throw new AssertionError("JEI's published config screen could not be opened", e);
+		} finally {
+			minecraft.setScreen(parent);
+		}
 	}
 
 	private static void verifyChange(

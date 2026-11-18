@@ -37,6 +37,7 @@ import net.mezzdev.config.gui.remote.RemoteConfigEditor;
 import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryRegistry;
 import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import net.mezzdev.config.gui.api.IConfigListValueEditorMetadata;
+import net.mezzdev.config.gui.internal.ConfigValueEditorMetadataFactory;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.Nullable;

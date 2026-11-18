@@ -17,6 +17,7 @@ import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;
 import net.mezzdev.config.gui.api.IConfigScreenValue;
 import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
+import net.mezzdev.config.gui.internal.ConfigValueEditorMetadataFactory;
 import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 

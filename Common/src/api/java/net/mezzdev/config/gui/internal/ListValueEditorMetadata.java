@@ -1,9 +1,10 @@
-package net.mezzdev.config.gui;
+package net.mezzdev.config.gui.internal;
 
 import net.mezzdev.config.api.value.serializer.IConfigListValueSerializer;
 import net.mezzdev.config.gui.api.ConfigValueEditorTypes;
 import net.mezzdev.config.gui.api.IConfigListValueEditorMetadata;
 import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
+import net.mezzdev.config.gui.api.IConfigValueLocalizationProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 
@@ -32,6 +33,9 @@ public class ListValueEditorMetadata<T> extends ConfigValueEditorMetadata<List<T
 
 	@Override
 	public Component getLocalizedValueName(String localizationKey, List<T> values) {
+		if (serializer instanceof IConfigValueLocalizationProvider<?>) {
+			return super.getLocalizedValueName(localizationKey, values);
+		}
 		if (values.isEmpty()) {
 			return Component.translatable("mezz_config_gui.config.value.list.empty");
 		}

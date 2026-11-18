@@ -2,11 +2,11 @@ package net.mezzdev.config.gui.neoforge.config;
 
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.api.value.serializer.IConfigListValueSerializer;
-import net.mezzdev.config.gui.ListValueEditorMetadata;
+import net.mezzdev.config.gui.internal.ListValueEditorMetadata;
 import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import net.mezzdev.config.gui.ConfigRenderUtil;
-import net.mezzdev.config.gui.ConfigValueEditorMetadata;
-import net.mezzdev.config.gui.ConfigValueEditorMetadataFactory;
+import net.mezzdev.config.gui.internal.ConfigValueEditorMetadata;
+import net.mezzdev.config.gui.internal.ConfigValueEditorMetadataFactory;
 import net.mezzdev.config.gui.api.IConfigValueIcon;
 import net.mezzdev.config.gui.api.IConfigValueIconProvider;
 import net.minecraft.locale.Language;

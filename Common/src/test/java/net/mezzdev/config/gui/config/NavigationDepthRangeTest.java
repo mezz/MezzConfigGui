@@ -1,6 +1,6 @@
 package net.mezzdev.config.gui.config;
 
-import net.mezzdev.config.gui.ConfigValueEditorMetadataFactory;
+import net.mezzdev.config.gui.internal.ConfigValueEditorMetadataFactory;
 import net.mezzdev.config.api.value.IConfigValue;
 import net.mezzdev.config.api.value.editor.ConfigValueEditMode;
 import net.mezzdev.config.api.value.serializer.ConfigValueRange;

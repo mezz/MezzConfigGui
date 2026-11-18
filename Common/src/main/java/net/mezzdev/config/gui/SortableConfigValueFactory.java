@@ -15,6 +15,8 @@ import net.mezzdev.config.gui.api.IConfigValueIconProvider;
 import net.mezzdev.config.gui.api.ISortingConfigGuiBuilder;
 import net.mezzdev.config.gui.api.ISortableConfigValueFactory;
 import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
+import net.mezzdev.config.gui.internal.ConfigValueEditorMetadata;
+import net.mezzdev.config.gui.internal.ListValueEditorMetadata;
 import net.minecraft.network.chat.Component;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

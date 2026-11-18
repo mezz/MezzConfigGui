@@ -8,7 +8,7 @@ import net.mezzdev.config.gui.api.IConfigValuePopup;
 import net.mezzdev.config.gui.input.InputType;
 import net.mezzdev.config.gui.input.UserInput;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
-import net.mezzdev.config.gui.ConfigValueEditorMetadataFactory;
+import net.mezzdev.config.gui.internal.ConfigValueEditorMetadataFactory;
 import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.Rect2i;

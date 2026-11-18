@@ -1,4 +1,4 @@
-package net.mezzdev.config.gui;
+package net.mezzdev.config.gui.internal;
 
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.ConfigValueEditorType;
@@ -41,6 +41,6 @@ public class ConfigValueEditorMetadata<T> implements IConfigValueEditorMetadata<
 
 	@Override
 	public Optional<Component> getLocalizedValueDescription(String localizationKey, T value) {
-		return ConfigValueLocalization.getValueDescription(localizationKey, value);
+		return ConfigValueLocalization.getValueDescription(serializer, localizationKey, value);
 	}
 }

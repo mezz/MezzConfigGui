@@ -36,6 +36,7 @@ import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryEntry;
 import net.mezzdev.config.gui.screenlist.ConfigScreenFactoryRegistry;
 import net.mezzdev.config.gui.util.ConfigNameUtil;
 import net.mezzdev.config.gui.util.ErrorUtil;
+import net.mezzdev.config.gui.internal.ConfigValueEditorMetadataFactory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.network.chat.Component;

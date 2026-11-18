@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui;
 
+import net.mezzdev.config.gui.internal.ConfigValueEditorMetadataFactory;
+
 import net.mezzdev.config.api.schema.ConfigSchemaType;
 import net.mezzdev.config.api.schema.update.IConfigBatchUpdater;
 import net.mezzdev.config.api.schema.category.IConfigCategory;

@@ -24,7 +24,7 @@ import net.mezzdev.config.gui.info.ConfigServerInfo;
 import net.mezzdev.config.gui.info.ServerConfigAccess;
 import net.mezzdev.config.gui.model.ConfigCategoryWidget;
 import net.mezzdev.config.gui.ConfigScreenValues;
-import net.mezzdev.config.gui.ConfigValueEditorMetadataFactory;
+import net.mezzdev.config.gui.internal.ConfigValueEditorMetadataFactory;
 import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.Nullable;

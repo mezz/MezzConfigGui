@@ -14,7 +14,7 @@ import net.mezzdev.config.gui.popup.ColorPickerPopup;
 import net.mezzdev.config.gui.popup.MappedConfigValuePopup;
 import net.mezzdev.config.gui.util.HexColorString;
 import net.mezzdev.config.gui.util.ImmutableRect2i;
-import net.mezzdev.config.gui.ConfigValueEditorMetadataFactory;
+import net.mezzdev.config.gui.internal.ConfigValueEditorMetadataFactory;
 import net.mezzdev.config.gui.api.IConfigValueEditorMetadata;
 import org.junit.jupiter.api.Test;
 

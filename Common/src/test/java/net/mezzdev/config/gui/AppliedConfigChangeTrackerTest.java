@@ -1,5 +1,7 @@
 package net.mezzdev.config.gui;
 
+import net.mezzdev.config.gui.internal.ConfigValueEditorMetadataFactory;
+
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.api.value.serializer.IConfigValueSerializer;
 import net.mezzdev.config.gui.api.ConfigValueApplyMode;

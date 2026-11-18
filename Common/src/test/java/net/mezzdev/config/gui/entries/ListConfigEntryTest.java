@@ -1,6 +1,6 @@
 package net.mezzdev.config.gui.entries;
 
-import net.mezzdev.config.gui.ListValueEditorMetadata;
+import net.mezzdev.config.gui.internal.ListValueEditorMetadata;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.mezzdev.config.api.value.serializer.IDeserializeResult;
 import net.mezzdev.config.api.value.serializer.ConfigListOrdering;
