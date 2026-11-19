@@ -18,11 +18,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Java 21
+      - name: Set up Java toolchains
         uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: 21
+          # ForgeGradle resolves its launcher with Java 8 and runs Mavenizer with Java 25.
+          # Keep Java 21 last so Gradle and Minecraft use this branch's target JDK.
+          java-version: |
+            8
+            25
+            21
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
