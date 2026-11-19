@@ -122,7 +122,7 @@ dependencies {
     add(modDependencyConfiguration, "net.fabricmc:fabric-loader:$fabricLoaderVersion")
     add(modDependencyConfiguration, "net.fabricmc.fabric-api:fabric-api:$fabricApiVersion")
 
-    compileOnly("de.siphalor.amecs.amecs-key-modifiers:amecs-key-modifiers-mc26.2.0:1.0.2") { isTransitive = false }
+    compileOnly("de.siphalor.amecs.amecs-key-modifiers:amecs-key-modifiers-mc26.3.0:1.0.3") { isTransitive = false }
 
     add(modCompileConfiguration, "com.terraformersmc:modmenu:$modMenuVersionFabric") { isTransitive = false }
     compileOnly("com.google.code.findbugs:jsr305:$jsr305Version")
