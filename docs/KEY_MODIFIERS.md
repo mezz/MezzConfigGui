@@ -1,9 +1,9 @@
 # Key modifiers
 
 The binding editor supports Forge modifiers and optional AMECS modifiers on
-Fabric. Forge on Minecraft 1.20.1 use the portable
-`CONTROL_OR_COMMAND` modifier for their native Control binding. Other Fabric
-mappings need an adapter to support modifiers.
+Fabric. Forge uses the portable `CONTROL_OR_COMMAND` modifier for its native
+Control binding. When the main key is a Forge modifier, the editor captures it
+as a single-key binding. Other Fabric mappings need an adapter to support modifiers.
 
 ## Custom mappings
 

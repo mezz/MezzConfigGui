@@ -22,17 +22,24 @@ class ForgeKeyMappingAdapterTest {
 	private final ConfigKeyMappingHelper helper = ConfigKeyMappingHelper.INSTANCE;
 
 	@Test
-	void aModifierUsedAsTheMainKeyDoesNotDiscardOtherHeldModifiers() {
+	void captureCanRoundTripAForgeModifierUsedAsTheMainKey() {
 		var platformHelper = new ForgeConfigKeyMappingPlatformHelper();
 		KeyMapping mapping = mapping("modifier_key", KeyConflictContext.UNIVERSAL, KeyModifier.NONE);
 		var adapter = platformHelper.createAdapter(mapping);
 		var configMapping = KeyMappingAdapters.create(mapping);
-		var binding = configMapping.createBinding(InputConstants.getKey("key.keyboard.left.control"), GLFW.GLFW_MOD_CONTROL | GLFW.GLFW_MOD_SHIFT);
+		int keyCode = GLFW.GLFW_KEY_LEFT_CONTROL;
+		int modifiers = GLFW.GLFW_MOD_CONTROL | GLFW.GLFW_MOD_SHIFT;
+		if (ConfigInputUtil.isMac()) {
+			keyCode = GLFW.GLFW_KEY_LEFT_SUPER;
+			modifiers = GLFW.GLFW_MOD_SUPER | GLFW.GLFW_MOD_SHIFT;
+		}
+		var key = InputConstants.Type.KEYSYM.getOrCreate(keyCode);
 
+		var binding = configMapping.createBinding(key, modifiers);
 		adapter.setValue(binding);
 
-		assertEquals(binding.getKey(), mapping.getKey());
-		assertEquals(KeyModifier.SHIFT, mapping.getKeyModifier());
+		assertEquals(key, mapping.getKey());
+		assertEquals(KeyModifier.NONE, mapping.getKeyModifier());
 		assertEquals(binding, adapter.getValue());
 	}
 

@@ -57,6 +57,11 @@ final class ForgeKeyMappingAdapter implements IKeyMappingAdapter {
 
 	@Override
 	public IKeyMappingBinding createBinding(IKeyMappingInput input) {
+		InputConstants.Key key = input.getKey();
+		// Capture only the main key so the binding round-trips on Forge versions that clear held modifiers.
+		if (KeyModifier.isKeyCodeModifier(key)) {
+			return ConfigKeyMappingHelper.INSTANCE.createBinding(key, Set.of());
+		}
 		for (KeyInputModifier modifier : INPUT_MODIFIER_PRIORITY) {
 			if (!input.getModifiers().contains(modifier)) {
 				continue;
@@ -66,9 +71,9 @@ final class ForgeKeyMappingAdapter implements IKeyMappingAdapter {
 				case SHIFT -> KeyModifier.SHIFT;
 				case ALT -> KeyModifier.ALT;
 			};
-			return ConfigKeyMappingHelper.INSTANCE.createBinding(input.getKey(), fromForge(nativeModifier));
+			return ConfigKeyMappingHelper.INSTANCE.createBinding(key, fromForge(nativeModifier));
 		}
-		return ConfigKeyMappingHelper.INSTANCE.createBinding(input.getKey(), Set.of());
+		return ConfigKeyMappingHelper.INSTANCE.createBinding(key, Set.of());
 	}
 
 	@Override
@@ -88,7 +93,7 @@ final class ForgeKeyMappingAdapter implements IKeyMappingAdapter {
 	}
 
 	private static KeyInputModifier getNativeControlInput() {
-		// The 1.21.1 loader's Control modifier matches Command on macOS.
+		// Forge's Control modifier matches Command on macOS.
 		if (ConfigInputUtil.isMac()) {
 			return KeyInputModifier.COMMAND;
 		}
